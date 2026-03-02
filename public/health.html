@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuditWise Server Status</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #1a202c;
+            font-size: 32px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .subtitle {
+            color: #718096;
+            margin-bottom: 32px;
+            font-size: 14px;
+        }
+
+        .status-card {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .status-card.healthy {
+            background: #f0fdf4;
+            border-color: #86efac;
+        }
+
+        .status-card.error {
+            background: #fef2f2;
+            border-color: #fca5a5;
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .status-icon {
+            font-size: 32px;
+        }
+
+        .status-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a202c;
+        }
+
+        .status-time {
+            color: #718096;
+            font-size: 12px;
+            margin-left: auto;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            color: #1a202c;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .logs-section {
+            background: #1a202c;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-line {
+            color: #a0aec0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            margin: 4px 0;
+        }
+
+        .log-line.error {
+            color: #fc8181;
+        }
+
+        .log-line.success {
+            color: #68d391;
+        }
+
+        .button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-right: 12px;
+        }
+
+        .button:hover {
+            background: #5a67d8;
+        }
+
+        .button.secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .button.secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .actions {
+            margin-top: 24px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge.success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .badge.error {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .badge.warning {
+            background: #feebc8;
+            color: #7c2d12;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <span id="status-emoji">🏥</span>
+            AuditWise Server Status
+        </h1>
+        <p class="subtitle">Real-time health monitoring and diagnostics</p>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Checking server status...</p>
+        </div>
+
+        <div id="content" style="display: none;">
+            <!-- Application Status -->
+            <div id="app-status" class="status-card">
+                <div class="status-header">
+                    <span class="status-icon" id="app-icon">✅</span>
+                    <span class="status-title">Application Status</span>
+                    <span class="status-time" id="last-check"></span>
+                </div>
+                <div id="app-metrics"></div>
+            </div>
+
+            <!-- Container Status -->
+            <div id="container-status" class="status-card">
+                <div class="status-header">
+                    <span class="status-icon">🐳</span>
+                    <span class="status-title">Docker Containers</span>
+                </div>
+                <div id="container-metrics"></div>
+            </div>
+
+            <!-- Recent Logs -->
+            <div class="status-card">
+                <div class="status-header">
+                    <span class="status-icon">📋</span>
+                    <span class="status-title">Recent Application Logs</span>
+                </div>
+                <div id="logs" class="logs-section">
+                    <div class="log-line">Loading logs...</div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions">
+                <button class="button" onclick="location.reload()">🔄 Refresh Status</button>
+                <button class="button secondary" onclick="window.location.href='/dev'">📊 Developer Dashboard</button>
+                <button class="button secondary" onclick="window.location.href='/'">🏠 Go to App</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let autoRefresh = true;
+
+        async function checkHealth() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+
+                // Update app status
+                const appCard = document.getElementById('app-status');
+                appCard.className = 'status-card healthy';
+                document.getElementById('app-icon').textContent = '✅';
+                document.getElementById('status-emoji').textContent = '✅';
+                document.getElementById('last-check').textContent = new Date().toLocaleTimeString();
+
+                // App metrics
+                const uptime = formatUptime(data.uptime);
+                const memory = formatMemory(data.memory);
+                
+                document.getElementById('app-metrics').innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">Status</span>
+                        <span class="metric-value"><span class="badge success">HEALTHY</span></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Uptime</span>
+                        <span class="metric-value">${uptime}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Node Version</span>
+                        <span class="metric-value">${data.version}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Memory Usage</span>
+                        <span class="metric-value">${memory.used} / ${memory.total}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Last Updated</span>
+                        <span class="metric-value">${new Date(data.timestamp).toLocaleString()}</span>
+                    </div>
+                `;
+
+                // Get container stats
+                await checkContainers();
+                
+                // Get logs
+                await getLogs();
+
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+
+                const appCard = document.getElementById('app-status');
+                appCard.className = 'status-card error';
+                document.getElementById('app-icon').textContent = '❌';
+                document.getElementById('status-emoji').textContent = '❌';
+
+                document.getElementById('app-metrics').innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">Status</span>
+                        <span class="metric-value"><span class="badge error">DOWN</span></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Error</span>
+                        <span class="metric-value" style="color: #e53e3e;">${error.message}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Action Required</span>
+                        <span class="metric-value">Check server logs or SSH into server</span>
+                    </div>
+                `;
+
+                document.getElementById('container-status').style.display = 'none';
+            }
+        }
+
+        async function checkContainers() {
+            try {
+                const response = await fetch('/api/logs/status');
+                const data = await response.json();
+                
+                let html = '';
+                data.stats.forEach(stat => {
+                    const isHealthy = !stat.Name.includes('Exited');
+                    html += `
+                        <div class="metric">
+                            <span class="metric-label">${stat.Name}</span>
+                            <span class="metric-value">
+                                ${isHealthy ? '<span class="badge success">Running</span>' : '<span class="badge error">Stopped</span>'}
+                                CPU: ${stat.CPUPerc} | Memory: ${stat.MemPerc}
+                            </span>
+                        </div>
+                    `;
+                });
+                
+                document.getElementById('container-metrics').innerHTML = html;
+            } catch (error) {
+                document.getElementById('container-metrics').innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">Error</span>
+                        <span class="metric-value" style="color: #e53e3e;">Could not fetch container status</span>
+                    </div>
+                `;
+            }
+        }
+
+        async function getLogs() {
+            try {
+                const response = await fetch('/api/logs/app?lines=30');
+                const data = await response.json();
+                
+                let html = '';
+                data.logs.slice(0, 30).forEach(log => {
+                    if (!log.trim()) return;
+                    
+                    let className = 'log-line';
+                    if (log.toLowerCase().includes('error')) className += ' error';
+                    if (log.toLowerCase().includes('success') || log.includes('✅')) className += ' success';
+                    
+                    html += `<div class="${className}">${escapeHtml(log)}</div>`;
+                });
+                
+                document.getElementById('logs').innerHTML = html || '<div class="log-line">No logs available</div>';
+            } catch (error) {
+                document.getElementById('logs').innerHTML = `<div class="log-line error">Could not fetch logs: ${error.message}</div>`;
+            }
+        }
+
+        function formatUptime(seconds) {
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            
+            if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+            if (hours > 0) return `${hours}h ${minutes}m`;
+            return `${minutes}m`;
+        }
+
+        function formatMemory(mem) {
+            const used = (mem.heapUsed / 1024 / 1024).toFixed(1);
+            const total = (mem.heapTotal / 1024 / 1024).toFixed(1);
+            return { used: `${used} MB`, total: `${total} MB` };
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initial check
+        checkHealth();
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            if (autoRefresh) {
+                checkHealth();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

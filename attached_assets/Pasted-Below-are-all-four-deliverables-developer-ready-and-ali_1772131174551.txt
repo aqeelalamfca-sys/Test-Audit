@@ -1,0 +1,235 @@
+Below are all four deliverables, **developer-ready** and aligned to your current Execution UI (FS Heads grid + “Audit Evidence ISA 500/230” sub-steps) as shown in the uploaded screen .
+
+---
+
+## 1) Developer-ready Execution Workflow Diagram
+
+### A) End-to-End (Execution → Evidence → Review → Lock)
+
+```mermaid
+flowchart TD
+  A[Execution Phase Landing] --> B{Prerequisites Passed?}
+  B -- No --> B1[Show blockers: TB/GL, Mapping, Materiality, Risk, Audit Program]
+  B -- Yes --> C[FS Head Dashboard (cards with status & completion %)]
+
+  C --> D[Select FS Head]
+  D --> E[Auto-fetch Context: Risks, Assertions, Materiality, Prior WP, Sampling]
+  E --> F[Procedure Plan for this FS Head (ToC/Substantive/Analytics)]
+  F --> G[Execute Procedure]
+  G --> H[Capture Results + Tickmarks + Exceptions]
+  H --> I[Upload/Link Evidence (ISA 500)]
+  I --> J[Cross-reference: FS Head → Assertion → Risk → Procedure → Evidence]
+  J --> K[Draft Conclusion (ISA 230) + Evidence Sufficiency Assessment]
+  K --> L{Ready to Submit for Review?}
+
+  L -- No --> G
+  L -- Yes --> M[Submit: Prepared]
+  M --> N[Reviewer Queue]
+  N --> O{Reviewer Action}
+  O -- Return w/ Notes --> P[Review Notes (sticky) + Rework Required]
+  P --> G
+  O -- Approve --> Q[Approved / Locked FS Head]
+  Q --> R{All FS Heads Approved?}
+  R -- No --> C
+  R -- Yes --> S[Unlock: Finalization / Deliverables]
+```
+
+### B) Within each FS Head (micro-wizard)
+
+```mermaid
+flowchart LR
+  A1[FS Head Context] --> A2[Assertions]
+  A2 --> A3[Risk Linkage]
+  A3 --> A4[Procedures]
+  A4 --> A5[Evidence Upload/Link]
+  A5 --> A6[Sufficiency & Reliability Check]
+  A6 --> A7[Conclusion + Sign-off]
+```
+
+---
+
+## 2) Database Schema Updates (Prepared / Reviewed / Approved logic)
+
+### A) Core entities (additions are **bold**)
+
+**1) audit_fs_head**
+
+* id (PK)
+* engagement_id (FK)
+* fs_head_code, fs_head_name
+* balance_amount, materiality_bucket
+* completion_pct (0–100)
+* status_enum: `NOT_STARTED | IN_PROGRESS | PREPARED | IN_REVIEW | RETURNED | APPROVED | LOCKED`
+* **prepared_by_user_id, prepared_at**
+* **reviewed_by_user_id, reviewed_at**
+* **approved_by_user_id, approved_at**
+* **locked_at**
+* version_no (int, starts 1)
+* is_current_version (bool)
+
+**2) audit_procedure**
+
+* id (PK)
+* engagement_id (FK)
+* fs_head_id (FK)
+* procedure_type: `TOC | SUBSTANTIVE | ANALYTICAL | OTHER`
+* objective
+* assertions (array / join table)
+* **risk_ids (join table)**
+* **is_mandatory (bool)**
+* status_enum: `DRAFT | EXECUTED | EXCEPTION | CLEARED | PREPARED | IN_REVIEW | APPROVED`
+* prepared_by_user_id, prepared_at
+* reviewed_by_user_id, reviewed_at
+* approved_by_user_id, approved_at
+* execution_summary (text)
+* conclusion (text)
+
+**3) audit_evidence_item**
+
+* id (PK)
+* engagement_id (FK)
+* fs_head_id (FK nullable if global)
+* procedure_id (FK)
+* evidence_type: `EXTERNAL | INTERNAL | REPERFORMANCE | OBSERVATION | ANALYTICAL | MGMT_REP | OTHER`
+* source_system: `UPLOAD | CLIENT_PORTAL | GL_TB | BANK | TAX | OTHER`
+* file_object_id / storage_key
+* received_date
+* prepared_by_user_id, prepared_at
+* **reliability_score (0–100)**
+* **sufficiency_score (0–100)**
+* **flags_json (missing, outdated, inconsistent, tampered, unsupported, etc.)**
+* status_enum: `DRAFT | LINKED | VALIDATED | RETURNED | ACCEPTED | SUPERSEDED`
+
+**4) audit_review_note (sticky notes)**
+
+* id (PK)
+* engagement_id (FK)
+* entity_type: `FS_HEAD | PROCEDURE | EVIDENCE | CONCLUSION | MISSTATEMENT`
+* entity_id (UUID)
+* note_text
+* severity: `LOW | MEDIUM | HIGH`
+* status: `OPEN | IN_PROGRESS | RESOLVED | CLOSED`
+* created_by_user_id, created_at
+* assigned_to_user_id
+* resolved_by_user_id, resolved_at
+
+**5) audit_signoff_event (full audit trail)**
+
+* id (PK)
+* engagement_id (FK)
+* entity_type, entity_id
+* action: `PREPARE | SUBMIT_REVIEW | RETURN | REVIEW | APPROVE | LOCK | UNLOCK | VERSION_BUMP`
+* from_status, to_status
+* actor_user_id, actor_role
+* timestamp
+* comment (optional)
+
+### B) Enforced workflow rules (server-side)
+
+* Only **Prepared** items can be submitted to **In Review**.
+* **Approve** requires:
+
+  * all mandatory procedures executed,
+  * all required evidence attached and validated,
+  * all review notes resolved/closed (or explicitly waived with Partner override + log).
+* Any change after approval → auto:
+
+  * increment `version_no`,
+  * set previous version `is_current_version=false`,
+  * revert status to `IN_PROGRESS`,
+  * create signoff_event `VERSION_BUMP`.
+
+---
+
+## 3) ISA Compliance Control Matrix (Execution Phase)
+
+| Control ID | Standard | Control Objective                                 | System Control (Hard Gate)                                                             | Evidence/Output              |
+| ---------- | -------- | ------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------- |
+| EXE-500-01 | ISA 500  | Evidence must be sufficient & appropriate         | No FS-head approval if required evidence missing for mandatory procedures              | Evidence register + link map |
+| EXE-500-02 | ISA 500  | Reliability evaluation (source, nature, controls) | Force selection of evidence type/source + auto reliability score                       | Reliability scoring log      |
+| EXE-500-03 | ISA 500  | Contradictory evidence must be resolved           | Detect conflicts (TB vs evidence, confirmations vs ledger) → mandatory resolution note | Conflict resolution WP       |
+| EXE-230-01 | ISA 230  | Documentation completeness                        | Checklist must pass before “Submit for Review”                                         | ISA 230 checklist            |
+| EXE-230-02 | ISA 230  | Clear linkages & cross-referencing                | Enforce links: FS Head → Assertions → Risk → Procedure → Evidence                      | Cross-ref index              |
+| EXE-230-03 | ISA 230  | Timely assembly & audit trail                     | Lock edits after approval; version bump on edits                                       | Audit trail + versions       |
+| EXE-330-01 | ISA 330  | Risks must map to responses                       | Cannot execute procedures without risk linkage (except Partner override)               | Risk-response mapping        |
+| EXE-450-01 | ISA 450  | Misstatements captured & evaluated                | Exceptions → create misstatement candidate; require disposition                        | Misstatement register        |
+| EXE-265-01 | ISA 265  | Control deficiencies communicated                 | ToC failures trigger deficiency workflow                                               | Deficiency log + letter      |
+| EXE-520-01 | ISA 520  | Analytics documented properly                     | Analytical procedure requires expectation, threshold, explanation                      | Analytics WP                 |
+| EXE-505-01 | ISA 505  | Confirmations controlled                          | Confirmation requests tracked + status + follow-ups                                    | Confirmation tracker         |
+
+---
+
+## 4) AI Evidence Validation Logic Structure (Inspection-safe)
+
+### A) Inputs (what AI reads)
+
+* Procedure metadata (objective, assertions, risk rating, materiality, sampling parameters)
+* Evidence metadata + file text (if parseable)
+* GL/TB balances + mapping
+* Prior-year comparisons (optional)
+* Review notes + exceptions history
+
+### B) Core checks (deterministic first, AI second)
+
+**Layer 1 — Rules (no AI):**
+
+* Required fields present (type/source/date/linkage)
+* Evidence attached for mandatory procedures
+* Date validity (within period / after year-end where required)
+* Cross-reference completeness (FS head → procedure → evidence)
+* Sampling coverage threshold met (if applicable)
+
+**Layer 2 — AI scoring (assist, not decide):**
+
+* **Reliability score** (0–100) using factors:
+
+  * external > internal,
+  * independent > management-generated,
+  * original > copy,
+  * direct knowledge > hearsay,
+  * controls reliance indicators.
+* **Sufficiency score** (0–100) considering:
+
+  * risk level,
+  * materiality,
+  * coverage breadth (population, sample size),
+  * corroboration (multiple sources).
+* **Contradiction detection:**
+
+  * highlight mismatches (amounts, dates, counterparties) vs GL/TB.
+* **Relevance classification:**
+
+  * evidence supports which assertion(s) (existence, completeness, accuracy, valuation, rights/obligations, presentation).
+
+### C) Outputs (stored + visible)
+
+* evidence_item.reliability_score / sufficiency_score
+* flags_json:
+
+  * `missing_required`, `out_of_period`, `amount_mismatch`, `unsupported_assertion`,
+  * `contradictory_evidence`, `low_reliability`, `needs_manager_review`
+* Suggested next action:
+
+  * “Request third-party confirmation”
+  * “Increase sample size”
+  * “Perform alternative procedure”
+  * “Add management representation / reconcile variance”
+
+### D) Safety & compliance constraints
+
+* AI **never auto-approves**.
+* If AI flags HIGH risk contradictions → mandatory reviewer note required before approval.
+* All AI outputs labelled:
+
+  * “AI-assisted assessment — subject to professional judgment”
+* Every AI run logs:
+
+  * input IDs, model version, timestamp, user, and diff of changes.
+
+---
+
+If you want, I can convert this into:
+
+* **Exact Postgres DDL** (tables + enums + indexes + FK constraints),
+* **API endpoints** (Next.js/Node) for status transitions,
+* **UI state machine** mapping statuses to allowed buttons (“Save”, “Submit”, “Approve”, “Lock”).

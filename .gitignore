@@ -1,0 +1,8 @@
+# Ignore environment files
+.env
+.env.*
+!.env.example
+
+# But keep the production template
+!.env.production
+auditwise-deploy.tar.gz

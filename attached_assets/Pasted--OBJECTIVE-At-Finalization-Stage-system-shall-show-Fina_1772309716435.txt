@@ -1,0 +1,252 @@
+🎯 OBJECTIVE
+
+At Finalization Stage, system shall show:
+
+📊 Finalization Control Board
+User: Saqib (Associate)
+Generated on: 02-Mar-2026 | 10:45 PM (Server Time)
+
+With tiles:
+
+Pending Items from Execution
+
+Unadjusted Differences Summary (ISA 450)
+
+Key Audit Matters Summary (ISA 701)
+
+Filtered by:
+
+Logged-in user
+
+Engagement
+
+Role permissions
+
+1️⃣ STEP 1 — CREATE DASHBOARD AGGREGATION TABLE
+
+Create table:
+
+CREATE TABLE user_finalization_board (
+    id INT IDENTITY PRIMARY KEY,
+    engagement_id INT,
+    user_id INT,
+    pending_execution_items INT DEFAULT 0,
+    unadjusted_misstatements INT DEFAULT 0,
+    kam_items INT DEFAULT 0,
+    generated_at DATETIME DEFAULT GETUTCDATE(),
+    generated_by INT,
+    status VARCHAR(20) DEFAULT 'Generated'
+);
+
+This table stores a snapshot of the board at time of generation.
+
+2️⃣ STEP 2 — DEFINE DATA SOURCES (AUTO PULL LOGIC)
+A. Pending Items from Execution
+
+Source tables:
+
+execution_workpapers
+
+review_notes
+
+unresolved_issues
+
+Query logic:
+
+SELECT COUNT(*)
+FROM execution_workpapers
+WHERE engagement_id = @engagementId
+AND assigned_to_user_id = @userId
+AND status IN ('Open','Pending','Review Required');
+B. Unadjusted Differences (ISA 450)
+
+Source:
+
+adjusting_entries
+
+misstatements_register
+
+Logic:
+
+SELECT COUNT(*)
+FROM misstatements_register
+WHERE engagement_id = @engagementId
+AND adjustment_status = 'Unadjusted';
+C. Key Audit Matters (ISA 701)
+
+Source:
+
+kam_register
+
+Logic:
+
+SELECT COUNT(*)
+FROM kam_register
+WHERE engagement_id = @engagementId
+AND reporting_required = 1;
+3️⃣ STEP 3 — CREATE BOARD GENERATION SERVICE
+
+Create backend endpoint:
+
+POST /api/finalization/generate-board
+
+Server Logic:
+
+1. Get logged-in user ID
+2. Pull all counts from source tables
+3. Insert record in user_finalization_board
+4. Return response to UI
+4️⃣ STEP 4 — DISPLAY BOARD AT FINALIZATION STAGE
+
+UI Rule:
+
+IF:
+
+Current Phase = Finalization
+
+THEN:
+Render component:
+
+<FinalizationControlBoard />
+
+Header:
+
+Finalization Control Board
+Engagement: XYZ Limited
+User: Saqib (Associate)
+Generated On: 02-Mar-2026 10:45 PM (UTC+5 Display)
+5️⃣ STEP 5 — MAKE BOARD USER-SPECIFIC
+
+Add filter:
+
+Associate → sees own assigned items
+
+Manager → sees all team items
+
+Partner → sees summary (overall engagement)
+
+Logic:
+
+IF role = Associate
+    filter by assigned_to_user_id
+
+IF role = Manager
+    filter by team_id
+
+IF role = Partner
+    show engagement-level summary
+6️⃣ STEP 6 — AUTO-GENERATION TRIGGER
+
+Board shall auto-generate:
+
+Option A (Recommended):
+
+On entering Finalization phase
+
+Option B:
+
+On clicking “Generate Board” button
+
+Option C:
+
+Auto refresh every 5 minutes
+
+7️⃣ STEP 7 — ADD TIME & DATE STAMP
+
+Must use:
+
+GETUTCDATE()
+
+Never:
+
+Browser time
+
+Display format:
+
+02-Mar-2026 | 10:45 PM (PKT)
+8️⃣ STEP 8 — AUDIT TRAIL ENTRY
+
+Every time board is generated:
+
+Insert into:
+
+audit_signoff_log
+
+Action:
+
+Finalization Board Generated
+
+Include:
+
+User
+
+Time
+
+Engagement
+
+IP
+
+9️⃣ STEP 9 — LOCKING RULE (OPTIONAL)
+
+You may enforce:
+
+Partner cannot approve Finalization
+unless:
+
+Pending Items = 0
+
+Unadjusted Differences documented
+
+KAM conclusion finalized
+
+This becomes a Standards Gate.
+
+🔟 STEP 10 — SYSTEM-WIDE EXTENSION (FUTURE READY)
+
+Same board concept can be added for:
+
+Planning Completion Board
+
+Execution Completion Board
+
+Deliverables Release Board
+
+Unified dashboard framework.
+
+📊 OPTIONAL ADVANCED VERSION
+
+Instead of storing snapshot table,
+you can create:
+
+VIEW vw_finalization_user_board
+
+Dynamic calculation (real-time).
+
+1️⃣1️⃣ UI TILE DESIGN STRUCTURE
+
+Each tile contains:
+
+Field	Example
+Title	Pending Items from Execution
+Count	7
+Severity Badge	Red if >0
+Standard Reference	ISA 450 / ISA 701
+Drilldown Link	Click → open filtered module
+Last Updated	Auto
+1️⃣2️⃣ SECURITY CHECKS
+
+✔ Only engagement team users
+✔ Role-based filtering
+✔ No cross-engagement visibility
+✔ Full audit trail
+
+1️⃣3️⃣ FINAL ARCHITECTURE SUMMARY
+Execution / FS / KAM Tables
+        ↓
+Aggregation Service
+        ↓
+User Finalization Board Table
+        ↓
+Finalization UI Dashboard
+        ↓
+Partner Approval Gate
