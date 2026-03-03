@@ -29,8 +29,10 @@ export function requireFirmAdmin(req: AuthenticatedRequest, res: Response, next:
   if (!req.user) {
     return res.status(401).json({ error: "Authentication required" });
   }
-  const allowedRoles = ["FIRM_ADMIN", "SUPER_ADMIN"];
-  if (!allowedRoles.includes(req.user.role)) {
+  if (req.user.role === "SUPER_ADMIN") {
+    return res.status(403).json({ error: "Platform administrators cannot access tenant resources" });
+  }
+  if (req.user.role !== "FIRM_ADMIN") {
     return res.status(403).json({ error: "Firm Admin access required" });
   }
   next();
@@ -40,7 +42,10 @@ export function requirePlatformOrFirmAdmin(req: AuthenticatedRequest, res: Respo
   if (!req.user) {
     return res.status(401).json({ error: "Authentication required" });
   }
-  const allowedRoles = ["SUPER_ADMIN", "FIRM_ADMIN", "ADMIN"];
+  if (req.user.role === "SUPER_ADMIN") {
+    return res.status(403).json({ error: "Platform administrators cannot access tenant resources" });
+  }
+  const allowedRoles = ["FIRM_ADMIN", "ADMIN"];
   if (!allowedRoles.includes(req.user.role)) {
     return res.status(403).json({ error: "Admin access required" });
   }
@@ -51,6 +56,10 @@ export function requireMinRoleLevel(minRole: string) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
+    }
+
+    if (req.user.role === "SUPER_ADMIN") {
+      return res.status(403).json({ error: "Platform administrators cannot access tenant resources" });
     }
 
     const userLevel = ROLE_HIERARCHY[req.user.role] || 0;
@@ -72,5 +81,5 @@ export function isSuperAdmin(role: string): boolean {
 }
 
 export function isFirmAdmin(role: string): boolean {
-  return role === "FIRM_ADMIN" || role === "SUPER_ADMIN";
+  return role === "FIRM_ADMIN";
 }

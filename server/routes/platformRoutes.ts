@@ -136,22 +136,6 @@ router.post("/firms", async (req: AuthenticatedRequest, res: Response) => {
       },
     });
 
-    const tempPassword = randomBytes(8).toString("hex");
-    const passwordHash = await hashPassword(tempPassword);
-    const adminUsername = data.adminEmail.split("@")[0] + "_admin";
-
-    const firmAdmin = await prisma.user.create({
-      data: {
-        email: data.adminEmail,
-        username: adminUsername,
-        passwordHash,
-        fullName: data.adminFullName,
-        role: "FIRM_ADMIN",
-        firmId: firm.id,
-        status: "ACTIVE",
-      },
-    });
-
     let plan = null;
     if (data.planCode) {
       plan = await prisma.plan.findUnique({ where: { code: data.planCode } });
@@ -176,6 +160,20 @@ router.post("/firms", async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
+    const inviteToken = randomBytes(32).toString("hex");
+    const inviteExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
+    const invite = await prisma.firmInvite.create({
+      data: {
+        firmId: firm.id,
+        email: data.adminEmail,
+        role: "FIRM_ADMIN",
+        token: inviteToken,
+        expiresAt: inviteExpiresAt,
+        createdBy: req.user!.id,
+      },
+    });
+
     await logPlatformAction(
       req.user!.id, "FIRM_CREATED", "firm", firm.id, firm.id, ip, userAgent,
       { firmName: firm.name, adminEmail: data.adminEmail, plan: plan?.code }
@@ -183,7 +181,12 @@ router.post("/firms", async (req: AuthenticatedRequest, res: Response) => {
 
     res.status(201).json({
       firm,
-      firmAdmin: { ...firmAdmin, passwordHash: undefined, tempPassword },
+      invite: {
+        id: invite.id,
+        email: data.adminEmail,
+        inviteUrl: `/invite/${inviteToken}`,
+        expiresAt: inviteExpiresAt,
+      },
       subscription,
     });
   } catch (error) {
@@ -343,22 +346,44 @@ router.post("/firms/:id/terminate", async (req: AuthenticatedRequest, res: Respo
 router.post("/firms/:id/reset-admin", async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { ip, userAgent } = extractRequestMeta(req);
+    const firmId = req.params.id;
     const firmAdmin = await prisma.user.findFirst({
-      where: { firmId: req.params.id, role: "FIRM_ADMIN" },
+      where: { firmId, role: "FIRM_ADMIN" },
     });
 
     if (!firmAdmin) return res.status(404).json({ error: "Firm admin not found" });
 
-    const tempPassword = randomBytes(8).toString("hex");
-    const passwordHash = await hashPassword(tempPassword);
-
-    await prisma.user.update({
-      where: { id: firmAdmin.id },
-      data: { passwordHash, status: "ACTIVE" },
+    await prisma.firmInvite.updateMany({
+      where: {
+        firmId,
+        email: firmAdmin.email,
+        acceptedAt: null,
+        revokedAt: null,
+      },
+      data: { revokedAt: new Date() },
     });
 
-    await logPlatformAction(req.user!.id, "FIRM_ADMIN_RESET", "user", firmAdmin.id, req.params.id, ip, userAgent);
-    res.json({ email: firmAdmin.email, tempPassword });
+    const inviteToken = randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
+    const invite = await prisma.firmInvite.create({
+      data: {
+        firmId,
+        email: firmAdmin.email,
+        role: "FIRM_ADMIN",
+        token: inviteToken,
+        expiresAt,
+        createdBy: req.user!.id,
+      },
+    });
+
+    await logPlatformAction(req.user!.id, "FIRM_ADMIN_RESET", "user", firmAdmin.id, firmId, ip, userAgent);
+    res.json({
+      email: firmAdmin.email,
+      inviteUrl: `/invite/${inviteToken}`,
+      expiresAt,
+      message: "A new invite link has been generated. Share it with the firm admin to reset their access.",
+    });
   } catch (error) {
     console.error("Reset admin error:", error);
     res.status(500).json({ error: "Failed to reset admin" });
@@ -897,6 +922,128 @@ router.get("/ai-usage", async (req: AuthenticatedRequest, res: Response) => {
   } catch (error) {
     console.error("AI usage error:", error);
     res.status(500).json({ error: "Failed to get AI usage" });
+  }
+});
+
+// ========== INVITE-BASED FIRM ADMIN CREATION ==========
+
+const inviteAdminSchema = z.object({
+  email: z.string().email(),
+  fullName: z.string().min(2).optional(),
+  role: z.enum(["FIRM_ADMIN", "ADMIN", "PARTNER", "MANAGING_PARTNER"]).optional(),
+});
+
+router.post("/firms/:id/invite-admin", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const data = inviteAdminSchema.parse(req.body);
+    const { ip, userAgent } = extractRequestMeta(req);
+
+    const firm = await prisma.firm.findUnique({ where: { id } });
+    if (!firm) return res.status(404).json({ error: "Firm not found" });
+
+    const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
+    if (existingUser) {
+      return res.status(400).json({ error: "A user with this email already exists" });
+    }
+
+    const existingInvite = await prisma.firmInvite.findFirst({
+      where: {
+        firmId: id,
+        email: data.email,
+        acceptedAt: null,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+    if (existingInvite) {
+      return res.status(400).json({ error: "An active invite for this email already exists" });
+    }
+
+    const token = randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
+    const invite = await prisma.firmInvite.create({
+      data: {
+        firmId: id,
+        email: data.email,
+        role: data.role || "FIRM_ADMIN",
+        token,
+        expiresAt,
+        createdBy: req.user!.id,
+      },
+    });
+
+    await logPlatformAction(
+      req.user!.id, "ADMIN_INVITE_CREATED", "FirmInvite", invite.id, id, ip, userAgent,
+      { email: data.email, role: data.role || "FIRM_ADMIN", expiresAt: expiresAt.toISOString() }
+    );
+
+    const inviteUrl = `/invite/${token}`;
+
+    res.status(201).json({
+      invite: { ...invite, token: undefined },
+      inviteUrl,
+      token,
+      expiresAt,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid request", details: error.errors });
+    }
+    console.error("Create invite error:", error);
+    res.status(500).json({ error: "Failed to create invite" });
+  }
+});
+
+router.get("/firms/:id/invites", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const invites = await prisma.firmInvite.findMany({
+      where: { firmId: req.params.id },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        expiresAt: true,
+        acceptedAt: true,
+        revokedAt: true,
+        createdAt: true,
+        token: true,
+      },
+    });
+
+    res.json(invites);
+  } catch (error) {
+    console.error("List invites error:", error);
+    res.status(500).json({ error: "Failed to list invites" });
+  }
+});
+
+router.delete("/invites/:id", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { ip, userAgent } = extractRequestMeta(req);
+    const invite = await prisma.firmInvite.findUnique({ where: { id: req.params.id } });
+    if (!invite) return res.status(404).json({ error: "Invite not found" });
+
+    if (invite.acceptedAt) {
+      return res.status(400).json({ error: "Cannot revoke an already accepted invite" });
+    }
+
+    await prisma.firmInvite.update({
+      where: { id: req.params.id },
+      data: { revokedAt: new Date() },
+    });
+
+    await logPlatformAction(
+      req.user!.id, "ADMIN_INVITE_REVOKED", "FirmInvite", invite.id, invite.firmId, ip, userAgent,
+      { email: invite.email }
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Revoke invite error:", error);
+    res.status(500).json({ error: "Failed to revoke invite" });
   }
 });
 

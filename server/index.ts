@@ -31,6 +31,7 @@ import { seedInitialAdmin } from "./seeds/seedInitialAdmin";
 import { seedTemplates } from "./seeds/seedTemplates";
 import { seedSuperAdmin } from "./seeds/seedSuperAdmin";
 import { seedPlans } from "./seeds/seedPlans";
+import { enableRLS } from "./scripts/enable-rls";
 import platformRoutes from "./routes/platformRoutes";
 import tenantRoutes from "./routes/tenantRoutes";
 import logsRoutes from "./logsRoutes";
@@ -238,6 +239,36 @@ app.use((req, res, next) => {
   next();
 });
 
+import { verifyAccessToken } from "./auth";
+
+const SUPER_ADMIN_ALLOWED_PREFIXES = [
+  "/api/platform",
+  "/api/auth",
+  "/api/health",
+  "/__healthz",
+  "/health",
+  "/uploads",
+];
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (!req.path.startsWith("/api/") || req.path.startsWith("/api/platform") || req.path.startsWith("/api/auth") || req.path.startsWith("/api/health") || req.path.startsWith("/api/logs")) {
+    return next();
+  }
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return next();
+  }
+
+  const token = authHeader.split(" ")[1];
+  const payload = verifyAccessToken(token);
+  if (payload && payload.role === "SUPER_ADMIN") {
+    return res.status(403).json({ error: "Platform administrators cannot access tenant data" });
+  }
+
+  next();
+});
+
 (async () => {
   await registerRoutes(httpServer, app);
   registerDeploymentRoutes(app);
@@ -360,6 +391,16 @@ app.use((req, res, next) => {
       console.log("Standard templates seeded successfully");
     } catch (err) {
       console.error("Failed to seed templates:", err);
+    }
+
+    try {
+      const rlsResult = await enableRLS();
+      console.log(`[RLS] Enabled on ${rlsResult.enabled} tables, skipped ${rlsResult.skipped}`);
+      if (rlsResult.errors.length > 0) {
+        console.warn(`[RLS] Errors: ${rlsResult.errors.join("; ")}`);
+      }
+    } catch (err) {
+      console.error("[RLS] Failed to enable row-level security:", err);
     }
 
     clearInterval(seedKeepalive);

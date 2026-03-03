@@ -1,0 +1,108 @@
+You are updating AuditWise (Next.js + .NET + Postgres) to enforce secure Super Admin initialization and password policy.
+
+OBJECTIVE
+1) Ensure a Super Admin account exists with email:
+   aqeelalam2010@gmail.com
+2) Do NOT hardcode password in codebase.
+3) Password must be provided via environment variable at initialization.
+4) Enforce password policy:
+   - Minimum 8 characters
+   - At least one uppercase letter
+   - At least one lowercase letter
+   - At least one number
+   - At least one special character
+5) All passwords must be securely hashed using BCrypt or ASP.NET Identity hashing.
+6) No plaintext passwords stored anywhere.
+
+-------------------------------------------------
+A) PASSWORD POLICY ENFORCEMENT (MANDATORY)
+-------------------------------------------------
+
+In .NET:
+
+Create a PasswordValidator service enforcing:
+- length >= 8
+- Regex: at least one uppercase [A-Z]
+- at least one lowercase [a-z]
+- at least one digit [0-9]
+- at least one special character
+
+If validation fails → return 400 Bad Request with clear message.
+
+Apply this validation:
+- On signup
+- On password reset
+- On super admin initialization
+
+-------------------------------------------------
+B) SUPER ADMIN INITIALIZATION (SAFE BOOTSTRAP)
+-------------------------------------------------
+
+At application startup:
+
+1) Read environment variables:
+   INITIAL_SUPER_ADMIN_EMAIL
+   INITIAL_SUPER_ADMIN_PASSWORD
+
+2) If platform_users table has no SUPER_ADMIN:
+   - Validate password against policy
+   - Hash password securely
+   - Insert super admin record:
+        email = INITIAL_SUPER_ADMIN_EMAIL
+        role = SUPER_ADMIN
+        is_active = true
+   - Log action in platform_audit_log:
+        action = "SUPER_ADMIN_BOOTSTRAP"
+
+3) If SUPER_ADMIN already exists:
+   - Do NOT overwrite automatically
+   - Instead allow optional reset via:
+        ADMIN_RESET=true environment variable
+
+-------------------------------------------------
+C) OPTIONAL TERMINAL RESET COMMAND
+-------------------------------------------------
+
+Implement a .NET CLI tool:
+
+Command:
+   dotnet run --project tools/AdminReset
+
+It should:
+- Require environment variables:
+     RESET_EMAIL
+     RESET_PASSWORD
+- Validate password policy
+- Hash password
+- Update platform_users
+- Log action: "SUPER_ADMIN_PASSWORD_RESET"
+
+-------------------------------------------------
+D) SECURITY REQUIREMENTS
+-------------------------------------------------
+
+- Never store default password in code.
+- Never expose reset endpoint publicly.
+- Ensure DB user does NOT have superuser privileges.
+- Ensure platform_users table is separate from tenant users.
+- Log all admin bootstrap/reset actions.
+
+-------------------------------------------------
+E) FRONTEND LOGIN VALIDATION (NEXT.JS)
+-------------------------------------------------
+
+- Enforce password validation before submitting signup form.
+- Display user-friendly error messages.
+
+-------------------------------------------------
+ACCEPTANCE CRITERIA
+-------------------------------------------------
+
+1) If no super admin exists, system creates one using environment variables.
+2) Password must meet policy (>=8 chars + uppercase mandatory).
+3) Password stored as hash only.
+4) No hardcoded password anywhere.
+5) Reset possible only via secure terminal command.
+6) All actions logged.
+
+Implement clean, secure, production-ready solution.

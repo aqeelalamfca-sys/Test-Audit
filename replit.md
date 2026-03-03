@@ -74,26 +74,30 @@ Key architectural patterns and features include:
 - **Role-scoped views**: Associates see own items, Managers see team, Partners see executive summary.
 - **Standards gate**: Blocks finalization approval if HIGH risk with unresolved issues, pending execution items, or missing evidence (ISA 500).
 
-### Multi-Tenant SaaS Architecture
-- **Tenant Isolation**: All tenant-scoped queries enforce `firmId` from authenticated user. SuperAdmin bypasses but must specify firmId explicitly.
-- **Role Hierarchy**: STAFF(1) → SENIOR(2) → TEAM_LEAD(3) → MANAGER(5) → PARTNER(6) → MANAGING_PARTNER(7) → ADMIN(7) → FIRM_ADMIN(8) → SUPER_ADMIN(99)
-- **New Roles**: `SUPER_ADMIN` (platform-wide, no firmId), `FIRM_ADMIN` (firm-scoped admin)
+### Multi-Tenant SaaS Architecture (STRICT Isolation)
+- **Strict Tenant Isolation**: SuperAdmin CANNOT access any firm's audit data. Platform admins are hard-blocked from all `/api/*` routes except `/api/platform/*`, `/api/auth/*`, `/api/health/*`, and `/api/logs/*` via global middleware in `server/index.ts`.
+- **Postgres Row-Level Security (RLS)**: Enabled on 98+ tenant tables. Uses `set_config('app.firm_id', ...)` session variable. Even if application code has a bug, the database blocks cross-firm access. RLS enabled at startup via `server/scripts/enable-rls.ts`.
+- **Tenant DB Context**: `server/middleware/tenantDbContext.ts` provides `withTenantContext(firmId, fn)` helper that wraps Prisma queries in a transaction with `SET LOCAL app.firm_id`.
+- **`blockSuperAdmin` Middleware**: Exported from `server/middleware/tenantIsolation.ts`. SuperAdmin gets 403 on `enforceFirmScope`, `requireTenantScope`, and `blockSuperAdmin` calls.
+- **RBAC Guards**: `requireFirmAdmin`, `requirePlatformOrFirmAdmin`, `requireMinRoleLevel` all reject SUPER_ADMIN to prevent platform admins from accessing tenant resources.
+- **Invite-Based Onboarding**: SuperAdmin creates firm + sends invite link (48-hour expiry). Firm admin sets own password via `/invite/:token` page. SuperAdmin never sees tenant passwords.
+  - Model: `FirmInvite` (id, firmId, email, role, token, expiresAt, acceptedAt, revokedAt, createdBy)
+  - API: `POST /api/platform/firms/:id/invite-admin`, `GET/DELETE /api/platform/firms/:id/invites`, `GET /api/auth/invite/:token` (validate), `POST /api/auth/invite/:token/accept` (create account)
+  - Frontend: `/invite/:token` public page (`client/src/pages/invite-accept.tsx`)
+- **Role Hierarchy**: STAFF(1) → SENIOR(2) → TEAM_LEAD(3) → MANAGER(4) → PARTNER(5) → MANAGING_PARTNER(5) → EQCR(6) → ADMIN(7) → FIRM_ADMIN(8) → SUPER_ADMIN(99)
 - **Subscription Plans**: STARTER (PKR 4,900/mo, 5 users, 1 office, 15 eng, 5GB), GROWTH (PKR 14,900/mo, 20 users, 3 offices, 75 eng, 25GB), PROFESSIONAL (PKR 34,900/mo, 60 users, 7 offices, 250 eng, 100GB), ENTERPRISE (PKR 79,900/mo, unlimited, 500GB, dedicated support)
 - **Overage Pricing**: Per-plan overage rates for extra users/offices/engagements (stored in Plan model: userOveragePkr, officeOveragePkr, engagementPackSize, engagementPackPkr)
-- **Plan Model Extended Fields**: maxOffices, storageGb, platformAiIncluded, userOveragePkr, officeOveragePkr, engagementPackSize, engagementPackPkr, isPublic, supportLevel
-- **Subscription Extended Fields**: graceDays (default 7), graceEndAt, nextInvoiceAt; SubscriptionStatus enum: TRIAL/ACTIVE/PAST_DUE/GRACE/SUSPENDED/CANCELED/EXPIRED
-- **Invoice Model**: Added invoiceNo (unique, format INV-YYYY-NNNNNN), subtotal, tax fields; InvoiceLine model for itemized billing
 - **Default Currency**: PKR (Pakistani Rupee). Multi-currency supported: PKR, USD, GBP, EUR, AED, SAR, CAD, AUD, INR, BDT
 - **Firm Status Guards**: ACTIVE/TRIAL allowed, SUSPENDED/TERMINATED blocked with 403. PAST_DUE blocks writes only.
-- **Platform API** (`/api/platform/*`): SuperAdmin-only routes for firm CRUD, plan management, invoices (list/detail/generate/mark-paid/void), billing lifecycle enforcement, global notifications, audit logs, AI config, analytics
+- **Platform API** (`/api/platform/*`): SuperAdmin-only routes for firm CRUD, plan management, invoices, billing lifecycle, notifications, audit logs, AI config, analytics, invite management. Shows ONLY safe metadata (counts, plan info, status) — no tenant content.
 - **Tenant API** (`/api/tenant/*`): Firm-scoped routes for user management, settings, AI key override, audit logs, AI usage
 - **Billing Service** (`server/services/billingService.ts`): Monthly invoice generation with overage line items, subscription lifecycle enforcement (TRIAL→PAST_DUE→GRACE→SUSPENDED), scheduled invoice processing. Runs hourly via setInterval in server startup.
-- **Middleware Stack**: `tenantIsolation.ts` (firm scope), `subscriptionGuard.ts` (status checks), `rbacGuard.ts` (role hierarchy)
+- **Middleware Stack**: `tenantIsolation.ts` (firm scope + SuperAdmin block), `tenantDbContext.ts` (RLS session var), `subscriptionGuard.ts` (status checks), `rbacGuard.ts` (role hierarchy + SuperAdmin block)
 - **AI Key Encryption**: Firm AI API keys encrypted at rest using AES-256-GCM (`server/services/encryptionService.ts`)
 - **Platform Audit Logging**: All write actions logged to `PlatformAuditLog` via `server/services/platformAuditService.ts`
 - **AI Usage Tracking**: Per-firm/user token consumption tracked in `AIUsageRecord`
 - **SuperAdmin Credentials**: `SUPER_ADMIN_EMAIL` / `SUPER_ADMIN_PASSWORD` env vars (default: superadmin@auditwise.pk / SuperAdmin@123)
-- **Frontend Routes**: `/platform/*` (SuperAdmin dashboard, firms, plans, notifications, audit logs, AI config), `/firm-admin/*` (user management, settings, audit logs, AI usage)
+- **Frontend Routes**: `/platform/*` (SuperAdmin dashboard, firms, plans, notifications, audit logs, AI config), `/firm-admin/*` (user management, settings, audit logs, AI usage), `/invite/:token` (public invite acceptance)
 - **Sidebar Navigation**: Role-aware - shows Platform Admin section for SUPER_ADMIN, Firm Administration section for FIRM_ADMIN
 - **Role-Based Theme Engine**: Automatic color theming based on user role hierarchy. CSS custom properties (`--primary`, `--sidebar-primary`) override globally via `role-{color}` classes on `<html>`. RoleThemeProvider applies theme inside AuthProvider. Mapping: SUPER_ADMIN→Red, FIRM_ADMIN→Orange, PARTNER/EQCR/MANAGING_PARTNER→Purple, MANAGER/ADMIN→Blue, SENIOR/TEAM_LEAD→Teal, STAFF→Green, READ_ONLY/CLIENT→Gray. All `bg-primary`, `text-primary` automatically adapt. Files: `client/src/lib/role-theme.ts`, `client/src/components/role-theme-provider.tsx`, `client/src/index.css` (role theme CSS section)
 

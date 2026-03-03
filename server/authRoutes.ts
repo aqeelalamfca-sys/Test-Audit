@@ -671,6 +671,144 @@ router.patch("/me", requireAuth, async (req: AuthenticatedRequest, res: Response
   }
 });
 
+// ========== INVITE-BASED ONBOARDING (Public) ==========
+
+router.get("/invite/:token", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const invite = await prisma.firmInvite.findUnique({
+      where: { token: req.params.token },
+      include: {
+        firm: { select: { id: true, name: true, logoUrl: true } },
+      },
+    });
+
+    if (!invite) {
+      return res.status(404).json({ error: "Invite not found" });
+    }
+
+    if (invite.revokedAt) {
+      return res.status(410).json({ error: "This invite has been revoked" });
+    }
+
+    if (invite.acceptedAt) {
+      return res.status(410).json({ error: "This invite has already been used" });
+    }
+
+    if (invite.expiresAt < new Date()) {
+      return res.status(410).json({ error: "This invite has expired" });
+    }
+
+    res.json({
+      email: invite.email,
+      role: invite.role,
+      firm: invite.firm,
+      expiresAt: invite.expiresAt,
+    });
+  } catch (error) {
+    console.error("Validate invite error:", error);
+    res.status(500).json({ error: "Failed to validate invite" });
+  }
+});
+
+const acceptInviteSchema = z.object({
+  fullName: z.string().min(2),
+  password: z.string().min(8),
+  username: z.string().min(3).optional(),
+});
+
+router.post("/invite/:token/accept", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const data = acceptInviteSchema.parse(req.body);
+
+    const invite = await prisma.firmInvite.findUnique({
+      where: { token: req.params.token },
+      include: { firm: true },
+    });
+
+    if (!invite) {
+      return res.status(404).json({ error: "Invite not found" });
+    }
+
+    if (invite.revokedAt) {
+      return res.status(410).json({ error: "This invite has been revoked" });
+    }
+
+    if (invite.acceptedAt) {
+      return res.status(410).json({ error: "This invite has already been used" });
+    }
+
+    if (invite.expiresAt < new Date()) {
+      return res.status(410).json({ error: "This invite has expired" });
+    }
+
+    const existingUser = await prisma.user.findUnique({ where: { email: invite.email } });
+    if (existingUser) {
+      return res.status(400).json({ error: "A user with this email already exists" });
+    }
+
+    const username = data.username || invite.email.split("@")[0] + "_admin";
+    const existingUsername = await prisma.user.findUnique({ where: { username } });
+    if (existingUsername) {
+      return res.status(400).json({ error: "Username already taken. Please choose a different one." });
+    }
+
+    const passwordHash = await hashPassword(data.password);
+
+    const result = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: invite.email,
+          username,
+          passwordHash,
+          fullName: data.fullName,
+          role: invite.role as any,
+          firmId: invite.firmId,
+          status: "ACTIVE",
+          isActive: true,
+        },
+      });
+
+      await tx.firmInvite.update({
+        where: { id: invite.id },
+        data: { acceptedAt: new Date() },
+      });
+
+      return user;
+    });
+
+    await logAuditTrail(
+      result.id,
+      "INVITE_ACCEPTED",
+      "user",
+      result.id,
+      null,
+      { inviteId: invite.id, firmId: invite.firmId, role: invite.role },
+      undefined,
+      undefined,
+      req.ip,
+      req.get("user-agent")
+    );
+
+    const accessToken = generateAccessToken(result);
+    const refreshToken = await generateRefreshToken(result.id);
+    const { passwordHash: _, ...safeUser } = result;
+
+    res.status(201).json({
+      user: safeUser,
+      token: accessToken,
+      refreshToken,
+      expiresIn: 900,
+      firm: { id: invite.firmId, name: invite.firm.name },
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid request", details: error.errors });
+    }
+    console.error("Accept invite error:", error);
+    res.status(500).json({ error: "Failed to accept invite" });
+  }
+});
+
 router.post("/change-password", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const schema = z.object({

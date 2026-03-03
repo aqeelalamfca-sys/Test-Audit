@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Plus, Search, Ban, CheckCircle, XCircle, RotateCcw, Upload, X, MapPin } from "lucide-react";
+import { Building2, Plus, Search, Ban, CheckCircle, XCircle, RotateCcw, Upload, X, MapPin, Mail, Copy, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 
@@ -68,7 +68,7 @@ export default function FirmManagement() {
       }
       toast({
         title: "Firm Created",
-        description: `${data.firm.name} created. Admin temp password: ${data.firmAdmin.tempPassword}`,
+        description: `${data.firm.name} created. Invite link sent to ${data.invite?.email || "admin"}.`,
       });
       setShowCreateDialog(false);
       setCreateForm({ ...emptyForm });
@@ -103,7 +103,53 @@ export default function FirmManagement() {
       return res.json();
     },
     onSuccess: (data) => {
-      toast({ title: "Admin Reset", description: `New password for ${data.email}: ${data.tempPassword}` });
+      toast({ title: "Admin Reset", description: `New invite link generated for ${data.email}. Share the link with the admin.` });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const [inviteFirmId, setInviteFirmId] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("FIRM_ADMIN");
+
+  const { data: invitesData } = useQuery<any[]>({
+    queryKey: ["/api/platform/firms", inviteFirmId, "invites"],
+    enabled: !!inviteFirmId,
+  });
+
+  const createInviteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/platform/firms/${inviteFirmId}/invite-admin`, {
+        email: inviteEmail,
+        role: inviteRole,
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      const fullUrl = `${window.location.origin}/invite/${data.token}`;
+      navigator.clipboard.writeText(fullUrl).catch(() => {});
+      toast({
+        title: "Invite Created",
+        description: `Invite link copied to clipboard. Expires in 48 hours.`,
+      });
+      setInviteEmail("");
+      queryClient.invalidateQueries({ queryKey: ["/api/platform/firms", inviteFirmId, "invites"] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const revokeInviteMutation = useMutation({
+    mutationFn: async (inviteId: string) => {
+      const res = await apiRequest("DELETE", `/api/platform/invites/${inviteId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Invite Revoked" });
+      queryClient.invalidateQueries({ queryKey: ["/api/platform/firms", inviteFirmId, "invites"] });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -490,6 +536,13 @@ export default function FirmManagement() {
                     >
                       <RotateCcw className="h-3 w-3 mr-1" /> Reset Admin
                     </Button>
+                    <Button
+                      variant="outline" size="sm"
+                      data-testid={`button-invite-admin-${firm.id}`}
+                      onClick={() => setInviteFirmId(firm.id)}
+                    >
+                      <Mail className="h-3 w-3 mr-1" /> Invite Admin
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -500,6 +553,93 @@ export default function FirmManagement() {
           )}
         </div>
       )}
+
+      <Dialog open={!!inviteFirmId} onOpenChange={(open) => { if (!open) { setInviteFirmId(null); setInviteEmail(""); } }}>
+        <DialogContent className="max-w-lg" data-testid="invite-admin-dialog">
+          <DialogHeader>
+            <DialogTitle>Invite Firm Admin</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Label>Email Address</Label>
+                <Input
+                  data-testid="input-invite-email"
+                  type="email"
+                  placeholder="admin@firm.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+              <div className="w-40">
+                <Label>Role</Label>
+                <Select value={inviteRole} onValueChange={setInviteRole}>
+                  <SelectTrigger data-testid="select-invite-role"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FIRM_ADMIN">Firm Admin</SelectItem>
+                    <SelectItem value="ADMIN">Admin</SelectItem>
+                    <SelectItem value="PARTNER">Partner</SelectItem>
+                    <SelectItem value="MANAGING_PARTNER">Managing Partner</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Button
+              className="w-full"
+              data-testid="button-send-invite"
+              disabled={!inviteEmail || createInviteMutation.isPending}
+              onClick={() => createInviteMutation.mutate()}
+            >
+              {createInviteMutation.isPending ? "Sending..." : "Send Invite & Copy Link"}
+            </Button>
+
+            {invitesData && invitesData.length > 0 && (
+              <div className="border-t pt-4 space-y-2">
+                <h4 className="font-medium text-sm">Pending Invites</h4>
+                {invitesData.map((inv: any) => (
+                  <div key={inv.id} className="flex items-center justify-between text-sm border rounded p-2" data-testid={`invite-row-${inv.id}`}>
+                    <div>
+                      <span className="font-medium">{inv.email}</span>
+                      <span className="text-muted-foreground ml-2">{inv.role?.replace(/_/g, " ")}</span>
+                      {inv.acceptedAt && <Badge className="ml-2 bg-green-100 text-green-800">Accepted</Badge>}
+                      {inv.revokedAt && <Badge className="ml-2 bg-red-100 text-red-800">Revoked</Badge>}
+                      {!inv.acceptedAt && !inv.revokedAt && new Date(inv.expiresAt) < new Date() && (
+                        <Badge className="ml-2 bg-gray-100 text-gray-800">Expired</Badge>
+                      )}
+                      {!inv.acceptedAt && !inv.revokedAt && new Date(inv.expiresAt) >= new Date() && (
+                        <Badge className="ml-2 bg-amber-100 text-amber-800">Pending</Badge>
+                      )}
+                    </div>
+                    <div className="flex gap-1">
+                      {!inv.acceptedAt && !inv.revokedAt && new Date(inv.expiresAt) >= new Date() && (
+                        <>
+                          <Button
+                            variant="ghost" size="sm"
+                            data-testid={`button-copy-invite-${inv.id}`}
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/invite/${inv.token}`);
+                              toast({ title: "Copied", description: "Invite link copied to clipboard" });
+                            }}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost" size="sm"
+                            data-testid={`button-revoke-invite-${inv.id}`}
+                            onClick={() => revokeInviteMutation.mutate(inv.id)}
+                          >
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -81,6 +81,7 @@ const PortalRequests = lazy(() => retryImport(() => import("@/pages/portal-reque
 
 const PricingPage = lazy(() => retryImport(() => import("@/pages/pricing")));
 const SignupPage = lazy(() => retryImport(() => import("@/pages/signup")));
+const InviteAcceptPage = lazy(() => retryImport(() => import("@/pages/invite-accept")));
 
 const PlatformDashboard = lazy(() => retryImport(() => import("@/pages/platform/platform-dashboard")));
 const FirmManagement = lazy(() => retryImport(() => import("@/pages/platform/firm-management")));
@@ -133,6 +134,7 @@ const PortalDashboardLazy = withLazySuspense(PortalDashboard);
 const PortalRequestsLazy = withLazySuspense(PortalRequests);
 const PricingPageLazy = withLazySuspense(PricingPage);
 const SignupPageLazy = withLazySuspense(SignupPage);
+const InviteAcceptPageLazy = withLazySuspense(InviteAcceptPage);
 const PlatformDashboardLazy = withLazySuspense(PlatformDashboard);
 const FirmManagementLazy = withLazySuspense(FirmManagement);
 const PlanManagementLazy = withLazySuspense(PlanManagement);
@@ -486,7 +488,7 @@ function PortalRouter() {
 function App() {
   const [location] = useLocation();
   const isPortalRoute = location.startsWith("/portal");
-  const isPublicRoute = location === "/pricing" || location.startsWith("/signup");
+  const isPublicRoute = location === "/pricing" || location.startsWith("/signup") || location.startsWith("/invite/");
 
   return (
     <ThemeProvider>
@@ -499,6 +501,7 @@ function App() {
             <Switch>
               <Route path="/pricing" component={PricingPageLazy} />
               <Route path="/signup" component={SignupPageLazy} />
+              <Route path="/invite/:token" component={InviteAcceptPageLazy} />
             </Switch>
           ) : (
             <AuthProvider>

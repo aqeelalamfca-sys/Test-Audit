@@ -1,0 +1,207 @@
+multi-tenant SaaS pattern. The key is to separate:
+
+Platform-level control (Super Admin can create firms, manage billing, suspend/activate)
+from
+
+Tenant data access (Super Admin must not be able to read any firm’s audit data)
+
+Below is a practical, implementation-ready approach for your stack (Next.js + .NET + Postgres).
+
+Target Model
+What Super Admin CAN do
+
+Create a Firm (tenant)
+
+Create Firm Admin credentials (or send invite link)
+
+Assign plan / trial / suspend / activate
+
+Broadcast notices
+
+View only metadata needed for billing (user count, plan, status), not engagement content
+
+What Super Admin CANNOT do
+
+Open any firm’s engagements, working papers, documents, TB/GL, audit trails, etc.
+
+Run queries that return tenant business data
+
+Recommended Implementation (Single Database, Strong Tenant Isolation)
+1) Tenant ID everywhere (hard rule)
+
+Every business table must include:
+
+firm_id uuid NOT NULL
+
+Examples: engagements, workingpapers, documents, clients, tb_gl, risk_assessments, etc.
+
+And every query must be scoped:
+
+WHERE firm_id = @firmId
+2) Enforce isolation at the DATABASE layer (best practice)
+
+Use Postgres Row Level Security (RLS) so even if an API bug happens, the database still blocks cross-firm access.
+
+Step A — enable RLS on all tenant tables
+
+Example for engagements:
+
+ALTER TABLE engagements ENABLE ROW LEVEL SECURITY;
+Step B — Create a policy: only allow firm context
+
+Store firm context in DB session:
+
+SELECT set_config('app.firm_id', '<<firm_uuid>>', true);
+
+Policy:
+
+CREATE POLICY firm_isolation_policy
+ON engagements
+USING (firm_id::text = current_setting('app.firm_id', true));
+
+Now even if someone runs SELECT * FROM engagements, Postgres will only return rows for that firm_id.
+
+✅ This is the strongest control because it’s not dependent on app code.
+
+3) Application-level enforcement (mandatory)
+
+In .NET middleware:
+
+Resolve logged-in user
+
+Determine their firm_id
+
+Before any request, set the DB session variable:
+
+set_config('app.firm_id', user.firm_id)
+
+So every query automatically respects RLS.
+
+4) Split schemas: Platform vs Tenant (clean separation)
+
+Create two logical zones:
+
+Platform tables (Super Admin allowed)
+
+firms
+
+plans
+
+subscriptions
+
+invoices
+
+payments
+
+platform_users (super admin accounts)
+
+platform_audit_log
+
+✅ These tables must NOT contain audit content.
+
+Tenant tables (Super Admin blocked by design + RLS)
+
+clients
+
+engagements
+
+workingpapers
+
+documents
+
+evidence
+
+tb_gl
+
+audit_logs (tenant level)
+
+5) Remove “Impersonate Firm” feature (strict mode)
+
+If you do not implement impersonation, the Super Admin can never enter firm portals. That alone reduces risk.
+
+If you ever need support access, implement temporary support access:
+
+explicit written approval by firm admin
+
+time-bound (e.g., 30 minutes)
+
+full audit trail
+
+limited to read-only
+But if your requirement is “never see”, then do not build it.
+
+How Super Admin can create firm logins without seeing data
+Option A (Most secure): Super Admin creates firm + sends invite
+
+Super Admin creates firm record
+
+System generates a one-time invite token
+
+Firm Admin sets password via invite link
+
+Super Admin never knows password, never logs in as them
+
+✅ Best for privacy.
+
+Option B: Super Admin sets initial password (allowed but weaker)
+
+Super Admin creates firm admin with temp password
+
+Forces password change on first login
+
+Still okay, but privacy perception is weaker.
+
+API/RBAC rules (important)
+Roles
+
+SUPER_ADMIN (platform only)
+
+FIRM_ADMIN
+
+USER (preparer/reviewer/approver)
+
+Route separation
+
+/platform/* → Super Admin only (billing + firm creation)
+
+/app/* → Firm portal only (tenant data)
+
+Super Admin account must not have access to /app/*.
+
+What to show to Super Admin (safe data)
+
+For platform operations, show only:
+
+Firm name, city
+
+plan, status, trial dates
+
+counts: number of users / offices / engagements count (optional)
+
+billing totals
+
+Do not show:
+
+engagement titles
+
+client names
+
+TB/GL
+
+documents
+
+working papers
+
+Summary: The “Yes, and how”
+
+Yes, it’s possible and standard. Implement it with:
+
+firm_id on every tenant table
+
+strict query scoping in APIs
+
+Postgres Row Level Security with set_config('app.firm_id', ...)
+
+separate Platform vs Tenant modules/routes
+
+Super Admin restricted to platform metadata only (no tenant portal)
