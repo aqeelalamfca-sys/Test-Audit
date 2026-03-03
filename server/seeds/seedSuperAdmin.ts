@@ -3,7 +3,7 @@ import { hashPassword } from "../auth";
 import { validatePasswordPolicy } from "../utils/passwordPolicy";
 import { logPlatformAction } from "../services/platformAuditService";
 
-const DEFAULT_EMAIL = "aqeelalam2010@gmail.com";
+const DEFAULT_EMAIL = "superadmin@auditwise.pk";
 
 export async function seedSuperAdmin() {
   try {
