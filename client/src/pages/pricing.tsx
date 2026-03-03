@@ -34,39 +34,68 @@ interface Plan {
   featureFlags: any;
 }
 
-const tierConfig: Record<string, { color: string; icon: any; tagline: string; popular?: boolean }> = {
+const tierConfig: Record<string, {
+  color: string;
+  borderColor: string;
+  icon: any;
+  tagline: string;
+  popular?: boolean;
+  yearlyDiscount: number;
+  monthlyDiscount: number;
+}> = {
   STARTER: {
-    color: "border-blue-500",
+    color: "text-blue-600 dark:text-blue-400",
+    borderColor: "border-blue-500",
     icon: Zap,
     tagline: "Perfect for solo practitioners",
+    yearlyDiscount: 0,
+    monthlyDiscount: 0,
   },
   GROWTH: {
-    color: "border-emerald-500",
+    color: "text-emerald-600 dark:text-emerald-400",
+    borderColor: "border-emerald-500",
     icon: Building2,
     tagline: "For growing audit teams",
     popular: true,
+    yearlyDiscount: 40,
+    monthlyDiscount: 20,
   },
   PROFESSIONAL: {
-    color: "border-purple-500",
+    color: "text-purple-600 dark:text-purple-400",
+    borderColor: "border-purple-500",
     icon: Crown,
     tagline: "For established firms",
+    yearlyDiscount: 30,
+    monthlyDiscount: 15,
   },
   ENTERPRISE: {
-    color: "border-amber-500",
+    color: "text-amber-600 dark:text-amber-400",
+    borderColor: "border-amber-500",
     icon: Shield,
     tagline: "Unlimited scale & support",
+    yearlyDiscount: 45,
+    monthlyDiscount: 22,
   },
 };
 
-function formatPrice(price: string | number) {
-  return Number(price).toLocaleString("en-PK");
+function formatPrice(price: number) {
+  return price.toLocaleString("en-PK");
 }
 
 export default function PricingPage() {
   const [, navigate] = useLocation();
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
   const { data: plans, isLoading } = useQuery<Plan[]>({
     queryKey: ["/api/auth/plans"],
   });
+
+  function getPrice(plan: Plan) {
+    const base = Number(plan.monthlyPrice);
+    const config = tierConfig[plan.code] || tierConfig.STARTER;
+    const discount = billingCycle === "yearly" ? config.yearlyDiscount : config.monthlyDiscount;
+    const discounted = Math.round(base * (1 - discount / 100));
+    return { base, discounted, discount };
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950">
@@ -87,17 +116,46 @@ export default function PricingPage() {
           </Button>
         </div>
 
-        <div className="text-center mb-12">
+        <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Shield className="h-10 w-10 text-primary" />
             <h1 className="text-4xl font-bold text-foreground" data-testid="text-page-title">
               AuditWise
             </h1>
           </div>
-          <p className="text-xl text-muted-foreground mb-2">
+          <p className="text-xl text-muted-foreground mb-6">
             Choose the plan that fits your firm
           </p>
-          <div className="flex items-center justify-center gap-2">
+
+          <div className="inline-flex items-center bg-muted/60 dark:bg-muted/30 rounded-full p-1 mb-2">
+            <button
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
+                billingCycle === "monthly"
+                  ? "bg-white dark:bg-gray-800 shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={() => setBillingCycle("monthly")}
+              data-testid="toggle-monthly"
+            >
+              Monthly
+            </button>
+            <button
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
+                billingCycle === "yearly"
+                  ? "bg-white dark:bg-gray-800 shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={() => setBillingCycle("yearly")}
+              data-testid="toggle-yearly"
+            >
+              Yearly
+              <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+                Save up to 45%
+              </Badge>
+            </button>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 mt-3">
             <Badge variant="secondary" className="text-sm px-3 py-1">
               30-day free trial
             </Badge>
@@ -119,12 +177,13 @@ export default function PricingPage() {
               const config = tierConfig[plan.code] || tierConfig.STARTER;
               const Icon = config.icon;
               const isUnlimited = plan.maxUsers >= 9999;
+              const { base, discounted, discount } = getPrice(plan);
 
               return (
                 <Card
                   key={plan.id}
-                  className={`relative flex flex-col border-t-4 ${config.color} ${
-                    config.popular ? "ring-2 ring-emerald-500 shadow-lg scale-[1.02]" : ""
+                  className={`relative flex flex-col border-t-4 ${config.borderColor} ${
+                    config.popular ? "ring-2 ring-emerald-500 shadow-xl scale-[1.02]" : ""
                   } transition-all hover:shadow-lg`}
                   data-testid={`card-plan-${plan.code.toLowerCase()}`}
                 >
@@ -137,39 +196,56 @@ export default function PricingPage() {
                     </Badge>
                   )}
 
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Icon className="h-5 w-5 text-muted-foreground" />
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Icon className={`h-5 w-5 ${config.color}`} />
                       <CardTitle className="text-lg">{plan.name}</CardTitle>
                     </div>
                     <p className="text-sm text-muted-foreground">{config.tagline}</p>
+
                     <div className="mt-4">
-                      <span className="text-3xl font-bold" data-testid={`text-price-${plan.code.toLowerCase()}`}>
-                        PKR {formatPrice(plan.monthlyPrice)}
-                      </span>
-                      <span className="text-muted-foreground text-sm">/month</span>
+                      {discount > 0 && (
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg text-muted-foreground line-through">
+                            PKR {formatPrice(base)}
+                          </span>
+                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0 font-semibold">
+                            {discount}% OFF
+                          </Badge>
+                        </div>
+                      )}
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-bold" data-testid={`text-price-${plan.code.toLowerCase()}`}>
+                          PKR {formatPrice(discounted)}
+                        </span>
+                        <span className="text-muted-foreground text-sm">/mo</span>
+                      </div>
+                      {billingCycle === "yearly" && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Billed PKR {formatPrice(discounted * 12)}/year
+                        </p>
+                      )}
+                      {billingCycle === "monthly" && discount > 0 && (
+                        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+                          Save {tierConfig[plan.code]?.yearlyDiscount}% with yearly billing
+                        </p>
+                      )}
                     </div>
                   </CardHeader>
 
-                  <CardContent className="flex-1 flex flex-col">
-                    <ul className="space-y-3 flex-1 mb-6">
+                  <CardContent className="flex-1 flex flex-col pt-0">
+                    <ul className="space-y-2.5 flex-1 mb-6">
                       <li className="flex items-center gap-2 text-sm">
                         <Users className="h-4 w-4 text-primary shrink-0" />
-                        <span>
-                          {isUnlimited ? "Unlimited" : `Up to ${plan.maxUsers}`} users
-                        </span>
+                        <span>{isUnlimited ? "Unlimited" : `Up to ${plan.maxUsers}`} users</span>
                       </li>
                       <li className="flex items-center gap-2 text-sm">
                         <Building2 className="h-4 w-4 text-primary shrink-0" />
-                        <span>
-                          {isUnlimited ? "Unlimited" : `${plan.maxOffices}`} office{plan.maxOffices !== 1 ? "s" : ""}
-                        </span>
+                        <span>{isUnlimited ? "Unlimited" : `${plan.maxOffices}`} office{plan.maxOffices !== 1 ? "s" : ""}</span>
                       </li>
                       <li className="flex items-center gap-2 text-sm">
                         <Briefcase className="h-4 w-4 text-primary shrink-0" />
-                        <span>
-                          {isUnlimited ? "Unlimited" : `${plan.maxEngagements}`} engagements/year
-                        </span>
+                        <span>{isUnlimited ? "Unlimited" : `${plan.maxEngagements}`} engagements/year</span>
                       </li>
                       <li className="flex items-center gap-2 text-sm">
                         <HardDrive className="h-4 w-4 text-primary shrink-0" />
@@ -177,9 +253,7 @@ export default function PricingPage() {
                       </li>
                       <li className="flex items-center gap-2 text-sm">
                         <Brain className="h-4 w-4 text-primary shrink-0" />
-                        <span>
-                          {plan.platformAiIncluded ? "Platform AI included" : "No AI"}
-                        </span>
+                        <span>{plan.platformAiIncluded ? "Platform AI included" : "No AI"}</span>
                       </li>
                       {plan.allowCustomAi && (
                         <li className="flex items-center gap-2 text-sm">
