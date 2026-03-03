@@ -140,7 +140,10 @@ export default function Inspection() {
       
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+      const firmName = firm?.displayName || firm?.name || "AuditWise";
       const packageContent = {
+        firmName,
+        firmLogoUrl: firm?.logoUrl || null,
         exportDate: new Date().toISOString(),
         engagementId,
         clientName: client?.name || data.engagementInfo.clientName,
@@ -155,7 +158,7 @@ export default function Inspection() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Audit_Package_${engagement?.engagementCode || 'export'}_${new Date().toISOString().split('T')[0]}.json`;
+      link.download = `${firmName.replace(/\s+/g, '_')}_Audit_Package_${engagement?.engagementCode || 'export'}_${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

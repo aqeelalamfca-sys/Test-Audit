@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
+import { useAuth } from "@/lib/auth";
 import { useEngagement } from "@/lib/workspace-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -130,6 +131,7 @@ export default function TBReview() {
   } = useEngagement();
   const engagementId = params.engagementId || contextEngagementId || undefined;
   const { toast } = useToast();
+  const { firm } = useAuth();
   
   const [trialBalance, setTrialBalance] = useState<TrialBalanceData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -441,7 +443,13 @@ export default function TBReview() {
   const handleDownloadTB = () => {
     if (!trialBalance) return;
     
+    const firmName = firm?.displayName || firm?.name || "AuditWise";
     const csvContent = [
+      `"${firmName}"`,
+      `"Trial Balance Export"`,
+      `"Period End: ${trialBalance.periodEnd}"`,
+      `"Generated: ${new Date().toLocaleDateString()}"`,
+      "",
       ["Account Code", "Account Name", "Opening Balance", "Period Dr", "Period Cr", "Closing Balance", "FS Line Item"].join(","),
       ...trialBalance.lineItems.map(item => [
         item.accountCode,
@@ -458,7 +466,7 @@ export default function TBReview() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `trial_balance_${trialBalance.periodEnd}.csv`;
+    a.download = `${firmName.replace(/\s+/g, '_')}_trial_balance_${trialBalance.periodEnd}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     
@@ -487,7 +495,12 @@ export default function TBReview() {
   };
 
   const handleExportGL = () => {
+    const firmName = firm?.displayName || firm?.name || "AuditWise";
     const csvContent = [
+      `"${firmName}"`,
+      `"General Ledger Export"`,
+      `"Generated: ${new Date().toLocaleDateString()}"`,
+      "",
       ["Voucher No", "Date", "Narration", "Debit", "Credit", "Account Code", "Account Name", "Party", "Doc Ref"].join(","),
       ...glEntries.map(entry => [
         entry.voucherNo,
@@ -506,7 +519,7 @@ export default function TBReview() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `general_ledger_${engagementId}.csv`;
+    a.download = `${firmName.replace(/\s+/g, '_')}_general_ledger_${engagementId}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     

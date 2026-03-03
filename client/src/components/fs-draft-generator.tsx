@@ -18,6 +18,7 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
+import { useAuth } from "@/lib/auth";
 import {
   FileSpreadsheet,
   FileText,
@@ -320,6 +321,7 @@ function StatementSection({
 
 export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
   const { toast } = useToast();
+  const { firm } = useAuth();
   const [viewType, setViewType] = useState<"ADJUSTED" | "ORIGINAL">("ADJUSTED");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -410,17 +412,24 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
 
   const handleExportCSV = () => {
     if (!drilldownData?.population) return;
+    const firmName = firm?.displayName || firm?.name || "AuditWise";
     const headers = ["Date", "Voucher No", "GL Code", "Party", "Narrative", "Debit", "Credit", "Net", "Source"];
     const rows = drilldownData.population.map(p => [
       p.postingDate, p.voucherNo, p.glCode, p.partyId || "", p.narrative || "",
       p.debit.toString(), p.credit.toString(), p.net.toString(), p.sourceModule || ""
     ]);
-    const csv = [headers.join(","), ...rows.map(r => r.map(c => `"${c}"`).join(","))].join("\n");
+    const firmHeader = [
+      `"${firmName}"`,
+      `"FS Population Drilldown - ${selectedLineItem}"`,
+      `"Generated: ${new Date().toLocaleDateString()}"`,
+      ""
+    ];
+    const csv = [...firmHeader, headers.join(","), ...rows.map(r => r.map(c => `"${c}"`).join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${selectedLineItem}_population.csv`;
+    a.download = `${firmName.replace(/\s+/g, '_')}_${selectedLineItem}_population.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast({ title: "CSV exported successfully" });

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -73,6 +74,7 @@ interface RepairLogEntry {
 }
 
 export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonitorPanelProps) {
+  const { firm } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("health");
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -164,11 +166,18 @@ export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonit
 
   const exportReport = () => {
     if (!report) return;
-    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const firmName = firm?.displayName || firm?.name || "AuditWise";
+    const exportData = {
+      firmName,
+      firmLogoUrl: firm?.logoUrl || null,
+      exportDate: new Date().toISOString(),
+      ...report,
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `linkage-report-${engagementId}-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `${firmName.replace(/\s+/g, '_')}_linkage-report-${engagementId}-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };

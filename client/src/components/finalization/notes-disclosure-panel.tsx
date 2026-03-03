@@ -19,6 +19,7 @@ import type { EntityProfile, ReportingFramework, CompanyType, ListingStatus } fr
 import { determineFramework, buildDefaultEntityProfile } from "./notes-disclosure-registry";
 import type { DisclosurePackage, GeneratedNoteContent, GeneratedTable, ChecklistEntry, MissingInfoItem } from "./notes-disclosure-generator";
 import { buildDisclosurePackage, formatCurrency, getFrameworkLabel, getCompanyTypeLabel } from "./notes-disclosure-generator";
+import { useAuth } from "@/lib/auth";
 
 interface NotesDisclosurePanelProps {
   draftFsData: DraftFSData | undefined;
@@ -150,6 +151,7 @@ export function NotesDisclosurePanel({
   secpNo,
   fileStatus = 'open',
 }: NotesDisclosurePanelProps) {
+  const { firm } = useAuth();
   const [configOpen, setConfigOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('notes-index');
   const [notesSearch, setNotesSearch] = useState('');
@@ -211,7 +213,10 @@ export function NotesDisclosurePanel({
   }, []);
 
   const handleDownload = useCallback(() => {
+    const firmName = firm?.displayName || firm?.name || "AuditWise";
     const lines: string[] = [];
+    lines.push(firmName);
+    lines.push('');
     lines.push(`NOTES TO THE FINANCIAL STATEMENTS`);
     lines.push(`${clientName}`);
     lines.push(`For the year ended ${periodEnd}`);
@@ -250,7 +255,7 @@ export function NotesDisclosurePanel({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `notes-disclosures-${clientName.replace(/\s+/g, '-')}-${periodEnd}.txt`;
+    a.download = `${(firm?.displayName || firm?.name || 'AuditWise').replace(/\s+/g, '_')}_notes-disclosures-${clientName.replace(/\s+/g, '-')}-${periodEnd}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   }, [applicableNotes, clientName, periodEnd, disclosurePackage]);

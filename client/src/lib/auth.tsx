@@ -16,6 +16,7 @@ interface User {
 interface Firm {
   id: string;
   name: string;
+  displayName: string | null;
   licenseNo: string | null;
   logoUrl: string | null;
 }

@@ -177,6 +177,7 @@ model Firm {
   city               String?
   headOfficeAddress  String?
   logoUrl            String?
+  themeColor         String?  @default("#1e40af")
   numberOfPartners   Int?
   partners           Json?
   offices            Json?
@@ -449,6 +450,20 @@ model FirmInvite {
   @@index([email])
 }
 
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
 model User {
   id             String     @id @default(uuid())
   email          String     @unique
@@ -469,6 +484,7 @@ model User {
   firm                Firm?            @relation(fields: [firmId], references: [id])
   sessions            Session[]
   refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
   teamAssignments     EngagementTeam[]
   checklistsCompleted ChecklistItem[]  @relation("CompletedBy")
   checklistsAssigned  ChecklistItem[]  @relation("AssignedTo")

@@ -2443,8 +2443,20 @@ router.get("/recon-summary/:engagementId/export", requireAuth, async (req: Authe
       glByAccount[gl.accountCode].cr += Number(gl.credit) || 0;
     }
 
+    let firmName = "AuditWise";
+    if (req.user?.firmId) {
+      const userFirm = await prisma.firm.findUnique({ where: { id: req.user.firmId }, select: { displayName: true, name: true } });
+      if (userFirm) firmName = userFirm.displayName || userFirm.name;
+    }
+
     if (exportType === 'exceptions') {
-      const rows: string[] = ['Account Code,Account Name,TB Movement,GL Movement,Difference,Status'];
+      const rows: string[] = [
+        `"${firmName}"`,
+        `"Reconciliation Exceptions Report"`,
+        `"Generated: ${new Date().toLocaleDateString()}"`,
+        '',
+        'Account Code,Account Name,TB Movement,GL Movement,Difference,Status'
+      ];
       
       for (const tb of tbLines) {
         const tbClosing = (Number(tb.debits) || 0) - (Number(tb.credits) || 0);
@@ -2460,11 +2472,17 @@ router.get("/recon-summary/:engagementId/export", requireAuth, async (req: Authe
       }
 
       res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename=recon_exceptions_${engagementId}.csv`);
+      res.setHeader('Content-Disposition', `attachment; filename="${firmName.replace(/\s+/g, '_')}_recon_exceptions_${engagementId}.csv"`);
       res.send(rows.join('\n'));
 
     } else {
-      const rows: string[] = ['Account Code,Account Name,Opening Balance,TB Period Dr,TB Period Cr,Closing Balance,GL Total Dr,GL Total Cr,TB Movement,GL Movement,Difference,Status'];
+      const rows: string[] = [
+        `"${firmName}"`,
+        `"TB-GL Reconciliation Report"`,
+        `"Generated: ${new Date().toLocaleDateString()}"`,
+        '',
+        'Account Code,Account Name,Opening Balance,TB Period Dr,TB Period Cr,Closing Balance,GL Total Dr,GL Total Cr,TB Movement,GL Movement,Difference,Status'
+      ];
       
       for (const tb of tbLines) {
         const tbDr = Number(tb.debits) || 0;
@@ -2481,7 +2499,7 @@ router.get("/recon-summary/:engagementId/export", requireAuth, async (req: Authe
       }
 
       res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename=recon_report_${engagementId}.csv`);
+      res.setHeader('Content-Disposition', `attachment; filename="${firmName.replace(/\s+/g, '_')}_recon_report_${engagementId}.csv"`);
       res.send(rows.join('\n'));
     }
 

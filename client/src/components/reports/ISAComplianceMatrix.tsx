@@ -9,6 +9,7 @@ import {
   FileText, Shield, RefreshCw
 } from "lucide-react";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
+import { useAuth } from "@/lib/auth";
 
 interface ISAStandard {
   isa: string;
@@ -31,6 +32,7 @@ interface ISAComplianceMatrixProps {
 }
 
 export function ISAComplianceMatrix({ engagementId }: ISAComplianceMatrixProps) {
+  const { firm } = useAuth();
   const [standards, setStandards] = useState<ISAStandard[]>([]);
   const [summary, setSummary] = useState<ISAComplianceSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,14 +84,23 @@ export function ISAComplianceMatrix({ engagementId }: ISAComplianceMatrixProps) 
   };
 
   const exportToCSV = () => {
+    const firmName = firm?.displayName || firm?.name || "AuditWise";
     const headers = ["ISA", "Title", "Status", "Evidence"];
     const rows = standards.map(s => [s.isa, s.title, s.status, s.evidence]);
-    const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
+    const allRows = [
+      [`"${firmName}"`],
+      [`"ISA Compliance Matrix"`],
+      [`"Generated: ${new Date().toLocaleDateString()}"`],
+      [],
+      headers.map(h => `"${h}"`),
+      ...rows.map(row => row.map(cell => `"${cell}"`))
+    ];
+    const csv = allRows.map(row => row.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `isa-compliance-${engagementId}.csv`;
+    a.download = `${firmName.replace(/\s+/g, '_')}_isa-compliance-${engagementId}.csv`;
     a.click();
   };
 
