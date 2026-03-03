@@ -305,8 +305,8 @@ class AdministrationService {
       {
         firmId,
         role: "ADMIN",
-        displayName: "System Administrator",
-        description: "System administrator with full configuration access",
+        displayName: "Firm Administrator",
+        description: "Firm administrator with full configuration access",
         hierarchyLevel: 99,
         canApproveOwnWork: false,
         canOverrideControls: true,

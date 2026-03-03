@@ -206,7 +206,7 @@ export default function PDFDocumentation() {
             <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
             <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
             <p className="text-muted-foreground text-center max-w-md">
-              This module is restricted to System Administrators and Engagement Partners only.
+              This module is restricted to Firm Administrators and Engagement Partners only.
             </p>
           </CardContent>
         </Card>

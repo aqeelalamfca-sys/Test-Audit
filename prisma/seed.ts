@@ -44,7 +44,7 @@ async function main() {
       email,
       username: email.split("@")[0],
       passwordHash,
-      fullName: "System Administrator",
+      fullName: "Firm Administrator",
       role: UserRole.ADMIN,
       firmId: firm.id,
     },

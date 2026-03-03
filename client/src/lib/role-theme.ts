@@ -292,7 +292,7 @@ export function getRoleDisplayLabel(role: string | undefined | null): string {
   const labels: Record<string, string> = {
     super_admin: "Super Admin",
     firm_admin: "Firm Admin",
-    admin: "Admin",
+    admin: "Firm Admin",
     partner: "Partner",
     managing_partner: "Managing Partner",
     eqcr: "EQCR",
