@@ -128,12 +128,18 @@ export function TopBar({}: TopBarProps) {
     }
   };
 
+  const userRole = user?.role?.toLowerCase();
+  const isSuperAdmin = userRole === "super_admin";
+
   return (
     <header className="h-12 border-b border-border/60 bg-background/95 backdrop-blur-sm flex items-center px-4 gap-3">
       <SidebarTrigger data-testid="button-sidebar-toggle" />
       
       <Separator orientation="vertical" className="h-6" />
 
+      {isSuperAdmin ? (
+        <div className="flex-1" />
+      ) : (
       <div className="flex items-center gap-6 flex-1">
         {isWorkspaceRoute && workspaceEngagement ? (
           <div className="flex items-center gap-3 flex-1">
@@ -331,46 +337,49 @@ export function TopBar({}: TopBarProps) {
           />
         </div>
       </div>
+      )}
 
       <Separator orientation="vertical" className="h-6" />
 
       <div className="flex items-center gap-1">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative h-8 w-8" data-testid="button-notifications">
-              <Bell className="h-4 w-4" />
-              <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center p-0 text-[10px] bg-red-500">
-                3
-              </Badge>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <div className="flex flex-col gap-1">
-                <span className="font-medium text-sm">New review pending</span>
-                <span className="text-xs text-muted-foreground">ABC Corp - FY2024 Audit</span>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <div className="flex flex-col gap-1">
-                <span className="font-medium text-sm">Engagement assigned</span>
-                <span className="text-xs text-muted-foreground">XYZ Industries - FY2024</span>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <div className="flex flex-col gap-1">
-                <span className="font-medium text-sm">Phase completed</span>
-                <span className="text-xs text-muted-foreground">DEF Ltd. - Planning Phase</span>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-center text-primary">
-              View all notifications
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {!isSuperAdmin && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative h-8 w-8" data-testid="button-notifications">
+                <Bell className="h-4 w-4" />
+                <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center p-0 text-[10px] bg-red-500">
+                  3
+                </Badge>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <div className="flex flex-col gap-1">
+                  <span className="font-medium text-sm">New review pending</span>
+                  <span className="text-xs text-muted-foreground">ABC Corp - FY2024 Audit</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <div className="flex flex-col gap-1">
+                  <span className="font-medium text-sm">Engagement assigned</span>
+                  <span className="text-xs text-muted-foreground">XYZ Industries - FY2024</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <div className="flex flex-col gap-1">
+                  <span className="font-medium text-sm">Phase completed</span>
+                  <span className="text-xs text-muted-foreground">DEF Ltd. - Planning Phase</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-center text-primary">
+                View all notifications
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         <ThemeToggle />
 
