@@ -9,10 +9,20 @@ const SESSION_DURATION_HOURS = 24;
 export interface AuthenticatedRequest extends Request {
   user?: User;
   session?: { id: string; token: string };
-  // Optional active workspace context specified by client
+  jwtPayload?: { userId: string; email: string; role: string; firmId: string | null };
   activeClientId?: string | null;
   activePeriodId?: string | null;
 }
+
+export {
+  generateAccessToken,
+  generateRefreshToken,
+  rotateRefreshToken,
+  revokeAllRefreshTokens,
+  verifyAccessToken,
+  isExpiredJwt,
+  jwtAuthMiddleware,
+} from "./middleware/jwtAuth";
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);

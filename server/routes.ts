@@ -2,7 +2,7 @@ import type { Express, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { prisma } from "./db";
-import { authMiddleware, requireAuth, requireMinRole, requireRoles, logAuditTrail, type AuthenticatedRequest } from "./auth";
+import { authMiddleware, jwtAuthMiddleware, requireAuth, requireMinRole, requireRoles, logAuditTrail, type AuthenticatedRequest } from "./auth";
 import { invalidatePhaseCache } from "./middleware/auditLock";
 import authRoutes from "./authRoutes";
 import clientRoutes from "./clientRoutes";
@@ -94,7 +94,7 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  app.use(authMiddleware);
+  app.use(jwtAuthMiddleware);
 
   // Parse optional active context headers on all requests
   app.use((req: AuthenticatedRequest, res, next) => {

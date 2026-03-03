@@ -1,0 +1,173 @@
+```text
+You are developing AuditWise SaaS (Next.js frontend + .NET Web API + Postgres) on Replit. Implement a COMPLETE self-signup + plan selection + 2-month trial + auto-deletion system for firms.
+
+OBJECTIVE
+A new user lands on https://auditwise.tech, selects a package (Starter/Growth/Professional/Enterprise), creates their own Firm Admin account, and instantly gets a 2-month (60 days) trial. If the firm does NOT activate (no payment confirmed) by trial expiry, the entire tenant (firm + all related data) must be automatically deleted. This must be production-grade with RBAC, audit logging, and safe cascades.
+
+SCOPE (BUILD END-TO-END)
+1) Public Website Pricing → Start Trial → Signup
+2) Create firm (tenant) + create firm admin user + create subscription(trialing)
+3) Trial countdown in portal UI + activation CTA
+4) Trial expiry enforcement + auto-delete job
+5) Billing audit trail entries for all critical events
+
+A) DATA MODEL (POSTGRES) — MIGRATIONS REQUIRED (IDEMPOTENT)
+1) plans table (if not already):
+   - id uuid pk
+   - plan_key text unique (starter/growth/professional/enterprise)
+   - plan_name text
+   - base_price_pkr numeric
+   - included_users int
+   - included_offices int
+   - included_engagements int (define as per year)
+   - platform_ai_included boolean
+   - allows_custom_ai_key boolean
+   - storage_gb_included int
+   - user_overage_pkr numeric
+   - office_overage_pkr numeric
+   - engagement_pack_size int
+   - engagement_pack_pkr numeric
+   - is_public boolean
+   - is_active boolean
+2) firms table:
+   - id uuid pk
+   - legal_name text
+   - display_name text
+   - is_active boolean default true
+   - deleted_at timestamptz null
+   - created_at timestamptz
+3) users table (firm users):
+   - id uuid pk
+   - firm_id uuid fk -> firms(id) on delete cascade
+   - email text unique
+   - password_hash text
+   - full_name text
+   - role text (FIRM_ADMIN / USER etc)
+   - is_active boolean default true
+4) subscriptions table (1 active subscription per firm):
+   - id uuid pk
+   - firm_id uuid unique fk -> firms(id) on delete cascade
+   - plan_id uuid fk -> plans(id)
+   - status enum subscription_status: trialing, active, past_due, grace, suspended, canceled, expired
+   - trial_start_at timestamptz
+   - trial_end_at timestamptz
+   - delete_at timestamptz                    <-- IMPORTANT: scheduled deletion time
+   - is_activated boolean default false       <-- set true only after payment confirmed
+   - grace_days int default 0                 <-- keep 0 if you want strict delete at trial end
+   - grace_end_at timestamptz
+   - current_period_start timestamptz
+   - current_period_end timestamptz
+   - next_invoice_at timestamptz
+   - price_snapshot jsonb default '{}'
+   - created_at, updated_at
+5) billing_audit_log table:
+   - id uuid pk
+   - actor_user_id uuid null
+   - firm_id uuid null
+   - subscription_id uuid null
+   - action text NOT NULL (SIGNUP_TRIAL_STARTED / TRIAL_EXPIRED_AUTO_DELETE / ACTIVATED / etc)
+   - before_state jsonb
+   - after_state jsonb
+   - created_at timestamptz default now()
+
+Ensure ALL tenant-owned tables reference firm_id with ON DELETE CASCADE so that deleting from firms wipes everything firm-related (offices, engagements, docs, logs, etc).
+
+B) SEED DEFAULT PLANS
+Seed these plans if not present:
+- STARTER: PKR 4,900/mo, users 5, offices 1, engagements 15/yr, platform AI, no custom key, storage 5GB
+- GROWTH: PKR 14,900/mo, users 20, offices 3, engagements 75/yr, platform AI, custom key allowed, storage 25GB
+- PROFESSIONAL: PKR 34,900/mo, users 60, offices 7, engagements 250/yr, platform AI, custom key allowed, storage 100GB
+- ENTERPRISE: PKR 79,900/mo, unlimited users/offices/engagements, platform AI, custom key allowed, storage 500GB
+
+C) PUBLIC SITE UX (NEXT.JS)
+1) Pricing page shows plan cards + “Start Free Trial” button on each card.
+2) Clicking “Start Free Trial” routes to /signup?plan=starter (etc) with plan preselected.
+
+Signup form fields:
+- Firm Legal Name (required)
+- Firm Display Name (optional)
+- Admin Full Name (required)
+- Admin Email (required)
+- Password (required)
+- Confirm Password
+- Accept Terms checkbox
+
+D) SIGNUP API (.NET)
+Create endpoint: POST /api/auth/signup
+Input: firm info + admin info + selected plan_key
+Process in a DB transaction:
+1) Validate email uniqueness.
+2) Create firm row.
+3) Create admin user row (role=FIRM_ADMIN, firm_id set).
+4) Fetch plan_id by plan_key.
+5) Create subscription:
+   - status='trialing'
+   - trial_start_at=now()
+   - trial_end_at=now()+interval '60 days'
+   - delete_at=trial_end_at  (STRICT requirement)
+   - is_activated=false
+   - price_snapshot = plan pricing JSON snapshot
+6) Write billing_audit_log:
+   action='SIGNUP_TRIAL_STARTED'
+Return: JWT/session + firm context redirect to portal.
+
+E) PORTAL UI (NEXT.JS) — TRIAL BANNER + COUNTDOWN
+For any logged-in firm user:
+1) Fetch subscription summary via GET /api/firm/subscription/me
+2) If status='trialing':
+   show top banner: “Trial ends on {date} — {X days remaining}”
+   show “Activate Now” button (route to /billing)
+3) If trial expired and not activated (status='expired' or firm deleted):
+   if firm exists but status expired, show lock screen “Trial expired. Activate to continue.”
+NOTE: since we delete strictly at trial_end, this lock screen is optional and only for edge cases. Primary behavior is deletion.
+
+F) TRIAL EXPIRY AUTO-DELETE (CRON / BACKGROUND JOB)
+Implement a .NET hosted background service (or Hangfire/Quartz if used) that runs every hour:
+1) Query subscriptions where:
+   - status='trialing'
+   - is_activated=false
+   - now() >= delete_at
+2) For each subscription found:
+   - Write billing_audit_log action='TRIAL_EXPIRED_AUTO_DELETE' with before snapshot
+   - DELETE FROM firms WHERE id = subscription.firm_id;  (CASCADE removes all firm data including subscription)
+   - Ensure this operation is idempotent (if firm already deleted, skip gracefully)
+
+IMPORTANT: Use a single transaction per firm deletion. Do NOT partially delete.
+
+G) ACTIVATION (MANUAL PAYMENT CONFIRM FLOW)
+Implement minimal activation endpoint for now:
+POST /api/platform/firms/{firmId}/activate
+Super Admin only. This sets:
+- subscriptions.is_activated=true
+- subscriptions.status='active'
+- subscriptions.delete_at=NULL
+- write billing_audit_log action='ACTIVATED_BY_ADMIN'
+(You can later connect payments/invoices. For this request, activation flag is enough.)
+
+H) SECURITY / RBAC
+- Public routes: /pricing, /signup
+- Firm Admin routes: portal, billing page
+- Platform Super Admin routes: platform dashboard, firms list, activate firm
+Enforce at API level using JWT roles.
+
+I) EDGE CASES / SAFETY
+- If a firm is activated before trial ends: cancel delete_at and keep firm.
+- If an activated subscription is later canceled, do not delete firm automatically (only delete trial firms).
+- Prevent reusing the same admin email if previously deleted? Implement either:
+  - allow reuse (recommended) OR keep a tombstone record. Choose one and document.
+
+J) ACCEPTANCE TESTS (MUST PASS)
+1) User selects plan on pricing → signs up → lands in portal as Firm Admin.
+2) Subscription is created as trialing with trial_end_at=now+60 days and delete_at=trial_end_at.
+3) Trial banner shows correct days remaining.
+4) Super Admin can activate firm; activation cancels deletion.
+5) Background job deletes any non-activated firm at delete_at; login fails afterward.
+6) billing_audit_log captures signup and deletion/activation actions.
+
+NOW IMPLEMENT:
+- Postgres migrations + seeds
+- .NET endpoints + services + RBAC
+- Next.js pricing + signup + trial banner
+- Background deletion job (hourly)
+Return the full code changes and ensure it runs on Replit.
+```

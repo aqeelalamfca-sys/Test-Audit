@@ -20,6 +20,7 @@ if (isProduction) {
 }
 
 import express, { type Request, Response, NextFunction } from "express";
+import path from "path";
 import { registerRoutes } from "./routes";
 import { registerDeploymentRoutes } from "./deploymentRoutes";
 import { serveStatic } from "./static";
@@ -81,6 +82,13 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+
+app.use("/uploads/logos", express.static(path.join(process.cwd(), "uploads", "logos"), {
+  setHeaders: (res) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'");
+  },
+}));
 
 app.use(compression());
 

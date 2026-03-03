@@ -1,5 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { getAuthToken } from "./auth";
+import { getAuthToken, refreshAccessToken } from "./auth";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -21,24 +21,48 @@ function getAuthHeaders(): Record<string, string> {
   return headers;
 }
 
+async function fetchWithAutoRefresh(url: string, options: RequestInit = {}): Promise<Response> {
+  let res = await fetch(url, {
+    ...options,
+    headers: { ...getAuthHeaders(), ...(options.headers || {}) },
+    credentials: "include",
+  });
+
+  if (res.status === 401) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      const retryHeaders: Record<string, string> = {};
+      if (options.headers) {
+        Object.assign(retryHeaders, options.headers);
+      }
+      retryHeaders["Authorization"] = `Bearer ${newToken}`;
+
+      res = await fetch(url, {
+        ...options,
+        headers: retryHeaders,
+        credentials: "include",
+      });
+    }
+  }
+
+  return res;
+}
+
 export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const headers: Record<string, string> = {
-    ...getAuthHeaders(),
-  };
+  const headers: Record<string, string> = {};
 
   if (data) {
     headers["Content-Type"] = "application/json";
   }
 
-  const res = await fetch(url, {
+  const res = await fetchWithAutoRefresh(url, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
   });
 
   await throwIfResNotOk(res);
@@ -51,10 +75,7 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
-      credentials: "include",
-      headers: getAuthHeaders(),
-    });
+    const res = await fetchWithAutoRefresh(queryKey.join("/") as string);
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;

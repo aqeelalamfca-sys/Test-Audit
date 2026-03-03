@@ -6,3 +6,4 @@
 # But keep the production template
 !.env.production
 auditwise-deploy.tar.gz
+.jwt_secret

@@ -97,10 +97,20 @@ Key architectural patterns and features include:
 - **Enforcement Engine Enhancements**: Validates prerequisite phase completion, open review notes, and role requirements for approvals.
 - **Engagement Versioning**: Version field on Engagement model incremented on post-approval edits.
 
+### JWT + Refresh Token Authentication
+- **JWT Access Tokens**: 15-minute expiry, signed with `JWT_SECRET` env var (auto-generated if not set). Contains `userId`, `email`, `role`, `firmId`.
+- **Refresh Tokens**: 7-day expiry, stored in `RefreshToken` table, rotated on each use (old token revoked).
+- **Token Refresh Endpoint**: `POST /api/auth/refresh` accepts `{ refreshToken }`, returns new access + refresh token pair.
+- **Backward Compatibility**: Auth middleware (`jwtAuthMiddleware` in `server/middleware/jwtAuth.ts`) tries JWT verification first, then falls back to session token lookup for legacy compatibility.
+- **Auto-Refresh on Frontend**: `queryClient.ts` uses `fetchWithAutoRefresh()` that automatically refreshes expired JWT on 401 response. `auth.tsx` schedules proactive refresh 1 minute before expiry.
+- **Logout**: Revokes all refresh tokens for the user via `revokeAllRefreshTokens()`.
+- **Storage**: Access token in `localStorage` as `auditwise_token`, refresh token as `auditwise_refresh_token`.
+- **Files**: `server/middleware/jwtAuth.ts`, `server/auth.ts` (re-exports), `server/authRoutes.ts` (login/refresh/logout), `client/src/lib/auth.tsx`, `client/src/lib/queryClient.ts`
+
 ### Standardized Auth Pattern
-- **All API calls use `fetchWithAuth`**: Automatically adds Bearer token, active client/period headers, credentials, and timeout.
+- **All API calls use `fetchWithAutoRefresh`**: Automatically adds Bearer token, retries with refreshed token on 401.
 - **`apiRequest`**: Handles auth for mutations (POST/PATCH/DELETE via TanStack Query).
-- **Default queryFn** in QueryClient uses `getAuthHeaders()` for TanStack Query default fetching.
+- **Default queryFn** in QueryClient uses `fetchWithAutoRefresh()` for TanStack Query default fetching.
 
 ### Performance Optimizations
 - **Lazy Loading**: Most pages are lazy-loaded via React.lazy() with Suspense boundaries.

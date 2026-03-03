@@ -7,6 +7,12 @@ import {
   invalidateSession,
   logAuditTrail,
   requireAuth,
+  generateAccessToken,
+  generateRefreshToken,
+  rotateRefreshToken,
+  revokeAllRefreshTokens,
+  verifyAccessToken,
+  isExpiredJwt,
   type AuthenticatedRequest,
 } from "./auth";
 import { z } from "zod";
@@ -39,8 +45,7 @@ router.get("/ping", async (req: AuthenticatedRequest, res: Response) => {
 
     const token = authHeader.split(" ")[1];
     
-    // PHASE 2: Quick token format validation (< 1ms)
-    if (!token || token.length < 32) {
+    if (!token || token.length < 10) {
       return respond({
         ok: true,
         authenticated: false,
@@ -49,8 +54,29 @@ router.get("/ping", async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    // PHASE 3: DB lookup with timeout (circuit breaker)
-    const DB_TIMEOUT = 2000; // 2 second max for DB
+    const jwtPayload = verifyAccessToken(token);
+    if (jwtPayload) {
+      return respond({
+        ok: true,
+        authenticated: true,
+        reason: "valid",
+        message: "JWT is valid",
+        userId: jwtPayload.userId,
+        role: jwtPayload.role,
+      });
+    }
+
+    if (isExpiredJwt(token)) {
+      return respond({
+        ok: true,
+        authenticated: false,
+        reason: "token_expired",
+        message: "JWT has expired, please refresh",
+        needsRefresh: true,
+      });
+    }
+
+    const DB_TIMEOUT = 2000;
     const dbPromise = prisma.session.findUnique({
       where: { token },
       select: { id: true, expiresAt: true, userId: true, user: { select: { role: true, isActive: true } } },
@@ -80,7 +106,7 @@ router.get("/ping", async (req: AuthenticatedRequest, res: Response) => {
         ok: true,
         authenticated: false,
         reason: "session_not_found",
-        message: "Session does not exist",
+        message: "Invalid token",
       });
     }
 
@@ -183,11 +209,8 @@ router.post("/login", async (req: AuthenticatedRequest, res: Response) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const session = await createSession(
-      user.id,
-      req.ip,
-      req.get("user-agent")
-    );
+    const accessToken = generateAccessToken(user);
+    const refreshToken = await generateRefreshToken(user.id);
 
     await logAuditTrail(
       user.id,
@@ -195,7 +218,7 @@ router.post("/login", async (req: AuthenticatedRequest, res: Response) => {
       "user",
       user.id,
       null,
-      { sessionId: session.id },
+      { authMethod: "jwt" },
       undefined,
       undefined,
       req.ip,
@@ -206,8 +229,9 @@ router.post("/login", async (req: AuthenticatedRequest, res: Response) => {
 
     res.json({
       user: safeUser,
-      token: session.token,
-      expiresAt: session.expiresAt,
+      token: accessToken,
+      refreshToken,
+      expiresIn: 900,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -262,13 +286,15 @@ router.post("/register", async (req: AuthenticatedRequest, res: Response) => {
       req.get("user-agent")
     );
 
-    const session = await createSession(user.id, req.ip, req.get("user-agent"));
+    const accessToken = generateAccessToken(user);
+    const refreshToken = await generateRefreshToken(user.id);
     const { passwordHash: _, ...safeUser } = user;
 
     res.status(201).json({
       user: safeUser,
-      token: session.token,
-      expiresAt: session.expiresAt,
+      token: accessToken,
+      refreshToken,
+      expiresIn: 900,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -281,27 +307,52 @@ router.post("/register", async (req: AuthenticatedRequest, res: Response) => {
 
 router.post("/logout", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    await revokeAllRefreshTokens(req.user!.id);
+
     if (req.session?.token) {
       await invalidateSession(req.session.token);
-
-      await logAuditTrail(
-        req.user!.id,
-        "LOGOUT",
-        "user",
-        req.user!.id,
-        null,
-        null,
-        undefined,
-        undefined,
-        req.ip,
-        req.get("user-agent")
-      );
     }
+
+    await logAuditTrail(
+      req.user!.id,
+      "LOGOUT",
+      "user",
+      req.user!.id,
+      null,
+      null,
+      undefined,
+      undefined,
+      req.ip,
+      req.get("user-agent")
+    );
 
     res.json({ success: true });
   } catch (error) {
     console.error("Logout error:", error);
     res.status(500).json({ error: "Logout failed" });
+  }
+});
+
+router.post("/refresh", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { refreshToken } = z.object({ refreshToken: z.string() }).parse(req.body);
+
+    const result = await rotateRefreshToken(refreshToken);
+    if (!result) {
+      return res.status(401).json({ error: "Invalid or expired refresh token" });
+    }
+
+    res.json({
+      token: result.accessToken,
+      refreshToken: result.refreshToken,
+      expiresIn: 900,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid request" });
+    }
+    console.error("Token refresh error:", error);
+    res.status(500).json({ error: "Token refresh failed" });
   }
 });
 

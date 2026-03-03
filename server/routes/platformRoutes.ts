@@ -5,6 +5,9 @@ import { requireSuperAdmin } from "../middleware/rbacGuard";
 import { logPlatformAction, extractRequestMeta } from "../services/platformAuditService";
 import { z } from "zod";
 import { randomBytes } from "crypto";
+import multer from "multer";
+import path from "path";
+import fs from "fs/promises";
 
 const router = Router();
 
@@ -53,6 +56,45 @@ router.get("/firms", async (req: AuthenticatedRequest, res: Response) => {
   }
 });
 
+const logoStorage = multer.diskStorage({
+  destination: async (_req, _file, cb) => {
+    const dir = path.join(process.cwd(), "uploads", "logos");
+    await fs.mkdir(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `firm-${Date.now()}-${randomBytes(4).toString("hex")}${ext}`);
+  },
+});
+const logoUpload = multer({
+  storage: logoStorage,
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [".png", ".jpg", ".jpeg", ".webp"];
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, allowed.includes(ext));
+  },
+});
+
+router.post("/firms/:id/logo", logoUpload.single("logo"), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!req.file) return res.status(400).json({ error: "No logo file provided" });
+
+    const logoUrl = `/uploads/logos/${req.file.filename}`;
+    await prisma.firm.update({ where: { id }, data: { logoUrl } });
+
+    const { ip, userAgent } = extractRequestMeta(req);
+    await logPlatformAction(req.user!.id, id, "FIRM_LOGO_UPLOAD", "Firm", id, ip, userAgent, { logoUrl });
+
+    res.json({ logoUrl });
+  } catch (error) {
+    console.error("Logo upload error:", error);
+    res.status(500).json({ error: "Failed to upload logo" });
+  }
+});
+
 const createFirmSchema = z.object({
   name: z.string().min(2),
   email: z.string().email().optional(),
@@ -60,6 +102,12 @@ const createFirmSchema = z.object({
   currency: z.string().optional(),
   timezone: z.string().optional(),
   registrationNumber: z.string().optional(),
+  headOfficeAddress: z.string().optional(),
+  ntn: z.string().optional(),
+  branches: z.array(z.object({
+    name: z.string(),
+    address: z.string(),
+  })).optional(),
   planCode: z.string().optional(),
   trialDays: z.number().optional(),
   adminEmail: z.string().email(),
@@ -79,6 +127,9 @@ router.post("/firms", async (req: AuthenticatedRequest, res: Response) => {
         currency: data.currency,
         timezone: data.timezone,
         registrationNumber: data.registrationNumber,
+        headOfficeAddress: data.headOfficeAddress,
+        taxId: data.ntn,
+        offices: data.branches ? data.branches : undefined,
         status: data.trialDays ? "TRIAL" : "ACTIVE",
         createdById: req.user!.id,
       },

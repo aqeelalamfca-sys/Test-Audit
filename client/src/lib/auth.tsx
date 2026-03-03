@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { apiRequest, queryClient } from "./queryClient";
 
 interface User {
@@ -41,6 +41,52 @@ interface RegisterData {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const TOKEN_KEY = "auditwise_token";
+const REFRESH_TOKEN_KEY = "auditwise_refresh_token";
+
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+  if (!refreshToken) return null;
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch("/api/auth/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!response.ok) {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
+        return null;
+      }
+
+      const data = await response.json();
+      localStorage.setItem(TOKEN_KEY, data.token);
+      localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+      return data.token as string;
+    } catch {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      return null;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+export { refreshAccessToken };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -52,6 +98,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return null;
   });
   const [isLoading, setIsLoading] = useState(true);
+  const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const scheduleRefresh = useCallback((expiresInSeconds: number) => {
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+    }
+    const refreshIn = Math.max((expiresInSeconds - 60) * 1000, 30000);
+    refreshTimerRef.current = setTimeout(async () => {
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        setToken(newToken);
+        scheduleRefresh(900);
+      } else {
+        setToken(null);
+        setUser(null);
+        setFirm(null);
+      }
+    }, refreshIn);
+  }, []);
 
   const fetchUser = useCallback(async () => {
     if (!token) {
@@ -60,23 +125,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
 
     try {
-      // PHASE 1: Quick ping to verify session is valid (fast, guaranteed response)
       const pingResponse = await fetch("/api/auth/ping", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         signal: controller.signal,
       });
 
       const pingData = await pingResponse.json();
-      
-      // If session is invalid, clear immediately without waiting for /me
+
       if (!pingData.authenticated) {
-        console.log("Auth ping failed:", pingData.reason);
+        if (pingData.needsRefresh || pingData.reason === "token_expired") {
+          const newToken = await refreshAccessToken();
+          if (newToken) {
+            setToken(newToken);
+            clearTimeout(timeoutId);
+            setIsLoading(false);
+            return;
+          }
+        }
         localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
         setToken(null);
         setUser(null);
         setFirm(null);
@@ -84,11 +154,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // PHASE 2: Fetch full user data (session is confirmed valid)
       const response = await fetch("/api/auth/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         signal: controller.signal,
       });
 
@@ -98,6 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = await response.json();
         setUser(data.user);
         setFirm(data.firm);
+        scheduleRefresh(900);
 
         try {
           if (data.user?.activeClientId) {
@@ -110,6 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (e) {}
       } else {
         localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
         setToken(null);
         setUser(null);
         setFirm(null);
@@ -121,14 +190,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.warn("Auth request timed out - clearing session");
       }
       localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
       setToken(null);
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [token, scheduleRefresh]);
 
   useEffect(() => {
     fetchUser();
+    return () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
+    };
   }, [fetchUser]);
 
   const login = async (email: string, password: string) => {
@@ -145,8 +220,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const data = await response.json();
     localStorage.setItem(TOKEN_KEY, data.token);
+    if (data.refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+    }
     setToken(data.token);
     setUser(data.user);
+    scheduleRefresh(data.expiresIn || 900);
     await fetchUser();
     return data.user;
   };
@@ -165,8 +244,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const result = await response.json();
     localStorage.setItem(TOKEN_KEY, result.token);
+    if (result.refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, result.refreshToken);
+    }
     setToken(result.token);
     setUser(result.user);
+    scheduleRefresh(result.expiresIn || 900);
   };
 
   const logout = async () => {
@@ -174,16 +257,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         await fetch("/api/auth/logout", {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
       } catch (error) {
         console.error("Logout error:", error);
       }
     }
 
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+    }
+
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
     setToken(null);
     setUser(null);
     setFirm(null);
