@@ -838,6 +838,87 @@ router.post("/invoices/:id/void", async (req: AuthenticatedRequest, res: Respons
   }
 });
 
+router.post("/invoices/:id/dispatch", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const invoice = await prisma.invoice.findUnique({ where: { id: req.params.id } });
+    if (!invoice) return res.status(404).json({ error: "Invoice not found" });
+    if (invoice.status === "PAID") return res.status(400).json({ error: "Cannot dispatch a paid invoice" });
+    if (invoice.status === "VOID") return res.status(400).json({ error: "Cannot dispatch a voided invoice" });
+
+    const { daysUntilDue = 15 } = req.body;
+    const now = new Date();
+    const dueAt = new Date(now.getTime() + daysUntilDue * 86400000);
+
+    const updated = await prisma.invoice.update({
+      where: { id: req.params.id },
+      data: { status: "ISSUED", issuedAt: now, dueAt },
+      include: { lines: true, subscription: { include: { firm: { select: { id: true, name: true } }, plan: { select: { code: true, name: true } } } } },
+    });
+
+    const { ip, userAgent } = extractRequestMeta(req);
+    await logPlatformAction(req.user!.id, "DISPATCH_INVOICE", "Invoice", invoice.id, undefined, ip, userAgent, {
+      invoiceNo: invoice.invoiceNo,
+      amount: invoice.amount,
+      dueAt,
+    });
+
+    res.json(updated);
+  } catch (error) {
+    console.error("Dispatch invoice error:", error);
+    res.status(500).json({ error: "Failed to dispatch invoice" });
+  }
+});
+
+router.get("/billing-summary", async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const firms = await prisma.firm.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        displayName: true,
+        email: true,
+        status: true,
+        subscriptions: {
+          take: 1,
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            status: true,
+            trialStart: true,
+            trialEnd: true,
+            currentPeriodStart: true,
+            currentPeriodEnd: true,
+            nextInvoiceAt: true,
+            priceSnapshot: true,
+            plan: { select: { id: true, code: true, name: true, monthlyPrice: true } },
+            invoices: {
+              orderBy: { createdAt: "desc" },
+              take: 5,
+              select: {
+                id: true,
+                invoiceNo: true,
+                amount: true,
+                currency: true,
+                status: true,
+                issuedAt: true,
+                dueAt: true,
+                paidAt: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    res.json({ firms });
+  } catch (error) {
+    console.error("Billing summary error:", error);
+    res.status(500).json({ error: "Failed to get billing summary" });
+  }
+});
+
 router.post("/billing/enforce-lifecycle", async (req: AuthenticatedRequest, res: Response) => {
   try {
     const result = await enforceSubscriptionLifecycle();

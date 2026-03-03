@@ -194,7 +194,7 @@ export default function FirmWideControls() {
   const [eqcrForm, setEqcrForm] = useState({ eqcrPartnerUserId: "", engagementId: "" });
   const [policyDocForm, setPolicyDocForm] = useState({ docType: "quality_manual", title: "", version: "1.0" });
   const [versionForm, setVersionForm] = useState({ manualVersion: "", changeSummary: "" });
-  const [monitoringForm, setMonitoringForm] = useState({ reviewType: "internal_inspection", cycleCode: new Date().getFullYear().toString(), status: "planned" });
+  const [reviewCycleForm, setReviewCycleForm] = useState({ reviewType: "internal_inspection", cycleCode: new Date().getFullYear().toString(), status: "planned" });
 
   const createFwcObjectiveMutation = useMutation({
     mutationFn: (data: any) => apiRequest("/api/firm-wide-controls/quality-objectives", { method: "POST", body: JSON.stringify(data) }),

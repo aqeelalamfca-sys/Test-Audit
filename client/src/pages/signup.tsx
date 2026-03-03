@@ -109,6 +109,22 @@ export default function SignupPage() {
 
   const params = new URLSearchParams(searchString);
   const preselectedPlan = params.get("plan") || "";
+  const billingCycle = (params.get("billing") || "monthly") as "monthly" | "yearly";
+
+  const PLAN_DISCOUNTS: Record<string, { yearly: number; monthly: number }> = {
+    STARTER:      { yearly: 0,  monthly: 0  },
+    GROWTH:       { yearly: 40, monthly: 20 },
+    PROFESSIONAL: { yearly: 30, monthly: 15 },
+    ENTERPRISE:   { yearly: 45, monthly: 22 },
+  };
+
+  function getPlanDisplayPrice(plan: Plan) {
+    const base = Number(plan.monthlyPrice);
+    const discounts = PLAN_DISCOUNTS[plan.code] || { yearly: 0, monthly: 0 };
+    const discount = billingCycle === "yearly" ? discounts.yearly : discounts.monthly;
+    const discounted = Math.round(base * (1 - discount / 100));
+    return { base, discounted, discount };
+  }
 
   const { data: plans } = useQuery<Plan[]>({
     queryKey: ["/api/auth/plans"],
@@ -229,11 +245,21 @@ export default function SignupPage() {
             <p className="text-xs text-muted-foreground">
               30 days free. No credit card required. Cancel anytime.
             </p>
-            {selectedPlan && (
-              <Badge variant="outline" className="mt-2 mx-auto">
-                {selectedPlan.name} Plan - PKR {Number(selectedPlan.monthlyPrice).toLocaleString("en-PK")}/month after trial
-              </Badge>
-            )}
+            {selectedPlan && (() => {
+              const { discounted, discount } = getPlanDisplayPrice(selectedPlan);
+              return (
+                <div className="mt-2 flex flex-col items-center gap-1">
+                  <Badge variant="outline">
+                    {selectedPlan.name} Plan — PKR {discounted.toLocaleString("en-PK")}/mo after trial
+                  </Badge>
+                  {discount > 0 && (
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                      {billingCycle === "yearly" ? "Yearly" : "Monthly"} billing — {discount}% discount applied
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
           </CardHeader>
 
           <CardContent>
@@ -252,11 +278,15 @@ export default function SignupPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {plans?.map((plan) => (
-                            <SelectItem key={plan.code} value={plan.code}>
-                              {plan.name} - PKR {Number(plan.monthlyPrice).toLocaleString("en-PK")}/mo
-                            </SelectItem>
-                          ))}
+                          {plans?.map((plan) => {
+                            const { discounted, discount } = getPlanDisplayPrice(plan);
+                            return (
+                              <SelectItem key={plan.code} value={plan.code}>
+                                {plan.name} — PKR {discounted.toLocaleString("en-PK")}/mo
+                                {discount > 0 ? ` (${discount}% off)` : ""}
+                              </SelectItem>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
                       <FormMessage />

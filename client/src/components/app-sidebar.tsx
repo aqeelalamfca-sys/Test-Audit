@@ -36,6 +36,7 @@ import {
   Crown,
   Rocket,
   MessageSquare,
+  Banknote,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth";
@@ -227,6 +228,19 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       <Link href="/platform/plans">
                         <BarChart3 className={`h-4 w-4 ${iconClasses}`} />
                         <span>Plan Management</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/platform/billing"}
+                      data-testid="nav-platform-billing"
+                      className={activeClasses}
+                    >
+                      <Link href="/platform/billing">
+                        <Banknote className={`h-4 w-4 ${iconClasses}`} />
+                        <span>Billing Management</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

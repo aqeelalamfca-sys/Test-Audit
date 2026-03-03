@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { logoToBase64 } from "@/lib/pdf-logo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -1506,7 +1507,10 @@ const platformGuides: { id: string; label: string; badge: string; steps: { title
   },
 ];
 
-function generateDeploymentPDF(versionInfo: VersionInfo | undefined) {
+function generateDeploymentPDF(
+  versionInfo: VersionInfo | undefined,
+  firmInfo?: { name?: string | null; displayName?: string | null; logoUrl?: string | null }
+) {
   return async () => {
     const jspdfModule = await import("jspdf");
     const jsPDF = jspdfModule.jsPDF || jspdfModule.default;
@@ -1514,19 +1518,31 @@ function generateDeploymentPDF(versionInfo: VersionInfo | undefined) {
     const autoTable = autoTableModule.autoTable || autoTableModule.default;
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
+    const firmName = firmInfo?.displayName || firmInfo?.name || "AuditWise";
+    let coverLogoY = 50;
+    if (firmInfo?.logoUrl) {
+      try {
+        const b64 = await logoToBase64(firmInfo.logoUrl);
+        if (b64) {
+          doc.addImage(b64, "PNG", 67.5, 25, 70, 25);
+          coverLogoY = 60;
+        }
+      } catch {}
+    }
+
     doc.setFontSize(28);
     doc.setFont("helvetica", "bold");
-    doc.text("AuditWise", 105, 50, { align: "center" });
+    doc.text(firmName, 105, coverLogoY, { align: "center" });
     doc.setFontSize(18);
     doc.setFont("helvetica", "normal");
-    doc.text("Deployment Guide", 105, 65, { align: "center" });
+    doc.text("Deployment Guide", 105, coverLogoY + 15, { align: "center" });
     doc.setFontSize(11);
-    doc.text(`Version: ${versionInfo?.version || "1.0.0"}`, 105, 82, { align: "center" });
-    doc.text(`Generated: ${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })}`, 105, 90, { align: "center" });
+    doc.text(`Version: ${versionInfo?.version || "1.0.0"}`, 105, coverLogoY + 32, { align: "center" });
+    doc.text(`Generated: ${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })}`, 105, coverLogoY + 40, { align: "center" });
     doc.setFontSize(10);
-    doc.text(`${platforms.length} Deployment Platforms Covered`, 105, 105, { align: "center" });
+    doc.text(`${platforms.length} Deployment Platforms Covered`, 105, coverLogoY + 55, { align: "center" });
     doc.setFontSize(9);
-    doc.text("CONFIDENTIAL - For Internal Use Only", 105, 130, { align: "center" });
+    doc.text("CONFIDENTIAL - For Internal Use Only", 105, coverLogoY + 80, { align: "center" });
 
     doc.addPage();
     doc.setFontSize(16);
@@ -1676,7 +1692,7 @@ function generateDeploymentPDF(versionInfo: VersionInfo | undefined) {
 
 export default function DeploymentGuide() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, firm } = useAuth();
 
   const { data: versionInfo } = useQuery<VersionInfo>({
     queryKey: ["/api/version"],
@@ -1701,7 +1717,7 @@ export default function DeploymentGuide() {
   const handleDownloadPDF = async () => {
     toast({ title: "Generating PDF...", description: "Please wait while the deployment guide is prepared." });
     try {
-      await generateDeploymentPDF(versionInfo)();
+      await generateDeploymentPDF(versionInfo, firm)();
       toast({ title: "Guide downloaded", description: `PDF with ${platforms.length} platform guides has been generated.` });
     } catch (err) {
       console.error("PDF generation error:", err);

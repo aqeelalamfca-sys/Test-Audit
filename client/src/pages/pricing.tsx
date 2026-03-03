@@ -244,7 +244,7 @@ export default function PricingPage() {
                     <Button
                       className="w-full h-9 text-sm mb-3"
                       variant={config.popular ? "default" : "outline"}
-                      onClick={() => navigate(`/signup?plan=${plan.code.toLowerCase()}`)}
+                      onClick={() => navigate(`/signup?plan=${plan.code.toLowerCase()}&billing=${billingCycle}`)}
                       data-testid={`button-start-trial-${plan.code.toLowerCase()}`}
                     >
                       Start Free Trial

@@ -85,6 +85,7 @@ const InviteAcceptPage = lazy(() => retryImport(() => import("@/pages/invite-acc
 const PlatformDashboard = lazy(() => retryImport(() => import("@/pages/platform/platform-dashboard")));
 const FirmManagement = lazy(() => retryImport(() => import("@/pages/platform/firm-management")));
 const PlanManagement = lazy(() => retryImport(() => import("@/pages/platform/plan-management")));
+const BillingManagement = lazy(() => retryImport(() => import("@/pages/platform/billing-management")));
 const PlatformNotifications = lazy(() => retryImport(() => import("@/pages/platform/platform-notifications")));
 const PlatformAuditLogs = lazy(() => retryImport(() => import("@/pages/platform/platform-audit-logs")));
 const PlatformAIConfig = lazy(() => retryImport(() => import("@/pages/platform/platform-ai-config")));
@@ -217,6 +218,7 @@ function createRoleGuardedComponent(Component: React.LazyExoticComponent<any>, r
 const GuardedPlatformDashboard = createRoleGuardedComponent(PlatformDashboard, "SUPER_ADMIN");
 const GuardedFirmManagement = createRoleGuardedComponent(FirmManagement, "SUPER_ADMIN");
 const GuardedPlanManagement = createRoleGuardedComponent(PlanManagement, "SUPER_ADMIN");
+const GuardedBillingManagement = createRoleGuardedComponent(BillingManagement, "SUPER_ADMIN");
 const GuardedPlatformNotifications = createRoleGuardedComponent(PlatformNotifications, "SUPER_ADMIN");
 const GuardedPlatformAuditLogs = createRoleGuardedComponent(PlatformAuditLogs, "SUPER_ADMIN");
 const GuardedPlatformAIConfig = createRoleGuardedComponent(PlatformAIConfig, "SUPER_ADMIN");
@@ -295,6 +297,7 @@ function Router() {
       <Route path="/platform" component={GuardedPlatformDashboard} />
       <Route path="/platform/firms" component={GuardedFirmManagement} />
       <Route path="/platform/plans" component={GuardedPlanManagement} />
+      <Route path="/platform/billing" component={GuardedBillingManagement} />
       <Route path="/platform/notifications" component={GuardedPlatformNotifications} />
       <Route path="/platform/audit-logs" component={GuardedPlatformAuditLogs} />
       <Route path="/platform/ai-config" component={GuardedPlatformAIConfig} />
