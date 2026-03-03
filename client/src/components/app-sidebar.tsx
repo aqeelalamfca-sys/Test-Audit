@@ -1,4 +1,3 @@
-import React from "react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -36,11 +35,18 @@ import {
   Crown,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { RoleBadge } from "@/components/status-badge";
 import { useAuth } from "@/lib/auth";
 import { useWorkspace, WORKSPACE_PHASES, isPhaseVisible } from "@/lib/workspace-context";
 import { Button } from "@/components/ui/button";
 import { EngagementHealthPanel } from "@/components/engagement-health-panel";
+import { useRoleTheme } from "@/components/role-theme-provider";
+import {
+  getRoleActiveItemClasses,
+  getRoleIconClasses,
+  getRoleBadgeClasses,
+  getRoleSidebarClasses,
+  getRoleDisplayLabel,
+} from "@/lib/role-theme";
 
 interface AppSidebarProps {
   currentUser?: {
@@ -66,6 +72,7 @@ const WORKSPACE_PHASE_ICONS: Record<string, React.ElementType> = {
 export function AppSidebar({ currentUser }: AppSidebarProps) {
   const [location] = useLocation();
   const { user } = useAuth();
+  const { theme } = useRoleTheme();
   const { activeEngagement, isInWorkspaceMode, getWorkspaceHref, exitWorkspace, currentEngagementId } = useWorkspace();
 
   const userRole = user?.role?.toLowerCase() || currentUser?.role?.toLowerCase() || "staff";
@@ -76,19 +83,29 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
 
   const isWorkspaceRoute = location.startsWith("/workspace/");
 
+  const sidebarClasses = getRoleSidebarClasses(theme);
+  const activeClasses = getRoleActiveItemClasses(theme);
+  const iconClasses = getRoleIconClasses(theme);
+  const badgeClasses = getRoleBadgeClasses(theme);
+
+  const sectionLabel = isSuperAdmin ? "Platform Admin" : isFirmAdmin ? "Firm Administration" : "";
+  const headerSubtitle = isSuperAdmin ? "Platform Control" : isFirmAdmin ? "Firm Administration" : "Statutory Audit";
+  const headerInitials = isSuperAdmin ? "SA" : isFirmAdmin ? "FA" : "AW";
+  const homeLink = isSuperAdmin ? "/platform" : isFirmAdmin ? "/firm-admin/settings" : "/";
+
   return (
-    <Sidebar className={`border-r ${isSuperAdmin ? 'border-red-200 dark:border-red-900' : isFirmAdmin ? 'border-emerald-200 dark:border-emerald-900' : 'border-sidebar-border'}`}>
-      <SidebarHeader className={`border-b px-4 py-4 ${isSuperAdmin ? 'border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/30' : isFirmAdmin ? 'border-emerald-200 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-950/30' : 'border-sidebar-border'}`}>
-        <Link href={isSuperAdmin ? "/platform" : isFirmAdmin ? "/firm-admin/settings" : "/"} className="flex items-center gap-3" data-testid="link-home">
-          <div className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold text-lg ${isSuperAdmin ? 'bg-red-600 text-white' : isFirmAdmin ? 'bg-emerald-600 text-white' : 'bg-primary text-primary-foreground'}`}>
-            {isSuperAdmin ? "SA" : isFirmAdmin ? "FA" : "AW"}
+    <Sidebar className={`border-r ${sidebarClasses.border}`}>
+      <SidebarHeader className={`border-b px-4 py-4 ${sidebarClasses.border} ${sidebarClasses.headerBg}`}>
+        <Link href={homeLink} className="flex items-center gap-3" data-testid="link-home">
+          <div className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold text-lg ${theme.avatarBg} ${theme.avatarText}`}>
+            {headerInitials}
           </div>
           <div>
-            <h1 className={`text-lg font-semibold ${isSuperAdmin ? 'text-red-700 dark:text-red-400' : isFirmAdmin ? 'text-emerald-700 dark:text-emerald-400' : 'text-sidebar-foreground'}`}>
+            <h1 className={`text-lg font-semibold ${theme.iconColor} ${theme.iconColorDark}`}>
               AuditWise
             </h1>
-            <p className={`text-xs ${isSuperAdmin ? 'text-red-500 dark:text-red-400' : isFirmAdmin ? 'text-emerald-500 dark:text-emerald-400' : 'text-muted-foreground'}`}>
-              {isSuperAdmin ? "Platform Control" : isFirmAdmin ? "Firm Administration" : "Statutory Audit"}
+            <p className={`text-xs ${theme.iconColor} ${theme.iconColorDark}`}>
+              {headerSubtitle}
             </p>
           </div>
         </Link>
@@ -97,7 +114,6 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
       <SidebarContent className="px-2">
         {isWorkspaceRoute ? (
           <>
-            {/* Workspace Mode: Back to Engagements button */}
             <div className="px-2 py-3">
               <Button
                 variant="ghost"
@@ -114,7 +130,6 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
               <EngagementHealthPanel slot="top" />
             </div>
 
-            {/* Workspace Navigation */}
             <SidebarGroup>
               <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Audit Lifecycle
@@ -155,9 +170,8 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
           </>
         ) : isSuperAdmin ? (
           <>
-            {/* SuperAdmin: Platform Admin Only */}
             <SidebarGroup>
-              <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wide text-red-600 dark:text-red-400">
+              <SidebarGroupLabel className={`px-2 text-xs font-medium uppercase tracking-wide ${theme.groupLabelColor} ${theme.groupLabelColorDark}`}>
                 <Crown className="h-3 w-3 inline mr-1" />
                 Platform Admin
               </SidebarGroupLabel>
@@ -168,10 +182,10 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       asChild
                       isActive={location === "/platform" || location === "/"}
                       data-testid="nav-platform-dashboard"
-                      className="data-[active=true]:bg-red-100 data-[active=true]:text-red-800 dark:data-[active=true]:bg-red-950 dark:data-[active=true]:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-700 dark:hover:text-red-400"
+                      className={activeClasses}
                     >
                       <Link href="/platform">
-                        <LayoutDashboard className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <LayoutDashboard className={`h-4 w-4 ${iconClasses}`} />
                         <span>Dashboard</span>
                       </Link>
                     </SidebarMenuButton>
@@ -181,10 +195,10 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       asChild
                       isActive={location === "/platform/firms"}
                       data-testid="nav-platform-firms"
-                      className="data-[active=true]:bg-red-100 data-[active=true]:text-red-800 dark:data-[active=true]:bg-red-950 dark:data-[active=true]:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-700 dark:hover:text-red-400"
+                      className={activeClasses}
                     >
                       <Link href="/platform/firms">
-                        <Building2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <Building2 className={`h-4 w-4 ${iconClasses}`} />
                         <span>Firm Management</span>
                       </Link>
                     </SidebarMenuButton>
@@ -194,10 +208,10 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       asChild
                       isActive={location === "/platform/plans"}
                       data-testid="nav-platform-plans"
-                      className="data-[active=true]:bg-red-100 data-[active=true]:text-red-800 dark:data-[active=true]:bg-red-950 dark:data-[active=true]:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-700 dark:hover:text-red-400"
+                      className={activeClasses}
                     >
                       <Link href="/platform/plans">
-                        <BarChart3 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <BarChart3 className={`h-4 w-4 ${iconClasses}`} />
                         <span>Plan Management</span>
                       </Link>
                     </SidebarMenuButton>
@@ -207,10 +221,10 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       asChild
                       isActive={location === "/platform/notifications"}
                       data-testid="nav-platform-notifications"
-                      className="data-[active=true]:bg-red-100 data-[active=true]:text-red-800 dark:data-[active=true]:bg-red-950 dark:data-[active=true]:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-700 dark:hover:text-red-400"
+                      className={activeClasses}
                     >
                       <Link href="/platform/notifications">
-                        <Bell className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <Bell className={`h-4 w-4 ${iconClasses}`} />
                         <span>Notifications</span>
                       </Link>
                     </SidebarMenuButton>
@@ -220,10 +234,10 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       asChild
                       isActive={location === "/platform/audit-logs"}
                       data-testid="nav-platform-audit-logs"
-                      className="data-[active=true]:bg-red-100 data-[active=true]:text-red-800 dark:data-[active=true]:bg-red-950 dark:data-[active=true]:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-700 dark:hover:text-red-400"
+                      className={activeClasses}
                     >
                       <Link href="/platform/audit-logs">
-                        <FileText className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <FileText className={`h-4 w-4 ${iconClasses}`} />
                         <span>Audit Logs</span>
                       </Link>
                     </SidebarMenuButton>
@@ -233,10 +247,10 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       asChild
                       isActive={location === "/platform/ai-config"}
                       data-testid="nav-platform-ai-config"
-                      className="data-[active=true]:bg-red-100 data-[active=true]:text-red-800 dark:data-[active=true]:bg-red-950 dark:data-[active=true]:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-700 dark:hover:text-red-400"
+                      className={activeClasses}
                     >
                       <Link href="/platform/ai-config">
-                        <Bot className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <Bot className={`h-4 w-4 ${iconClasses}`} />
                         <span>AI Configuration</span>
                       </Link>
                     </SidebarMenuButton>
@@ -247,7 +261,6 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
           </>
         ) : (
           <>
-            {/* Global Mode: Overview Section */}
             <SidebarGroup>
               <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Overview
@@ -308,7 +321,6 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* Global Mode: Administration Section */}
             <SidebarGroup>
               <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Administration
@@ -373,7 +385,7 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
 
             {isFirmAdmin && (
               <SidebarGroup>
-                <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+                <SidebarGroupLabel className={`px-2 text-xs font-medium uppercase tracking-wide ${theme.groupLabelColor} ${theme.groupLabelColorDark}`}>
                   <Shield className="h-3 w-3 inline mr-1" />
                   Firm Administration
                 </SidebarGroupLabel>
@@ -384,10 +396,10 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                         asChild
                         isActive={location === "/firm-admin/users"}
                         data-testid="nav-firm-users"
-                        className="data-[active=true]:bg-emerald-100 data-[active=true]:text-emerald-800 dark:data-[active=true]:bg-emerald-950 dark:data-[active=true]:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-700 dark:hover:text-emerald-400"
+                        className={activeClasses}
                       >
                         <Link href="/firm-admin/users">
-                          <Users className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <Users className={`h-4 w-4 ${iconClasses}`} />
                           <span>User Management</span>
                         </Link>
                       </SidebarMenuButton>
@@ -397,10 +409,10 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                         asChild
                         isActive={location === "/firm-admin/settings" || location === "/firm-admin"}
                         data-testid="nav-firm-settings"
-                        className="data-[active=true]:bg-emerald-100 data-[active=true]:text-emerald-800 dark:data-[active=true]:bg-emerald-950 dark:data-[active=true]:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-700 dark:hover:text-emerald-400"
+                        className={activeClasses}
                       >
                         <Link href="/firm-admin/settings">
-                          <Settings className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <Settings className={`h-4 w-4 ${iconClasses}`} />
                           <span>Firm Settings</span>
                         </Link>
                       </SidebarMenuButton>
@@ -410,10 +422,10 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                         asChild
                         isActive={location === "/firm-admin/audit-logs"}
                         data-testid="nav-firm-audit-logs"
-                        className="data-[active=true]:bg-emerald-100 data-[active=true]:text-emerald-800 dark:data-[active=true]:bg-emerald-950 dark:data-[active=true]:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-700 dark:hover:text-emerald-400"
+                        className={activeClasses}
                       >
                         <Link href="/firm-admin/audit-logs">
-                          <FileText className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <FileText className={`h-4 w-4 ${iconClasses}`} />
                           <span>Audit Logs</span>
                         </Link>
                       </SidebarMenuButton>
@@ -423,10 +435,10 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                         asChild
                         isActive={location === "/firm-admin/ai-usage"}
                         data-testid="nav-firm-ai-usage"
-                        className="data-[active=true]:bg-emerald-100 data-[active=true]:text-emerald-800 dark:data-[active=true]:bg-emerald-950 dark:data-[active=true]:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-700 dark:hover:text-emerald-400"
+                        className={activeClasses}
                       >
                         <Link href="/firm-admin/ai-usage">
-                          <Bot className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <Bot className={`h-4 w-4 ${iconClasses}`} />
                           <span>AI Usage</span>
                         </Link>
                       </SidebarMenuButton>
@@ -439,10 +451,10 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
         )}
       </SidebarContent>
 
-      <SidebarFooter className={`border-t p-4 ${isSuperAdmin ? 'border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/30' : isFirmAdmin ? 'border-emerald-200 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-950/30' : 'border-sidebar-border'}`}>
+      <SidebarFooter className={`border-t p-4 ${sidebarClasses.border} ${sidebarClasses.footerBg}`}>
         <div className="flex items-center gap-2.5">
           <Avatar className="h-9 w-9">
-            <AvatarFallback className={`text-sm font-medium ${isSuperAdmin ? 'bg-red-600 text-white' : isFirmAdmin ? 'bg-emerald-600 text-white' : 'bg-primary text-primary-foreground'}`}>
+            <AvatarFallback className={`text-sm font-medium ${theme.avatarBg} ${theme.avatarText}`}>
               {currentUser?.initials || "JD"}
             </AvatarFallback>
           </Avatar>
@@ -450,17 +462,12 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
             <p className="text-sm font-medium text-sidebar-foreground truncate">
               {currentUser?.name || "John Doe"}
             </p>
-            {isSuperAdmin ? (
-              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400" data-testid="badge-super-admin">
-                SUPER ADMIN
-              </span>
-            ) : isFirmAdmin ? (
-              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400" data-testid="badge-firm-admin">
-                FIRM ADMIN
-              </span>
-            ) : (
-              <RoleBadge role={currentUser?.role || "partner"} />
-            )}
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${badgeClasses}`}
+              data-testid={`badge-role-${userRole}`}
+            >
+              {getRoleDisplayLabel(userRole).toUpperCase()}
+            </span>
           </div>
         </div>
       </SidebarFooter>

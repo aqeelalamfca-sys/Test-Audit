@@ -56,7 +56,7 @@ export default function PlatformNotifications() {
     <div className="p-6 space-y-6 max-w-5xl mx-auto" data-testid="platform-notifications-page">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Bell className="h-6 w-6 text-red-600" />
+          <Bell className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold" data-testid="text-page-title">Platform Notifications</h1>
         </div>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>

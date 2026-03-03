@@ -13,7 +13,7 @@ export default function PlatformDashboard() {
   const stats = [
     {
       label: "Total Firms", value: analytics?.totalFirms || 0,
-      icon: Building2, color: "text-red-600", bg: "bg-red-50 dark:bg-red-950",
+      icon: Building2, color: "text-primary", bg: "bg-primary/10",
       href: "/platform/firms", description: "View all registered firms",
     },
     {
@@ -49,7 +49,7 @@ export default function PlatformDashboard() {
   ];
 
   const navItems = [
-    { label: "Firm Management", href: "/platform/firms", icon: Building2, description: "Create, manage, and monitor all tenant firms", accent: "text-red-600" },
+    { label: "Firm Management", href: "/platform/firms", icon: Building2, description: "Create, manage, and monitor all tenant firms", accent: "text-primary" },
     { label: "Plan Management", href: "/platform/plans", icon: BarChart3, description: "Configure subscription plans and pricing", accent: "text-blue-600" },
     { label: "Notifications", href: "/platform/notifications", icon: Bell, description: "Send global or firm-specific alerts", accent: "text-amber-600" },
     { label: "Audit Logs", href: "/platform/audit-logs", icon: FileText, description: "View all platform activity logs", accent: "text-green-600" },
@@ -59,7 +59,7 @@ export default function PlatformDashboard() {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto" data-testid="platform-dashboard">
       <div className="flex items-center gap-3 mb-6">
-        <Shield className="h-8 w-8 text-red-600" />
+        <Shield className="h-8 w-8 text-primary" />
         <div>
           <h1 className="text-2xl font-bold" data-testid="text-page-title">Platform Administration</h1>
           <p className="text-muted-foreground">Super Admin Dashboard — Manage all firms, plans, and platform settings</p>
@@ -93,7 +93,7 @@ export default function PlatformDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {navItems.map((item) => (
           <Link key={item.href} href={item.href}>
-            <Card className="cursor-pointer hover:border-red-400 hover:shadow-md transition-all group" data-testid={`link-${item.label.toLowerCase().replace(/\s/g, '-')}`}>
+            <Card className="cursor-pointer hover:border-primary/40 hover:shadow-md transition-all group" data-testid={`link-${item.label.toLowerCase().replace(/\s/g, '-')}`}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <item.icon className={`h-5 w-5 ${item.accent}`} />

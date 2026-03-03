@@ -291,6 +291,147 @@
   --chart-1: 38 80% 65%;
 }
 
+/* ===== ROLE-BASED THEME OVERRIDES ===== */
+/* Red - Super Admin */
+:root.role-red {
+  --primary: 0 72% 42%;
+  --primary-foreground: 0 100% 98%;
+  --ring: 0 68% 50%;
+  --sidebar-primary: 0 72% 42%;
+  --sidebar-primary-foreground: 0 100% 98%;
+  --sidebar-ring: 0 68% 50%;
+  --chart-1: 0 72% 45%;
+}
+.dark.role-red {
+  --primary: 0 68% 55%;
+  --primary-foreground: 0 100% 98%;
+  --ring: 0 65% 60%;
+  --sidebar-primary: 0 68% 55%;
+  --sidebar-primary-foreground: 0 100% 98%;
+  --sidebar-ring: 0 65% 60%;
+  --chart-1: 0 68% 68%;
+}
+
+/* Orange - Firm Admin */
+:root.role-orange {
+  --primary: 25 90% 42%;
+  --primary-foreground: 25 100% 98%;
+  --ring: 25 85% 50%;
+  --sidebar-primary: 25 90% 42%;
+  --sidebar-primary-foreground: 25 100% 98%;
+  --sidebar-ring: 25 85% 50%;
+  --chart-1: 25 90% 45%;
+}
+.dark.role-orange {
+  --primary: 25 85% 52%;
+  --primary-foreground: 25 100% 98%;
+  --ring: 25 80% 58%;
+  --sidebar-primary: 25 85% 52%;
+  --sidebar-primary-foreground: 25 100% 98%;
+  --sidebar-ring: 25 80% 58%;
+  --chart-1: 25 85% 65%;
+}
+
+/* Purple - Partner / Approver / EQCR */
+:root.role-purple {
+  --primary: 270 65% 45%;
+  --primary-foreground: 270 100% 98%;
+  --ring: 270 60% 52%;
+  --sidebar-primary: 270 65% 45%;
+  --sidebar-primary-foreground: 270 100% 98%;
+  --sidebar-ring: 270 60% 52%;
+  --chart-1: 270 65% 48%;
+}
+.dark.role-purple {
+  --primary: 270 60% 58%;
+  --primary-foreground: 270 100% 98%;
+  --ring: 270 55% 62%;
+  --sidebar-primary: 270 60% 58%;
+  --sidebar-primary-foreground: 270 100% 98%;
+  --sidebar-ring: 270 55% 62%;
+  --chart-1: 270 60% 70%;
+}
+
+/* Blue - Manager / Reviewer / Admin (default fallback) */
+:root.role-blue {
+  --primary: 215 85% 35%;
+  --primary-foreground: 210 100% 98%;
+  --ring: 215 75% 45%;
+  --sidebar-primary: 215 85% 35%;
+  --sidebar-primary-foreground: 210 100% 98%;
+  --sidebar-ring: 215 75% 45%;
+  --chart-1: 215 75% 38%;
+}
+.dark.role-blue {
+  --primary: 215 80% 55%;
+  --primary-foreground: 210 100% 98%;
+  --ring: 215 75% 60%;
+  --sidebar-primary: 215 80% 55%;
+  --sidebar-primary-foreground: 210 100% 98%;
+  --sidebar-ring: 215 75% 60%;
+  --chart-1: 215 80% 68%;
+}
+
+/* Teal - Senior / Preparer / Team Lead */
+:root.role-teal {
+  --primary: 175 70% 32%;
+  --primary-foreground: 175 100% 98%;
+  --ring: 175 65% 40%;
+  --sidebar-primary: 175 70% 32%;
+  --sidebar-primary-foreground: 175 100% 98%;
+  --sidebar-ring: 175 65% 40%;
+  --chart-1: 175 70% 35%;
+}
+.dark.role-teal {
+  --primary: 175 65% 48%;
+  --primary-foreground: 175 100% 98%;
+  --ring: 175 60% 54%;
+  --sidebar-primary: 175 65% 48%;
+  --sidebar-primary-foreground: 175 100% 98%;
+  --sidebar-ring: 175 60% 54%;
+  --chart-1: 175 65% 62%;
+}
+
+/* Green - Staff / User */
+:root.role-green {
+  --primary: 145 65% 32%;
+  --primary-foreground: 145 100% 98%;
+  --ring: 145 60% 40%;
+  --sidebar-primary: 145 65% 32%;
+  --sidebar-primary-foreground: 145 100% 98%;
+  --sidebar-ring: 145 60% 40%;
+  --chart-1: 145 65% 35%;
+}
+.dark.role-green {
+  --primary: 145 60% 45%;
+  --primary-foreground: 145 100% 98%;
+  --ring: 145 55% 52%;
+  --sidebar-primary: 145 60% 45%;
+  --sidebar-primary-foreground: 145 100% 98%;
+  --sidebar-ring: 145 55% 52%;
+  --chart-1: 145 60% 58%;
+}
+
+/* Gray - Read Only / Client */
+:root.role-gray {
+  --primary: 215 15% 46%;
+  --primary-foreground: 210 100% 98%;
+  --ring: 215 12% 54%;
+  --sidebar-primary: 215 15% 46%;
+  --sidebar-primary-foreground: 210 100% 98%;
+  --sidebar-ring: 215 12% 54%;
+  --chart-1: 215 15% 48%;
+}
+.dark.role-gray {
+  --primary: 215 12% 56%;
+  --primary-foreground: 210 100% 98%;
+  --ring: 215 10% 62%;
+  --sidebar-primary: 215 12% 56%;
+  --sidebar-primary-foreground: 210 100% 98%;
+  --sidebar-ring: 215 10% 62%;
+  --chart-1: 215 12% 68%;
+}
+
 @layer base {
   * {
     @apply border-border;

@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { RoleThemeProvider } from "@/components/role-theme-provider";
 import { WorkspaceProvider, useWorkspace } from "@/lib/workspace-context";
 import { AppSidebar } from "@/components/app-sidebar";
 import { TopBar } from "@/components/top-bar";
@@ -464,7 +465,11 @@ function AuthenticatedApp() {
     return <Login />;
   }
 
-  return <AppLayout />;
+  return (
+    <RoleThemeProvider>
+      <AppLayout />
+    </RoleThemeProvider>
+  );
 }
 
 function PortalRouter() {

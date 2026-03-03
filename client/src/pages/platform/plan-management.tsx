@@ -100,7 +100,7 @@ export default function PlanManagement() {
     <div className="p-6 space-y-6 max-w-7xl mx-auto" data-testid="plan-management-page">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <BarChart3 className="h-6 w-6 text-red-600" />
+          <BarChart3 className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold" data-testid="text-page-title">Plan Management</h1>
         </div>
         <Dialog open={showCreateDialog} onOpenChange={(open) => {

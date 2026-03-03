@@ -47,7 +47,7 @@ export default function FirmSettingsPage() {
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto" data-testid="firm-settings-page">
       <div className="flex items-center gap-3">
-        <Settings className="h-6 w-6 text-emerald-600" />
+        <Settings className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold" data-testid="text-page-title">Firm Settings</h1>
       </div>
 

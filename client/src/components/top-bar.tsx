@@ -27,6 +27,8 @@ import { useWorkspace } from "@/lib/workspace-context";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { GlobalSaveIndicator } from "./global-save-indicator";
+import { useRoleTheme } from "@/components/role-theme-provider";
+import { getRoleDisplayLabel, getRoleBadgeClasses } from "@/lib/role-theme";
 
 interface TopBarProps {
   clientName?: string;
@@ -130,6 +132,8 @@ export function TopBar({}: TopBarProps) {
 
   const userRole = user?.role?.toLowerCase();
   const isSuperAdmin = userRole === "super_admin";
+  const { theme } = useRoleTheme();
+  const roleBadgeCls = getRoleBadgeClasses(theme);
 
   return (
     <header className="h-12 border-b border-border/60 bg-background/95 backdrop-blur-sm flex items-center px-4 gap-3">
@@ -387,7 +391,7 @@ export function TopBar({}: TopBarProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
+                <AvatarFallback className={`text-xs font-medium ${theme.avatarBg} ${theme.avatarText}`}>
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -398,7 +402,9 @@ export function TopBar({}: TopBarProps) {
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium">{user?.fullName || "User"}</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
-                <Badge variant="outline" className="w-fit mt-1 capitalize text-[10px]">{user?.role?.toLowerCase()}</Badge>
+                <span className={`inline-flex items-center rounded-full w-fit mt-1 px-2 py-0.5 text-[10px] font-semibold ${roleBadgeCls}`} data-testid="badge-user-role">
+                  {getRoleDisplayLabel(userRole).toUpperCase()}
+                </span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

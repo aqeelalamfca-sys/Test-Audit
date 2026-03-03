@@ -95,6 +95,7 @@ Key architectural patterns and features include:
 - **SuperAdmin Credentials**: `SUPER_ADMIN_EMAIL` / `SUPER_ADMIN_PASSWORD` env vars (default: superadmin@auditwise.pk / SuperAdmin@123)
 - **Frontend Routes**: `/platform/*` (SuperAdmin dashboard, firms, plans, notifications, audit logs, AI config), `/firm-admin/*` (user management, settings, audit logs, AI usage)
 - **Sidebar Navigation**: Role-aware - shows Platform Admin section for SUPER_ADMIN, Firm Administration section for FIRM_ADMIN
+- **Role-Based Theme Engine**: Automatic color theming based on user role hierarchy. CSS custom properties (`--primary`, `--sidebar-primary`) override globally via `role-{color}` classes on `<html>`. RoleThemeProvider applies theme inside AuthProvider. Mapping: SUPER_ADMIN→Red, FIRM_ADMIN→Orange, PARTNER/EQCR/MANAGING_PARTNER→Purple, MANAGER/ADMIN→Blue, SENIOR/TEAM_LEAD→Teal, STAFF→Green, READ_ONLY/CLIENT→Gray. All `bg-primary`, `text-primary` automatically adapt. Files: `client/src/lib/role-theme.ts`, `client/src/components/role-theme-provider.tsx`, `client/src/index.css` (role theme CSS section)
 
 ### Security & Access Control
 - **Rate Limiting Middleware**: Per-user/IP rate limiting for auth, AI, and general API endpoints.
