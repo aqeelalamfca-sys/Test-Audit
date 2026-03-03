@@ -22,6 +22,7 @@ export interface GuideModule {
   locks: string[];
   tabs: GuideModuleTab[];
   workedExample: string;
+  screenshot?: string;
 }
 
 export const USER_GUIDE_REGISTRY: GuideModule[] = [

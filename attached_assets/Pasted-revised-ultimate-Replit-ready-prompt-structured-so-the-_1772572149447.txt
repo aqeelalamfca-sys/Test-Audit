@@ -1,0 +1,283 @@
+revised ultimate Replit-ready prompt, structured so the system must scan → detect gaps → logically design → implement only if missing → validate → deploy, without breaking existing architecture.
+
+✅ ULTIMATE SYSTEM SCAN + LOGICAL GAP DEPLOYMENT PROMPT
+
+Perform a complete technical and compliance audit of the entire AuditWise system (Frontend, Backend, Database, AI Layer, Security, DevOps).
+
+🔎 STEP 1 — INTELLIGENT GAP SCAN (MANDATORY FIRST)
+
+Systematically scan and validate whether the following modules are:
+
+Fully implemented
+
+Partially implemented
+
+Structurally present but inactive
+
+Completely missing
+
+Do NOT overwrite working modules.
+Only deploy components if logically missing or incomplete.
+
+Generate a structured internal gap summary before making changes.
+
+COMPLIANCE & FUNCTIONAL MODULE VALIDATION
+1️⃣ ISA 200–720 Mapping Engine
+
+Verify existence of:
+
+Standard-wise mapping table
+
+ISA reference tagging in working papers
+
+Report generation compliance (ISA 700/705/706/720)
+
+Risk-to-ISA linkage
+
+If partially implemented:
+→ Complete missing mapping tables
+If missing:
+→ Design modular ISA compliance engine with relational mapping
+
+2️⃣ ISQM-1 Firm-Wide Controls
+
+Validate:
+
+Governance & leadership controls
+
+Ethical compliance monitoring
+
+Client acceptance workflow
+
+Resource monitoring
+
+Remediation tracking
+
+Annual evaluation report
+
+If missing or incomplete:
+→ Deploy structured ISQM-1 dashboard
+→ Create control registry table
+→ Add monitoring workflow
+→ Generate annual evaluation export logic
+
+3️⃣ Automated Risk Assessment Engine
+
+Verify:
+
+Materiality calculator
+
+Inherent/control risk scoring
+
+Risk heatmap
+
+Risk-procedure auto mapping
+
+AI-assisted narrative drafting
+
+If missing:
+→ Logically design weighted scoring model
+→ Link risk scores to engagement phase
+→ Ensure dynamic recalculation
+
+4️⃣ Engagement Lifecycle Control
+
+Validate existence of:
+
+Draft → In Progress → Under Review → Approved → Locked → Archived
+
+If status transitions are weak or missing:
+→ Implement controlled state machine
+→ Enforce role-based transition rules
+→ Apply database-level locking after approval
+
+5️⃣ Digital Sign-Off System
+
+Verify:
+
+Single “Complete” action workflow
+
+Server timestamp logging
+
+Immutable audit trail
+
+Role-based validation
+
+IP capture
+
+If missing:
+→ Deploy unified digital sign-off module
+→ Create audit_trail table
+→ Prevent post-approval modification
+
+6️⃣ AI Working Paper Engine
+
+Validate:
+
+Prompt template library
+
+Working paper drafting
+
+ISA reference embedding
+
+AI usage logging
+
+If missing:
+→ Implement AI service layer
+→ Tag AI outputs with engagement ID + ISA ref
+→ Maintain full edit history
+
+7️⃣ Secure Postgres Architecture
+
+Verify:
+
+Multi-tenant isolation
+
+Row-level security
+
+Encrypted env variables
+
+Backup automation
+
+Foreign key integrity
+
+Error logging
+
+If missing:
+→ Implement RLS policies
+→ Enforce firm-level data isolation
+→ Add daily backup cron logic
+
+8️⃣ Pakistan Companies Act 2017 Integration
+
+Validate:
+
+Auditor report format
+
+Director report checklist
+
+Related party disclosures
+
+Section-based compliance tagging
+
+If missing:
+→ Deploy Companies Act compliance module
+→ Map sections to reporting templates
+
+9️⃣ FBR Documentation Module
+
+Verify:
+
+Tax reconciliation templates
+
+Computation formats
+
+Export capability
+
+Adjustment summaries
+
+If missing:
+→ Create FBR-ready documentation engine
+→ Add Excel export logic
+
+🔟 SECP Compliance Dashboard
+
+Validate:
+
+Regulatory checklist
+
+Opinion formatting
+
+XBRL readiness logic
+
+Compliance export summary
+
+If missing:
+→ Deploy SECP compliance tracking dashboard
+
+🔐 SECURITY HARDENING (DEPLOY IF MISSING)
+
+Check and implement only if absent:
+
+RBAC matrix enforcement
+
+Super Admin IP restriction
+
+Password complexity policy
+
+Two-factor authentication
+
+CSRF & XSS protection
+
+API rate limiting
+
+Centralized error handling
+
+Secure headers
+
+Session timeout policy
+
+🚀 DEVOPS & DEPLOYMENT VALIDATION
+
+Verify:
+
+Docker multi-stage production build
+
+Environment variable protection
+
+NGINX reverse proxy
+
+SSL auto configuration
+
+Domain mapping
+
+Restart policy
+
+Backup automation
+
+If any element missing:
+→ Logically implement without disturbing running services.
+
+🧠 STRICT EXECUTION RULES
+
+Do NOT delete working modules
+
+Do NOT duplicate logic
+
+Do NOT break multi-tenant isolation
+
+Do NOT override production database
+
+Apply schema migrations safely
+
+Maintain backward compatibility
+
+Validate before deployment
+
+📊 FINAL REQUIRED OUTPUT
+
+After scan + conditional deployment, generate:
+
+Compliance Coverage Matrix (ISA 200–720)
+
+ISQM-1 Control Register
+
+Risk Engine Logic Diagram
+
+Engagement Workflow Flowchart
+
+RBAC Matrix
+
+Updated ERD
+
+Security Checklist
+
+Deployment Status Report
+
+QCR Readiness Mapping
+
+Production Validation Summary
+
+🔁 FINAL EXECUTION INSTRUCTION
+
+Scan entire system → Identify gaps → Logically design missing structures → Deploy only where absent → Validate dependencies → Optimize → Secure → Generate compliance & deployment report → Confirm production-ready state.

@@ -38,7 +38,7 @@ Key architectural patterns and features include:
 - **Master Configuration Dictionary**: Comprehensive ISA-compliant options for the entire audit system.
 - **IFRS/Local GAAP Notes & Disclosures Generator**: Rule-based generator for Notes to Financial Statements per Pakistan requirements.
 - **Notes to Accounts AI Generation System**: Multi-file reference document upload with AI-powered Notes to Financial Statements generation using GPT-4o.
-- **Live User Guide**: Auto-generated comprehensive user guide with 30+ documented modules covering all platform features.
+- **Live User Guide**: Auto-generated comprehensive user guide with 37 documented modules, per-module screenshot previews with zoom dialog, and Issues/Gaps feedback system.
 - **Hard Controls API**: Unified hard controls validation endpoint providing 7 gate-blocking validations.
 - **Engagement Health Panel**: Collapsible dashboard component showing hard controls status.
 - **Unified SignOffBar Component (Maker-Checker-Approver)**: Reusable component enforcing role-based sign-offs with audit trail.

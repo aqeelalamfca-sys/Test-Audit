@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { USER_GUIDE_REGISTRY } from "@/lib/user-guide-registry";
 import type { GuideModule, GuideModuleTab } from "@/lib/user-guide-registry";
+import { GUIDE_SCREENSHOTS } from "@/lib/guide-screenshots";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +19,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import {
   BookOpen, Download, AlertTriangle, CheckCircle2, Clock,
   ChevronRight, ChevronDown, Search, Plus, Shield, FileText,
-  Info, ExternalLink, Lock, Users, Layers, ArrowRight
+  Info, ExternalLink, Lock, Users, Layers, ArrowRight, ImageIcon, ZoomIn
 } from "lucide-react";
 
 interface GuideIssue {
@@ -354,6 +355,47 @@ export default function UserGuide() {
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Purpose</h4>
                   <p className="text-sm">{mod.purpose}</p>
                 </div>
+
+                {(() => {
+                  const screenshotSrc = mod.screenshot || GUIDE_SCREENSHOTS[mod.key];
+                  if (!screenshotSrc) return null;
+                  return (
+                    <div>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                        <ImageIcon className="h-3 w-3" />
+                        Module Preview
+                      </h4>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <div className="relative group cursor-pointer rounded-md overflow-hidden border border-border/50 bg-muted/20" data-testid={`screenshot-${mod.key}`}>
+                            <img
+                              src={screenshotSrc}
+                              alt={`${mod.label} screenshot`}
+                              className="w-full h-auto max-h-[280px] object-cover object-top"
+                              loading="lazy"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background/90 rounded-full p-2 shadow-sm">
+                                <ZoomIn className="h-4 w-4 text-foreground" />
+                              </div>
+                            </div>
+                          </div>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto p-2">
+                          <DialogHeader className="pb-0">
+                            <DialogTitle className="text-sm">{mod.label}</DialogTitle>
+                            <DialogDescription className="text-xs text-muted-foreground">Module screenshot preview</DialogDescription>
+                          </DialogHeader>
+                          <img
+                            src={screenshotSrc}
+                            alt={`${mod.label} screenshot`}
+                            className="w-full h-auto rounded-md"
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  );
+                })()}
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {mod.prerequisites.length > 0 && (
