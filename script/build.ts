@@ -48,17 +48,6 @@ async function buildAll() {
   console.log("generating prisma client...");
   execSync("npx prisma generate", { stdio: "inherit" });
 
-  if (process.env.DATABASE_URL) {
-    console.log("syncing database schema...");
-    try {
-      execSync("npx prisma db push", { stdio: "inherit" });
-    } catch (e) {
-      console.warn("prisma db push warning (continuing build):", (e as any).message || e);
-    }
-  } else {
-    console.log("no DATABASE_URL set, skipping db push");
-  }
-
   console.log("building client...");
   await viteBuild();
 
