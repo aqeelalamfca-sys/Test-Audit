@@ -295,7 +295,40 @@ export default function PricingPage() {
           </div>
         )}
 
-        <div className="mt-8 max-w-4xl mx-auto">
+        <div className="mt-10 max-w-4xl mx-auto">
+          <div className="rounded-lg border border-emerald-200/70 dark:border-emerald-800/40 bg-emerald-50/30 dark:bg-emerald-950/15 p-6">
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="h-7 w-7 rounded-md bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                <Shield className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-foreground" data-testid="heading-pricing-justified">Why This Pricing is Justified</h3>
+                <p className="text-[11px] text-muted-foreground">Built-in compliance coverage across every plan</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
+              {[
+                "ISA 200\u2013720 full mapping",
+                "ISQM-1 firm-wide controls",
+                "Automated risk assessment engine",
+                "End-to-end engagement lifecycle control",
+                "Preparer\u2013Reviewer\u2013Partner digital sign-off workflow",
+                "AI-assisted working paper drafting",
+                "Secure Postgres encrypted database",
+                "Pakistan Companies Act 2017 integration",
+                "FBR-ready documentation structure",
+                "SECP compliance alignment",
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-2 py-1" data-testid={`pricing-feature-${i}`}>
+                  <Check className="h-3.5 w-3.5 mt-0.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
+                  <span className="text-[12.5px] text-muted-foreground leading-snug">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 max-w-4xl mx-auto">
           <Card className="border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30">
             <CardContent className="p-5">
               <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
