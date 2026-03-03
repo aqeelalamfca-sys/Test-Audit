@@ -93,6 +93,17 @@ app.use("/uploads/logos", express.static(path.join(process.cwd(), "uploads", "lo
 
 app.use(compression());
 
+if (isProduction) {
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    next();
+  });
+}
+
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.method === 'GET' && req.path.startsWith('/api/') && !req.path.includes('/auth/')) {
     res.setHeader('Cache-Control', 'private, max-age=30');
@@ -103,8 +114,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use((req: Request, res: Response, next: NextFunction) => {
   const origin = req.headers.origin;
   if (origin) {
-    const allowedOrigins = process.env.CORS_ORIGINS?.split(",").map(o => o.trim());
-    if (!isProduction || !allowedOrigins || allowedOrigins.includes(origin)) {
+    const allowedOrigins = process.env.CORS_ORIGINS?.split(",").map(o => o.trim()).filter(Boolean);
+    if (!isProduction || (allowedOrigins && allowedOrigins.length > 0 && allowedOrigins.includes(origin))) {
       res.setHeader("Access-Control-Allow-Origin", origin);
     }
   }
@@ -429,14 +440,27 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     await runBillingCycle();
     const billingInterval = setInterval(runBillingCycle, 60 * 60 * 1000);
 
-    const shutdown = async () => {
+    let isShuttingDown = false;
+    const shutdown = async (signal: string) => {
+      if (isShuttingDown) return;
+      isShuttingDown = true;
+      console.log(`[SHUTDOWN] Received ${signal}, draining connections...`);
       clearInterval(keepaliveInterval);
       clearInterval(billingInterval);
-      await prisma.$disconnect();
-      httpServer.close();
-      process.exit(0);
+      
+      httpServer.close(async () => {
+        console.log("[SHUTDOWN] HTTP server closed, disconnecting database...");
+        await prisma.$disconnect();
+        console.log("[SHUTDOWN] Clean shutdown complete.");
+        process.exit(0);
+      });
+      
+      setTimeout(() => {
+        console.error("[SHUTDOWN] Forced exit after 15s drain timeout.");
+        process.exit(1);
+      }, 15000).unref();
     };
-    process.on('SIGTERM', shutdown);
-    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
   })();
 })();

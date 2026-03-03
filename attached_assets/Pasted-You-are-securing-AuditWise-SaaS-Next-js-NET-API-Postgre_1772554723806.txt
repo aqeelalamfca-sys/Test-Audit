@@ -1,0 +1,176 @@
+You are securing AuditWise SaaS (Next.js + .NET API + Postgres, multi-tenant). 
+Implement enterprise-grade security so that cyber attacks are prevented, detected, and contained using defense-in-depth architecture.
+
+GOAL:
+No unauthorized access, no data leakage between firms, no privilege escalation, no injection, no session hijacking, no brute force success, no direct DB exposure.
+
+------------------------------------------------------------
+A) ZERO-TRUST AUTHENTICATION & AUTHORIZATION
+------------------------------------------------------------
+
+1) Use JWT with:
+   - short expiry (15 min access token)
+   - refresh token rotation
+   - revoke on logout
+2) Store refresh tokens hashed in DB.
+3) Enforce RBAC strictly:
+   - SUPER_ADMIN → platform only
+   - FIRM_ADMIN / PARTNER / MANAGER / PREPARER → tenant scoped
+4) All endpoints must require role-based policy.
+5) Deny-by-default policy (no anonymous access except /login /signup).
+
+------------------------------------------------------------
+B) PASSWORD & LOGIN SECURITY
+------------------------------------------------------------
+
+1) Enforce password policy:
+   - min 8 chars
+   - at least 1 uppercase
+   - at least 1 lowercase
+   - at least 1 number
+   - at least 1 special character
+2) Hash passwords using BCrypt (work factor >= 12) or ASP.NET Identity.
+3) Implement login rate limiting:
+   - max 5 failed attempts per 15 min per IP/email.
+4) Lock account after repeated failures (temporary lock).
+5) Optional: enable 2FA (TOTP-based).
+
+------------------------------------------------------------
+C) DATABASE SECURITY (CRITICAL)
+------------------------------------------------------------
+
+1) Enable Postgres Row Level Security (RLS) on all tenant tables.
+2) Ensure application DB user:
+   - NOT superuser
+   - NO BYPASSRLS
+   - limited privileges only.
+3) All tenant queries must set:
+   SELECT set_config('app.firm_id', '<firm_uuid>', true);
+4) Disable public schema writes.
+5) Never expose DB port publicly (allow only internal/VPS).
+
+------------------------------------------------------------
+D) INPUT VALIDATION & API HARDENING
+------------------------------------------------------------
+
+1) Use FluentValidation (or equivalent) on all request models.
+2) Prevent:
+   - SQL Injection (use parameterized queries / EF Core)
+   - XSS (sanitize inputs, encode output)
+   - CSRF (anti-forgery tokens for state-changing requests)
+3) Validate file uploads:
+   - allow only specific extensions
+   - max file size limit
+   - scan file type server-side.
+4) Disable stack traces in production.
+
+------------------------------------------------------------
+E) FRONTEND SECURITY (NEXT.JS)
+------------------------------------------------------------
+
+1) Use HttpOnly, Secure cookies.
+2) Enable strict CSP headers:
+   Content-Security-Policy
+   X-Frame-Options: DENY
+   X-Content-Type-Options: nosniff
+   Referrer-Policy: strict-origin
+3) Disable inline scripts where possible.
+4) Protect against DOM-based XSS.
+
+------------------------------------------------------------
+F) SERVER & INFRASTRUCTURE HARDENING
+------------------------------------------------------------
+
+1) Use HTTPS only (force redirect HTTP → HTTPS).
+2) Enable HSTS.
+3) Use firewall:
+   - Allow 80/443 only
+   - Block DB port externally.
+4) Fail2Ban or equivalent for SSH brute force.
+5) Rotate server keys regularly.
+6) Disable root login via SSH.
+7) Use environment variables for secrets.
+8) Never commit secrets to GitHub.
+
+------------------------------------------------------------
+G) RATE LIMITING & DDOS PROTECTION
+------------------------------------------------------------
+
+1) Global rate limiting middleware:
+   - e.g., 100 requests/min per IP
+2) Strict rate limit for login endpoint.
+3) Optional: integrate Cloudflare / reverse proxy protection.
+4) Add request size limits to prevent payload abuse.
+
+------------------------------------------------------------
+H) AUDIT LOGGING & DETECTION
+------------------------------------------------------------
+
+1) Log:
+   - login attempts (success/failure)
+   - role changes
+   - plan changes
+   - permission escalations
+2) Store logs in append-only audit table.
+3) Alert on:
+   - repeated failed logins
+   - privilege escalation attempt
+   - abnormal request spikes
+4) Do not log sensitive data (passwords, tokens).
+
+------------------------------------------------------------
+I) FILE STORAGE SECURITY
+------------------------------------------------------------
+
+1) Store uploaded files outside web root.
+2) Use GUID file names (not user-provided names).
+3) Require authenticated access to download.
+4) Validate firm ownership before file access.
+
+------------------------------------------------------------
+J) TENANT ISOLATION (CRITICAL)
+------------------------------------------------------------
+
+1) Strict separation:
+   - Platform routes (/platform/*)
+   - Tenant routes (/app/*)
+2) Super Admin cannot access tenant data.
+3) Enforce RLS at DB level.
+4) Consider database-per-tenant for highest isolation.
+
+------------------------------------------------------------
+K) BACKUP & DISASTER RECOVERY
+------------------------------------------------------------
+
+1) Daily encrypted DB backups.
+2) Store backups off-server.
+3) Test restore procedure monthly.
+4) Implement backup retention policy.
+
+------------------------------------------------------------
+L) PRODUCTION MODE HARDENING
+------------------------------------------------------------
+
+1) Set ASPNETCORE_ENVIRONMENT=Production
+2) Disable Swagger in production.
+3) Remove debug endpoints.
+4) Disable detailed error messages.
+
+------------------------------------------------------------
+ACCEPTANCE CRITERIA
+------------------------------------------------------------
+
+- Brute force login blocked.
+- Cross-firm data access impossible (RLS enforced).
+- No SQL injection possible.
+- No XSS vulnerability.
+- DB not publicly accessible.
+- All traffic HTTPS only.
+- Super Admin cannot read tenant audit data.
+- Logs capture security events.
+- Passwords never stored plaintext.
+- Secrets stored only in environment variables.
+
+Implement security layers cleanly and production-ready.
+No hardcoded credentials. No backdoors. No bypass roles.
+Defense-in-depth architecture required.

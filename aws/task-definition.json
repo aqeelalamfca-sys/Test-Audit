@@ -22,6 +22,7 @@
         { "name": "PORT", "value": "5000" },
         { "name": "FIRM_NAME", "value": "Your Audit Firm Name" },
         { "name": "ADMIN_EMAIL", "value": "admin@yourfirm.com" },
+        { "name": "INITIAL_SUPER_ADMIN_EMAIL", "value": "superadmin@auditwise.pk" },
         { "name": "CORS_ORIGINS", "value": "https://yourdomain.com" },
         { "name": "NODE_HEAP_SIZE", "value": "2560" }
       ],
@@ -35,8 +36,16 @@
           "valueFrom": "arn:aws:secretsmanager:YOUR_REGION:YOUR_ACCOUNT_ID:secret:auditwise/session-secret"
         },
         {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:YOUR_REGION:YOUR_ACCOUNT_ID:secret:auditwise/jwt-secret"
+        },
+        {
           "name": "ADMIN_PASSWORD",
           "valueFrom": "arn:aws:secretsmanager:YOUR_REGION:YOUR_ACCOUNT_ID:secret:auditwise/admin-password"
+        },
+        {
+          "name": "INITIAL_SUPER_ADMIN_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:YOUR_REGION:YOUR_ACCOUNT_ID:secret:auditwise/super-admin-password"
         },
         {
           "name": "OPENAI_API_KEY",
