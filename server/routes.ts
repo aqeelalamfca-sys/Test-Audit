@@ -2070,48 +2070,102 @@ export async function registerRoutes(
 
   app.get("/api/guide-issues", async (req, res) => {
     if (!req.user) return res.status(401).json({ error: "Not authenticated" });
-    const issues = await storage.getGuideIssues();
-    res.json(issues);
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
+    try {
+      const issues = await prisma.firmFeedback.findMany({
+        where: { firmId },
+        include: { createdBy: { select: { fullName: true, role: true } } },
+        orderBy: { createdAt: "desc" },
+      });
+      res.json(issues);
+    } catch (error) {
+      console.error("Error fetching guide issues:", error);
+      res.status(500).json({ error: "Failed to fetch issues" });
+    }
   });
 
   app.post("/api/guide-issues", async (req, res) => {
     if (!req.user) return res.status(401).json({ error: "Not authenticated" });
-    const { moduleKey, pageKey, title, description } = req.body;
-    if (!moduleKey || !title || !description) return res.status(400).json({ error: "Missing required fields" });
-    const issue = await storage.createGuideIssue({
-      moduleKey,
-      pageKey: pageKey || null,
-      title,
-      description,
-      status: "open",
-      createdBy: req.user!.id,
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
+    const feedbackSchema = z.object({
+      moduleKey: z.string().min(1),
+      title: z.string().min(1).max(200),
+      description: z.string().min(1).max(2000),
+      priority: z.enum(["low", "medium", "high", "critical"]).default("medium"),
     });
-    res.status(201).json(issue);
+    const parsed = feedbackSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "Validation failed", details: parsed.error.errors });
+    const { moduleKey, title, description, priority } = parsed.data;
+    try {
+      const issue = await prisma.firmFeedback.create({
+        data: {
+          firmId,
+          moduleKey,
+          title,
+          description,
+          priority,
+          status: "open",
+          createdById: req.user!.id,
+        },
+        include: { createdBy: { select: { fullName: true, role: true } } },
+      });
+      res.status(201).json(issue);
+    } catch (error) {
+      console.error("Error creating guide issue:", error);
+      res.status(500).json({ error: "Failed to create issue" });
+    }
   });
 
   app.patch("/api/guide-issues/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
-    const role = (req.user as any)?.role;
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
+    const role = req.user!.role;
     if (!["ADMIN", "PARTNER", "MANAGING_PARTNER"].includes(role)) {
       return res.status(403).json({ message: "Only Admin/Partner can update issue status" });
     }
     const { status } = req.body;
-    if (!status || !["open", "in_review", "fixed"].includes(status)) {
+    if (!status || !["open", "in_review", "acknowledged", "resolved", "fixed"].includes(status)) {
       return res.status(400).json({ error: "Invalid status" });
     }
-    const updated = await storage.updateGuideIssue(req.params.id, { status });
-    if (!updated) return res.status(404).json({ error: "Issue not found" });
-    res.json(updated);
+    try {
+      const existing = await prisma.firmFeedback.findFirst({
+        where: { id: req.params.id, firmId },
+      });
+      if (!existing) return res.status(404).json({ error: "Issue not found" });
+      const updated = await prisma.firmFeedback.update({
+        where: { id: req.params.id },
+        data: { status },
+        include: { createdBy: { select: { fullName: true, role: true } } },
+      });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating guide issue:", error);
+      res.status(500).json({ error: "Failed to update issue" });
+    }
   });
 
   app.delete("/api/guide-issues/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
-    const role = (req.user as any)?.role;
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
+    const role = req.user!.role;
     if (!["ADMIN", "PARTNER", "MANAGING_PARTNER"].includes(role)) {
       return res.status(403).json({ message: "Insufficient permissions" });
     }
-    await storage.deleteGuideIssue(req.params.id);
-    res.json({ success: true });
+    try {
+      const existing = await prisma.firmFeedback.findFirst({
+        where: { id: req.params.id, firmId },
+      });
+      if (!existing) return res.status(404).json({ error: "Issue not found" });
+      await prisma.firmFeedback.delete({ where: { id: req.params.id } });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting guide issue:", error);
+      res.status(500).json({ error: "Failed to delete issue" });
+    }
   });
 
   app.get("/api/version", (req, res) => {

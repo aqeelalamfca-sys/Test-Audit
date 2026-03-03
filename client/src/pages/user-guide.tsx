@@ -23,13 +23,16 @@ import {
 
 interface GuideIssue {
   id: string;
+  firmId: string;
   moduleKey: string;
-  pageKey: string | null;
   title: string;
   description: string;
+  priority: string;
   status: string;
-  createdBy: string;
+  createdById: string;
+  createdBy: { fullName: string; role: string } | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 interface VersionInfo {
@@ -46,7 +49,7 @@ export default function UserGuide() {
   const [activeGuideTab, setActiveGuideTab] = useState("guide");
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const [issueDialog, setIssueDialog] = useState(false);
-  const [newIssue, setNewIssue] = useState({ moduleKey: "", title: "", description: "" });
+  const [newIssue, setNewIssue] = useState({ moduleKey: "", title: "", description: "", priority: "medium" });
 
   const { data: versionInfo, isLoading: versionLoading } = useQuery<VersionInfo>({
     queryKey: ["/api/version"],
@@ -57,15 +60,15 @@ export default function UserGuide() {
   });
 
   const submitIssueMutation = useMutation({
-    mutationFn: async (issue: { moduleKey: string; title: string; description: string }) => {
+    mutationFn: async (issue: { moduleKey: string; title: string; description: string; priority: string }) => {
       const res = await apiRequest("POST", "/api/guide-issues", issue);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/guide-issues"] });
       setIssueDialog(false);
-      setNewIssue({ moduleKey: "", title: "", description: "" });
-      toast({ title: "Issue submitted", description: "Your feedback has been recorded." });
+      setNewIssue({ moduleKey: "", title: "", description: "", priority: "medium" });
+      toast({ title: "Issue submitted", description: "Your feedback has been recorded and is visible to the platform team." });
     },
   });
 
@@ -630,6 +633,20 @@ export default function UserGuide() {
                       />
                     </div>
                     <div>
+                      <label className="text-sm font-medium">Priority</label>
+                      <Select value={newIssue.priority} onValueChange={v => setNewIssue(prev => ({ ...prev, priority: v }))}>
+                        <SelectTrigger data-testid="select-issue-priority">
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="critical">Critical</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
                       <label className="text-sm font-medium">Description</label>
                       <Textarea
                         placeholder="Detailed description of the missing step, screen, or gap..."
@@ -674,16 +691,35 @@ export default function UserGuide() {
                           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                             <Badge variant="outline" className="text-[10px]">{mod?.label || issue.moduleKey}</Badge>
                             <Badge
-                              variant={issue.status === "fixed" ? "default" : issue.status === "in_review" ? "secondary" : "destructive"}
+                              variant={
+                                issue.status === "fixed" || issue.status === "resolved" ? "default" :
+                                issue.status === "in_review" ? "secondary" :
+                                issue.status === "acknowledged" ? "outline" :
+                                "destructive"
+                              }
                               className="text-[10px]"
                             >
-                              {issue.status === "open" ? "Open" : issue.status === "in_review" ? "In Review" : "Fixed"}
+                              {issue.status === "open" ? "Open" :
+                               issue.status === "in_review" ? "In Review" :
+                               issue.status === "acknowledged" ? "Acknowledged" :
+                               issue.status === "resolved" ? "Resolved" : "Fixed"}
+                            </Badge>
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] ${
+                                issue.priority === "critical" ? "border-red-500 text-red-600" :
+                                issue.priority === "high" ? "border-orange-500 text-orange-600" :
+                                issue.priority === "medium" ? "border-yellow-500 text-yellow-600" :
+                                "border-gray-400 text-gray-500"
+                              }`}
+                            >
+                              {issue.priority?.charAt(0).toUpperCase() + issue.priority?.slice(1) || "Medium"}
                             </Badge>
                           </div>
                           <p className="text-sm font-medium">{issue.title}</p>
                           <p className="text-xs text-muted-foreground mt-0.5">{issue.description}</p>
                           <p className="text-[10px] text-muted-foreground mt-1">
-                            Reported: {new Date(issue.createdAt).toLocaleDateString("en-GB")}
+                            By: {issue.createdBy?.fullName || "Unknown"} · {new Date(issue.createdAt).toLocaleDateString("en-GB")}
                           </p>
                         </div>
                         {user?.role === "admin" || user?.role === "partner" ? (
@@ -697,6 +733,8 @@ export default function UserGuide() {
                             <SelectContent>
                               <SelectItem value="open">Open</SelectItem>
                               <SelectItem value="in_review">In Review</SelectItem>
+                              <SelectItem value="acknowledged">Acknowledged</SelectItem>
+                              <SelectItem value="resolved">Resolved</SelectItem>
                               <SelectItem value="fixed">Fixed</SelectItem>
                             </SelectContent>
                           </Select>

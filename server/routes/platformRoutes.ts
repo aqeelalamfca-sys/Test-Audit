@@ -1046,4 +1046,112 @@ router.delete("/invites/:id", async (req: AuthenticatedRequest, res: Response) =
   }
 });
 
+// ========== FIRM FEEDBACK / ISSUES ==========
+
+router.get("/feedback", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { firmId, status, priority, page = "1", limit = "50" } = req.query;
+    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+    const take = parseInt(limit as string);
+
+    const where: any = {};
+    if (firmId) where.firmId = firmId;
+    if (status) where.status = status;
+    if (priority) where.priority = priority;
+
+    const [items, total] = await Promise.all([
+      prisma.firmFeedback.findMany({
+        where,
+        include: {
+          firm: { select: { id: true, name: true, displayName: true, logoUrl: true } },
+          createdBy: { select: { id: true, fullName: true, role: true, email: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take,
+      }),
+      prisma.firmFeedback.count({ where }),
+    ]);
+
+    const stats = await prisma.firmFeedback.groupBy({
+      by: ["status"],
+      _count: { id: true },
+    });
+
+    res.json({
+      items,
+      total,
+      page: parseInt(page as string),
+      totalPages: Math.ceil(total / take),
+      stats: stats.reduce((acc, s) => ({ ...acc, [s.status]: s._count.id }), {} as Record<string, number>),
+    });
+  } catch (error) {
+    console.error("Error fetching platform feedback:", error);
+    res.status(500).json({ error: "Failed to fetch feedback" });
+  }
+});
+
+router.get("/feedback/by-firm", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const firms = await prisma.firm.findMany({
+      select: {
+        id: true,
+        name: true,
+        displayName: true,
+        logoUrl: true,
+        feedbacks: {
+          include: {
+            createdBy: { select: { fullName: true, role: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+      where: {
+        feedbacks: { some: {} },
+      },
+      orderBy: { name: "asc" },
+    });
+
+    res.json(firms);
+  } catch (error) {
+    console.error("Error fetching feedback by firm:", error);
+    res.status(500).json({ error: "Failed to fetch feedback by firm" });
+  }
+});
+
+router.patch("/feedback/:id/status", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { status } = req.body;
+    if (!status || !["open", "in_review", "acknowledged", "resolved"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+
+    const existing = await prisma.firmFeedback.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ error: "Feedback item not found" });
+
+    const feedback = await prisma.firmFeedback.update({
+      where: { id: req.params.id },
+      data: { status },
+      include: {
+        firm: { select: { id: true, name: true } },
+        createdBy: { select: { fullName: true, role: true } },
+      },
+    });
+
+    await logPlatformAction(
+      req.user!.id,
+      "FEEDBACK_STATUS_UPDATE",
+      "FirmFeedback",
+      feedback.id,
+      extractRequestMeta(req),
+      { firmId: feedback.firmId, newStatus: status, title: feedback.title }
+    );
+
+    res.json(feedback);
+  } catch (error) {
+    console.error("Error updating feedback status:", error);
+    res.status(500).json({ error: "Failed to update feedback status" });
+  }
+});
+
 export default router;

@@ -88,6 +88,7 @@ const PlanManagement = lazy(() => retryImport(() => import("@/pages/platform/pla
 const PlatformNotifications = lazy(() => retryImport(() => import("@/pages/platform/platform-notifications")));
 const PlatformAuditLogs = lazy(() => retryImport(() => import("@/pages/platform/platform-audit-logs")));
 const PlatformAIConfig = lazy(() => retryImport(() => import("@/pages/platform/platform-ai-config")));
+const PlatformFeedback = lazy(() => retryImport(() => import("@/pages/platform/platform-feedback")));
 const FirmUsersPage = lazy(() => retryImport(() => import("@/pages/firm-admin/firm-users")));
 const FirmSettingsPage = lazy(() => retryImport(() => import("@/pages/firm-admin/firm-settings")));
 const FirmAuditLogsPage = lazy(() => retryImport(() => import("@/pages/firm-admin/firm-audit-logs")));
@@ -219,6 +220,7 @@ const GuardedPlanManagement = createRoleGuardedComponent(PlanManagement, "SUPER_
 const GuardedPlatformNotifications = createRoleGuardedComponent(PlatformNotifications, "SUPER_ADMIN");
 const GuardedPlatformAuditLogs = createRoleGuardedComponent(PlatformAuditLogs, "SUPER_ADMIN");
 const GuardedPlatformAIConfig = createRoleGuardedComponent(PlatformAIConfig, "SUPER_ADMIN");
+const GuardedPlatformFeedback = createRoleGuardedComponent(PlatformFeedback, "SUPER_ADMIN");
 const GuardedFirmUsers = createRoleGuardedComponent(FirmUsersPage, "FIRM_ADMIN");
 const GuardedFirmSettings = createRoleGuardedComponent(FirmSettingsPage, "FIRM_ADMIN");
 const GuardedFirmAuditLogs = createRoleGuardedComponent(FirmAuditLogsPage, "FIRM_ADMIN");
@@ -296,6 +298,7 @@ function Router() {
       <Route path="/platform/notifications" component={GuardedPlatformNotifications} />
       <Route path="/platform/audit-logs" component={GuardedPlatformAuditLogs} />
       <Route path="/platform/ai-config" component={GuardedPlatformAIConfig} />
+      <Route path="/platform/feedback" component={GuardedPlatformFeedback} />
 
       {/* Firm Admin routes (FirmAdmin+ role guard) */}
       <Route path="/firm-admin" component={GuardedFirmSettings} />

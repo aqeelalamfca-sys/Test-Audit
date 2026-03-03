@@ -219,6 +219,7 @@ model Firm {
   platformAuditLogs     PlatformAuditLog[]
   aiUsageRecords        AIUsageRecord[]
   firmInvites           FirmInvite[]
+  feedbacks             FirmFeedback[] @relation("FirmFeedbacks")
 }
 
 model Plan {
@@ -862,6 +863,7 @@ model User {
   resolvedReconIssues ReconIssue[]      @relation("ReconIssueResolver")
   generatedDraftFS    DraftFSSnapshot[] @relation("DraftFSSnapshotGenerator")
   finalizationBoards  FinalizationBoard[] @relation("UserFinalizationBoards")
+  feedbacks           FirmFeedback[]     @relation("UserFeedbacks")
 }
 
 model Session {
@@ -12655,4 +12657,24 @@ model FinalizationBoard {
   @@index([engagementId])
   @@index([userId])
   @@index([engagementId, userId])
+}
+
+model FirmFeedback {
+  id          String   @id @default(uuid())
+  firmId      String
+  moduleKey   String
+  title       String
+  description String
+  priority    String   @default("medium")
+  status      String   @default("open")
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  firm      Firm @relation("FirmFeedbacks", fields: [firmId], references: [id], onDelete: Cascade)
+  createdBy User @relation("UserFeedbacks", fields: [createdById], references: [id])
+
+  @@index([firmId])
+  @@index([firmId, status])
+  @@index([createdById])
 }

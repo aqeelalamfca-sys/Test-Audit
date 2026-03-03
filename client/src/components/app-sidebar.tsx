@@ -34,6 +34,7 @@ import {
   Bot,
   Crown,
   Rocket,
+  MessageSquare,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth";
@@ -264,6 +265,19 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       <Link href="/platform/ai-config">
                         <Bot className={`h-4 w-4 ${iconClasses}`} />
                         <span>AI Configuration</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/platform/feedback"}
+                      data-testid="nav-platform-feedback"
+                      className={activeClasses}
+                    >
+                      <Link href="/platform/feedback">
+                        <MessageSquare className={`h-4 w-4 ${iconClasses}`} />
+                        <span>Firm Feedback</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

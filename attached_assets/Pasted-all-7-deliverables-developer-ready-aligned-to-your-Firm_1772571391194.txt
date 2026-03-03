@@ -1,0 +1,217 @@
+all 7 deliverables, developer-ready, aligned to your Firm Wide Controls module (ISQM1/ISQM2/IESBA/ISA 220 Rev) in a multi-tenant SaaS where Super Admin cannot see firm data.
+
+1) Developer-ready ERD diagram (Mermaid)
+2) RBAC Matrix (Roles × Actions × Objects)
+
+Roles
+
+SA = Super Admin (platform)
+
+FA = Firm Admin
+
+PR = Partner (quality leader)
+
+MG = Manager (monitoring lead)
+
+AS = Associate/Staff
+
+Object / Module	Action	SA	FA	PR	MG	AS
+Administration Menu	View “Firm Wide Controls”	✖	✔	✔	✔ (read)	✔ (read limited)
+ISQM Objectives	Create/Edit/Retire	✖	✔	✔	✖	✖
+ISQM Objectives	Approve	✖	✖	✔	✖	✖
+Risks	Create/Edit/Rate	✖	✔	✔	✔	✖
+Responses	Create/Edit/Implement	✖	✔	✔	✔	✖
+Responses	Mark Tested / Verified	✖	✖	✔	✔	✖
+Policy Documents	Upload / Version / Publish	✖	✔	✔	✖	✖
+Ethics Program	Configure rules	✖	✔	✔	✖	✖
+Independence Declaration	Submit own	✖	✔	✔	✔	✔
+Independence Declaration	Review/Approve others	✖	✔	✔	✔ (team)	✖
+EQCR Policy	Configure criteria	✖	✔	✔	✖	✖
+EQCR Assignments	Assign EQCR Partner	✖	✔	✔	✔	✖
+EQCR Review	Complete sign-off	✖	✖	✔ (if EQCR)	✖	✖
+Monitoring Reviews	Plan/Run/Issue report	✖	✔	✔	✔	✖
+Deficiencies	Create / Assign owner	✖	✔	✔	✔	✖
+Remediation Actions	Execute action	✖	✖	✔	✔	✔ (assigned only)
+Remediation Actions	Verify / Close	✖	✖	✔	✔	✖
+Audit Logs	View (firm scope)	✖	✔	✔	✔	✖
+Platform Billing / Plans	Manage	✔	✖	✖	✖	✖
+Tenant Data (firm policies, objectives)	View/Query	✖ (no access)	✔	✔	✔ (as permitted)	✔ (limited)
+
+Key enforcement rule: every firm-scoped endpoint requires firm_id from session/tenant context; SA endpoints must never accept firm_id query parameters.
+
+3) Status transition flowchart (Mermaid)
+A) Firm Wide Controls lifecycle (Objective → Risk → Response → Test)
+B) Engagement “readiness gate” dependency (ISQM + Ethics + EQCR)
+4) UI Wireframe (Admin → Firm Wide Controls)
+Sidebar (Administration)
+
+Firm Settings
+
+Users & Roles
+
+Reports
+
+Admin Settings
+
+Firm Wide Controls (NEW)
+
+Page Wireframe (ASCII)
+┌─────────────────────────────────────────────────────────────────────┐
+│ Firm Wide Controls  [Compliance Score: 78%]  [Export Manual PDF]     │
+│ Breadcrumb: Administration > Firm Wide Controls                       │
+├─────────────────────────────────────────────────────────────────────┤
+│ Tabs: [ISQM 1 Components] [ISQM 2 EQCR] [Ethics] [Monitoring] [Docs] │
+├─────────────────────────────────────────────────────────────────────┤
+│ ISQM 1 Components (Accordion + Stepper)                               │
+│  1) Governance & Leadership  (GREEN)  [View]                          │
+│  2) Ethical Requirements     (AMBER)  [View]                          │
+│  3) Acceptance & Continuance (RED)    [View]                          │
+│  4) Engagement Performance   (AMBER)  [View]                          │
+│  5) Resources                (GREEN)  [View]                          │
+│  6) Info & Communication     (GREEN)  [View]                          │
+│  7) Monitoring & Remediation (AMBER)  [View]                          │
+├─────────────────────────────────────────────────────────────────────┤
+│ Selected Component Panel (e.g., Acceptance & Continuance)             │
+│  Objectives  | Risks | Responses | Evidence | Review Cycle            │
+│  [+ New Objective]  [AI Suggest Objectives]                           │
+│  Objective List (table)                                               │
+│   - Title | Status | Last Review | Next Due | Owner | RAG             │
+│   - Click row -> drawer: details, risks, responses                    │
+│                                                                     │
+│  Drawer: Objective Details                                            │
+│   - Risks: [+ Add Risk] [AI Suggest Risks]                             │
+│   - Responses: [+ Add Response] [AI Suggest Response]                  │
+│   - Implementation: Planned/InProgress/Implemented/Tested              │
+│   - Upload Evidence (policy/testing)                                  │
+│   - Approvals: Prepared/Reviewed/Approved (role-based)                │
+└─────────────────────────────────────────────────────────────────────┘
+
+UI rules
+
+RAG is computed, not user-entered.
+
+“AI Suggest” actions create draft suggestions requiring human approval.
+
+5) SaaS subscription logic integration (Trial → Active → Dormant)
+Plan/Status model (firm-level)
+
+trial → active → suspended → dormant → deleted
+
+Enforcement logic
+
+Trial (60 days)
+
+Full access except: watermark on exports, limited file storage, limited AI credits.
+
+Trial Expired
+
+If not paid: firm becomes dormant
+
+Dormant means: read-only access (view only), no edits, no new engagements, no exports.
+
+Dormant retention
+
+After retention window (e.g., 30 days) → soft-delete + scheduled hard delete per policy.
+
+Suspended
+
+Due to billing failure or compliance breach; similar to dormant but with SA messaging and admin notice.
+
+Subscription gating points (must be centralized middleware)
+
+Block write APIs for: objectives/risks/responses/policy uploads/monitoring reviews/exports when not active or trial.
+
+Block engagements from “issue” if not active.
+
+SA can manage billing, but cannot query any firm tables.
+
+“Firm Wide Controls” specific gating
+
+Exports (Quality Manual PDF, Monitoring reports) active only (trial gets watermark).
+
+Document uploads active/trial only.
+
+Independence declarations allowed even in dormant (read-only operations + submit allowed) if you want “reactivation readiness”.
+
+6) Production security checklist (Audit-grade)
+A) Tenant isolation & authorization
+
+ Every API endpoint enforces firm_id from session token; never from request body/query.
+
+ Row-level filtering in repository/data layer mandatory (unit tested).
+
+ SA endpoints operate only on platform tables (billing, firm status) with firm_id = null logs.
+
+ Deny-by-default RBAC; explicit allow lists per endpoint.
+
+B) Authentication & session security
+
+ Strong password policy (min length + uppercase + complexity as you defined).
+
+ MFA optional for Firm Admin/Partner (recommended).
+
+ Secure cookies (HttpOnly, Secure, SameSite=strict).
+
+ Rate limit login + lockout after N attempts + IP-based throttling.
+
+C) Data protection
+
+ Encrypt sensitive fields at rest (document keys, tokens, ethics reports).
+
+ Object storage presigned URLs with short expiry.
+
+ Database backups encrypted + tested restore drills.
+
+D) Auditability
+
+ Immutable audit logs (append-only) with before/after JSON.
+
+ Admin actions log actor, IP, user-agent, timestamp.
+
+ Evidence integrity: hash stored for uploaded critical documents.
+
+E) AppSec
+
+ Input validation on every endpoint (Zod/FluentValidation).
+
+ CSRF protection on state-changing requests.
+
+ Content Security Policy (CSP) strict.
+
+ Dependency scanning + SAST (CI) + container image scanning.
+
+F) Availability
+
+ Health checks + uptime monitor.
+
+ Centralized structured logging + alerting.
+
+ DB indexes for firm_id + frequent filters.
+
+7) QCR inspection readiness mapping (AOB/ICAP style)
+
+This mapping lets you answer an inspector’s question: “Show me where the firm’s system of quality management is designed, implemented, monitored, and remediated.”
+
+QCR / Practice Inspection Area	Where in Firm Wide Controls	Evidence Produced
+Leadership & governance	ISQM1 → Governance & Leadership	Objectives + approved responses + annual review record
+Ethical requirements & independence	Ethics tab + Independence Declarations	Declaration PDFs, conflict handling log, breach channel policy
+Acceptance & continuance	ISQM1 → Acceptance & Continuance + Engagement Readiness Checks	Acceptance policy, engagement acceptance checklist completion
+Engagement performance	ISQM1 → Engagement Performance + link to engagement module	ISA 220 alignment, supervision/review evidence, sign-offs
+Resources & competence	ISQM1 → Resources	Training records policy, assignment rules, competency matrix (optional add-on)
+Information & communication	ISQM1 → Info & Communication	Policy distribution evidence, version control + staff acknowledgement (optional add-on)
+Monitoring & remediation	Monitoring tab + Deficiencies + Remediation	Monitoring plan, inspection reports, deficiency register, remediation evidence
+EQCR (ISQM2)	ISQM2 EQCR tab + EQCR Assignments	EQCR criteria, assignments, checklists, EQCR completion timestamps
+Documentation & version control	Docs tab + Version Control	Quality manual versions, approval sign-offs, change logs
+Continuous improvement	Monitoring cycle + remediation verification	“closed-loop” remediation verification + next cycle plan
+
+Minimum “inspection pack” exports (one-click)
+
+Firm Quality Manual (latest version)
+
+Monitoring Plan + latest Monitoring Report
+
+Deficiency Register + Remediation Status
+
+Ethics & Independence Register (current cycle)
+
+EQCR policy + list of EQCR engagements and completion evidence
