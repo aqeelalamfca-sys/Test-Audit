@@ -421,6 +421,7 @@ router.post("/signup", async (req: AuthenticatedRequest, res: Response) => {
       const firm = await tx.firm.create({
         data: {
           name: data.firmLegalName,
+          displayName: data.firmDisplayName || null,
           email: data.adminEmail,
           headOfficeAddress: data.headOfficeAddress || null,
           phone: data.mobileNumber || null,

@@ -341,7 +341,7 @@ router.get("/firm-profile", requireAuth, async (req: AuthenticatedRequest, res: 
     const firm = await prisma.firm.findUnique({
       where: { id: firmId },
       select: {
-        id: true, name: true, licenseNo: true, address: true, phone: true, email: true,
+        id: true, name: true, displayName: true, licenseNo: true, address: true, phone: true, email: true,
         establishmentDate: true, registrationNumber: true, taxId: true, regulatoryBody: true,
         website: true, country: true, city: true, headOfficeAddress: true, logoUrl: true,
         numberOfPartners: true, partners: true, offices: true,
@@ -361,13 +361,14 @@ router.put("/firm-profile", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
     const {
-      name, licenseNo, address, phone, email, establishmentDate,
+      name, displayName, licenseNo, address, phone, email, establishmentDate,
       registrationNumber, taxId, regulatoryBody, website, country, city,
       headOfficeAddress, logoUrl, numberOfPartners, partners, offices
     } = req.body;
 
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
+    if (displayName !== undefined) updateData.displayName = displayName;
     if (licenseNo !== undefined) updateData.licenseNo = licenseNo;
     if (address !== undefined) updateData.address = address;
     if (phone !== undefined) updateData.phone = phone;

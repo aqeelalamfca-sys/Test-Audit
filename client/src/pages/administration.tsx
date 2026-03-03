@@ -153,6 +153,7 @@ const TEMPLATE_CATEGORIES = [
 interface FirmProfile {
   id: string;
   name: string;
+  displayName: string | null;
   licenseNo: string | null;
   address: string | null;
   phone: string | null;
@@ -282,6 +283,7 @@ function FirmSettingTab() {
   if (profile && !initialized) {
     setForm({
       name: profile.name || "",
+      displayName: profile.displayName || "",
       licenseNo: profile.licenseNo || "",
       address: profile.address || "",
       phone: profile.phone || "",
@@ -371,8 +373,12 @@ function FirmSettingTab() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label>Firm Name <span className="text-red-500">*</span></Label>
+              <Label>Firm Legal Name <span className="text-red-500">*</span></Label>
               <Input value={form.name || ""} onChange={(e) => setForm({ ...form, name: e.target.value })} data-testid="input-firm-name" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Display Name</Label>
+              <Input value={form.displayName || ""} onChange={(e) => setForm({ ...form, displayName: e.target.value })} placeholder="Short name for display" data-testid="input-display-name" />
             </div>
             <div className="space-y-1.5">
               <Label>Establishment Date</Label>

@@ -1210,21 +1210,141 @@ router.post("/:engagementId/persist", requireAuth, async (req: AuthenticatedRequ
       return res.status(400).json({ error: "assertionRisks array is required" });
     }
 
+    const assertionEnumMap: Record<string, string> = {
+      'EXISTENCE': 'EXISTENCE',
+      'COMPLETENESS': 'COMPLETENESS',
+      'ACCURACY': 'ACCURACY',
+      'VALUATION': 'VALUATION',
+      'CUTOFF': 'CUTOFF',
+      'CLASSIFICATION': 'CLASSIFICATION',
+      'OCCURRENCE': 'OCCURRENCE',
+      'RIGHTS_OBLIGATIONS': 'RIGHTS_OBLIGATIONS',
+      'PRESENTATION_DISCLOSURE': 'PRESENTATION_DISCLOSURE',
+      'Existence': 'EXISTENCE',
+      'Completeness': 'COMPLETENESS',
+      'Accuracy': 'ACCURACY',
+      'Valuation': 'VALUATION',
+      'Cut-off': 'CUTOFF',
+      'Classification': 'CLASSIFICATION',
+      'Occurrence': 'OCCURRENCE',
+      'Rights & Obligations': 'RIGHTS_OBLIGATIONS',
+      'Rights and Obligations': 'RIGHTS_OBLIGATIONS',
+      'Presentation & Disclosure': 'PRESENTATION_DISCLOSURE',
+      'Presentation and Disclosure': 'PRESENTATION_DISCLOSURE',
+    };
+
+    const riskLevelMap: Record<string, string> = {
+      'High': 'HIGH',
+      'Medium': 'MODERATE',
+      'Low': 'LOW',
+      'HIGH': 'HIGH',
+      'MODERATE': 'MODERATE',
+      'LOW': 'LOW',
+      'Significant': 'SIGNIFICANT',
+      'SIGNIFICANT': 'SIGNIFICANT',
+    };
+
+    const fraudTypeMap: Record<string, string> = {
+      'Revenue Recognition': 'REVENUE_RECOGNITION',
+      'Management Override': 'MANAGEMENT_OVERRIDE',
+      'Asset Misappropriation': 'ASSET_MISAPPROPRIATION',
+      'Expense Manipulation': 'EXPENSE_MANIPULATION',
+      'Related Party Abuse': 'RELATED_PARTY_ABUSE',
+      'Disclosure Fraud': 'DISCLOSURE_FRAUD',
+    };
+
+    const fsAreaMap: Record<string, string> = {
+      'REVENUE': 'REVENUE',
+      'COST_OF_SALES': 'COST_OF_SALES',
+      'OPERATING_EXPENSES': 'OPERATING_EXPENSES',
+      'OTHER_INCOME': 'OTHER_INCOME',
+      'FINANCE_COSTS': 'FINANCE_COSTS',
+      'TAXATION': 'TAXATION',
+      'CASH_AND_BANK': 'CASH_AND_BANK',
+      'RECEIVABLES': 'RECEIVABLES',
+      'INVENTORIES': 'INVENTORIES',
+      'INVESTMENTS': 'INVESTMENTS',
+      'FIXED_ASSETS': 'FIXED_ASSETS',
+      'INTANGIBLES': 'INTANGIBLES',
+      'PAYABLES': 'PAYABLES',
+      'BORROWINGS': 'BORROWINGS',
+      'PROVISIONS': 'PROVISIONS',
+    };
+
+    const mapAssertion = (val: string): string => assertionEnumMap[val] || 'EXISTENCE';
+    const mapRiskLevel = (val: string): string => riskLevelMap[val] || 'MODERATE';
+
+    let created = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+
+    await prisma.$transaction(async (tx) => {
+      for (const risk of assertionRisks) {
+        try {
+          const assertion = mapAssertion(risk.assertion);
+          const inherentRisk = mapRiskLevel(risk.riskRating || risk.likelihood || 'Medium');
+          const controlRisk = mapRiskLevel(risk.magnitude || 'Medium');
+          const romm = mapRiskLevel(risk.riskRating || 'Medium');
+          const fsArea = fsAreaMap[risk.fsHeadKey?.toUpperCase()] || null;
+
+          const fraudRiskIndicators: string[] = [];
+          if (risk.fraudRiskCriteria) {
+            if (risk.fraudRiskCriteria.pressureIndicators) fraudRiskIndicators.push(...risk.fraudRiskCriteria.pressureIndicators);
+            if (risk.fraudRiskCriteria.opportunityIndicators) fraudRiskIndicators.push(...risk.fraudRiskCriteria.opportunityIndicators);
+            if (risk.fraudRiskCriteria.rationalizationIndicators) fraudRiskIndicators.push(...risk.fraudRiskCriteria.rationalizationIndicators);
+          }
+
+          let fraudRiskType = null;
+          if (risk.isFraudRisk) {
+            const category = risk.fsHeadKey?.toUpperCase() || '';
+            if (category.includes('REVENUE')) fraudRiskType = 'REVENUE_RECOGNITION';
+            else if (category.includes('EXPENSE') || category.includes('COST')) fraudRiskType = 'EXPENSE_MANIPULATION';
+            else if (category.includes('CASH') || category.includes('INVENTORY') || category.includes('FIXED')) fraudRiskType = 'ASSET_MISAPPROPRIATION';
+            else fraudRiskType = 'MANAGEMENT_OVERRIDE';
+          }
+
+          await tx.riskAssessment.create({
+            data: {
+              engagementId,
+              riskDescription: risk.riskStatement || risk.whatCouldGoWrong || `Risk for ${risk.fsHeadLabel} - ${risk.assertion}`,
+              accountOrClass: risk.fsHeadLabel || risk.fsHeadKey || 'General',
+              fsArea: fsArea as any || undefined,
+              assertionImpacts: [assertion] as any[],
+              assertion: assertion as any,
+              inherentRisk: inherentRisk as any,
+              controlRisk: controlRisk as any,
+              riskOfMaterialMisstatement: romm as any,
+              isSignificantRisk: !!risk.isSignificantRisk,
+              significantRiskReason: risk.significantRiskRationale || null,
+              isFraudRisk: !!risk.isFraudRisk,
+              fraudRiskType: fraudRiskType as any || undefined,
+              fraudRiskIndicators,
+              fraudResponse: risk.isFraudRisk ? `Fraud risk identified for ${risk.fsHeadLabel}: ${risk.whatCouldGoWrong || risk.riskStatement}` : null,
+              inherentRiskFactors: risk.isa315Adjustments || [],
+              controlRiskFactors: risk.riskDriver ? [risk.riskDriver] : [],
+              plannedResponse: risk.linkedProcedureIds?.length > 0 ? `Linked to ${risk.linkedProcedureIds.length} audit procedure(s)` : null,
+              auditProcedureIds: risk.linkedProcedureIds || [],
+              assessedById: userId,
+              assessedDate: new Date(),
+            },
+          });
+          created++;
+        } catch (err: any) {
+          skipped++;
+          errors.push(`Risk for ${risk.fsHeadLabel || 'unknown'} - ${risk.assertion || 'unknown'}: ${err.message}`);
+        }
+      }
+    });
+
     res.json({
       success: true,
-      message: "Risk assessment persistence endpoint ready. Full implementation pending database schema updates.",
-      stub: true,
+      message: `Risk assessment persisted: ${created} risks created, ${skipped} skipped.`,
       metadata: {
         engagementId,
         userId,
-        receivedData: {
-          assertionRisksCount: assertionRisks?.length || 0,
-          fsLevelRisksCount: fsLevelRisks?.length || 0,
-          hasIsa315Factors: !!isa315EntityFactors,
-          hasIsa240Analysis: !!isa240FraudAnalysis,
-          hasAuditStrategy: !!auditStrategyInputs,
-          hasMateriality: !!materiality
-        },
+        created,
+        skipped,
+        errors: errors.length > 0 ? errors : undefined,
         persistedAt: new Date().toISOString(),
         version: '1.0.0'
       }

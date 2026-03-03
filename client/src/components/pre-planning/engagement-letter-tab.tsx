@@ -2,6 +2,8 @@ import { useState, useEffect, useImperativeHandle, forwardRef } from "react";
 import { useParams } from "wouter";
 import { useEngagement } from "@/lib/workspace-context";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun, BorderStyle, Table, TableRow, TableCell, WidthType } from "docx";
+import { getClientDocxLogoParagraph } from "@/lib/docx-logo";
+import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -278,6 +280,7 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
   const { toast } = useToast();
   const { engagementId } = useParams();
   const { engagement, client } = useEngagement();
+  const { firm } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generatingConsent, setGeneratingConsent] = useState(false);
@@ -515,11 +518,14 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
       setGeneratingConsent(true);
       
       const currentDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      const logoParagraph = await getClientDocxLogoParagraph(firm?.logoUrl);
       
       const doc = new Document({
         sections: [{
           properties: {},
           children: [
+            ...(logoParagraph ? [logoParagraph] : []),
             new Paragraph({
               children: [
                 new TextRun({

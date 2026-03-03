@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "re
 import { useParams } from "wouter";
 import { useEngagement } from "@/lib/workspace-context";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
+import { getClientDocxLogoParagraph } from "@/lib/docx-logo";
+import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +39,7 @@ const IndependenceTab = forwardRef<{ save: () => Promise<void> }>((props, ref) =
   const { toast } = useToast();
   const { engagementId } = useParams();
   const { engagement, client } = useEngagement();
+  const { firm } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -53,10 +56,13 @@ const IndependenceTab = forwardRef<{ save: () => Promise<void> }>((props, ref) =
     const engagementCode = engagement?.engagementCode || "ENG-001";
     const fiscalYear = engagement?.fiscalYearEnd || new Date().getFullYear().toString();
 
+    const logoParagraph = await getClientDocxLogoParagraph(firm?.logoUrl);
+
     const doc = new Document({
       sections: [{
         properties: {},
         children: [
+          ...(logoParagraph ? [logoParagraph] : []),
           new Paragraph({
             children: [
               new TextRun({
