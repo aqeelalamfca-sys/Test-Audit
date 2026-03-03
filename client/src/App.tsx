@@ -18,7 +18,6 @@ import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts-dialog";
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
-import ContextRequiredBanner from "@/components/context-required-banner";
 import { WorkspaceAccessGuard } from "@/components/workspace-access-guard";
 import { WorkspaceRibbon } from "@/components/workspace-ribbon";
 import { TrialBanner } from "@/components/trial-banner";
@@ -406,9 +405,7 @@ function EnforcedAppContent({ user, firm, sidebarStyle, initials }: {
             />
             <TrialBanner />
             <WorkspaceRibbon />
-            <div className="flex-shrink-0">
-              <ContextRequiredBanner />
-            </div>
+            
             <main className="flex-1 overflow-auto bg-background">
               <ErrorBoundary>
                 <Router />

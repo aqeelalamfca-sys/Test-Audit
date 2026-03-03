@@ -57,42 +57,38 @@ router.get("/firms", async (req: AuthenticatedRequest, res: Response) => {
   }
 });
 
-const logoStorage = multer.diskStorage({
-  destination: async (_req, _file, cb) => {
-    const dir = path.join(process.cwd(), "uploads", "logos");
-    await fs.mkdir(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `firm-${Date.now()}-${randomBytes(4).toString("hex")}${ext}`);
-  },
-});
-const logoUpload = multer({
-  storage: logoStorage,
-  limits: { fileSize: 2 * 1024 * 1024 },
+const logoMemoryUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = [".png", ".jpg", ".jpeg", ".webp"];
+    const allowed = [".png", ".jpg", ".jpeg", ".webp", ".svg"];
     const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, allowed.includes(ext));
+    const allowedMimes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/svg+xml"];
+    cb(null, allowed.includes(ext) && allowedMimes.includes(file.mimetype));
   },
 });
 
-router.post("/firms/:id/logo", logoUpload.single("logo"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/firms/:id/logo", logoMemoryUpload.single("logo"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    if (!req.file) return res.status(400).json({ error: "No logo file provided" });
+    if (!req.file) return res.status(400).json({ error: "No logo file provided. Accepted formats: SVG, PNG, JPG, JPEG, WEBP" });
 
-    const logoUrl = `/uploads/logos/${req.file.filename}`;
+    const { processAndSaveLogo, deleteLogo } = await import("../utils/logoProcessor");
+
+    const existingFirm = await prisma.firm.findUnique({ where: { id }, select: { logoUrl: true } });
+    if (existingFirm?.logoUrl) {
+      await deleteLogo(existingFirm.logoUrl);
+    }
+
+    const logoUrl = await processAndSaveLogo(req.file.buffer, req.file.originalname, id);
     await prisma.firm.update({ where: { id }, data: { logoUrl } });
 
     const { ip, userAgent } = extractRequestMeta(req);
     await logPlatformAction(req.user!.id, "FIRM_LOGO_UPLOAD", "Firm", id, undefined, ip, userAgent, { logoUrl });
 
     res.json({ logoUrl });
-  } catch (error) {
-    console.error("Logo upload error:", error);
-    res.status(500).json({ error: "Failed to upload logo" });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || "Failed to upload logo" });
   }
 });
 

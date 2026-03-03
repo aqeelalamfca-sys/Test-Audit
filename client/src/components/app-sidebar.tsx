@@ -72,7 +72,7 @@ const WORKSPACE_PHASE_ICONS: Record<string, React.ElementType> = {
 
 export function AppSidebar({ currentUser }: AppSidebarProps) {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, firm } = useAuth();
   const { theme } = useRoleTheme();
   const { activeEngagement, isInWorkspaceMode, getWorkspaceHref, exitWorkspace, currentEngagementId } = useWorkspace();
 
@@ -93,6 +93,7 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
   const headerSubtitle = isSuperAdmin ? "Platform Control" : isFirmAdmin ? "Firm Administration" : "Statutory Audit";
   const headerInitials = isSuperAdmin ? "SA" : isFirmAdmin ? "FA" : "AW";
   const homeLink = isSuperAdmin ? "/platform" : isFirmAdmin ? "/firm-admin/settings" : "/";
+  const firmLogoUrl = firm?.logoUrl || null;
 
   return (
     <Sidebar className={`border-r ${sidebarClasses.border}`}>
@@ -101,13 +102,23 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
           <div className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold text-lg ${theme.avatarBg} ${theme.avatarText}`}>
             {headerInitials}
           </div>
-          <div>
-            <h1 className={`text-lg font-semibold ${theme.iconColor} ${theme.iconColorDark}`}>
-              AuditWise
-            </h1>
-            <p className={`text-xs ${theme.iconColor} ${theme.iconColorDark}`}>
-              {headerSubtitle}
-            </p>
+          <div className="flex items-center gap-2">
+            <div>
+              <h1 className={`text-lg font-semibold ${theme.iconColor} ${theme.iconColorDark}`}>
+                AuditWise
+              </h1>
+              <p className={`text-xs ${theme.iconColor} ${theme.iconColorDark}`}>
+                {headerSubtitle}
+              </p>
+            </div>
+            {firmLogoUrl && (
+              <img
+                src={firmLogoUrl}
+                alt="Firm logo"
+                className="max-h-[50px] w-auto object-contain"
+                data-testid="img-firm-logo-sidebar"
+              />
+            )}
           </div>
         </Link>
       </SidebarHeader>

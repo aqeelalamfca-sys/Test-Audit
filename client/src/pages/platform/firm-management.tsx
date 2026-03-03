@@ -159,8 +159,8 @@ export default function FirmManagement() {
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "Error", description: "Logo must be under 2MB", variant: "destructive" });
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Error", description: "Logo must be under 5MB", variant: "destructive" });
       return;
     }
     setLogoFile(file);
@@ -244,7 +244,7 @@ export default function FirmManagement() {
                     <input
                       ref={logoInputRef}
                       type="file"
-                      accept=".png,.jpg,.jpeg,.webp"
+                      accept=".svg,.png,.jpg,.jpeg,.webp,image/svg+xml"
                       className="hidden"
                       onChange={handleLogoSelect}
                       data-testid="input-firm-logo"

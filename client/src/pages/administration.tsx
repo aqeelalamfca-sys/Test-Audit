@@ -31,7 +31,9 @@ import {
   Plus,
   Trash2,
   MapPin,
-  Upload
+  Upload,
+  X,
+  ImageIcon,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { formatAccounting } from '@/lib/formatters';
@@ -183,6 +185,80 @@ interface OfficeEntry {
   city: string;
   phone: string;
   isHeadOffice: boolean;
+}
+
+function FirmLogoUpload({ currentLogoUrl, onLogoChange }: { currentLogoUrl: string | null; onLogoChange: (url: string | null) => void }) {
+  const { toast } = useToast();
+  const [uploading, setUploading] = useState(false);
+  const [preview, setPreview] = useState<string | null>(currentLogoUrl);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/svg+xml"];
+    if (!validTypes.includes(file.type)) {
+      toast({ title: "Invalid file type", description: "Accepted: SVG, PNG, JPG, JPEG, WEBP", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Logo must be under 5MB", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("logo", file);
+      const res = await fetchWithAuth("/api/admin/firm-logo", { method: "POST", body: formData });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Upload failed");
+      }
+      const data = await res.json();
+      setPreview(data.logoUrl);
+      onLogoChange(data.logoUrl);
+      toast({ title: "Logo uploaded", description: "Firm logo has been updated" });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemove = async () => {
+    setUploading(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/firm-logo/delete", { method: "POST" });
+      if (res.ok) {
+        setPreview(null);
+        onLogoChange(null);
+        toast({ title: "Logo removed" });
+      }
+    } catch {
+      toast({ title: "Failed to remove logo", variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-3">
+      {preview ? (
+        <div className="relative border rounded-lg p-2 bg-white dark:bg-gray-900 flex items-center justify-center" style={{ minWidth: 120, minHeight: 50 }}>
+          <img src={preview} alt="Firm logo" className="max-h-[50px] w-auto object-contain" data-testid="img-firm-logo-admin" />
+          <button type="button" onClick={handleRemove} disabled={uploading} className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5" data-testid="button-remove-firm-logo">
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      ) : (
+        <label className={`flex items-center gap-2 border border-dashed rounded-lg px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors text-sm text-muted-foreground ${uploading ? "opacity-50 pointer-events-none" : ""}`} data-testid="label-upload-firm-logo">
+          <Upload className="h-4 w-4" />
+          {uploading ? "Uploading..." : "Upload logo"}
+          <input type="file" accept=".svg,.png,.jpg,.jpeg,.webp" className="hidden" onChange={handleFileSelect} data-testid="input-firm-logo-file" />
+        </label>
+      )}
+      <p className="text-[11px] text-muted-foreground">Max 600x200px. Auto-optimized to PNG.</p>
+    </div>
+  );
 }
 
 function FirmSettingTab() {
@@ -350,8 +426,8 @@ function FirmSettingTab() {
               <Input value={form.city || ""} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Karachi" data-testid="input-firm-city" />
             </div>
             <div className="space-y-1.5">
-              <Label>Logo URL</Label>
-              <Input value={form.logoUrl || ""} onChange={(e) => setForm({ ...form, logoUrl: e.target.value })} placeholder="https://... or /uploads/logo.png" data-testid="input-firm-logo" />
+              <Label>Firm Logo</Label>
+              <FirmLogoUpload currentLogoUrl={form.logoUrl || profile?.logoUrl || null} onLogoChange={(url) => setForm({ ...form, logoUrl: url })} />
             </div>
             <div className="space-y-1.5 md:col-span-2 lg:col-span-3">
               <Label>Head Office Address</Label>

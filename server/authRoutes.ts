@@ -381,6 +381,8 @@ router.post("/register", async (req: AuthenticatedRequest, res: Response) => {
 const signupSchema = z.object({
   firmLegalName: z.string().min(2, "Firm name must be at least 2 characters"),
   firmDisplayName: z.string().optional(),
+  headOfficeAddress: z.string().min(5, "Head office address is required").optional().or(z.literal("")),
+  mobileNumber: z.string().min(7, "Valid mobile number is required").optional().or(z.literal("")),
   adminFullName: z.string().min(2, "Full name must be at least 2 characters"),
   adminEmail: z.string().email("Invalid email address"),
   password: z.string().min(10, "Password must be at least 10 characters"),
@@ -420,6 +422,8 @@ router.post("/signup", async (req: AuthenticatedRequest, res: Response) => {
         data: {
           name: data.firmLegalName,
           email: data.adminEmail,
+          headOfficeAddress: data.headOfficeAddress || null,
+          phone: data.mobileNumber || null,
           status: "TRIAL",
           currency: "PKR",
           country: "Pakistan",

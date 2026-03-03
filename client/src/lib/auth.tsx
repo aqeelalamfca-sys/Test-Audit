@@ -17,6 +17,7 @@ interface Firm {
   id: string;
   name: string;
   licenseNo: string | null;
+  logoUrl: string | null;
 }
 
 interface AuthContextType {

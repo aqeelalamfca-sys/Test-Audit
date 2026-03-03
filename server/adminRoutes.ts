@@ -5,6 +5,16 @@ import { requireAuth, requireRoles, logAuditTrail, type AuthenticatedRequest } f
 import { administrationService } from "./services/administrationService";
 
 const backupUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } });
+const firmLogoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [".png", ".jpg", ".jpeg", ".webp", ".svg"];
+    const ext = (file.originalname || "").split(".").pop()?.toLowerCase();
+    const allowedMimes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/svg+xml"];
+    cb(null, allowed.includes(`.${ext}`) && allowedMimes.includes(file.mimetype));
+  },
+});
 
 const router = Router();
 
@@ -397,6 +407,73 @@ router.put("/firm-profile", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER
   } catch (error) {
     console.error("Error updating firm profile:", error);
     res.status(500).json({ error: "Failed to update firm profile" });
+  }
+});
+
+router.post("/firm-logo", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), firmLogoUpload.single("logo"), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
+    if (!req.file) return res.status(400).json({ error: "No logo file provided. Accepted formats: SVG, PNG, JPG, JPEG, WEBP" });
+
+    const { processAndSaveLogo, deleteLogo } = await import("./utils/logoProcessor");
+
+    const existingFirm = await prisma.firm.findUnique({ where: { id: firmId }, select: { logoUrl: true } });
+    if (existingFirm?.logoUrl) {
+      await deleteLogo(existingFirm.logoUrl);
+    }
+
+    const logoUrl = await processAndSaveLogo(req.file.buffer, req.file.originalname, firmId);
+    await prisma.firm.update({ where: { id: firmId }, data: { logoUrl } });
+
+    await logAuditTrail(
+      req.user!.id,
+      "UPDATE",
+      "FirmLogo",
+      firmId,
+      undefined,
+      { logoUrl },
+      undefined,
+      "Firm logo uploaded",
+      req.ip || undefined,
+      req.headers["user-agent"] || undefined
+    );
+
+    res.json({ logoUrl });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || "Failed to upload logo" });
+  }
+});
+
+router.post("/firm-logo/delete", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
+
+    const existingFirm = await prisma.firm.findUnique({ where: { id: firmId }, select: { logoUrl: true } });
+    if (existingFirm?.logoUrl) {
+      const { deleteLogo } = await import("./utils/logoProcessor");
+      await deleteLogo(existingFirm.logoUrl);
+    }
+
+    await prisma.firm.update({ where: { id: firmId }, data: { logoUrl: null } });
+
+    await logAuditTrail(
+      req.user!.id,
+      "DELETE",
+      "FirmLogo",
+      firmId,
+      undefined,
+      { previousLogoUrl: existingFirm?.logoUrl },
+      undefined,
+      "Firm logo removed",
+      req.ip || undefined,
+      req.headers["user-agent"] || undefined
+    );
+
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: "Failed to delete logo" });
   }
 });
 

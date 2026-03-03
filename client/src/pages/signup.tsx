@@ -35,11 +35,16 @@ import {
   User,
   Loader2,
   CheckCircle2,
+  Upload,
+  X,
+  ImageIcon,
 } from "lucide-react";
 
 const signupSchema = z.object({
   firmLegalName: z.string().min(2, "Firm name must be at least 2 characters"),
   firmDisplayName: z.string().optional(),
+  headOfficeAddress: z.string().optional(),
+  mobileNumber: z.string().optional(),
   adminFullName: z.string().min(2, "Full name must be at least 2 characters"),
   adminEmail: z.string().email("Please enter a valid email"),
   password: z.string()
@@ -76,6 +81,31 @@ export default function SignupPage() {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/svg+xml"];
+    if (!validTypes.includes(file.type)) {
+      toast({ title: "Invalid file type", description: "Accepted formats: SVG, PNG, JPG, JPEG, WEBP", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Logo must be under 5MB before processing", variant: "destructive" });
+      return;
+    }
+    setLogoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setLogoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const removeLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
+  };
 
   const params = new URLSearchParams(searchString);
   const preselectedPlan = params.get("plan") || "";
@@ -89,6 +119,8 @@ export default function SignupPage() {
     defaultValues: {
       firmLegalName: "",
       firmDisplayName: "",
+      headOfficeAddress: "",
+      mobileNumber: "",
       adminFullName: "",
       adminEmail: "",
       password: "",
@@ -113,6 +145,8 @@ export default function SignupPage() {
         body: JSON.stringify({
           firmLegalName: data.firmLegalName,
           firmDisplayName: data.firmDisplayName,
+          headOfficeAddress: data.headOfficeAddress || "",
+          mobileNumber: data.mobileNumber || "",
           adminFullName: data.adminFullName,
           adminEmail: data.adminEmail,
           password: data.password,
@@ -134,6 +168,19 @@ export default function SignupPage() {
 
       localStorage.setItem("auditwise_token", result.token);
       localStorage.setItem("auditwise_refresh_token", result.refreshToken);
+
+      if (logoFile && result.firm?.id) {
+        try {
+          const formData = new FormData();
+          formData.append("logo", logoFile);
+          await fetch(`/api/admin/firm-logo`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${result.token}` },
+            body: formData,
+          });
+        } catch {
+        }
+      }
 
       toast({
         title: "Welcome to AuditWise!",
@@ -222,7 +269,7 @@ export default function SignupPage() {
                     <Building2 className="h-3.5 w-3.5" />
                     Firm Information
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <FormField
                       control={form.control}
                       name="firmLegalName"
@@ -258,14 +305,90 @@ export default function SignupPage() {
                       )}
                     />
                   </div>
+                  <div className="space-y-1.5">
+                    <FormLabel>Firm Logo (optional)</FormLabel>
+                    <div className="flex items-center gap-3">
+                      {logoPreview ? (
+                        <div className="relative border rounded-lg p-2 bg-white dark:bg-gray-900 flex items-center justify-center" style={{ minWidth: 120, minHeight: 50 }}>
+                          <img
+                            src={logoPreview}
+                            alt="Logo preview"
+                            className="max-h-[50px] w-auto object-contain"
+                            data-testid="img-logo-preview"
+                          />
+                          <button
+                            type="button"
+                            onClick={removeLogo}
+                            className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5"
+                            data-testid="button-remove-logo"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <label
+                          className="flex items-center gap-2 border border-dashed rounded-lg px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors text-sm text-muted-foreground"
+                          data-testid="label-upload-logo"
+                        >
+                          <Upload className="h-4 w-4" />
+                          Upload logo
+                          <input
+                            type="file"
+                            accept=".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp"
+                            className="hidden"
+                            onChange={handleLogoSelect}
+                            data-testid="input-logo-file"
+                          />
+                        </label>
+                      )}
+                      <p className="text-[11px] text-muted-foreground">
+                        Max 600x200px. SVG, PNG, JPG, WEBP accepted. Auto-optimized to PNG.
+                      </p>
+                    </div>
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="headOfficeAddress"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Head Office Address (optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g. Suite 201, 2nd Floor, Business Tower, Lahore"
+                            data-testid="input-head-office-address"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="mobileNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mobile Number (optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="tel"
+                            placeholder="e.g. +92 300 1234567"
+                            data-testid="input-mobile-number"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
-                <div className="border-t pt-4">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                    <User className="h-4 w-4" />
+                <div className="border-t pt-3">
+                  <h3 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                    <User className="h-3.5 w-3.5" />
                     Admin Account
                   </h3>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <FormField
                       control={form.control}
                       name="adminFullName"
@@ -301,7 +424,7 @@ export default function SignupPage() {
                         </FormItem>
                       )}
                     />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <FormField
                         control={form.control}
                         name="password"
@@ -362,6 +485,9 @@ export default function SignupPage() {
                         )}
                       />
                     </div>
+                    <p className="text-[11px] text-muted-foreground -mt-1">
+                      Min 10 characters with uppercase, lowercase, number, and special character required.
+                    </p>
                   </div>
                 </div>
 
