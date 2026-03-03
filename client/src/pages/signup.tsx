@@ -44,7 +44,12 @@ const signupSchema = z.object({
   firmDisplayName: z.string().optional(),
   adminFullName: z.string().min(2, "Full name must be at least 2 characters"),
   adminEmail: z.string().email("Please enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[a-z]/, "Must contain at least one lowercase letter")
+    .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+    .regex(/\d/, "Must contain at least one number")
+    .regex(/[@$!%*?&#^()_+\-=\[\]{}|\\:";'<>,./~`]/, "Must contain at least one special character"),
   confirmPassword: z.string(),
   planKey: z.string().min(1, "Please select a plan"),
   acceptTerms: z.boolean(),

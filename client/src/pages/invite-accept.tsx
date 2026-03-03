@@ -59,8 +59,14 @@ export default function InviteAccept() {
       return;
     }
 
-    if (password.length < 8) {
-      toast({ title: "Error", description: "Password must be at least 8 characters", variant: "destructive" });
+    const pwErrors: string[] = [];
+    if (password.length < 8) pwErrors.push("at least 8 characters");
+    if (!/[a-z]/.test(password)) pwErrors.push("a lowercase letter");
+    if (!/[A-Z]/.test(password)) pwErrors.push("an uppercase letter");
+    if (!/\d/.test(password)) pwErrors.push("a number");
+    if (!/[@$!%*?&#^()_+\-=\[\]{}|\\:";'<>,./~`]/.test(password)) pwErrors.push("a special character");
+    if (pwErrors.length > 0) {
+      toast({ title: "Weak Password", description: `Password must contain ${pwErrors.join(", ")}`, variant: "destructive" });
       return;
     }
 

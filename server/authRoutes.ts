@@ -16,6 +16,7 @@ import {
   type AuthenticatedRequest,
 } from "./auth";
 import { z } from "zod";
+import { validatePasswordPolicy } from "./utils/passwordPolicy";
 
 const router = Router();
 
@@ -287,6 +288,11 @@ router.post("/register", async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
+    const passwordCheck = validatePasswordPolicy(data.password);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({ error: "Password does not meet requirements", details: passwordCheck.errors });
+    }
+
     const passwordHash = await hashPassword(data.password);
 
     const user = await prisma.user.create({
@@ -346,6 +352,11 @@ router.post("/signup", async (req: AuthenticatedRequest, res: Response) => {
   try {
     const data = signupSchema.parse(req.body);
     const { logBillingAction } = await import("./services/billingAuditService");
+
+    const passwordCheck = validatePasswordPolicy(data.password);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({ error: "Password does not meet requirements", details: passwordCheck.errors });
+    }
 
     const existingUser = await prisma.user.findUnique({ where: { email: data.adminEmail } });
     if (existingUser) {
@@ -720,6 +731,11 @@ router.post("/invite/:token/accept", async (req: AuthenticatedRequest, res: Resp
   try {
     const data = acceptInviteSchema.parse(req.body);
 
+    const passwordCheck = validatePasswordPolicy(data.password);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({ error: "Password does not meet requirements", details: passwordCheck.errors });
+    }
+
     const invite = await prisma.firmInvite.findUnique({
       where: { token: req.params.token },
       include: { firm: true },
@@ -817,6 +833,11 @@ router.post("/change-password", requireAuth, async (req: AuthenticatedRequest, r
     });
 
     const { currentPassword, newPassword } = schema.parse(req.body);
+
+    const passwordCheck = validatePasswordPolicy(newPassword);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({ error: "Password does not meet requirements", details: passwordCheck.errors });
+    }
 
     const isValid = await verifyPassword(currentPassword, req.user!.passwordHash);
     if (!isValid) {

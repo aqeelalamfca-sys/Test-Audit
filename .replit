@@ -39,3 +39,8 @@ deploymentTarget = "autoscale"
 run = ["node", "./dist/index.cjs"]
 build = ["npm", "run", "build"]
 publicDir = "dist/public"
+
+[userenv]
+
+[userenv.shared]
+INITIAL_SUPER_ADMIN_EMAIL = "aqeelalam2010@gmail.com"

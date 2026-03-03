@@ -6,34 +6,7 @@ import type { UserRole } from "@prisma/client";
 
 const router = Router();
 
-const PASSWORD_MIN_LENGTH = 8;
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
-
-function validatePasswordPolicy(password: string): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
-  
-  if (password.length < PASSWORD_MIN_LENGTH) {
-    errors.push(`Password must be at least ${PASSWORD_MIN_LENGTH} characters`);
-  }
-  
-  if (!/[a-z]/.test(password)) {
-    errors.push("Password must contain at least one lowercase letter");
-  }
-  
-  if (!/[A-Z]/.test(password)) {
-    errors.push("Password must contain at least one uppercase letter");
-  }
-  
-  if (!/\d/.test(password)) {
-    errors.push("Password must contain at least one number");
-  }
-  
-  if (!/[@$!%*?&#^()_+=-]/.test(password)) {
-    errors.push("Password must contain at least one special character (@$!%*?&#^()_+=-)");
-  }
-  
-  return { valid: errors.length === 0, errors };
-}
+import { validatePasswordPolicy, PASSWORD_MIN_LENGTH } from "./utils/passwordPolicy";
 
 const createUserSchema = z.object({
   email: z.string().email(),
