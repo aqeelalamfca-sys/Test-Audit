@@ -77,15 +77,19 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
   const isWorkspaceRoute = location.startsWith("/workspace/");
 
   return (
-    <Sidebar className="border-r border-sidebar-border">
-      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
-        <Link href="/" className="flex items-center gap-3" data-testid="link-home">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg">
-            AW
+    <Sidebar className={`border-r ${isSuperAdmin ? 'border-red-200 dark:border-red-900' : 'border-sidebar-border'}`}>
+      <SidebarHeader className={`border-b px-4 py-4 ${isSuperAdmin ? 'border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/30' : 'border-sidebar-border'}`}>
+        <Link href={isSuperAdmin ? "/platform" : "/"} className="flex items-center gap-3" data-testid="link-home">
+          <div className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold text-lg ${isSuperAdmin ? 'bg-red-600 text-white' : 'bg-primary text-primary-foreground'}`}>
+            {isSuperAdmin ? "SA" : "AW"}
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-sidebar-foreground">AuditWise</h1>
-            <p className="text-xs text-muted-foreground">Statutory Audit</p>
+            <h1 className={`text-lg font-semibold ${isSuperAdmin ? 'text-red-700 dark:text-red-400' : 'text-sidebar-foreground'}`}>
+              {isSuperAdmin ? "AuditWise" : "AuditWise"}
+            </h1>
+            <p className={`text-xs ${isSuperAdmin ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground'}`}>
+              {isSuperAdmin ? "Platform Control" : "Statutory Audit"}
+            </p>
           </div>
         </Link>
       </SidebarHeader>
@@ -148,6 +152,98 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
             <div className="border-t border-sidebar-border mx-2">
               <EngagementHealthPanel slot="bottom" />
             </div>
+          </>
+        ) : isSuperAdmin ? (
+          <>
+            {/* SuperAdmin: Platform Admin Only */}
+            <SidebarGroup>
+              <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wide text-red-600 dark:text-red-400">
+                <Crown className="h-3 w-3 inline mr-1" />
+                Platform Admin
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/platform" || location === "/"}
+                      data-testid="nav-platform-dashboard"
+                      className="data-[active=true]:bg-red-100 data-[active=true]:text-red-800 dark:data-[active=true]:bg-red-950 dark:data-[active=true]:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-700 dark:hover:text-red-400"
+                    >
+                      <Link href="/platform">
+                        <LayoutDashboard className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <span>Dashboard</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/platform/firms"}
+                      data-testid="nav-platform-firms"
+                      className="data-[active=true]:bg-red-100 data-[active=true]:text-red-800 dark:data-[active=true]:bg-red-950 dark:data-[active=true]:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-700 dark:hover:text-red-400"
+                    >
+                      <Link href="/platform/firms">
+                        <Building2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <span>Firm Management</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/platform/plans"}
+                      data-testid="nav-platform-plans"
+                      className="data-[active=true]:bg-red-100 data-[active=true]:text-red-800 dark:data-[active=true]:bg-red-950 dark:data-[active=true]:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-700 dark:hover:text-red-400"
+                    >
+                      <Link href="/platform/plans">
+                        <BarChart3 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <span>Plan Management</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/platform/notifications"}
+                      data-testid="nav-platform-notifications"
+                      className="data-[active=true]:bg-red-100 data-[active=true]:text-red-800 dark:data-[active=true]:bg-red-950 dark:data-[active=true]:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-700 dark:hover:text-red-400"
+                    >
+                      <Link href="/platform/notifications">
+                        <Bell className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <span>Notifications</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/platform/audit-logs"}
+                      data-testid="nav-platform-audit-logs"
+                      className="data-[active=true]:bg-red-100 data-[active=true]:text-red-800 dark:data-[active=true]:bg-red-950 dark:data-[active=true]:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-700 dark:hover:text-red-400"
+                    >
+                      <Link href="/platform/audit-logs">
+                        <FileText className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <span>Audit Logs</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/platform/ai-config"}
+                      data-testid="nav-platform-ai-config"
+                      className="data-[active=true]:bg-red-100 data-[active=true]:text-red-800 dark:data-[active=true]:bg-red-950 dark:data-[active=true]:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-700 dark:hover:text-red-400"
+                    >
+                      <Link href="/platform/ai-config">
+                        <Bot className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <span>AI Configuration</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
           </>
         ) : (
           <>
@@ -318,75 +414,14 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                 </SidebarGroupContent>
               </SidebarGroup>
             )}
-
-            {isSuperAdmin && (
-              <SidebarGroup>
-                <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  <Crown className="h-3 w-3 inline mr-1" />
-                  Platform Admin
-                </SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location === "/platform"} data-testid="nav-platform-dashboard">
-                        <Link href="/platform">
-                          <LayoutDashboard className="h-4 w-4" />
-                          <span>Dashboard</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location === "/platform/firms"} data-testid="nav-platform-firms">
-                        <Link href="/platform/firms">
-                          <Building2 className="h-4 w-4" />
-                          <span>Firm Management</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location === "/platform/plans"} data-testid="nav-platform-plans">
-                        <Link href="/platform/plans">
-                          <BarChart3 className="h-4 w-4" />
-                          <span>Plan Management</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location === "/platform/notifications"} data-testid="nav-platform-notifications">
-                        <Link href="/platform/notifications">
-                          <Bell className="h-4 w-4" />
-                          <span>Notifications</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location === "/platform/audit-logs"} data-testid="nav-platform-audit-logs">
-                        <Link href="/platform/audit-logs">
-                          <FileText className="h-4 w-4" />
-                          <span>Audit Logs</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location === "/platform/ai-config"} data-testid="nav-platform-ai-config">
-                        <Link href="/platform/ai-config">
-                          <Bot className="h-4 w-4" />
-                          <span>AI Configuration</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            )}
           </>
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-4">
+      <SidebarFooter className={`border-t p-4 ${isSuperAdmin ? 'border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/30' : 'border-sidebar-border'}`}>
         <div className="flex items-center gap-2.5">
           <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
+            <AvatarFallback className={`text-sm font-medium ${isSuperAdmin ? 'bg-red-600 text-white' : 'bg-primary text-primary-foreground'}`}>
               {currentUser?.initials || "JD"}
             </AvatarFallback>
           </Avatar>
@@ -394,7 +429,13 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
             <p className="text-sm font-medium text-sidebar-foreground truncate">
               {currentUser?.name || "John Doe"}
             </p>
-            <RoleBadge role={currentUser?.role || "partner"} />
+            {isSuperAdmin ? (
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400" data-testid="badge-super-admin">
+                SUPER ADMIN
+              </span>
+            ) : (
+              <RoleBadge role={currentUser?.role || "partner"} />
+            )}
           </div>
         </div>
       </SidebarFooter>

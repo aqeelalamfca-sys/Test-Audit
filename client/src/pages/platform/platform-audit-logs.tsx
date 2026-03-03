@@ -27,7 +27,7 @@ export default function PlatformAuditLogs() {
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto" data-testid="platform-audit-logs-page">
       <div className="flex items-center gap-3">
-        <FileText className="h-6 w-6 text-blue-600" />
+        <FileText className="h-6 w-6 text-red-600" />
         <h1 className="text-2xl font-bold" data-testid="text-page-title">Platform Audit Logs</h1>
       </div>
 

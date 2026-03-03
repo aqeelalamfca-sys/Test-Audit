@@ -37,7 +37,7 @@ export default function PlatformAIConfig() {
   return (
     <div className="p-6 space-y-6 max-w-3xl mx-auto" data-testid="platform-ai-config-page">
       <div className="flex items-center gap-3">
-        <Bot className="h-6 w-6 text-blue-600" />
+        <Bot className="h-6 w-6 text-red-600" />
         <h1 className="text-2xl font-bold" data-testid="text-page-title">Platform AI Configuration</h1>
       </div>
 
