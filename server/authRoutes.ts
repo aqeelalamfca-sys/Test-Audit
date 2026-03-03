@@ -219,19 +219,6 @@ router.post("/login", loginRateLimit(), async (req: AuthenticatedRequest, res: R
       return res.status(403).json({ error: "Your account has been suspended. Please contact your administrator." });
     }
 
-    const SUPER_ADMIN_ALLOWED_IPS = (process.env.SUPER_ADMIN_ALLOWED_IPS || "").split(",").map(s => s.trim()).filter(Boolean);
-    if (user.role === "SUPER_ADMIN" && SUPER_ADMIN_ALLOWED_IPS.length > 0) {
-      const reqIp = req.ip || req.socket.remoteAddress || "";
-      const forwardedFor = (req.headers["x-forwarded-for"] as string || "").split(",")[0].trim();
-      const isAllowed = SUPER_ADMIN_ALLOWED_IPS.some(ip =>
-        reqIp === ip || reqIp === `::ffff:${ip}` || forwardedFor === ip || ip === "127.0.0.1" && (reqIp === "::1" || reqIp === "127.0.0.1")
-      );
-      if (!isAllowed) {
-        await logAuditTrail(user.id, "SUPERADMIN_LOGIN_BLOCKED", "user", user.id, null, { reason: "ip_not_allowed", ip: forwardedFor || reqIp }, undefined, undefined, clientIp, req.get("user-agent"));
-        return res.status(403).json({ error: "Access denied. SuperAdmin login is restricted." });
-      }
-    }
-
     if (user.firmId && user.role !== "SUPER_ADMIN") {
       const firm = await prisma.firm.findUnique({ where: { id: user.firmId } });
       if (firm) {
