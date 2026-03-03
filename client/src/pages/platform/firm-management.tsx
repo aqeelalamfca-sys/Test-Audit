@@ -18,7 +18,7 @@ export default function FirmManagement() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createForm, setCreateForm] = useState({
     name: "", adminEmail: "", adminFullName: "", email: "",
-    country: "", currency: "USD", planCode: "BASIC", trialDays: 30,
+    country: "", currency: "PKR", planCode: "BASIC", trialDays: 30,
   });
 
   const { data, isLoading } = useQuery<any>({
@@ -38,7 +38,7 @@ export default function FirmManagement() {
         description: `${data.firm.name} created. Admin temp password: ${data.firmAdmin.tempPassword}`,
       });
       setShowCreateDialog(false);
-      setCreateForm({ name: "", adminEmail: "", adminFullName: "", email: "", country: "", currency: "USD", planCode: "BASIC", trialDays: 30 });
+      setCreateForm({ name: "", adminEmail: "", adminFullName: "", email: "", country: "", currency: "PKR", planCode: "BASIC", trialDays: 30 });
       queryClient.invalidateQueries({ queryKey: ["/api/platform/firms"] });
       queryClient.invalidateQueries({ queryKey: ["/api/platform/analytics"] });
     },
@@ -115,7 +115,21 @@ export default function FirmManagement() {
                 </div>
                 <div>
                   <Label>Currency</Label>
-                  <Input data-testid="input-firm-currency" value={createForm.currency} onChange={(e) => setCreateForm({ ...createForm, currency: e.target.value })} />
+                  <Select value={createForm.currency} onValueChange={(v) => setCreateForm({ ...createForm, currency: v })}>
+                    <SelectTrigger data-testid="select-firm-currency"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PKR">PKR - Pakistani Rupee</SelectItem>
+                      <SelectItem value="USD">USD - US Dollar</SelectItem>
+                      <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                      <SelectItem value="EUR">EUR - Euro</SelectItem>
+                      <SelectItem value="AED">AED - UAE Dirham</SelectItem>
+                      <SelectItem value="SAR">SAR - Saudi Riyal</SelectItem>
+                      <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
+                      <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
+                      <SelectItem value="INR">INR - Indian Rupee</SelectItem>
+                      <SelectItem value="BDT">BDT - Bangladeshi Taka</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div>

@@ -78,7 +78,8 @@ Key architectural patterns and features include:
 - **Tenant Isolation**: All tenant-scoped queries enforce `firmId` from authenticated user. SuperAdmin bypasses but must specify firmId explicitly.
 - **Role Hierarchy**: STAFF(1) → SENIOR(2) → TEAM_LEAD(3) → MANAGER(5) → PARTNER(6) → MANAGING_PARTNER(7) → ADMIN(7) → FIRM_ADMIN(8) → SUPER_ADMIN(99)
 - **New Roles**: `SUPER_ADMIN` (platform-wide, no firmId), `FIRM_ADMIN` (firm-scoped admin)
-- **Subscription Plans**: BASIC ($49/mo, 5 users, 10 engagements), PRO ($199/mo, 25 users, 100 engagements), ENTERPRISE ($499/mo, 999 users, 9999 engagements)
+- **Subscription Plans**: BASIC (PKR 9,999/mo, 5 users, 10 engagements), PRO (PKR 39,999/mo, 25 users, 100 engagements), ENTERPRISE (PKR 99,999/mo, 999 users, 9999 engagements)
+- **Default Currency**: PKR (Pakistani Rupee). Multi-currency supported: PKR, USD, GBP, EUR, AED, SAR, CAD, AUD, INR, BDT
 - **Firm Status Guards**: ACTIVE/TRIAL allowed, SUSPENDED/TERMINATED blocked with 403. PAST_DUE blocks writes only.
 - **Platform API** (`/api/platform/*`): SuperAdmin-only routes for firm CRUD, plan management, global notifications, audit logs, AI config, analytics
 - **Tenant API** (`/api/tenant/*`): Firm-scoped routes for user management, settings, AI key override, audit logs, AI usage

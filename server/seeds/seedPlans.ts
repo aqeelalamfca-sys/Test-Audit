@@ -7,7 +7,7 @@ const DEFAULT_PLANS = [
     maxUsers: 5,
     maxEngagements: 10,
     allowCustomAi: false,
-    monthlyPrice: 49,
+    monthlyPrice: 9999,
     featureFlags: {
       aiAssist: true,
       advancedReporting: false,
@@ -21,7 +21,7 @@ const DEFAULT_PLANS = [
     maxUsers: 25,
     maxEngagements: 100,
     allowCustomAi: true,
-    monthlyPrice: 199,
+    monthlyPrice: 39999,
     featureFlags: {
       aiAssist: true,
       advancedReporting: true,
@@ -35,7 +35,7 @@ const DEFAULT_PLANS = [
     maxUsers: 999,
     maxEngagements: 9999,
     allowCustomAi: true,
-    monthlyPrice: 499,
+    monthlyPrice: 99999,
     featureFlags: {
       aiAssist: true,
       advancedReporting: true,

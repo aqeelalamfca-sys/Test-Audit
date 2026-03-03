@@ -254,7 +254,7 @@ model Invoice {
   id             String        @id @default(uuid())
   subscriptionId String
   amount         Decimal
-  currency       String        @default("USD")
+  currency       String        @default("PKR")
   status         InvoiceStatus @default(DRAFT)
   description    String?
   issuedAt       DateTime?

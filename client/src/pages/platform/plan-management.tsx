@@ -71,7 +71,7 @@ export default function PlanManagement() {
                   <Input data-testid="input-max-engagements" type="number" value={form.maxEngagements} onChange={(e) => setForm({ ...form, maxEngagements: parseInt(e.target.value) || 0 })} />
                 </div>
                 <div>
-                  <Label>Monthly Price ($)</Label>
+                  <Label>Monthly Price (PKR)</Label>
                   <Input data-testid="input-monthly-price" type="number" value={form.monthlyPrice} onChange={(e) => setForm({ ...form, monthlyPrice: parseInt(e.target.value) || 0 })} />
                 </div>
               </div>
@@ -105,7 +105,7 @@ export default function PlanManagement() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="text-3xl font-bold">${Number(plan.monthlyPrice)}<span className="text-sm font-normal text-muted-foreground">/mo</span></div>
+                <div className="text-3xl font-bold">PKR {Number(plan.monthlyPrice).toLocaleString()}<span className="text-sm font-normal text-muted-foreground">/mo</span></div>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-muted-foreground" />
