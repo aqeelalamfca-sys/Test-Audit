@@ -336,7 +336,7 @@ router.get("/:engagementId/export-excel", requireAuth, async (req: Authenticated
     }
 
     const clientName = engagement?.client?.name || "Company";
-    const firmName = engagement?.firm?.name || "";
+    const firmName = engagement?.firm?.displayName || engagement?.firm?.name || "";
     const periodEnd = engagement?.periodEnd
       ? new Date(engagement.periodEnd).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })
       : "Year End";
@@ -402,6 +402,10 @@ router.get("/:engagementId/export-excel", requireAuth, async (req: Authenticated
     XLSX.utils.book_append_sheet(wb, ws, "Notes");
 
     const indexRows: any[][] = [];
+    if (firmName) {
+      indexRows.push([firmName]);
+      indexRows.push([]);
+    }
     indexRows.push([clientName]);
     indexRows.push(["NOTES TO THE FINANCIAL STATEMENTS — INDEX"]);
     indexRows.push([`FOR THE PERIOD ENDED ${periodEnd.toUpperCase()}`]);
@@ -422,7 +426,8 @@ router.get("/:engagementId/export-excel", requireAuth, async (req: Authenticated
     const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
 
     const safeClientName = clientName.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30);
-    const fileName = `${safeClientName}_Notes_to_FS.xlsx`;
+    const safeFirmName = firmName ? firmName.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30) : "";
+    const fileName = safeFirmName ? `${safeFirmName}_${safeClientName}_Notes_to_FS.xlsx` : `${safeClientName}_Notes_to_FS.xlsx`;
 
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);

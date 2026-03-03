@@ -501,7 +501,7 @@ class SamplingService {
     return { success: true };
   }
 
-  generateCSVExport(items: SampledItem[]): string {
+  generateCSVExport(items: SampledItem[], firmName?: string): string {
     const headers = [
       "Item #",
       "Voucher Number",
@@ -530,7 +530,14 @@ class SamplingService {
       item.stratum || "",
     ]);
 
-    return [headers.join(","), ...rows.map((r) => r.map((c) => `"${c}"`).join(","))].join("\n");
+    const preamble = [
+      `"${firmName || "AuditWise"}"`,
+      `"Sampling Run Export"`,
+      `"Generated: ${new Date().toLocaleDateString()}"`,
+      "",
+    ];
+
+    return [...preamble, headers.join(","), ...rows.map((r) => r.map((c) => `"${c}"`).join(","))].join("\n");
   }
 }
 

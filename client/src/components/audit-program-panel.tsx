@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1310,6 +1311,7 @@ function LoadingSkeleton() {
 }
 
 export function AuditProgramPanel({ engagementId, onDataChange, onPushToExecution, className }: AuditProgramPanelProps) {
+  const { firm } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -1401,6 +1403,7 @@ export function AuditProgramPanel({ engagementId, onDataChange, onPushToExecutio
   const handleExportProcedures = () => {
     if (!savedProgram?.step7_procedureRecords) return;
     
+    const firmName = firm?.displayName || firm?.name || "AuditWise";
     const headers = ["Procedure ID", "FS Head", "Assertion", "Type", "Source", "Objective", "Status", "Samples", "ISA Ref"];
     const rows = savedProgram.step7_procedureRecords.map(p => [
       p.procedureId,
@@ -1414,7 +1417,8 @@ export function AuditProgramPanel({ engagementId, onDataChange, onPushToExecutio
       p.isaReference,
     ]);
     
-    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const preamble = [`"${firmName}"`, `"ISA 330 Audit Program Export"`, `"Generated: ${new Date().toLocaleDateString()}"`, ""];
+    const csv = [...preamble, headers.join(","), ...rows.map(r => r.join(","))].join("\n");
     navigator.clipboard.writeText(csv);
     toast({
       title: "Exported to Clipboard",

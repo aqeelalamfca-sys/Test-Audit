@@ -3338,7 +3338,7 @@ router.get("/:engagementId/summary/export", requireAuth, async (req: Request, re
       where: { id: engagementId },
       include: { firm: true },
     });
-    const firmName = engagement?.firm?.name || "";
+    const firmName = engagement?.firm?.displayName || engagement?.firm?.name || "";
 
     const workbook = new ExcelJS.Workbook();
     
@@ -3416,7 +3416,8 @@ router.get("/:engagementId/summary/export", requireAuth, async (req: Request, re
     }
 
     const buffer = await workbook.xlsx.writeBuffer();
-    const filename = `Output_Summary_${new Date().toISOString().split("T")[0]}.xlsx`;
+    const safeFirm = firmName ? firmName.replace(/[^a-zA-Z0-9]/g, "_") + "_" : "";
+    const filename = `${safeFirm}Output_Summary_${new Date().toISOString().split("T")[0]}.xlsx`;
 
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);

@@ -157,9 +157,9 @@ router.get("/run/:runId/export", requireAuth, async (req: AuthenticatedRequest, 
       where: { id: runId },
       include: { engagement: { include: { firm: true } } },
     });
-    const firmName = run?.engagement?.firm?.name || "";
+    const firmName = run?.engagement?.firm?.displayName || run?.engagement?.firm?.name || "";
 
-    const csv = samplingService.generateCSVExport(formattedItems);
+    const csv = samplingService.generateCSVExport(formattedItems, firmName);
     const fileName = firmName
       ? `${firmName.replace(/[^a-zA-Z0-9]/g, "_")}_sampling_run_${runId}.csv`
       : `sampling_run_${runId}.csv`;

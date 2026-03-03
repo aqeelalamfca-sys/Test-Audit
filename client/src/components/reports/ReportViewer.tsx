@@ -66,7 +66,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
       headerEl = document.createElement("div");
       headerEl.id = "report-print-header";
       headerEl.style.display = "none";
-      headerEl.innerHTML = `${logoImg}<div><h1 style="color: #1a365d; margin: 0; font-size: 18px;">${firm?.name || "AuditWise"}</h1><p style="color: #666; margin: 2px 0 0 0; font-size: 11px;">Statutory Audit Management</p></div>`;
+      headerEl.innerHTML = `${logoImg}<div><h1 style="color: #1a365d; margin: 0; font-size: 18px;">${firm?.displayName || firm?.name || "AuditWise"}</h1><p style="color: #666; margin: 2px 0 0 0; font-size: 11px;">Statutory Audit Management</p></div>`;
       document.body.prepend(headerEl);
     }
 
@@ -95,6 +95,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
   };
 
   const handleExportCSV = () => {
+    const firmName = firm?.displayName || firm?.name || "AuditWise";
     let csvContent = "";
     const timestamp = format(new Date(), "yyyy-MM-dd");
     
@@ -121,11 +122,12 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
       csvContent = JSON.stringify(data, null, 2);
     }
     
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const preamble = `"${firmName}"\n"${title}"\n"Generated: ${new Date().toLocaleDateString()}"\n\n`;
+    const blob = new Blob([preamble + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${reportType}-report-${timestamp}.csv`;
+    a.download = `${firmName.replace(/\s+/g, '_')}_${reportType}-report-${timestamp}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };

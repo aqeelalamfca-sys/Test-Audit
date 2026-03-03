@@ -636,32 +636,101 @@
 /* ===== GLOBAL LAYOUT OPTIMIZATION ===== */
 
 /* ---- STANDARDIZED INPUT FIELD HEIGHTS ---- */
-/* Form inputs have consistent height: h-9 (36px) - scoped to form elements */
 input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([role]),
 select:not([role]) {
-  height: 2.25rem; /* h-9 = 36px */
+  height: 2.25rem;
   min-height: 2.25rem;
-  font-size: 0.875rem; /* text-sm */
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
 }
 
-/* Textarea maintains min-height but with consistent font */
 textarea {
   font-size: 0.875rem;
-  min-height: 4.5rem; /* 72px = 2 rows */
+  min-height: 4.5rem;
+  border-radius: 0.5rem;
 }
 
 /* ---- LABEL STANDARDIZATION ---- */
 label,
 .label,
 [data-slot="label"] {
-  font-size: 0.75rem; /* text-xs = 12px */
+  font-size: 0.8125rem;
   font-weight: 500;
-  line-height: 1.25;
+  line-height: 1.3;
+  color: hsl(var(--foreground) / 0.85);
 }
 
 /* ---- FORM FIELD SPACING ---- */
-/* FormItem spacing is handled by parent layout (space-y-* or gap) */
-/* Form description and message text sizing is handled in component classes */
+[data-slot="form-item"] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+[data-slot="form-message"] {
+  font-size: 0.75rem;
+  margin-top: 0.125rem;
+}
+
+[data-slot="form-description"] {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+/* ---- DIALOG & MODAL POLISH ---- */
+[data-slot="dialog-body"] {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+[data-slot="dialog-body"]::-webkit-scrollbar {
+  width: 4px;
+}
+
+[data-slot="dialog-body"]::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+[data-slot="dialog-body"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[role="dialog"] {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+[role="dialog"]::-webkit-scrollbar {
+  width: 4px;
+}
+
+[role="dialog"]::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+[role="dialog"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---- FORM LAYOUT SECTION POLISH ---- */
+[data-slot="form-section"] + [data-slot="form-section"] {
+  padding-top: 1rem;
+  border-top: 1px solid hsl(var(--border) / 0.5);
+}
+
+[data-slot="form-layout"] {
+  font-size: 0.875rem;
+}
+
+[data-slot="form-row"] {
+  align-items: start;
+}
+
+[data-slot="form-row"] > * {
+  min-width: 0;
+}
 
 /* ---- TABLE OPTIMIZATION ---- */
 /* Table styling handled by TableHead/TableCell components with data-slot attributes */
@@ -729,21 +798,40 @@ table tr {
 }
 
 /* ---- RESPONSIVE FIXES ---- */
-/* Use .grid-responsive class for opt-in responsive grid behavior */
 @media (max-width: 1024px) {
   .grid-responsive {
     @apply grid-cols-1;
   }
 }
 
-/* Prevent horizontal scroll */
 body {
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .overflow-fix {
   max-width: 100vw;
   overflow-x: hidden;
+}
+
+@media (max-width: 640px) {
+  [data-slot="dialog-header"] {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 1rem;
+    padding-bottom: 0.75rem;
+  }
+  [data-slot="dialog-footer"] {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 1rem;
+    padding-top: 0.75rem;
+  }
+  [data-slot="dialog-body"] {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
 }
 
 /* ---- TABS OPTIMIZATION ---- */

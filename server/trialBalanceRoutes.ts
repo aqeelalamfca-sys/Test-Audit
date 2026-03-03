@@ -1074,6 +1074,12 @@ router.get("/:engagementId/export/mapping", requireAuth, async (req: Authenticat
       include: { mappedBy: { select: { fullName: true } } }
     });
     
+    let firmName = "AuditWise";
+    if (req.user?.firmId) {
+      const userFirm = await prisma.firm.findUnique({ where: { id: req.user.firmId }, select: { displayName: true, name: true } });
+      if (userFirm) firmName = userFirm.displayName || userFirm.name;
+    }
+
     const exportData = trialBalance.lineItems.map(li => {
       const mapping = mappings.find(m => m.accountCode === li.accountCode);
       return {
@@ -1092,13 +1098,21 @@ router.get("/:engagementId/export/mapping", requireAuth, async (req: Authenticat
     });
     
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(exportData);
+    const headerRows = [
+      [firmName],
+      ["TB Mapping Export"],
+      [`Generated: ${new Date().toLocaleDateString()}`],
+      [],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(headerRows);
+    XLSX.utils.sheet_add_json(ws, exportData, { origin: "A5" });
     XLSX.utils.book_append_sheet(wb, ws, "TB Mapping");
     
     const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
     
+    const safeFileName = firmName.replace(/[^a-zA-Z0-9]/g, "_");
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res.setHeader("Content-Disposition", `attachment; filename=tb_mapping_${engagementId}.xlsx`);
+    res.setHeader("Content-Disposition", `attachment; filename=${safeFileName}_tb_mapping_${engagementId}.xlsx`);
     res.send(buffer);
     
   } catch (error) {

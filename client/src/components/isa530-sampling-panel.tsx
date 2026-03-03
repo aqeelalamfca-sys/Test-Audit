@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1179,6 +1180,7 @@ function LoadingSkeleton() {
 }
 
 export function ISA530SamplingPanel({ engagementId, onSamplingGenerated, className }: ISA530SamplingPanelProps) {
+  const { firm } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -1242,6 +1244,7 @@ export function ISA530SamplingPanel({ engagementId, onSamplingGenerated, classNa
   const handleExportSamples = () => {
     if (!savedSampling?.step7_sampleList) return;
     
+    const firmName = firm?.displayName || firm?.name || "AuditWise";
     const headers = ["Sample ID", "Transaction ID", "FS Head", "Assertion", "Amount", "Selection Method", "Status", "Population Ref", "Risk Ref"];
     const rows = savedSampling.step7_sampleList.map(s => [
       s.id,
@@ -1255,7 +1258,8 @@ export function ISA530SamplingPanel({ engagementId, onSamplingGenerated, classNa
       s.riskReference || '',
     ]);
     
-    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const preamble = [`"${firmName}"`, `"ISA 530 Sampling Export"`, `"Generated: ${new Date().toLocaleDateString()}"`, ""];
+    const csv = [...preamble, headers.join(","), ...rows.map(r => r.join(","))].join("\n");
     navigator.clipboard.writeText(csv);
     toast({
       title: "Exported to Clipboard",
