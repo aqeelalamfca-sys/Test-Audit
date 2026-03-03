@@ -17,6 +17,8 @@ import {
 } from "./auth";
 import { z } from "zod";
 import { validatePasswordPolicy } from "./utils/passwordPolicy";
+import { checkAccountLockout, recordFailedAttempt, clearLockout } from "./middleware/accountLockout";
+import { loginRateLimit } from "./middleware/rateLimiter";
 
 const router = Router();
 
@@ -188,13 +190,28 @@ const registerSchema = z.object({
   firmId: z.string().optional(),
 });
 
-router.post("/login", async (req: AuthenticatedRequest, res: Response) => {
+router.post("/login", loginRateLimit(), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { email, password } = loginSchema.parse(req.body);
+
+    const clientIp = (typeof req.headers["x-forwarded-for"] === "string"
+      ? req.headers["x-forwarded-for"].split(",")[0].trim()
+      : req.ip) || "unknown";
+    const lockoutKey = `${email.toLowerCase()}:${clientIp}`;
+
+    const lockStatus = checkAccountLockout(lockoutKey);
+    if (lockStatus.locked) {
+      return res.status(429).json({
+        error: "Account temporarily locked due to too many failed attempts.",
+        code: "ACCOUNT_LOCKED",
+        retryAfterSeconds: lockStatus.remainingSeconds,
+      });
+    }
 
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user || !user.isActive || user.status === "DELETED") {
+      recordFailedAttempt(lockoutKey);
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
@@ -228,20 +245,29 @@ router.post("/login", async (req: AuthenticatedRequest, res: Response) => {
 
     const isValid = await verifyPassword(password, user.passwordHash);
     if (!isValid) {
+      const lockResult = recordFailedAttempt(lockoutKey);
       await logAuditTrail(
         user.id,
         "LOGIN_FAILED",
         "user",
         user.id,
         null,
-        { reason: "invalid_password" },
+        { reason: "invalid_password", attemptsRemaining: lockResult.attemptsRemaining, locked: lockResult.locked },
         undefined,
         undefined,
-        req.ip,
+        clientIp,
         req.get("user-agent")
       );
+      if (lockResult.locked) {
+        return res.status(429).json({
+          error: "Account temporarily locked due to too many failed attempts. Try again in 15 minutes.",
+          code: "ACCOUNT_LOCKED",
+        });
+      }
       return res.status(401).json({ error: "Invalid credentials" });
     }
+
+    clearLockout(lockoutKey);
 
     const accessToken = generateAccessToken(user);
     const refreshToken = await generateRefreshToken(user.id);
@@ -255,7 +281,7 @@ router.post("/login", async (req: AuthenticatedRequest, res: Response) => {
       { authMethod: "jwt" },
       undefined,
       undefined,
-      req.ip,
+      clientIp,
       req.get("user-agent")
     );
 

@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { randomBytes } from "crypto";
+import { randomBytes, createHash } from "crypto";
 import { prisma } from "../db";
 import type { Request, Response, NextFunction } from "express";
 import type { User } from "@prisma/client";
@@ -42,6 +42,10 @@ export interface AuthenticatedRequest extends Request {
   activePeriodId?: string | null;
 }
 
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
 export function generateAccessToken(user: User): string {
   const payload: JwtPayload = {
     userId: user.id,
@@ -70,24 +74,27 @@ export function isExpiredJwt(token: string): boolean {
 }
 
 export async function generateRefreshToken(userId: string): Promise<string> {
-  const token = randomBytes(48).toString("hex");
+  const rawToken = randomBytes(48).toString("hex");
+  const tokenHash = hashToken(rawToken);
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000);
 
   await prisma.refreshToken.create({
-    data: { userId, token, expiresAt },
+    data: { userId, token: tokenHash, expiresAt },
   });
 
-  return token;
+  return rawToken;
 }
 
-export async function rotateRefreshToken(oldToken: string): Promise<{ accessToken: string; refreshToken: string; user: User } | null> {
-  const existing = await prisma.refreshToken.findUnique({
-    where: { token: oldToken },
+export async function rotateRefreshToken(oldRawToken: string): Promise<{ accessToken: string; refreshToken: string; user: User } | null> {
+  const oldHash = hashToken(oldRawToken);
+
+  const existing = await prisma.refreshToken.findFirst({
+    where: { token: oldHash, revokedAt: null },
     include: { user: true },
   });
 
-  if (!existing || existing.revokedAt || existing.expiresAt < new Date()) {
-    if (existing && !existing.revokedAt) {
+  if (!existing || existing.expiresAt < new Date()) {
+    if (existing) {
       await prisma.refreshToken.update({
         where: { id: existing.id },
         data: { revokedAt: new Date() },
@@ -132,20 +139,11 @@ export async function jwtAuthMiddleware(req: AuthenticatedRequest, _res: Respons
   const jwtPayload = verifyAccessToken(token);
   if (jwtPayload) {
     const user = await prisma.user.findUnique({ where: { id: jwtPayload.userId } });
-    if (user && user.isActive && user.status !== "DELETED") {
+    if (user && user.isActive && user.status !== "DELETED" && user.status !== "SUSPENDED") {
       req.user = user;
       req.jwtPayload = jwtPayload;
     }
     return next();
-  }
-
-  const session = await prisma.session.findUnique({
-    where: { token },
-    include: { user: true },
-  });
-
-  if (session && session.expiresAt > new Date()) {
-    req.user = session.user;
   }
 
   next();

@@ -14,10 +14,18 @@ function getStore(name: string): Map<string, RateLimitEntry> {
   return stores[name];
 }
 
-function getKey(req: Request): string {
-  const userId = (req as any).user?.id;
-  if (userId) return `user:${userId}`;
-  return `ip:${req.ip || req.socket.remoteAddress || "unknown"}`;
+function getClientIp(req: Request): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") return forwarded.split(",")[0].trim();
+  return req.ip || req.socket.remoteAddress || "unknown";
+}
+
+function getKey(req: Request, keyStrategy: "ip" | "user-or-ip" = "user-or-ip"): string {
+  if (keyStrategy === "user-or-ip") {
+    const userId = (req as any).user?.id;
+    if (userId) return `user:${userId}`;
+  }
+  return `ip:${getClientIp(req)}`;
 }
 
 export function rateLimit(options: {
@@ -25,12 +33,13 @@ export function rateLimit(options: {
   windowMs: number;
   maxRequests: number;
   message?: string;
+  keyStrategy?: "ip" | "user-or-ip";
 }) {
-  const { name, windowMs, maxRequests, message } = options;
+  const { name, windowMs, maxRequests, message, keyStrategy = "user-or-ip" } = options;
 
   return (req: Request, res: Response, next: NextFunction) => {
     const store = getStore(name);
-    const key = getKey(req);
+    const key = getKey(req, keyStrategy);
     const now = Date.now();
 
     let entry = store.get(key);
@@ -59,6 +68,16 @@ export function rateLimit(options: {
   };
 }
 
+export function loginRateLimit() {
+  return rateLimit({
+    name: "login",
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 5,
+    message: "Too many login attempts. Account temporarily locked. Try again in 15 minutes.",
+    keyStrategy: "ip",
+  });
+}
+
 export const aiRateLimit = rateLimit({
   name: "ai",
   windowMs: 60 * 1000,
@@ -69,8 +88,9 @@ export const aiRateLimit = rateLimit({
 export const authRateLimit = rateLimit({
   name: "auth",
   windowMs: 15 * 60 * 1000,
-  maxRequests: 15,
-  message: "Too many login attempts. Please try again in 15 minutes.",
+  maxRequests: 30,
+  message: "Too many authentication requests. Please try again later.",
+  keyStrategy: "ip",
 });
 
 export const apiRateLimit = rateLimit({
@@ -78,6 +98,14 @@ export const apiRateLimit = rateLimit({
   windowMs: 60 * 1000,
   maxRequests: 200,
   message: "API rate limit exceeded. Please slow down.",
+});
+
+export const globalRateLimit = rateLimit({
+  name: "global",
+  windowMs: 60 * 1000,
+  maxRequests: 100,
+  message: "Rate limit exceeded. Please slow down.",
+  keyStrategy: "ip",
 });
 
 setInterval(() => {

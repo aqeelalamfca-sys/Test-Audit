@@ -34,6 +34,7 @@ import { seedPlans } from "./seeds/seedPlans";
 import { enableRLS } from "./scripts/enable-rls";
 import platformRoutes from "./routes/platformRoutes";
 import tenantRoutes from "./routes/tenantRoutes";
+import { globalRateLimit } from "./middleware/rateLimiter";
 import logsRoutes from "./logsRoutes";
 import workspaceRoutes from "./workspaceRoutes";
 import prePlanningRoutes from "./prePlanningRoutes";
@@ -63,6 +64,8 @@ import { prisma, withRetry } from "./db";
 const app = express();
 const httpServer = createServer(app);
 
+app.set("trust proxy", 1);
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
@@ -72,6 +75,14 @@ declare module "http" {
 const AUTH_DEBUG = process.env.AUTH_DEBUG === "true";
 
 app.use(cookieParser());
+
+import { randomUUID } from "crypto";
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const requestId = (req.headers["x-request-id"] as string) || randomUUID();
+  res.setHeader("X-Request-Id", requestId);
+  (req as any).requestId = requestId;
+  next();
+});
 
 app.use(
   express.json({
@@ -83,6 +94,9 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+
+import { inputSanitizer } from "./middleware/inputSanitizer";
+app.use(inputSanitizer);
 
 app.use("/uploads/logos", express.static(path.join(process.cwd(), "uploads", "logos"), {
   setHeaders: (res) => {
@@ -100,9 +114,23 @@ if (isProduction) {
     res.setHeader("X-XSS-Protection", "1; mode=block");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+    res.removeHeader("X-Powered-By");
+    next();
+  });
+} else {
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.removeHeader("X-Powered-By");
     next();
   });
 }
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.path.startsWith("/api/")) {
+    return globalRateLimit(req, res, next);
+  }
+  next();
+});
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.method === 'GET' && req.path.startsWith('/api/') && !req.path.includes('/auth/')) {
