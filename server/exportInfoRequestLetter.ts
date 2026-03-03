@@ -1,5 +1,6 @@
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, HeadingLevel } from "docx";
 import { prisma } from "./db";
+import { getFirmLogoParagraph } from "./utils/docxLogo";
 
 interface ExportOptions {
   engagementId: string;
@@ -51,6 +52,11 @@ export async function generateInformationRequestLetter(options: ExportOptions): 
   }, {} as Record<string, typeof requests>);
 
   const docChildren: (Paragraph | Table)[] = [];
+
+  const logoParagraph = getFirmLogoParagraph(firm.logoUrl);
+  if (logoParagraph) {
+    docChildren.push(logoParagraph);
+  }
 
   docChildren.push(
     new Paragraph({

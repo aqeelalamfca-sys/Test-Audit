@@ -20,6 +20,8 @@ import html2pdf from "html2pdf.js";
 import { PageShell } from "@/components/page-shell";
 import { useDeliverablesSaveBridge } from "@/hooks/use-deliverables-save-bridge";
 import { useEngagement } from "@/lib/workspace-context";
+import { useAuth } from "@/lib/auth";
+import { getDocumentHeaderHtml } from "@/lib/pdf-logo";
 
 interface DeliverableFile {
   id: string;
@@ -130,6 +132,7 @@ export default function PrintView() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { client } = useEngagement();
+  const { firm } = useAuth();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   
@@ -303,12 +306,12 @@ export default function PrintView() {
   const handleExportPDF = async (deliverable: Deliverable) => {
     const clientName = engagement?.client?.name || "Client";
     const fiscalYearEnd = engagement?.fiscalYearEnd;
+    const headerHtml = await getDocumentHeaderHtml(firm?.logoUrl, firm?.name || "AuditWise");
 
     const content = `
       <div style="font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto;">
-        <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1a365d; padding-bottom: 20px;">
-          <h1 style="color: #1a365d; margin: 0; font-size: 24px;">AuditWise</h1>
-          <p style="color: #666; margin: 5px 0 0 0;">Statutory Audit Management</p>
+        <div style="margin-bottom: 30px; border-bottom: 2px solid #1a365d; padding-bottom: 20px;">
+          ${headerHtml}
         </div>
         
         <h2 style="color: #1a365d; margin-bottom: 20px; text-align: center;">${formatDeliverableType(deliverable.deliverableType, deliverable.customTypeName)}</h2>

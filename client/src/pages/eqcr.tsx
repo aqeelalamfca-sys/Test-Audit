@@ -18,6 +18,8 @@ import { formatAccounting } from '@/lib/formatters';
 import { PageShell } from "@/components/page-shell";
 import { useEQCRSaveBridge } from "@/hooks/use-eqcr-save-bridge";
 import { AIAssistBanner, PHASE_AI_CONFIGS } from "@/components/ai-assist-banner";
+import { useAuth } from "@/lib/auth";
+import { getDocumentHeaderHtml } from "@/lib/pdf-logo";
 
 interface ChecklistItem {
   id: string;
@@ -93,6 +95,7 @@ export default function EQCR() {
   } = useEngagement();
   const engagementId = params.engagementId || contextEngagementId || undefined;
   const { toast } = useToast();
+  const { firm } = useAuth();
 
   const [assignment, setAssignment] = useState<EQCRAssignment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -337,14 +340,16 @@ export default function EQCR() {
     setPrintingReport(true);
     try {
       const html2pdf = (await import("html2pdf.js")).default;
+      const headerHtml = await getDocumentHeaderHtml(firm?.logoUrl, firm?.name);
       
       const reportContent = document.createElement("div");
       reportContent.innerHTML = `
         <div style="font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #1a365d; margin-bottom: 10px;">ENGAGEMENT QUALITY CONTROL REVIEW</h1>
-            <h2 style="color: #4a5568; font-weight: normal;">ISQM 2 Compliant Report</h2>
-            <p style="color: #718096;">Generated: ${new Date().toLocaleString()}</p>
+          <div style="margin-bottom: 30px; border-bottom: 2px solid #1a365d; padding-bottom: 20px;">
+            ${headerHtml}
+            <h1 style="color: #1a365d; margin-bottom: 10px; text-align: center;">ENGAGEMENT QUALITY CONTROL REVIEW</h1>
+            <h2 style="color: #4a5568; font-weight: normal; text-align: center;">ISQM 2 Compliant Report</h2>
+            <p style="color: #718096; text-align: center;">Generated: ${new Date().toLocaleString()}</p>
           </div>
           
           <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 30px;">

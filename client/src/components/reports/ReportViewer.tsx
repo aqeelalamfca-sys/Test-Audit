@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { formatAccounting } from '@/lib/formatters';
+import { useAuth } from "@/lib/auth";
+import { logoToBase64 } from "@/lib/pdf-logo";
 
 type ReportType = "engagement-health" | "risk-exposure" | "resource-intelligence" | "portfolio-intelligence";
 
@@ -41,9 +43,39 @@ interface ReportViewerProps {
 
 export function ReportViewer({ isOpen, onClose, reportType, data, title }: ReportViewerProps) {
   const [activeTab, setActiveTab] = useState("summary");
+  const { firm } = useAuth();
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
+    let logoSrc = firm?.logoUrl || "";
+    if (firm?.logoUrl) {
+      const b64 = await logoToBase64(firm.logoUrl);
+      if (b64) logoSrc = b64;
+    }
+    const logoImg = logoSrc ? `<img src="${logoSrc}" style="max-height: 50px; width: auto; margin-right: 12px;" />` : "";
+    const printStyle = document.createElement("style");
+    printStyle.id = "report-print-header-style";
+    printStyle.textContent = `
+      @media print {
+        #report-print-header { display: flex !important; align-items: center; gap: 12px; margin-bottom: 16px; border-bottom: 2px solid #1a365d; padding-bottom: 12px; }
+      }
+    `;
+    document.head.appendChild(printStyle);
+
+    let headerEl = document.getElementById("report-print-header");
+    if (!headerEl) {
+      headerEl = document.createElement("div");
+      headerEl.id = "report-print-header";
+      headerEl.style.display = "none";
+      headerEl.innerHTML = `${logoImg}<div><h1 style="color: #1a365d; margin: 0; font-size: 18px;">${firm?.name || "AuditWise"}</h1><p style="color: #666; margin: 2px 0 0 0; font-size: 11px;">Statutory Audit Management</p></div>`;
+      document.body.prepend(headerEl);
+    }
+
     window.print();
+
+    setTimeout(() => {
+      headerEl?.remove();
+      printStyle.remove();
+    }, 1000);
   };
 
   const convertToCSV = (objArray: any[], headers?: string[]): string => {

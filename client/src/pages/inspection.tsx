@@ -18,6 +18,8 @@ import {
   History, Clock, UserCheck, ArrowRight, Activity
 } from "lucide-react";
 import { AIAssistBanner, PHASE_AI_CONFIGS } from "@/components/ai-assist-banner";
+import { useAuth } from "@/lib/auth";
+import { getDocumentHeaderHtml } from "@/lib/pdf-logo";
 
 interface PhaseSummary {
   phase: string;
@@ -67,6 +69,7 @@ export default function Inspection() {
   } = useEngagement();
   const engagementId = params.engagementId || contextEngagementId || undefined;
   const { toast } = useToast();
+  const { firm } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -177,14 +180,16 @@ export default function Inspection() {
     setPrinting(true);
     try {
       const html2pdf = (await import("html2pdf.js")).default;
+      const headerHtml = await getDocumentHeaderHtml(firm?.logoUrl, firm?.name);
       
       const printContent = document.createElement("div");
       printContent.innerHTML = `
         <div style="font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto;">
-          <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1a365d; padding-bottom: 20px;">
-            <h1 style="color: #1a365d; margin-bottom: 10px; font-size: 24px;">AUDIT FILE ARCHIVE</h1>
-            <h2 style="color: #4a5568; font-weight: normal; font-size: 18px;">Inspection Ready Summary</h2>
-            <p style="color: #718096; font-size: 12px;">Generated: ${new Date().toLocaleString()}</p>
+          <div style="margin-bottom: 30px; border-bottom: 3px solid #1a365d; padding-bottom: 20px;">
+            ${headerHtml}
+            <h1 style="color: #1a365d; margin-bottom: 10px; font-size: 24px; text-align: center;">AUDIT FILE ARCHIVE</h1>
+            <h2 style="color: #4a5568; font-weight: normal; font-size: 18px; text-align: center;">Inspection Ready Summary</h2>
+            <p style="color: #718096; font-size: 12px; text-align: center;">Generated: ${new Date().toLocaleString()}</p>
           </div>
           
           <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 30px;">

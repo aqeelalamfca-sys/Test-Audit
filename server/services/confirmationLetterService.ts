@@ -15,6 +15,7 @@ import {
   TabStopPosition,
   TabStopType,
 } from "docx";
+import { getFirmLogoParagraph } from "../utils/docxLogo";
 
 interface ConfirmationData {
   type: "AR" | "AP" | "BANK" | "LEGAL" | "TAX";
@@ -96,6 +97,7 @@ export async function generateBankConfirmationLetter(
     auditorFirmName: string;
     auditorAddress: string;
     periodStartDate?: string;
+    logoUrl?: string | null;
   }
 ): Promise<Buffer> {
   const currentDate = new Date().toLocaleDateString("en-GB", {
@@ -108,6 +110,10 @@ export async function generateBankConfirmationLetter(
   const periodStartDate = clientInfo.periodStartDate || "July 01, " + (new Date().getFullYear() - 1);
   const refNumber = data.refNumber || `${clientInfo.clientName.substring(0, 3).toUpperCase()}/FY${new Date().getFullYear().toString().slice(-2)}/BC-01`;
 
+  const logoChildren: Paragraph[] = [];
+  const logoParagraph = getFirmLogoParagraph(clientInfo.logoUrl);
+  if (logoParagraph) logoChildren.push(logoParagraph);
+
   const doc = new Document({
     sections: [
       {
@@ -117,6 +123,7 @@ export async function generateBankConfirmationLetter(
           },
         },
         children: [
+          ...logoChildren,
           new Paragraph({
             children: [new TextRun({ text: `Dated: ${currentDate}`, size: 20 })],
             spacing: { after: 100 },
@@ -383,6 +390,7 @@ export async function generateARAPConfirmationLetter(
     auditorFirmName: string;
     auditorAddress: string;
     auditorPhone?: string;
+    logoUrl?: string | null;
   }
 ): Promise<Buffer> {
   const currentDate = new Date().toLocaleDateString("en-GB", {
@@ -399,6 +407,10 @@ export async function generateARAPConfirmationLetter(
   const refPrefix = isAR ? "RC" : "PC";
   const refNumber = data.refNumber || `____/${refPrefix}/${new Date().getFullYear()}/01`;
 
+  const logoChildren: Paragraph[] = [];
+  const logoParagraph = getFirmLogoParagraph(clientInfo.logoUrl);
+  if (logoParagraph) logoChildren.push(logoParagraph);
+
   const doc = new Document({
     sections: [
       {
@@ -406,7 +418,7 @@ export async function generateARAPConfirmationLetter(
           page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } },
         },
         children: [
-          // Reference and Date
+          ...logoChildren,
           new Paragraph({
             children: [
               new TextRun({ text: "Ref:\t", bold: true, size: 22 }),
@@ -616,10 +628,15 @@ export async function generateLegalAdvisorConfirmationLetter(
     fiscalYearEnd: string;
     auditorFirmName: string;
     auditorAddress: string;
+    logoUrl?: string | null;
   }
 ): Promise<Buffer> {
   const asOfDate = data.asOfDate || clientInfo.fiscalYearEnd;
   const refNumber = data.refNumber || `____/LAC/${new Date().getFullYear()}/01`;
+
+  const logoChildren: Paragraph[] = [];
+  const logoParagraph = getFirmLogoParagraph(clientInfo.logoUrl);
+  if (logoParagraph) logoChildren.push(logoParagraph);
 
   const doc = new Document({
     sections: [
@@ -628,6 +645,7 @@ export async function generateLegalAdvisorConfirmationLetter(
           page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } },
         },
         children: [
+          ...logoChildren,
           new Paragraph({
             children: [
               new TextRun({ text: "Ref:\t", bold: true, size: 22 }),
@@ -763,10 +781,15 @@ export async function generateTaxAdvisorConfirmationLetter(
     fiscalYearEnd: string;
     auditorFirmName: string;
     auditorAddress: string;
+    logoUrl?: string | null;
   }
 ): Promise<Buffer> {
   const asOfDate = data.asOfDate || clientInfo.fiscalYearEnd;
   const refNumber = data.refNumber || `___/TAC/${new Date().getFullYear()}/01`;
+
+  const logoChildren: Paragraph[] = [];
+  const logoParagraph = getFirmLogoParagraph(clientInfo.logoUrl);
+  if (logoParagraph) logoChildren.push(logoParagraph);
 
   const doc = new Document({
     sections: [
@@ -775,6 +798,7 @@ export async function generateTaxAdvisorConfirmationLetter(
           page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } },
         },
         children: [
+          ...logoChildren,
           new Paragraph({
             children: [
               new TextRun({ text: "Ref:\t", bold: true, size: 22 }),
@@ -901,6 +925,7 @@ export async function generateAllConfirmationLetters(
     fiscalYearEnd: string;
     auditorFirmName: string;
     auditorAddress: string;
+    logoUrl?: string | null;
   }
 ): Promise<Buffer> {
   const sections = [];
@@ -914,12 +939,16 @@ export async function generateAllConfirmationLetters(
     });
 
     const asOfDate = data.asOfDate || clientInfo.fiscalYearEnd;
+    const sectionLogoChildren: Paragraph[] = [];
+    const sectionLogoParagraph = getFirmLogoParagraph(clientInfo.logoUrl);
+    if (sectionLogoParagraph) sectionLogoChildren.push(sectionLogoParagraph);
 
     if (data.type === "BANK") {
       const refNumber = `${clientInfo.clientName.substring(0, 3).toUpperCase()}/FY${new Date().getFullYear().toString().slice(-2)}/BC-${(i + 1).toString().padStart(2, '0')}`;
       sections.push({
         properties: { page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } } },
         children: [
+          ...sectionLogoChildren,
           new Paragraph({ children: [new TextRun({ text: `Dated: ${currentDate}`, size: 20 })], spacing: { after: 100 } }),
           new Paragraph({ children: [new TextRun({ text: `Ref: ${refNumber}`, size: 20 })], spacing: { after: 200 } }),
           new Paragraph({ children: [new TextRun({ text: "The Manager", size: 20 })] }),
@@ -944,6 +973,7 @@ export async function generateAllConfirmationLetters(
       sections.push({
         properties: { page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } } },
         children: [
+          ...sectionLogoChildren,
           new Paragraph({ children: [new TextRun({ text: `Ref: ____/${refPrefix}/${new Date().getFullYear()}/01`, size: 22 })], spacing: { after: 100 } }),
           new Paragraph({ children: [new TextRun({ text: `Dated: ${currentDate}`, size: 22 })], spacing: { after: 200 } }),
           new Paragraph({ children: [new TextRun({ text: data.partyName, size: 22 })] }),

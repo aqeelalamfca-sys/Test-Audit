@@ -3053,6 +3053,7 @@ router.post("/:engagementId/confirmation-letter", async (req: Request, res: Resp
       }) || new Date().toLocaleDateString("en-GB"),
       auditorFirmName: engagement.firm?.name || "Audit Firm",
       auditorAddress: engagement.firm?.address || "Audit Firm Address",
+      logoUrl: engagement.firm?.logoUrl || null,
     };
 
     const confirmationData = {
@@ -3124,6 +3125,7 @@ router.post("/:engagementId/confirmation-letters-all", async (req: Request, res:
       }) || new Date().toLocaleDateString("en-GB"),
       auditorFirmName: engagement.firm?.name || "Audit Firm",
       auditorAddress: engagement.firm?.address || "Audit Firm Address",
+      logoUrl: engagement.firm?.logoUrl || null,
     };
 
     const confirmationData = confirmations.map((c: any) => ({
