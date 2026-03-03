@@ -24,11 +24,19 @@ import {
   Users,
   Building2,
   CheckCircle2,
-  FileCheck,
-  BarChart3,
   ArrowRight,
   Sparkles,
   Lock,
+  Brain,
+  FileText,
+  Database,
+  Scale,
+  BarChart3,
+  ClipboardCheck,
+  UserCheck,
+  AlertTriangle,
+  BookOpen,
+  Layers,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -45,6 +53,25 @@ function isSuperAdminAccess(): boolean {
   const hostname = window.location.hostname;
   return SUPER_ADMIN_IPS.includes(hostname) || /^\d+\.\d+\.\d+\.\d+$/.test(hostname);
 }
+
+const FEATURES = [
+  { icon: BookOpen,      label: "ISA 200–720 Full Mapping" },
+  { icon: Shield,        label: "ISQM-1 Firm-Wide Controls" },
+  { icon: AlertTriangle, label: "Automated Risk Assessment" },
+  { icon: Layers,        label: "Engagement Lifecycle Control" },
+  { icon: UserCheck,     label: "Preparer-Reviewer-Partner Sign-off" },
+  { icon: Brain,         label: "AI Working Paper Drafting" },
+  { icon: Database,      label: "PostgreSQL Secure Database" },
+  { icon: Scale,         label: "Companies Act 2017 Integrated" },
+  { icon: FileText,      label: "FBR-Ready Documentation" },
+  { icon: BarChart3,     label: "SECP Alignment Built-in" },
+];
+
+const STATS = [
+  { value: "ISA 200–720", label: "Standards Covered" },
+  { value: "ISQM-1", label: "Quality Framework" },
+  { value: "SECP + FBR", label: "Local Compliance" },
+];
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -269,72 +296,113 @@ export default function Login() {
         <ThemeToggle />
       </div>
 
-      <div className="hidden lg:flex lg:w-[48%] relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/75" />
-        <div className="absolute inset-0 opacity-[0.05]" style={{
+      {/* ── Left panel ── */}
+      <div className="hidden lg:flex lg:w-[52%] xl:w-[55%] relative overflow-hidden">
+        {/* Multi-layer gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0d2a6b] via-[#0f3485] to-[#0a1f55]" />
+        {/* Radial glow top-right */}
+        <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+        {/* Radial glow bottom-left */}
+        <div className="absolute -bottom-24 -left-24 w-[400px] h-[400px] rounded-full bg-indigo-600/10 blur-3xl pointer-events-none" />
+        {/* Subtle grid texture */}
+        <div className="absolute inset-0 opacity-[0.04]" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M20 18v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
 
-        <div className="relative z-10 flex flex-col justify-between w-full px-10 xl:px-14 py-8">
+        <div className="relative z-10 flex flex-col w-full px-10 xl:px-14 py-8">
+
+          {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm border border-white/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 shadow-lg">
               <Shield className="h-5 w-5 text-white" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-white tracking-tight">AuditWise</h1>
-              <p className="text-[11px] text-white/50">Statutory Audit Management</p>
+              <p className="text-[11px] text-white/45 font-medium tracking-wide uppercase">Statutory Audit Management</p>
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col justify-center max-w-lg -mt-4">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 mb-5 w-fit">
-              <Sparkles className="h-3 w-3 text-amber-300" />
-              <span className="text-[11px] font-medium text-white/90">AI-Powered Audit Intelligence</span>
+          {/* Hero content */}
+          <div className="flex-1 flex flex-col justify-center max-w-xl mt-8">
+
+            {/* Badge */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-400/15 border border-amber-400/25 mb-6 w-fit">
+              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+              <span className="text-[11px] font-semibold text-amber-200 tracking-wide">AI-Powered Audit Intelligence · Pakistan's #1 Platform</span>
             </div>
 
-            <h2 className="text-3xl xl:text-[2.5rem] font-bold text-white leading-[1.15] mb-3">
-              Streamline Your Statutory Audits
+            {/* Headline */}
+            <h2 className="text-3xl xl:text-[2.4rem] font-extrabold text-white leading-[1.15] mb-3 tracking-tight">
+              The Complete Platform for{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-300 to-blue-200">
+                Statutory Audit
+              </span>{" "}
+              Excellence
             </h2>
-            <p className="text-sm text-white/60 leading-relaxed mb-8 max-w-md">
-              The complete platform for managing statutory audit engagements with built-in ISA compliance and intelligent automation.
+            <p className="text-[13px] xl:text-sm text-white/55 leading-relaxed mb-7 max-w-md">
+              Built ground-up for Pakistani audit firms — full ISA 200–720 coverage, ISQM-1 quality controls, and deep local regulatory integration in one platform.
             </p>
 
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { icon: FileCheck, title: "Complete Audit Lifecycle" },
-                { icon: Lock, title: "ISA / ISQM-1 Compliance" },
-                { icon: BarChart3, title: "AI-Powered Analytics" },
-                { icon: Shield, title: "Immutable Audit Trail" },
-              ].map((f, i) => (
-                <div key={i} className="flex items-center gap-2.5 p-3 rounded-lg bg-white/[0.06] border border-white/10">
-                  <f.icon className="h-4 w-4 text-white/80 shrink-0" />
-                  <span className="text-xs font-medium text-white/85">{f.title}</span>
+            {/* Stats bar */}
+            <div className="flex items-center gap-0 mb-7 rounded-xl overflow-hidden border border-white/10">
+              {STATS.map((s, i) => (
+                <div
+                  key={i}
+                  className={`flex-1 px-4 py-3 text-center ${i < STATS.length - 1 ? "border-r border-white/10" : ""} bg-white/[0.04]`}
+                >
+                  <div className="text-sm xl:text-base font-extrabold text-white leading-tight">{s.value}</div>
+                  <div className="text-[10px] text-white/40 mt-0.5 font-medium">{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* 10 Features — 2 columns */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+              {FEATURES.map((f, i) => (
+                <div key={i} className="flex items-center gap-2.5 group">
+                  <div className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-400/15 border border-emerald-400/20">
+                    <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                  </div>
+                  <span className="text-[12px] xl:text-[12.5px] text-white/75 font-medium leading-snug">{f.label}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex -space-x-2">
-              {["AK", "FZ", "MR", "SA"].map((initials, i) => (
-                <div
-                  key={i}
-                  className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-primary text-[9px] font-semibold text-white bg-white/15"
-                >
-                  {initials}
-                </div>
-              ))}
+          {/* Footer trust strip */}
+          <div className="flex items-center justify-between pt-5 border-t border-white/[0.08]">
+            <div className="flex items-center gap-3">
+              <div className="flex -space-x-2">
+                {["AK", "FZ", "MR", "SA"].map((initials, i) => (
+                  <div
+                    key={i}
+                    className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#0f3485] text-[9px] font-bold text-white bg-white/15 shadow"
+                  >
+                    {initials}
+                  </div>
+                ))}
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold text-white/75">Trusted by audit professionals</p>
+                <p className="text-[10px] text-white/35">ISA 230 / ISQM-1 Compliant</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-medium text-white/80">Trusted by audit professionals</p>
-              <p className="text-[10px] text-white/40">ISA 230 / ISQM-1 Compliant</p>
+            <div className="flex items-center gap-2">
+              {["SECP", "FBR", "ICAP"].map((tag) => (
+                <span key={tag} className="text-[9px] font-bold px-2 py-0.5 rounded border border-white/15 text-white/40 tracking-wider bg-white/[0.04]">
+                  {tag}
+                </span>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
+      {/* ── Right panel (login form) ── */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-[400px]">
+
+          {/* Mobile-only header */}
           <div className="lg:hidden text-center mb-6">
             <div className="flex justify-center mb-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg">
