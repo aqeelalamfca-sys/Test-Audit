@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1312,6 +1313,7 @@ function LoadingSkeleton() {
 export function ISA300StrategyPanel({ engagementId, onStrategyGenerated, className }: ISA300StrategyPanelProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { firm } = useAuth();
   
   const [openSteps, setOpenSteps] = useState<Record<number, boolean>>({
     2: true,
@@ -1352,9 +1354,12 @@ export function ISA300StrategyPanel({ engagementId, onStrategyGenerated, classNa
   const handleCopyAllDocumentation = () => {
     if (!savedStrategy?.step9_documentation) return;
     
+    const firmName = firm?.displayName || firm?.name || "AuditWise";
     const doc = savedStrategy.step9_documentation;
     const allText = [
+      firmName,
       "=== ISA 300/330 AUDIT STRATEGY DOCUMENTATION ===",
+      `Generated: ${new Date().toLocaleDateString()}`,
       "",
       "OVERALL AUDIT APPROACH SUMMARY:",
       doc.overallAuditApproachSummary,

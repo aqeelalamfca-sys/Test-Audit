@@ -1429,9 +1429,12 @@ export function AuditProgramPanel({ engagementId, onDataChange, onPushToExecutio
   const handleCopyAllDocumentation = () => {
     if (!savedProgram?.step9_documentation) return;
     
+    const firmName = firm?.displayName || firm?.name || "AuditWise";
     const doc = savedProgram.step9_documentation;
     const allText = [
+      firmName,
       "=== ISA 330 AUDIT PROGRAM DOCUMENTATION ===",
+      `Generated: ${new Date().toLocaleDateString()}`,
       "",
       "PROGRAM SCOPE:",
       doc.programScopeSummary,

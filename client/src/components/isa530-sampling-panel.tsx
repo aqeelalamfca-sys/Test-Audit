@@ -1270,9 +1270,12 @@ export function ISA530SamplingPanel({ engagementId, onSamplingGenerated, classNa
   const handleCopyAllDocumentation = () => {
     if (!savedSampling?.step9_documentation) return;
     
+    const firmName = firm?.displayName || firm?.name || "AuditWise";
     const doc = savedSampling.step9_documentation;
     const allText = [
+      firmName,
       "=== ISA 530 AUDIT SAMPLING DOCUMENTATION ===",
+      `Generated: ${new Date().toLocaleDateString()}`,
       "",
       "POPULATION DEFINITION:",
       doc.populationDefinitionSummary,

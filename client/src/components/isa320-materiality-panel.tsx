@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -743,9 +744,13 @@ function PartnerOverrideStep({ data }: { data: ISA320MaterialityResult["step7_pa
 
 function DocumentationOutputStep({ data }: { data: ISA320MaterialityResult["step8_documentation"] }) {
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const { firm } = useAuth();
 
   const copyToClipboard = async (text: string, field: string) => {
-    await navigator.clipboard.writeText(text);
+    const textToWrite = field === "all"
+      ? `${firm?.displayName || firm?.name || "AuditWise"}\n=== ISA 320 MATERIALITY DOCUMENTATION ===\nGenerated: ${new Date().toLocaleDateString()}\n\n${text}`
+      : text;
+    await navigator.clipboard.writeText(textToWrite);
     setCopiedField(field);
     setTimeout(() => setCopiedField(null), 2000);
   };

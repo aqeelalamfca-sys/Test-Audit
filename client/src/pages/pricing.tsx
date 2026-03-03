@@ -83,8 +83,14 @@ const tierConfig: Record<string, {
   },
 };
 
+const PKR_TO_USD = 278;
+
 function formatPrice(price: number) {
   return price.toLocaleString("en-PK");
+}
+
+function formatUsd(pkr: number) {
+  return Math.round(pkr / PKR_TO_USD).toLocaleString("en-US");
 }
 
 export default function PricingPage() {
@@ -225,11 +231,12 @@ export default function PricingPage() {
                         </span>
                         <span className="text-muted-foreground text-xs">/mo</span>
                       </div>
-                      {billingCycle === "yearly" && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                          Billed PKR {formatPrice(discounted * 12)}/year
-                        </p>
-                      )}
+                      <p className="text-[11px] text-muted-foreground mt-0.5" data-testid={`text-usd-${plan.code.toLowerCase()}`}>
+                        ≈ USD {formatUsd(discounted)}/mo
+                        {billingCycle === "yearly" && (
+                          <span> · Billed PKR {formatPrice(discounted * 12)}/year</span>
+                        )}
+                      </p>
                     </div>
                   </CardHeader>
 
@@ -366,7 +373,10 @@ export default function PricingPage() {
             All plans include a 30-day free trial. No credit card required to start.
           </p>
           <p className="text-xs text-muted-foreground">
-            Prices shown in Pakistani Rupees (PKR). Cancel anytime during the trial.
+            Prices shown in Pakistani Rupees (PKR). USD equivalents are approximate (1 USD ≈ {PKR_TO_USD} PKR).
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Cancel anytime during the trial.
           </p>
         </div>
       </div>

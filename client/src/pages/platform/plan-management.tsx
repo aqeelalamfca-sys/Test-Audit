@@ -19,8 +19,14 @@ const emptyForm = {
   isPublic: true, isActive: true, supportLevel: "standard",
 };
 
+const PKR_TO_USD = 278;
+
 function formatPkr(value: number | string) {
   return Number(value).toLocaleString("en-PK");
+}
+
+function formatUsd(pkr: number | string) {
+  return Math.round(Number(pkr) / PKR_TO_USD).toLocaleString("en-US");
 }
 
 function isUnlimited(value: number) {
@@ -257,6 +263,7 @@ export default function PlanManagement() {
                     <div>
                       <span className="text-3xl font-bold">PKR {formatPkr(plan.monthlyPrice)}</span>
                       <span className="text-sm text-muted-foreground">/mo</span>
+                      <p className="text-xs text-muted-foreground mt-0.5">≈ USD {formatUsd(plan.monthlyPrice)}/mo</p>
                     </div>
 
                     <Separator />
