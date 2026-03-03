@@ -140,8 +140,30 @@ router.post("/login", async (req: AuthenticatedRequest, res: Response) => {
 
     const user = await prisma.user.findUnique({ where: { email } });
 
-    if (!user || !user.isActive) {
+    if (!user || !user.isActive || user.status === "DELETED") {
       return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    if (user.status === "SUSPENDED") {
+      return res.status(403).json({ error: "Your account has been suspended. Please contact your administrator." });
+    }
+
+    if (user.firmId && user.role !== "SUPER_ADMIN") {
+      const firm = await prisma.firm.findUnique({ where: { id: user.firmId } });
+      if (firm) {
+        if (firm.status === "SUSPENDED") {
+          return res.status(403).json({
+            error: "Your firm account has been suspended. Please contact support.",
+            code: "FIRM_SUSPENDED",
+          });
+        }
+        if (firm.status === "TERMINATED") {
+          return res.status(403).json({
+            error: "Your firm account has been terminated.",
+            code: "FIRM_TERMINATED",
+          });
+        }
+      }
     }
 
     const isValid = await verifyPassword(password, user.passwordHash);

@@ -9,6 +9,7 @@ interface User {
   role: string;
   firmId: string | null;
   isActive: boolean;
+  status?: string;
   lastLoginAt: string | null;
 }
 
@@ -24,7 +25,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User | void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -147,6 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(data.token);
     setUser(data.user);
     await fetchUser();
+    return data.user;
   };
 
   const register = async (data: RegisterData) => {

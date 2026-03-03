@@ -28,6 +28,10 @@ import { seedPermissions } from "./seedPermissions";
 import { seedTestUsers } from "./seeds/seedUsers";
 import { seedInitialAdmin } from "./seeds/seedInitialAdmin";
 import { seedTemplates } from "./seeds/seedTemplates";
+import { seedSuperAdmin } from "./seeds/seedSuperAdmin";
+import { seedPlans } from "./seeds/seedPlans";
+import platformRoutes from "./routes/platformRoutes";
+import tenantRoutes from "./routes/tenantRoutes";
 import logsRoutes from "./logsRoutes";
 import workspaceRoutes from "./workspaceRoutes";
 import prePlanningRoutes from "./prePlanningRoutes";
@@ -264,6 +268,10 @@ app.use((req, res, next) => {
   app.use("/api/governance", auditGovernanceRoutes);
   app.use("/api/impacts", impactRoutes);
   app.use("/api/notes", notesRoutes);
+
+  // Multi-tenant platform & tenant routes
+  app.use("/api/platform", platformRoutes);
+  app.use("/api/tenant", tenantRoutes);
   
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -301,6 +309,20 @@ app.use((req, res, next) => {
       console.log("Permissions seeded successfully");
     } catch (err) {
       console.error("Failed to seed permissions:", err);
+    }
+
+    try {
+      await seedSuperAdmin();
+      console.log("SuperAdmin seeded successfully");
+    } catch (err) {
+      console.error("Failed to seed SuperAdmin:", err);
+    }
+
+    try {
+      await seedPlans();
+      console.log("Plans seeded successfully");
+    } catch (err) {
+      console.error("Failed to seed plans:", err);
     }
 
     if (isProduction) {

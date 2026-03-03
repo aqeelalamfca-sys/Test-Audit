@@ -31,6 +31,9 @@ import {
   CheckCircle2,
   FileOutput,
   Search,
+  Bell,
+  Bot,
+  Crown,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { RoleBadge } from "@/components/status-badge";
@@ -66,8 +69,10 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
   const { activeEngagement, isInWorkspaceMode, getWorkspaceHref, exitWorkspace, currentEngagementId } = useWorkspace();
 
   const userRole = user?.role?.toLowerCase() || currentUser?.role?.toLowerCase() || "staff";
-  const isAdmin = userRole === "admin" || userRole === "partner" || userRole === "managing_partner";
+  const isAdmin = userRole === "admin" || userRole === "partner" || userRole === "managing_partner" || userRole === "firm_admin";
   const isManager = userRole === "manager" || isAdmin;
+  const isSuperAdmin = userRole === "super_admin";
+  const isFirmAdmin = userRole === "firm_admin";
 
   const isWorkspaceRoute = location.startsWith("/workspace/");
 
@@ -269,6 +274,111 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+
+            {isFirmAdmin && (
+              <SidebarGroup>
+                <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Firm Administration
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location === "/firm-admin/users"} data-testid="nav-firm-users">
+                        <Link href="/firm-admin/users">
+                          <Users className="h-4 w-4" />
+                          <span>User Management</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location === "/firm-admin/settings" || location === "/firm-admin"} data-testid="nav-firm-settings">
+                        <Link href="/firm-admin/settings">
+                          <Settings className="h-4 w-4" />
+                          <span>Firm Settings</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location === "/firm-admin/audit-logs"} data-testid="nav-firm-audit-logs">
+                        <Link href="/firm-admin/audit-logs">
+                          <FileText className="h-4 w-4" />
+                          <span>Audit Logs</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location === "/firm-admin/ai-usage"} data-testid="nav-firm-ai-usage">
+                        <Link href="/firm-admin/ai-usage">
+                          <Bot className="h-4 w-4" />
+                          <span>AI Usage</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )}
+
+            {isSuperAdmin && (
+              <SidebarGroup>
+                <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <Crown className="h-3 w-3 inline mr-1" />
+                  Platform Admin
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location === "/platform"} data-testid="nav-platform-dashboard">
+                        <Link href="/platform">
+                          <LayoutDashboard className="h-4 w-4" />
+                          <span>Dashboard</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location === "/platform/firms"} data-testid="nav-platform-firms">
+                        <Link href="/platform/firms">
+                          <Building2 className="h-4 w-4" />
+                          <span>Firm Management</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location === "/platform/plans"} data-testid="nav-platform-plans">
+                        <Link href="/platform/plans">
+                          <BarChart3 className="h-4 w-4" />
+                          <span>Plan Management</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location === "/platform/notifications"} data-testid="nav-platform-notifications">
+                        <Link href="/platform/notifications">
+                          <Bell className="h-4 w-4" />
+                          <span>Notifications</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location === "/platform/audit-logs"} data-testid="nav-platform-audit-logs">
+                        <Link href="/platform/audit-logs">
+                          <FileText className="h-4 w-4" />
+                          <span>Audit Logs</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location === "/platform/ai-config"} data-testid="nav-platform-ai-config">
+                        <Link href="/platform/ai-config">
+                          <Bot className="h-4 w-4" />
+                          <span>AI Configuration</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )}
           </>
         )}
       </SidebarContent>

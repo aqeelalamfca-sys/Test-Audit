@@ -89,12 +89,19 @@ export default function Login() {
   const onSubmit = async (data: LoginFormData) => {
     setIsSubmitting(true);
     try {
-      await login(data.email, data.password);
+      const result = await login(data.email, data.password);
       toast({
         title: "Welcome back",
         description: "You have been successfully logged in.",
       });
-      setLocation("/");
+      const userRole = (result as any)?.role?.toUpperCase();
+      if (userRole === "SUPER_ADMIN") {
+        setLocation("/platform");
+      } else if (userRole === "FIRM_ADMIN") {
+        setLocation("/firm-admin");
+      } else {
+        setLocation("/");
+      }
     } catch (error) {
       toast({
         title: "Login failed",

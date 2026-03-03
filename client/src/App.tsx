@@ -77,6 +77,17 @@ const PortalLogin = lazy(() => retryImport(() => import("@/pages/portal-login"))
 const PortalDashboard = lazy(() => retryImport(() => import("@/pages/portal-dashboard")));
 const PortalRequests = lazy(() => retryImport(() => import("@/pages/portal-requests")));
 
+const PlatformDashboard = lazy(() => retryImport(() => import("@/pages/platform/platform-dashboard")));
+const FirmManagement = lazy(() => retryImport(() => import("@/pages/platform/firm-management")));
+const PlanManagement = lazy(() => retryImport(() => import("@/pages/platform/plan-management")));
+const PlatformNotifications = lazy(() => retryImport(() => import("@/pages/platform/platform-notifications")));
+const PlatformAuditLogs = lazy(() => retryImport(() => import("@/pages/platform/platform-audit-logs")));
+const PlatformAIConfig = lazy(() => retryImport(() => import("@/pages/platform/platform-ai-config")));
+const FirmUsersPage = lazy(() => retryImport(() => import("@/pages/firm-admin/firm-users")));
+const FirmSettingsPage = lazy(() => retryImport(() => import("@/pages/firm-admin/firm-settings")));
+const FirmAuditLogsPage = lazy(() => retryImport(() => import("@/pages/firm-admin/firm-audit-logs")));
+const FirmAIUsagePage = lazy(() => retryImport(() => import("@/pages/firm-admin/firm-ai-usage")));
+
 
 // Wrapper for global lazy-loaded pages
 const FirmWideControls = (props: any) => (
@@ -115,6 +126,16 @@ const WorkflowHealthPageLazy = withLazySuspense(WorkflowHealthPage);
 const PortalLoginLazy = withLazySuspense(PortalLogin);
 const PortalDashboardLazy = withLazySuspense(PortalDashboard);
 const PortalRequestsLazy = withLazySuspense(PortalRequests);
+const PlatformDashboardLazy = withLazySuspense(PlatformDashboard);
+const FirmManagementLazy = withLazySuspense(FirmManagement);
+const PlanManagementLazy = withLazySuspense(PlanManagement);
+const PlatformNotificationsLazy = withLazySuspense(PlatformNotifications);
+const PlatformAuditLogsLazy = withLazySuspense(PlatformAuditLogs);
+const PlatformAIConfigLazy = withLazySuspense(PlatformAIConfig);
+const FirmUsersLazy = withLazySuspense(FirmUsersPage);
+const FirmSettingsLazy = withLazySuspense(FirmSettingsPage);
+const FirmAuditLogsLazy = withLazySuspense(FirmAuditLogsPage);
+const FirmAIUsageLazy = withLazySuspense(FirmAIUsagePage);
 
 const StandardsMatrix = lazy(() => import("@/pages/standards-matrix"));
 const GuardedStandardsMatrix = createGuardedComponent(StandardsMatrix, "StandardsMatrix", true);
@@ -140,6 +161,60 @@ function createLegacyRedirect(legacyPath: string, workspacePath: string) {
     return <Redirect to={`/workspace/${engagementId}/${workspacePath}`} />;
   };
 }
+
+function RoleGuard({ requiredRole, children }: { requiredRole: string; children: React.ReactNode }) {
+  const { user } = useAuth();
+  const userRole = user?.role?.toUpperCase() || "";
+  
+  if (requiredRole === "SUPER_ADMIN" && userRole !== "SUPER_ADMIN") {
+    return (
+      <div className="flex items-center justify-center h-full p-8" data-testid="access-denied">
+        <div className="text-center space-y-3">
+          <div className="text-4xl font-bold text-muted-foreground">403</div>
+          <h2 className="text-xl font-semibold">Access Denied</h2>
+          <p className="text-muted-foreground">This area requires Super Admin privileges.</p>
+          <a href="/" className="text-primary underline">Return to Dashboard</a>
+        </div>
+      </div>
+    );
+  }
+  
+  if (requiredRole === "FIRM_ADMIN" && userRole !== "FIRM_ADMIN" && userRole !== "SUPER_ADMIN") {
+    return (
+      <div className="flex items-center justify-center h-full p-8" data-testid="access-denied">
+        <div className="text-center space-y-3">
+          <div className="text-4xl font-bold text-muted-foreground">403</div>
+          <h2 className="text-xl font-semibold">Access Denied</h2>
+          <p className="text-muted-foreground">This area requires Firm Admin privileges.</p>
+          <a href="/" className="text-primary underline">Return to Dashboard</a>
+        </div>
+      </div>
+    );
+  }
+  
+  return <>{children}</>;
+}
+
+function createRoleGuardedComponent(Component: React.LazyExoticComponent<any>, requiredRole: string) {
+  return (props: any) => (
+    <RoleGuard requiredRole={requiredRole}>
+      <Suspense fallback={<LoadingSpinner />}>
+        <Component {...props} />
+      </Suspense>
+    </RoleGuard>
+  );
+}
+
+const GuardedPlatformDashboard = createRoleGuardedComponent(PlatformDashboard, "SUPER_ADMIN");
+const GuardedFirmManagement = createRoleGuardedComponent(FirmManagement, "SUPER_ADMIN");
+const GuardedPlanManagement = createRoleGuardedComponent(PlanManagement, "SUPER_ADMIN");
+const GuardedPlatformNotifications = createRoleGuardedComponent(PlatformNotifications, "SUPER_ADMIN");
+const GuardedPlatformAuditLogs = createRoleGuardedComponent(PlatformAuditLogs, "SUPER_ADMIN");
+const GuardedPlatformAIConfig = createRoleGuardedComponent(PlatformAIConfig, "SUPER_ADMIN");
+const GuardedFirmUsers = createRoleGuardedComponent(FirmUsersPage, "FIRM_ADMIN");
+const GuardedFirmSettings = createRoleGuardedComponent(FirmSettingsPage, "FIRM_ADMIN");
+const GuardedFirmAuditLogs = createRoleGuardedComponent(FirmAuditLogsPage, "FIRM_ADMIN");
+const GuardedFirmAIUsage = createRoleGuardedComponent(FirmAIUsagePage, "FIRM_ADMIN");
 
 function createGuardedComponent(Component: React.ComponentType<any>, displayName: string, isLazy = false) {
   const GuardedComponent = (props: { params?: { engagementId?: string } }) => {
@@ -205,6 +280,21 @@ function Router() {
       <Route path="/user-guide" component={UserGuideLazy} />
       <Route path="/deployment-guide" component={DeploymentGuideLazy} />
       <Route path="/phase/:phase" component={PhaseViewLazy} />
+
+      {/* Platform Admin routes (SuperAdmin only - frontend role guard) */}
+      <Route path="/platform" component={GuardedPlatformDashboard} />
+      <Route path="/platform/firms" component={GuardedFirmManagement} />
+      <Route path="/platform/plans" component={GuardedPlanManagement} />
+      <Route path="/platform/notifications" component={GuardedPlatformNotifications} />
+      <Route path="/platform/audit-logs" component={GuardedPlatformAuditLogs} />
+      <Route path="/platform/ai-config" component={GuardedPlatformAIConfig} />
+
+      {/* Firm Admin routes (FirmAdmin+ role guard) */}
+      <Route path="/firm-admin" component={GuardedFirmSettings} />
+      <Route path="/firm-admin/users" component={GuardedFirmUsers} />
+      <Route path="/firm-admin/settings" component={GuardedFirmSettings} />
+      <Route path="/firm-admin/audit-logs" component={GuardedFirmAuditLogs} />
+      <Route path="/firm-admin/ai-usage" component={GuardedFirmAIUsage} />
       
       {/* Redirect bare /workspace to engagements */}
       <Route path="/workspace" component={WorkspaceRedirect} />

@@ -124,6 +124,8 @@ export function requireMinRole(minRole: UserRole) {
     MANAGING_PARTNER: 5,
     EQCR: 6,
     ADMIN: 99,
+    FIRM_ADMIN: 100,
+    SUPER_ADMIN: 999,
   };
 
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {

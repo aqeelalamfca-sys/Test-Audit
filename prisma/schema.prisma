@@ -17,6 +17,49 @@ enum UserRole {
   PARTNER
   EQCR
   ADMIN
+  FIRM_ADMIN
+  SUPER_ADMIN
+}
+
+enum FirmStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  SUSPENDED
+  CANCELED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  VOID
+  OVERDUE
+}
+
+enum NotificationScope {
+  GLOBAL
+  FIRM
+  ENGAGEMENT
+}
+
+enum NotificationType {
+  POPUP
+  BANNER
+  EMAIL
 }
 
 enum EngagementStatus {
@@ -112,6 +155,13 @@ model Firm {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  status        FirmStatus @default(ACTIVE)
+  suspendedAt   DateTime?
+  terminatedAt  DateTime?
+  createdById   String?
+  currency      String?
+  timezone      String?
+
   establishmentDate  DateTime?
   registrationNumber String?
   taxId              String?
@@ -157,26 +207,178 @@ model Firm {
 
   // QCR / ISQM-1 relations
   isqm1MonitoringEntries ISQM1MonitoringEntry[]
+
+  subscriptions         Subscription[]
+  platformNotifications PlatformNotification[]
+  platformAuditLogs     PlatformAuditLog[]
+  aiUsageRecords        AIUsageRecord[]
+}
+
+model Plan {
+  id                String   @id @default(uuid())
+  code              String   @unique
+  name              String
+  maxUsers          Int      @default(10)
+  maxEngagements    Int      @default(50)
+  allowCustomAi     Boolean  @default(false)
+  monthlyPrice      Decimal  @default(0)
+  featureFlags      Json     @default("{}")
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                 String             @id @default(uuid())
+  firmId             String
+  planId             String
+  status             SubscriptionStatus @default(TRIAL)
+  trialStart         DateTime?
+  trialEnd           DateTime?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  firm     Firm      @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  plan     Plan      @relation(fields: [planId], references: [id])
+  invoices Invoice[]
+
+  @@index([firmId])
+  @@index([status])
+}
+
+model Invoice {
+  id             String        @id @default(uuid())
+  subscriptionId String
+  amount         Decimal
+  currency       String        @default("USD")
+  status         InvoiceStatus @default(DRAFT)
+  description    String?
+  issuedAt       DateTime?
+  paidAt         DateTime?
+  dueAt          DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([status])
+}
+
+model PlatformNotification {
+  id           String            @id @default(uuid())
+  firmId       String?
+  scope        NotificationScope @default(GLOBAL)
+  engagementId String?
+  type         NotificationType  @default(POPUP)
+  title        String
+  message      String
+  startAt      DateTime          @default(now())
+  endAt        DateTime?
+  priority     Int               @default(0)
+  isActive     Boolean           @default(true)
+  createdById  String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  firm Firm? @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId])
+  @@index([scope])
+  @@index([startAt, endAt])
+}
+
+model PlatformAuditLog {
+  id        String   @id @default(uuid())
+  firmId    String?
+  userId    String
+  action    String
+  entity    String
+  entityId  String?
+  ip        String?
+  userAgent String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  firm Firm? @relation(fields: [firmId], references: [id], onDelete: SetNull)
+
+  @@index([firmId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([entity, entityId])
+}
+
+model AIUsageRecord {
+  id           String   @id @default(uuid())
+  firmId       String
+  userId       String
+  engagementId String?
+  model        String
+  provider     String   @default("openai")
+  tokensIn     Int      @default(0)
+  tokensOut    Int      @default(0)
+  costEstimate Decimal  @default(0)
+  createdAt    DateTime @default(now())
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([firmId, createdAt])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PlatformAIConfig {
+  id            String   @id @default(uuid())
+  defaultApiKey String
+  provider      String   @default("openai")
+  modelName     String   @default("gpt-4o")
+  tokenLimit    Int      @default(100000)
+  costPerToken  Decimal  @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model User {
-  id             String    @id @default(uuid())
-  email          String    @unique
-  username       String    @unique
+  id             String     @id @default(uuid())
+  email          String     @unique
+  username       String     @unique
   passwordHash   String
   fullName       String
-  role           UserRole  @default(STAFF)
+  role           UserRole   @default(STAFF)
   firmId         String?
-  isActive       Boolean   @default(true)
+  isActive       Boolean    @default(true)
+  status         UserStatus @default(ACTIVE)
   lastLoginAt    DateTime?
   partnerPin     String?
   activeClientId String?
   activePeriodId String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
   firm                Firm?            @relation(fields: [firmId], references: [id])
   sessions            Session[]
+  refreshTokens       RefreshToken[]
   teamAssignments     EngagementTeam[]
   checklistsCompleted ChecklistItem[]  @relation("CompletedBy")
   checklistsAssigned  ChecklistItem[]  @relation("AssignedTo")
@@ -6555,6 +6757,13 @@ model FirmSettings {
   aiRequiresHumanApproval Boolean @default(true)
   aiOutputLabel           String  @default("AI-Assisted – Subject to Professional Judgment")
   logAllAIInteractions    Boolean @default(true)
+
+  // AI Override (Firm-level key)
+  aiOverrideEnabled    Boolean @default(false)
+  aiApiKeyEncrypted    String?
+  aiProviderOverride   String?
+  tokenLimitMonthly    Int     @default(100000)
+  customAiAllowed      Boolean @default(true)
 
   // Audit Trail Settings
   immutableAuditTrail Boolean @default(true)

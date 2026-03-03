@@ -74,6 +74,22 @@ Key architectural patterns and features include:
 - **Role-scoped views**: Associates see own items, Managers see team, Partners see executive summary.
 - **Standards gate**: Blocks finalization approval if HIGH risk with unresolved issues, pending execution items, or missing evidence (ISA 500).
 
+### Multi-Tenant SaaS Architecture
+- **Tenant Isolation**: All tenant-scoped queries enforce `firmId` from authenticated user. SuperAdmin bypasses but must specify firmId explicitly.
+- **Role Hierarchy**: STAFF(1) → SENIOR(2) → TEAM_LEAD(3) → MANAGER(5) → PARTNER(6) → MANAGING_PARTNER(7) → ADMIN(7) → FIRM_ADMIN(8) → SUPER_ADMIN(99)
+- **New Roles**: `SUPER_ADMIN` (platform-wide, no firmId), `FIRM_ADMIN` (firm-scoped admin)
+- **Subscription Plans**: BASIC ($49/mo, 5 users, 10 engagements), PRO ($199/mo, 25 users, 100 engagements), ENTERPRISE ($499/mo, 999 users, 9999 engagements)
+- **Firm Status Guards**: ACTIVE/TRIAL allowed, SUSPENDED/TERMINATED blocked with 403. PAST_DUE blocks writes only.
+- **Platform API** (`/api/platform/*`): SuperAdmin-only routes for firm CRUD, plan management, global notifications, audit logs, AI config, analytics
+- **Tenant API** (`/api/tenant/*`): Firm-scoped routes for user management, settings, AI key override, audit logs, AI usage
+- **Middleware Stack**: `tenantIsolation.ts` (firm scope), `subscriptionGuard.ts` (status checks), `rbacGuard.ts` (role hierarchy)
+- **AI Key Encryption**: Firm AI API keys encrypted at rest using AES-256-GCM (`server/services/encryptionService.ts`)
+- **Platform Audit Logging**: All write actions logged to `PlatformAuditLog` via `server/services/platformAuditService.ts`
+- **AI Usage Tracking**: Per-firm/user token consumption tracked in `AIUsageRecord`
+- **SuperAdmin Credentials**: `SUPER_ADMIN_EMAIL` / `SUPER_ADMIN_PASSWORD` env vars (default: superadmin@auditwise.pk / SuperAdmin@123)
+- **Frontend Routes**: `/platform/*` (SuperAdmin dashboard, firms, plans, notifications, audit logs, AI config), `/firm-admin/*` (user management, settings, audit logs, AI usage)
+- **Sidebar Navigation**: Role-aware - shows Platform Admin section for SUPER_ADMIN, Firm Administration section for FIRM_ADMIN
+
 ### Security & Access Control
 - **Rate Limiting Middleware**: Per-user/IP rate limiting for auth, AI, and general API endpoints.
 - **Role-Based AI Access**: AI utility endpoints require SENIOR role minimum.

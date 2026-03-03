@@ -1,0 +1,305 @@
+Below is a **production-grade DevOps Deployment Model** for your **AI Audit Software (Multi-Tenant SaaS)** with:
+
+* **Super Admin (platform)**
+* **Firm-level tenants**
+* **AI API keys (default + firm override)**
+* **Billing + notifications**
+* **.NET API + React/Next frontend + SQL DB**
+* **Hostinger VPS-friendly (single server) with a clean path to scale**
+
+---
+
+## 1) Target Production Topology
+
+### Single VPS (recommended starting point)
+
+* **Nginx** (reverse proxy + SSL + security headers)
+* **Frontend**: Next.js (Node) or React SPA served via Nginx
+* **Backend API**: .NET (Kestrel) in Docker
+* **DB**: PostgreSQL (recommended) or SQL Server (Linux container)
+* **Cache/Queue (optional but recommended)**: Redis
+* **Background jobs**: Hangfire / Quartz (separate worker container)
+* **Observability**: Prometheus + Grafana + Loki (or simpler: Uptime Kuma + logs)
+
+**Key principle:** Everything runs as **Docker containers** via **docker compose**.
+
+---
+
+## 2) Environments & Branching
+
+### Environments
+
+* **dev**: local machine
+* **staging**: optional (same VPS, different subdomain)
+* **prod**: auditwise.tech
+
+### Git branching (simple & workable)
+
+* `main` → production
+* `develop` → staging (optional)
+* feature branches → PR → merge into develop/main
+
+---
+
+## 3) Containerization Standard
+
+### Services (compose-level)
+
+* `proxy` (nginx)
+* `frontend` (Next.js)
+* `api` (.NET)
+* `worker` (.NET background)
+* `db` (postgres or sqlserver)
+* `redis` (optional)
+* `migrate` (optional one-shot migration container)
+
+### Non-negotiables
+
+* **No secrets in repo**
+* **Config via environment variables**
+* **Health checks** for api/frontend
+* **Persistent volumes** for DB and uploads
+
+---
+
+## 4) Secrets & Configuration Model
+
+### Production secrets store (practical on VPS)
+
+* Use **/opt/auditwise/.env.prod** (root-only readable)
+* Or Docker secrets (Swarm) later
+
+**Examples of secrets:**
+
+* `DB_CONNECTION`
+* `JWT_SIGNING_KEY`
+* `DEFAULT_AI_API_KEY` (platform default)
+* `ENCRYPTION_KEY` (for encrypting firm AI keys at rest)
+* `SMTP_PASSWORD`
+* `S3_ACCESS_KEY` (if using object storage)
+
+**Critical:** Firm-provided AI keys must be **encrypted in DB** using `ENCRYPTION_KEY` (AES-GCM recommended).
+
+---
+
+## 5) Reverse Proxy & SSL
+
+### Nginx responsibilities
+
+* TLS termination (Let’s Encrypt)
+* Reverse proxy:
+
+  * `/` → frontend
+  * `/api` → backend API
+* Rate limiting (especially for auth + AI routes)
+* Static caching for assets
+* Request body size limits (uploads)
+
+**SSL automation options**
+
+* **certbot** on VPS (common)
+* OR nginx-proxy-manager (easier UI) but adds complexity
+
+---
+
+## 6) CI/CD Pipeline Model (GitHub Actions Recommended)
+
+### Build strategy
+
+* Build & push images to **GitHub Container Registry (GHCR)** or Docker Hub
+* On VPS: pull latest images + restart
+
+### Typical GitHub Actions workflow
+
+1. On push to `main`:
+
+   * run tests (unit + basic integration)
+   * build docker images: `frontend`, `api`, `worker`
+   * push to registry with tag `prod-<sha>` and `prod-latest`
+2. Deploy step:
+
+   * SSH into VPS
+   * `docker compose pull`
+   * `docker compose up -d`
+   * run migrations (optional)
+   * health check
+   * rollback if failure (keep previous tag)
+
+**Why this works:** no “git pull on server” needed; server just runs known images.
+
+---
+
+## 7) Database & Migration Strategy
+
+### Recommended DB
+
+* **PostgreSQL** (excellent for SaaS + row-level security if needed)
+* If you must use SQL Server: use official Linux container; higher overhead
+
+### Migrations (critical for stability)
+
+* Use **EF Core migrations** (or Flyway/Liquibase)
+* Run migrations in pipeline OR as one-shot container:
+
+  * `migrate` container runs, exits, then app starts
+
+### Backups (must-have)
+
+* Nightly `pg_dump` to:
+
+  * local encrypted file + retention (7/30/90 days)
+  * and optionally push to object storage (S3/Backblaze)
+
+---
+
+## 8) Deployment Steps on VPS (Operational Runbook)
+
+### One-time server hardening
+
+* Create a non-root deploy user
+* SSH key only; disable password auth
+* UFW firewall:
+
+  * allow `22`, `80`, `443`
+  * block everything else
+* Install:
+
+  * Docker + docker compose plugin
+  * Fail2ban (recommended)
+* Set time sync (chrony)
+
+### One-time app setup
+
+* `/opt/auditwise/`
+
+  * `docker-compose.yml`
+  * `.env.prod`
+  * `nginx/` configs
+  * `data/` (db volume, uploads)
+  * `backups/`
+
+### Deploy routine (repeatable)
+
+* Pull new images
+* Apply migrations
+* Restart containers
+* Verify health endpoints
+
+---
+
+## 9) Monitoring, Logging, Alerting
+
+### Minimum viable monitoring
+
+* **Uptime Kuma** for:
+
+  * `https://auditwise.tech/health`
+  * `https://auditwise.tech/api/health`
+* Email/Telegram alerts on downtime
+
+### Logging
+
+* Centralize logs using one:
+
+  * Simple: `docker logs` + log rotation
+  * Better: Loki + Grafana
+* App-level structured logs (JSON), include:
+
+  * `firmId`, `userId`, `requestId`, `module`, `action`
+
+### Metrics
+
+* API latency, error rate, CPU, RAM, disk, DB connections
+* AI usage metrics per firm (billing-critical)
+
+---
+
+## 10) Security Controls for Production
+
+### App security (platform)
+
+* JWT + refresh tokens (rotating)
+* Strong password policy & MFA for Super Admin (recommended)
+* Account lockout / rate limiting on login
+* Audit logs immutable (append-only table)
+
+### Infrastructure security
+
+* Only 80/443 public
+* DB not exposed publicly (internal network only)
+* Regular OS patching
+* Secrets encrypted at rest
+* Backups encrypted
+
+### Tenant isolation
+
+* FirmID enforced in middleware
+* Row-level DB security (optional, strong)
+* Separate storage paths per firm for uploads
+
+---
+
+## 11) Scale Path (When Load Increases)
+
+### Phase 1: Bigger VPS
+
+* More CPU/RAM, keep same architecture
+
+### Phase 2: Split DB
+
+* DB to managed Postgres (or separate VPS)
+* App containers remain on web VPS
+
+### Phase 3: Add queue + workers
+
+* Redis + background workers scale horizontally
+
+### Phase 4: Kubernetes (optional)
+
+* Only when you truly need auto-scaling / multiple nodes
+
+---
+
+## 12) Release & Rollback Policy
+
+### Release
+
+* Use versioned image tags + changelog
+* Deploy during off-peak
+* Run smoke tests:
+
+  * login
+  * create firm (super admin)
+  * create user (firm admin)
+  * create engagement
+  * run AI action (default + custom key)
+
+### Rollback
+
+* Keep previous images locally
+* `docker compose` revert tag to last stable
+* DB rollback: avoid destructive migrations; use additive changes first
+
+---
+
+## 13) Production Checklist (Quick)
+
+* [ ] HTTPS working (A+)
+* [ ] Health endpoints implemented
+* [ ] DB backups scheduled + tested restore
+* [ ] Secrets not in repo
+* [ ] Rate limiting enabled
+* [ ] Logs + alerts enabled
+* [ ] Migration plan in place
+* [ ] Trial expiry + billing enforcement tested
+* [ ] AI usage metering tested
+
+---
+
+If you tell me your **actual stack** (choose one):
+
+1. **Next.js + .NET + Postgres**
+2. **React SPA + .NET + SQL Server**
+3. **Other (name it)**
+
+…I will give you the **exact docker-compose.yml structure + Nginx config map + GitHub Actions YAML** aligned to your stack and domain routing (`/` and `/api`).
