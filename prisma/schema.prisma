@@ -160,6 +160,7 @@ model Firm {
   status        FirmStatus @default(ACTIVE)
   suspendedAt   DateTime?
   terminatedAt  DateTime?
+  deletedAt     DateTime?
   createdById   String?
   currency      String?
   timezone      String?
@@ -248,9 +249,12 @@ model Subscription {
   status             SubscriptionStatus @default(TRIAL)
   trialStart         DateTime?
   trialEnd           DateTime?
+  deleteAt           DateTime?
+  isActivated        Boolean            @default(false)
+  priceSnapshot      Json               @default("{}")
   currentPeriodStart DateTime?
   currentPeriodEnd   DateTime?
-  graceDays          Int                @default(7)
+  graceDays          Int                @default(0)
   graceEndAt         DateTime?
   nextInvoiceAt      DateTime?
   createdAt          DateTime           @default(now())
@@ -262,6 +266,7 @@ model Subscription {
 
   @@index([firmId])
   @@index([status])
+  @@index([deleteAt])
 }
 
 model Invoice {
@@ -342,6 +347,22 @@ model PlatformAuditLog {
   @@index([action])
   @@index([createdAt])
   @@index([entity, entityId])
+}
+
+model BillingAuditLog {
+  id             String   @id @default(uuid())
+  actorUserId    String?
+  firmId         String?
+  subscriptionId String?
+  action         String
+  beforeState    Json?
+  afterState     Json?
+  createdAt      DateTime @default(now())
+
+  @@index([firmId])
+  @@index([subscriptionId])
+  @@index([action])
+  @@index([createdAt])
 }
 
 model AIUsageRecord {

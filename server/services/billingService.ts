@@ -235,3 +235,55 @@ export async function processScheduledInvoices() {
 
   return { generated };
 }
+
+export async function deleteExpiredTrialFirms() {
+  const { logBillingAction } = await import("./billingAuditService");
+  const now = new Date();
+
+  const expiredSubs = await prisma.subscription.findMany({
+    where: {
+      status: "TRIAL",
+      isActivated: false,
+      deleteAt: { lte: now },
+    },
+    include: {
+      firm: { select: { id: true, name: true, email: true } },
+      plan: { select: { code: true, name: true } },
+    },
+  });
+
+  let deleted = 0;
+  let skipped = 0;
+
+  for (const sub of expiredSubs) {
+    try {
+      const firm = await prisma.firm.findUnique({ where: { id: sub.firmId } });
+      if (!firm) {
+        skipped++;
+        continue;
+      }
+
+      await logBillingAction({
+        firmId: sub.firmId,
+        subscriptionId: sub.id,
+        action: "TRIAL_EXPIRED_AUTO_DELETE",
+        beforeState: {
+          firmName: firm.name,
+          firmEmail: firm.email,
+          planCode: sub.plan?.code,
+          trialStart: sub.trialStart,
+          trialEnd: sub.trialEnd,
+          deleteAt: sub.deleteAt,
+        },
+      });
+
+      await prisma.firm.delete({ where: { id: sub.firmId } });
+      deleted++;
+      console.log(`[Billing] Auto-deleted trial firm "${firm.name}" (${sub.firmId}) - trial expired`);
+    } catch (err) {
+      console.error(`[Billing] Failed to delete expired trial firm ${sub.firmId}:`, err);
+    }
+  }
+
+  return { deleted, skipped, checked: expiredSubs.length };
+}

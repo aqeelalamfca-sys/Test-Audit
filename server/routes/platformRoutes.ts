@@ -266,10 +266,55 @@ router.post("/firms/:id/suspend", async (req: AuthenticatedRequest, res: Respons
 router.post("/firms/:id/activate", async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { ip, userAgent } = extractRequestMeta(req);
+    const { logBillingAction } = await import("../services/billingAuditService");
+    const firmId = req.params.id;
+
     const firm = await prisma.firm.update({
-      where: { id: req.params.id },
+      where: { id: firmId },
       data: { status: "ACTIVE", suspendedAt: null },
     });
+
+    const subscription = await prisma.subscription.findFirst({
+      where: { firmId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (subscription) {
+      const beforeState = {
+        status: subscription.status,
+        isActivated: subscription.isActivated,
+        deleteAt: subscription.deleteAt,
+      };
+
+      const now = new Date();
+      const periodEnd = new Date(now);
+      periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+      await prisma.subscription.update({
+        where: { id: subscription.id },
+        data: {
+          isActivated: true,
+          status: "ACTIVE",
+          deleteAt: null,
+          currentPeriodStart: now,
+          currentPeriodEnd: periodEnd,
+          nextInvoiceAt: periodEnd,
+        },
+      });
+
+      await logBillingAction({
+        actorUserId: req.user!.id,
+        firmId,
+        subscriptionId: subscription.id,
+        action: "ACTIVATED_BY_ADMIN",
+        beforeState,
+        afterState: {
+          status: "ACTIVE",
+          isActivated: true,
+          deleteAt: null,
+        },
+      });
+    }
 
     await logPlatformAction(req.user!.id, "FIRM_ACTIVATED", "firm", firm.id, firm.id, ip, userAgent);
     res.json(firm);

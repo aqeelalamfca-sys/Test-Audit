@@ -347,6 +347,20 @@ export default function Login() {
                     </form>
                   </Form>
 
+                  <div className="mt-4 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">New to AuditWise?</p>
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="text-sm font-medium p-0 h-auto"
+                      onClick={() => setLocation("/pricing")}
+                      data-testid="link-start-trial"
+                    >
+                      Start your 60-day free trial
+                      <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                    </Button>
+                  </div>
+
                   {import.meta.env.DEV && (
                   <div className="mt-6 p-4 rounded-xl bg-muted/50 border border-border/60" data-testid="dev-credentials">
                     <div className="flex items-center gap-2 mb-3">

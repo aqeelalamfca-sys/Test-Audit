@@ -372,13 +372,14 @@ app.use((req, res, next) => {
       }
     }, 30000);
 
-    const { enforceSubscriptionLifecycle, processScheduledInvoices } = await import("./services/billingService");
+    const { enforceSubscriptionLifecycle, processScheduledInvoices, deleteExpiredTrialFirms } = await import("./services/billingService");
     const runBillingCycle = async () => {
       try {
         const lifecycle = await enforceSubscriptionLifecycle();
         const invoicing = await processScheduledInvoices();
-        if (lifecycle.trialExpired || lifecycle.movedToGrace || lifecycle.suspended || lifecycle.overdueInvoices || invoicing.generated) {
-          console.log("[Billing]", JSON.stringify({ ...lifecycle, ...invoicing }));
+        const trialCleanup = await deleteExpiredTrialFirms();
+        if (lifecycle.trialExpired || lifecycle.movedToGrace || lifecycle.suspended || lifecycle.overdueInvoices || invoicing.generated || trialCleanup.deleted) {
+          console.log("[Billing]", JSON.stringify({ ...lifecycle, ...invoicing, trialDeleted: trialCleanup.deleted }));
         }
       } catch (err) {
         console.error("[Billing] Cycle error:", err);

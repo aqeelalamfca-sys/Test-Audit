@@ -147,6 +147,33 @@ router.get("/ping", async (req: AuthenticatedRequest, res: Response) => {
   }
 });
 
+router.get("/plans", async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const plans = await prisma.plan.findMany({
+      where: { isActive: true, isPublic: true },
+      orderBy: { monthlyPrice: "asc" },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        maxUsers: true,
+        maxEngagements: true,
+        maxOffices: true,
+        storageGb: true,
+        allowCustomAi: true,
+        platformAiIncluded: true,
+        monthlyPrice: true,
+        supportLevel: true,
+        featureFlags: true,
+      },
+    });
+    res.json(plans);
+  } catch (error) {
+    console.error("Plans fetch error:", error);
+    res.status(500).json({ error: "Failed to fetch plans" });
+  }
+});
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
@@ -302,6 +329,150 @@ router.post("/register", async (req: AuthenticatedRequest, res: Response) => {
     }
     console.error("Register error:", error);
     res.status(500).json({ error: "Registration failed" });
+  }
+});
+
+const signupSchema = z.object({
+  firmLegalName: z.string().min(2, "Firm name must be at least 2 characters"),
+  firmDisplayName: z.string().optional(),
+  adminFullName: z.string().min(2, "Full name must be at least 2 characters"),
+  adminEmail: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  planKey: z.string().min(1, "Plan selection is required"),
+  acceptTerms: z.literal(true, { errorMap: () => ({ message: "You must accept the terms" }) }),
+});
+
+router.post("/signup", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const data = signupSchema.parse(req.body);
+    const { logBillingAction } = await import("./services/billingAuditService");
+
+    const existingUser = await prisma.user.findUnique({ where: { email: data.adminEmail } });
+    if (existingUser) {
+      return res.status(400).json({ error: "This email is already registered. Please use a different email or sign in." });
+    }
+
+    const plan = await prisma.plan.findFirst({
+      where: { code: data.planKey.toUpperCase(), isActive: true, isPublic: true },
+    });
+    if (!plan) {
+      return res.status(400).json({ error: "Selected plan is not available." });
+    }
+
+    const now = new Date();
+    const trialEnd = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
+    const passwordHash = await hashPassword(data.password);
+    const username = data.adminEmail.split("@")[0] + "_admin";
+
+    const result = await prisma.$transaction(async (tx) => {
+      const firm = await tx.firm.create({
+        data: {
+          name: data.firmLegalName,
+          email: data.adminEmail,
+          status: "TRIAL",
+          currency: "PKR",
+          country: "Pakistan",
+        },
+      });
+
+      const adminUser = await tx.user.create({
+        data: {
+          email: data.adminEmail,
+          username,
+          passwordHash,
+          fullName: data.adminFullName,
+          role: "FIRM_ADMIN",
+          firmId: firm.id,
+          isActive: true,
+          status: "ACTIVE",
+        },
+      });
+
+      const priceSnapshot = {
+        planCode: plan.code,
+        planName: plan.name,
+        monthlyPrice: Number(plan.monthlyPrice),
+        maxUsers: plan.maxUsers,
+        maxEngagements: plan.maxEngagements,
+        maxOffices: plan.maxOffices,
+        storageGb: plan.storageGb,
+        allowCustomAi: plan.allowCustomAi,
+        platformAiIncluded: plan.platformAiIncluded,
+      };
+
+      const subscription = await tx.subscription.create({
+        data: {
+          firmId: firm.id,
+          planId: plan.id,
+          status: "TRIAL",
+          trialStart: now,
+          trialEnd: trialEnd,
+          deleteAt: trialEnd,
+          isActivated: false,
+          graceDays: 0,
+          priceSnapshot,
+        },
+      });
+
+      await tx.firmSettings.create({
+        data: {
+          firmId: firm.id,
+          aiEnabled: plan.platformAiIncluded,
+        },
+      });
+
+      return { firm, adminUser, subscription };
+    });
+
+    await logBillingAction({
+      actorUserId: result.adminUser.id,
+      firmId: result.firm.id,
+      subscriptionId: result.subscription.id,
+      action: "SIGNUP_TRIAL_STARTED",
+      afterState: {
+        firmName: result.firm.name,
+        adminEmail: data.adminEmail,
+        planCode: plan.code,
+        trialEnd: trialEnd.toISOString(),
+        deleteAt: trialEnd.toISOString(),
+      },
+    });
+
+    await logAuditTrail(
+      result.adminUser.id,
+      "SIGNUP_TRIAL",
+      "firm",
+      result.firm.id,
+      null,
+      { planCode: plan.code, trialDays: 60 },
+      undefined,
+      undefined,
+      req.ip,
+      req.get("user-agent")
+    );
+
+    const accessToken = generateAccessToken(result.adminUser);
+    const refreshToken = await generateRefreshToken(result.adminUser.id);
+    const { passwordHash: _, ...safeUser } = result.adminUser;
+
+    res.status(201).json({
+      user: safeUser,
+      token: accessToken,
+      refreshToken,
+      expiresIn: 900,
+      firm: { id: result.firm.id, name: result.firm.name },
+      subscription: {
+        id: result.subscription.id,
+        status: result.subscription.status,
+        trialEnd: result.subscription.trialEnd,
+      },
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Validation failed", details: error.errors });
+    }
+    console.error("Signup error:", error);
+    res.status(500).json({ error: "Signup failed. Please try again." });
   }
 });
 

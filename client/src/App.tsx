@@ -20,6 +20,7 @@ import Login from "@/pages/login";
 import ContextRequiredBanner from "@/components/context-required-banner";
 import { WorkspaceAccessGuard } from "@/components/workspace-access-guard";
 import { WorkspaceRibbon } from "@/components/workspace-ribbon";
+import { TrialBanner } from "@/components/trial-banner";
 
 import { ErrorBoundary } from "@/components/error-boundary";
 import { EnforcementProvider } from "@/lib/enforcement-context";
@@ -77,6 +78,9 @@ const PortalLogin = lazy(() => retryImport(() => import("@/pages/portal-login"))
 const PortalDashboard = lazy(() => retryImport(() => import("@/pages/portal-dashboard")));
 const PortalRequests = lazy(() => retryImport(() => import("@/pages/portal-requests")));
 
+const PricingPage = lazy(() => retryImport(() => import("@/pages/pricing")));
+const SignupPage = lazy(() => retryImport(() => import("@/pages/signup")));
+
 const PlatformDashboard = lazy(() => retryImport(() => import("@/pages/platform/platform-dashboard")));
 const FirmManagement = lazy(() => retryImport(() => import("@/pages/platform/firm-management")));
 const PlanManagement = lazy(() => retryImport(() => import("@/pages/platform/plan-management")));
@@ -126,6 +130,8 @@ const WorkflowHealthPageLazy = withLazySuspense(WorkflowHealthPage);
 const PortalLoginLazy = withLazySuspense(PortalLogin);
 const PortalDashboardLazy = withLazySuspense(PortalDashboard);
 const PortalRequestsLazy = withLazySuspense(PortalRequests);
+const PricingPageLazy = withLazySuspense(PricingPage);
+const SignupPageLazy = withLazySuspense(SignupPage);
 const PlatformDashboardLazy = withLazySuspense(PlatformDashboard);
 const FirmManagementLazy = withLazySuspense(FirmManagement);
 const PlanManagementLazy = withLazySuspense(PlanManagement);
@@ -395,6 +401,7 @@ function EnforcedAppContent({ user, firm, sidebarStyle, initials }: {
               currentPhase="onboarding"
               phaseStatus="not_started"
             />
+            <TrialBanner />
             <WorkspaceRibbon />
             <div className="flex-shrink-0">
               <ContextRequiredBanner />
@@ -474,6 +481,7 @@ function PortalRouter() {
 function App() {
   const [location] = useLocation();
   const isPortalRoute = location.startsWith("/portal");
+  const isPublicRoute = location === "/pricing" || location.startsWith("/signup");
 
   return (
     <ThemeProvider>
@@ -482,6 +490,11 @@ function App() {
           <Toaster />
           {isPortalRoute ? (
             <PortalRouter />
+          ) : isPublicRoute ? (
+            <Switch>
+              <Route path="/pricing" component={PricingPageLazy} />
+              <Route path="/signup" component={SignupPageLazy} />
+            </Switch>
           ) : (
             <AuthProvider>
               <AuthenticatedApp />
