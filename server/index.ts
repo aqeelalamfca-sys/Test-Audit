@@ -45,6 +45,7 @@ import { enableRLS } from "./scripts/enable-rls";
 import platformRoutes from "./routes/platformRoutes";
 import tenantRoutes from "./routes/tenantRoutes";
 import { globalRateLimit } from "./middleware/rateLimiter";
+import { auditLogMiddleware } from "./services/auditLogService";
 import logsRoutes from "./logsRoutes";
 import workspaceRoutes from "./workspaceRoutes";
 import prePlanningRoutes from "./prePlanningRoutes";
@@ -108,6 +109,8 @@ app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 import { inputSanitizer } from "./middleware/inputSanitizer";
 app.use(inputSanitizer);
 
+app.use(auditLogMiddleware);
+
 app.use("/uploads/logos", express.static(path.join(process.cwd(), "uploads", "logos"), {
   setHeaders: (res) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
@@ -117,23 +120,22 @@ app.use("/uploads/logos", express.static(path.join(process.cwd(), "uploads", "lo
 
 app.use(compression());
 
-if (isProduction) {
-  app.use((_req: Request, res: Response, next: NextFunction) => {
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "DENY");
-    res.setHeader("X-XSS-Protection", "1; mode=block");
-    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  res.removeHeader("X-Powered-By");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()");
+  res.setHeader("X-DNS-Prefetch-Control", "off");
+  res.setHeader("X-Download-Options", "noopen");
+  res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
+  if (isProduction) {
     res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
-    res.removeHeader("X-Powered-By");
-    next();
-  });
-} else {
-  app.use((_req: Request, res: Response, next: NextFunction) => {
-    res.removeHeader("X-Powered-By");
-    next();
-  });
-}
+    res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+  }
+  next();
+});
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.path.startsWith("/api/")) {

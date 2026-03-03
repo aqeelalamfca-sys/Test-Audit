@@ -19,6 +19,7 @@ import { z } from "zod";
 import { validatePasswordPolicy } from "./utils/passwordPolicy";
 import { checkAccountLockout, recordFailedAttempt, clearLockout } from "./middleware/accountLockout";
 import { loginRateLimit } from "./middleware/rateLimiter";
+import { logSecurityEvent } from "./services/auditLogService";
 
 const router = Router();
 
@@ -179,13 +180,13 @@ router.get("/plans", async (_req: AuthenticatedRequest, res: Response) => {
 
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(1),
 });
 
 const registerSchema = z.object({
   email: z.string().email(),
   username: z.string().min(3),
-  password: z.string().min(8),
+  password: z.string().min(10, "Password must be at least 10 characters"),
   fullName: z.string().min(2),
   firmId: z.string().optional(),
 });
@@ -201,6 +202,10 @@ router.post("/login", loginRateLimit(), async (req: AuthenticatedRequest, res: R
 
     const lockStatus = checkAccountLockout(lockoutKey);
     if (lockStatus.locked) {
+      logSecurityEvent("ACCOUNT_LOCKED_ATTEMPT", clientIp, req.get("user-agent"), {
+        email: email.toLowerCase(),
+        remainingSeconds: lockStatus.remainingSeconds,
+      }).catch(() => {});
       return res.status(429).json({
         error: "Account temporarily locked due to too many failed attempts.",
         code: "ACCOUNT_LOCKED",
@@ -212,6 +217,9 @@ router.post("/login", loginRateLimit(), async (req: AuthenticatedRequest, res: R
 
     if (!user || !user.isActive || user.status === "DELETED") {
       recordFailedAttempt(lockoutKey);
+      logSecurityEvent("LOGIN_FAILED_UNKNOWN_USER", clientIp, req.get("user-agent"), {
+        email: email.toLowerCase(),
+      }).catch(() => {});
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
@@ -375,7 +383,7 @@ const signupSchema = z.object({
   firmDisplayName: z.string().optional(),
   adminFullName: z.string().min(2, "Full name must be at least 2 characters"),
   adminEmail: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(10, "Password must be at least 10 characters"),
   planKey: z.string().min(1, "Plan selection is required"),
   acceptTerms: z.literal(true, { errorMap: () => ({ message: "You must accept the terms" }) }),
 });
@@ -755,7 +763,7 @@ router.get("/invite/:token", async (req: AuthenticatedRequest, res: Response) =>
 
 const acceptInviteSchema = z.object({
   fullName: z.string().min(2),
-  password: z.string().min(8),
+  password: z.string().min(10, "Password must be at least 10 characters"),
   username: z.string().min(3).optional(),
 });
 
@@ -861,7 +869,7 @@ router.post("/change-password", requireAuth, async (req: AuthenticatedRequest, r
   try {
     const schema = z.object({
       currentPassword: z.string(),
-      newPassword: z.string().min(8),
+      newPassword: z.string().min(10, "Password must be at least 10 characters"),
     });
 
     const { currentPassword, newPassword } = schema.parse(req.body);

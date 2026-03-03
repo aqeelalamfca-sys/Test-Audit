@@ -104,7 +104,12 @@ Key architectural patterns and features include:
 - **Role-Based Theme Engine**: Automatic color theming based on user role hierarchy. CSS custom properties (`--primary`, `--sidebar-primary`) override globally via `role-{color}` classes on `<html>`. RoleThemeProvider applies theme inside AuthProvider. Mapping: SUPER_ADMIN→Red, FIRM_ADMIN→Orange, PARTNER/EQCR/MANAGING_PARTNER→Purple, MANAGER/ADMIN→Blue, SENIOR/TEAM_LEAD→Teal, STAFF→Green, READ_ONLY/CLIENT→Gray. All `bg-primary`, `text-primary` automatically adapt. Files: `client/src/lib/role-theme.ts`, `client/src/components/role-theme-provider.tsx`, `client/src/index.css` (role theme CSS section)
 
 ### Security & Access Control
-- **Rate Limiting Middleware**: Per-user/IP rate limiting for auth, AI, and general API endpoints.
+- **Password Policy**: Minimum 10 characters, uppercase letter, lowercase letter, number, special character required. Common password blocking, sequential character detection, repeated character prevention. Password strength scoring (weak/fair/strong/very_strong). Validated on signup, invite accept, password change, and user creation.
+- **Input Sanitization**: Deep recursive XSS and SQL injection detection on all request bodies, query params, and URL params. Path traversal prevention. Password fields excluded from sanitization to preserve special characters. Blocks requests with detected injection patterns (returns 400).
+- **Security Headers**: X-Content-Type-Options, X-Frame-Options (DENY), X-XSS-Protection, Referrer-Policy, Permissions-Policy (camera/microphone/geolocation/payment/usb disabled), X-DNS-Prefetch-Control, X-Download-Options, X-Permitted-Cross-Domain-Policies. HSTS and CSP in production.
+- **Audit Log Service**: `server/services/auditLogService.ts` auto-logs all POST/PUT/PATCH/DELETE requests via `res.finish` event. Security events logged separately (failed logins, lockouts, injection attempts).
+- **Account Lockout**: 5 failed login attempts locks account for 15 minutes. Combined email+IP lockout keys. Security events logged to PlatformAuditLog.
+- **Rate Limiting Middleware**: Per-user/IP rate limiting for auth (30/15min), login (5/15min), AI (20/min), API (200/min), global (100/min).
 - **Role-Based AI Access**: AI utility endpoints require SENIOR role minimum.
 - **Enforcement Engine Enhancements**: Validates prerequisite phase completion, open review notes, and role requirements for approvals.
 - **Engagement Versioning**: Version field on Engagement model incremented on post-approval edits.
