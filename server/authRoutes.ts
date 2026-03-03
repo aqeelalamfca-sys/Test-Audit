@@ -217,6 +217,12 @@ router.post("/login", async (req: AuthenticatedRequest, res: Response) => {
             code: "FIRM_TERMINATED",
           });
         }
+        if (firm.status === "DORMANT" && user.role !== "FIRM_ADMIN") {
+          return res.status(403).json({
+            error: "Your firm's trial has expired. Only firm administrators can access the portal during dormant status.",
+            code: "FIRM_DORMANT",
+          });
+        }
       }
     }
 

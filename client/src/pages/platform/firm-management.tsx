@@ -194,6 +194,7 @@ export default function FirmManagement() {
   const statusColor: Record<string, string> = {
     ACTIVE: "bg-green-100 text-green-800",
     TRIAL: "bg-amber-100 text-amber-800",
+    DORMANT: "bg-orange-100 text-orange-800",
     SUSPENDED: "bg-red-100 text-red-800",
     TERMINATED: "bg-gray-100 text-gray-800",
   };
@@ -423,6 +424,7 @@ export default function FirmManagement() {
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="ACTIVE">Active</SelectItem>
             <SelectItem value="TRIAL">Trial</SelectItem>
+            <SelectItem value="DORMANT">Dormant</SelectItem>
             <SelectItem value="SUSPENDED">Suspended</SelectItem>
             <SelectItem value="TERMINATED">Terminated</SelectItem>
           </SelectContent>
@@ -507,7 +509,7 @@ export default function FirmManagement() {
                         <Ban className="h-3 w-3 mr-1" /> Suspend
                       </Button>
                     )}
-                    {firm.status === "SUSPENDED" && (
+                    {(firm.status === "SUSPENDED" || firm.status === "DORMANT") && (
                       <Button
                         variant="outline" size="sm"
                         data-testid={`button-activate-firm-${firm.id}`}

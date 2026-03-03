@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Users, BarChart3, Shield, Bot, Bell, FileText, TrendingUp, AlertTriangle, Clock, ChevronRight } from "lucide-react";
+import { Building2, Users, BarChart3, Shield, Bot, Bell, FileText, TrendingUp, AlertTriangle, Clock, ChevronRight, Moon } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 export default function PlatformDashboard() {
@@ -25,6 +25,11 @@ export default function PlatformDashboard() {
       label: "Trial Firms", value: analytics?.trialFirms || 0,
       icon: Clock, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950",
       href: "/platform/firms?status=TRIAL", description: "Firms in trial period",
+    },
+    {
+      label: "Dormant", value: analytics?.dormantFirms || 0,
+      icon: Moon, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-950",
+      href: "/platform/firms?status=DORMANT", description: "Expired trials awaiting activation",
     },
     {
       label: "Suspended", value: analytics?.suspendedFirms || 0,

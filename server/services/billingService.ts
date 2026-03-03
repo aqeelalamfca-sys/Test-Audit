@@ -140,17 +140,43 @@ export async function enforceSubscriptionLifecycle() {
     where: {
       status: "TRIAL",
       trialEnd: { lte: now },
+      isActivated: false,
     },
   });
 
+  let dormantCount = 0;
   for (const sub of expiredTrials) {
+    await prisma.subscription.update({
+      where: { id: sub.id },
+      data: {
+        status: "DORMANT",
+        dormantAt: now,
+      },
+    });
+    await prisma.firm.update({
+      where: { id: sub.firmId },
+      data: { status: "DORMANT" },
+    });
+    dormantCount++;
+    console.log(`[Billing] Trial expired for subscription ${sub.id}, firm ${sub.firmId} → DORMANT`);
+  }
+
+  const activatedExpiredTrials = await prisma.subscription.findMany({
+    where: {
+      status: "TRIAL",
+      trialEnd: { lte: now },
+      isActivated: true,
+    },
+  });
+
+  for (const sub of activatedExpiredTrials) {
     const graceDays = sub.graceDays || 7;
     const graceEndAt = new Date(now.getTime() + graceDays * 24 * 60 * 60 * 1000);
     await prisma.subscription.update({
       where: { id: sub.id },
       data: { status: "PAST_DUE", graceEndAt },
     });
-    console.log(`[Billing] Trial expired for subscription ${sub.id}, moved to PAST_DUE (grace ends ${graceEndAt.toISOString()})`);
+    console.log(`[Billing] Activated trial expired for subscription ${sub.id}, moved to PAST_DUE`);
   }
 
   const pastDueSubs = await prisma.subscription.findMany({
@@ -206,7 +232,8 @@ export async function enforceSubscriptionLifecycle() {
   }
 
   return {
-    trialExpired: expiredTrials.length,
+    dormant: dormantCount,
+    trialExpired: activatedExpiredTrials.length,
     movedToGrace: pastDueSubs.length,
     suspended: expiredGrace.length,
     overdueInvoices: overdueInvoices.length,
@@ -237,53 +264,5 @@ export async function processScheduledInvoices() {
 }
 
 export async function deleteExpiredTrialFirms() {
-  const { logBillingAction } = await import("./billingAuditService");
-  const now = new Date();
-
-  const expiredSubs = await prisma.subscription.findMany({
-    where: {
-      status: "TRIAL",
-      isActivated: false,
-      deleteAt: { lte: now },
-    },
-    include: {
-      firm: { select: { id: true, name: true, email: true } },
-      plan: { select: { code: true, name: true } },
-    },
-  });
-
-  let deleted = 0;
-  let skipped = 0;
-
-  for (const sub of expiredSubs) {
-    try {
-      const firm = await prisma.firm.findUnique({ where: { id: sub.firmId } });
-      if (!firm) {
-        skipped++;
-        continue;
-      }
-
-      await logBillingAction({
-        firmId: sub.firmId,
-        subscriptionId: sub.id,
-        action: "TRIAL_EXPIRED_AUTO_DELETE",
-        beforeState: {
-          firmName: firm.name,
-          firmEmail: firm.email,
-          planCode: sub.plan?.code,
-          trialStart: sub.trialStart,
-          trialEnd: sub.trialEnd,
-          deleteAt: sub.deleteAt,
-        },
-      });
-
-      await prisma.firm.delete({ where: { id: sub.firmId } });
-      deleted++;
-      console.log(`[Billing] Auto-deleted trial firm "${firm.name}" (${sub.firmId}) - trial expired`);
-    } catch (err) {
-      console.error(`[Billing] Failed to delete expired trial firm ${sub.firmId}:`, err);
-    }
-  }
-
-  return { deleted, skipped, checked: expiredSubs.length };
+  return { deleted: 0, skipped: 0, checked: 0 };
 }

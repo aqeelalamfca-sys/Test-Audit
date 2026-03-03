@@ -1,8 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
-import { AlertTriangle, Clock, Sparkles } from "lucide-react";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { AlertTriangle, Clock, Sparkles, ShieldAlert, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 interface SubscriptionInfo {
   subscription: {
@@ -12,6 +14,7 @@ interface SubscriptionInfo {
     trialEnd: string | null;
     deleteAt: string | null;
     isActivated: boolean;
+    dormantAt: string | null;
     plan: {
       code: string;
       name: string;
@@ -23,6 +26,7 @@ interface SubscriptionInfo {
 export function TrialBanner() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
+  const { toast } = useToast();
 
   const { data } = useQuery<SubscriptionInfo>({
     queryKey: ["/api/tenant/subscription"],
@@ -30,11 +34,64 @@ export function TrialBanner() {
     refetchInterval: 5 * 60 * 1000,
   });
 
+  const activateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/tenant/activate");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Activated", description: "Your subscription has been activated. Full access restored." });
+      queryClient.invalidateQueries({ queryKey: ["/api/tenant/subscription"] });
+      window.location.reload();
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to activate", variant: "destructive" });
+    },
+  });
+
   if (!data?.subscription) return null;
 
   const sub = data.subscription;
+  const firmStatus = data.firmStatus;
 
-  if (sub.status !== "TRIAL" && sub.status !== "EXPIRED") return null;
+  if (firmStatus === "DORMANT" || sub.status === "DORMANT") {
+    const dormantSince = sub.dormantAt ? new Date(sub.dormantAt).toLocaleDateString("en-PK", {
+      year: "numeric", month: "long", day: "numeric",
+    }) : null;
+
+    return (
+      <div
+        className="bg-amber-600 text-white px-4 py-3 flex items-center justify-center gap-3 text-sm"
+        data-testid="banner-dormant"
+      >
+        <ShieldAlert className="h-5 w-5 shrink-0" />
+        <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
+          <span className="font-semibold">
+            Dormant Account
+          </span>
+          <span className="hidden sm:inline">—</span>
+          <span>
+            Your trial expired{dormantSince ? ` on ${dormantSince}` : ""}. Activate to continue using AuditWise. Your data is safe and preserved.
+          </span>
+        </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="h-7 text-xs ml-2 whitespace-nowrap"
+          onClick={() => activateMutation.mutate()}
+          disabled={activateMutation.isPending}
+          data-testid="button-activate-dormant"
+        >
+          {activateMutation.isPending ? (
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          ) : (
+            <Clock className="h-3 w-3 mr-1" />
+          )}
+          Activate Now
+        </Button>
+      </div>
+    );
+  }
 
   if (sub.status === "EXPIRED" && !sub.isActivated) {
     return (

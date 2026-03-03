@@ -24,6 +24,7 @@ enum UserRole {
 enum FirmStatus {
   TRIAL
   ACTIVE
+  DORMANT
   SUSPENDED
   TERMINATED
 }
@@ -39,6 +40,7 @@ enum SubscriptionStatus {
   ACTIVE
   PAST_DUE
   GRACE
+  DORMANT
   SUSPENDED
   CANCELED
   EXPIRED
@@ -252,6 +254,7 @@ model Subscription {
   trialEnd           DateTime?
   deleteAt           DateTime?
   isActivated        Boolean            @default(false)
+  dormantAt          DateTime?
   priceSnapshot      Json               @default("{}")
   currentPeriodStart DateTime?
   currentPeriodEnd   DateTime?

@@ -394,4 +394,87 @@ router.get("/subscription", async (req: AuthenticatedRequest, res: Response) => 
   }
 });
 
+router.post("/activate", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(403).json({ error: "No firm context" });
+
+    if (req.user!.role !== "FIRM_ADMIN") {
+      return res.status(403).json({ error: "Only firm administrators can activate subscriptions" });
+    }
+
+    const firm = await prisma.firm.findUnique({ where: { id: firmId } });
+    if (!firm) return res.status(404).json({ error: "Firm not found" });
+
+    const subscription = await prisma.subscription.findFirst({
+      where: { firmId },
+      orderBy: { createdAt: "desc" },
+      include: { plan: true },
+    });
+
+    if (!subscription) {
+      return res.status(404).json({ error: "No subscription found" });
+    }
+
+    if (subscription.isActivated && subscription.status === "ACTIVE") {
+      return res.status(400).json({ error: "Subscription is already active" });
+    }
+
+    const now = new Date();
+    const periodEnd = new Date(now);
+    periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.subscription.update({
+        where: { id: subscription.id },
+        data: {
+          status: "ACTIVE",
+          isActivated: true,
+          dormantAt: null,
+          currentPeriodStart: now,
+          currentPeriodEnd: periodEnd,
+          nextInvoiceAt: periodEnd,
+        },
+      });
+
+      await tx.firm.update({
+        where: { id: firmId },
+        data: { status: "ACTIVE" },
+      });
+    });
+
+    const { logBillingAction } = await import("../services/billingAuditService");
+    await logBillingAction({
+      actorUserId: req.user!.id,
+      firmId,
+      subscriptionId: subscription.id,
+      action: "SUBSCRIPTION_ACTIVATED",
+      beforeState: {
+        firmStatus: firm.status,
+        subscriptionStatus: subscription.status,
+        isActivated: subscription.isActivated,
+        dormantAt: subscription.dormantAt,
+      },
+      afterState: {
+        firmStatus: "ACTIVE",
+        subscriptionStatus: "ACTIVE",
+        isActivated: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      message: "Subscription activated successfully. Full access has been restored.",
+      subscription: {
+        status: "ACTIVE",
+        isActivated: true,
+        plan: subscription.plan,
+      },
+    });
+  } catch (error) {
+    console.error("Activate subscription error:", error);
+    res.status(500).json({ error: "Failed to activate subscription" });
+  }
+});
+
 export default router;

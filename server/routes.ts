@@ -76,6 +76,7 @@ import finalizationBoardRoutes from "./finalizationBoardRoutes";
 import { attachEnforcementContext, enforceInspectionMode } from "./middleware/enforcementMiddleware";
 import { generateInformationRequestLetter } from "./exportInfoRequestLetter";
 import { aiRateLimit, authRateLimit } from "./middleware/rateLimiter";
+import { subscriptionGuard } from "./middleware/subscriptionGuard";
 import { z } from "zod";
 import type { AuditPhase } from "@prisma/client";
 
@@ -95,6 +96,18 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   app.use(jwtAuthMiddleware);
+
+  const SUBSCRIPTION_GUARD_EXCLUDED = ["/api/auth", "/api/platform", "/api/health", "/api/logs", "/__healthz"];
+  app.use((req: AuthenticatedRequest, res, next) => {
+    const path = req.originalUrl || req.path;
+    if (SUBSCRIPTION_GUARD_EXCLUDED.some(prefix => path.startsWith(prefix))) {
+      return next();
+    }
+    if (!path.startsWith("/api/")) {
+      return next();
+    }
+    return subscriptionGuard(req, res, next);
+  });
 
   // Parse optional active context headers on all requests
   app.use((req: AuthenticatedRequest, res, next) => {

@@ -41,6 +41,36 @@ export async function subscriptionGuard(req: AuthenticatedRequest, res: Response
       });
     }
 
+    if (firm.status === "DORMANT") {
+      if (req.user.role !== "FIRM_ADMIN") {
+        return res.status(403).json({
+          error: "Firm account is dormant",
+          code: "FIRM_DORMANT",
+          message: "Your firm's trial has expired. Only the firm administrator can access the portal. Please contact your administrator.",
+        });
+      }
+
+      const isWriteRequest = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
+      if (isWriteRequest) {
+        const fullPath = req.originalUrl || req.path;
+        const allowedWritePaths = [
+          "/api/auth/",
+          "/api/tenant/subscription",
+          "/api/tenant/activate",
+          "/api/billing/",
+        ];
+        const isAllowedWrite = allowedWritePaths.some(p => fullPath.startsWith(p));
+        if (!isAllowedWrite) {
+          return res.status(403).json({
+            error: "Firm account is dormant",
+            code: "FIRM_DORMANT",
+            message: "Your firm's trial has expired. Activate your subscription to continue using AuditWise.",
+            dormant: true,
+          });
+        }
+      }
+    }
+
     const subscription = await prisma.subscription.findFirst({
       where: { firmId: req.user.firmId },
       orderBy: { createdAt: "desc" },
@@ -54,6 +84,16 @@ export async function subscriptionGuard(req: AuthenticatedRequest, res: Response
           code: "SUBSCRIPTION_INACTIVE",
           message: "Your subscription is inactive. Please contact your administrator.",
         });
+      }
+
+      if (subscription.status === "DORMANT") {
+        if (req.user.role !== "FIRM_ADMIN") {
+          return res.status(403).json({
+            error: "Subscription dormant",
+            code: "SUBSCRIPTION_DORMANT",
+            message: "Your firm's trial has expired. Please contact your administrator.",
+          });
+        }
       }
 
       if (subscription.status === "TRIAL" && subscription.trialEnd) {
