@@ -58,7 +58,7 @@ export function useSaveEngine<T extends Record<string, any>>(
   }, [config.baseEndpoint, config.engagementId, config.pageKey]);
 
   const saveMutation = useMutation({
-    mutationFn: async ({ isDraft }: { isDraft: boolean }) => {
+    mutationFn: async ({ isDraft, silent }: { isDraft: boolean; silent?: boolean }) => {
       const endpoint = getEndpoint(isDraft);
       const method = config.entityId ? "PUT" : "POST";
       
@@ -100,10 +100,12 @@ export function useSaveEngine<T extends Record<string, any>>(
         setOriginalData(data);
         setErrors({});
         
-        toast({
-          title: variables.isDraft ? "Draft Saved" : "Changes Saved",
-          description: result.message || "Your changes have been saved successfully.",
-        });
+        if (!variables.silent) {
+          toast({
+            title: variables.isDraft ? "Draft Saved" : "Changes Saved",
+            description: result.message || "Your changes have been saved successfully.",
+          });
+        }
 
         if (config.onSaveSuccess) {
           config.onSaveSuccess(result.data || result);
@@ -116,15 +118,17 @@ export function useSaveEngine<T extends Record<string, any>>(
         throw new Error(result.message || "Save failed");
       }
     },
-    onError: (error: any) => {
+    onError: (error: any, variables: { isDraft: boolean; silent?: boolean }) => {
       setStatus("error");
       
-      const errorMessage = error.message || "Failed to save changes";
-      toast({
-        title: "Save Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      if (!variables.silent) {
+        const errorMessage = error.message || "Failed to save changes";
+        toast({
+          title: "Save Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
 
       if (error.errors && typeof error.errors === "object") {
         setErrors(error.errors);
@@ -192,14 +196,16 @@ export function useSaveEngine<T extends Record<string, any>>(
   }, [isDirty]);
 
   useEffect(() => {
-    if (config.enableDraftAutosave && isDirty) {
+    if ((config.enableDraftAutosave !== false) && isDirty) {
       if (autosaveTimerRef.current) {
         clearTimeout(autosaveTimerRef.current);
       }
       
       autosaveTimerRef.current = setTimeout(() => {
-        saveDraft();
-      }, config.autosaveDebounceMs || 30000);
+        if (saveMutation.isPending) return;
+        setStatus("saving");
+        saveMutation.mutateAsync({ isDraft: true, silent: true }).catch(() => {});
+      }, config.autosaveDebounceMs || 10000);
     }
 
     return () => {

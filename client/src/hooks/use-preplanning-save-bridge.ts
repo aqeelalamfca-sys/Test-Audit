@@ -21,7 +21,7 @@ export interface PreplanningSaveBridgeResult {
   signalChange: () => void;
 }
 
-const AUTO_SAVE_DELAY = 3000;
+const AUTO_SAVE_DELAY = 10000;
 
 export function usePreplanningSaveBridge(
   engagementId: string | undefined,

@@ -22,6 +22,8 @@ export interface ExecutionSaveBridgeResult {
   signalChange: () => void;
 }
 
+const AUTO_SAVE_DELAY = 10000;
+
 export function useExecutionSaveBridge(
   engagementId: string | undefined,
   buildPayload: () => ExecutionSavePayload
@@ -48,6 +50,8 @@ export function useExecutionSaveBridge(
   const hasBaselineRef = useRef(false);
   const changeCountRef = useRef(0);
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isSavingRef = useRef(false);
+  const dataLoadedRef = useRef(false);
 
   useEffect(() => {
     if (engagementId) {
@@ -83,23 +87,31 @@ export function useExecutionSaveBridge(
     const currentSignature = JSON.stringify(currentPayload);
     lastSavedSignatureRef.current = currentSignature;
     hasBaselineRef.current = true;
+    dataLoadedRef.current = true;
     setIsDirty(false);
     setStatus("idle");
   }, [buildPayload]);
 
-  const saveMutation = useCallback(async (isDraft: boolean): Promise<boolean> => {
+  const saveMutation = useCallback(async (isDraft: boolean, silent = false): Promise<boolean> => {
     if (!engagementId) return false;
+    if (isSavingRef.current) return false;
+    if (!dataLoadedRef.current) return false;
     
+    isSavingRef.current = true;
     setIsSaving(true);
     setStatus("saving");
     
     try {
       const payload = buildPayload();
-      console.log("[ExecutionSaveBridge] Saving payload:", {
-        isDraft,
-        controlTestsCount: payload.controlTests?.length,
-        firstControlTest: payload.controlTests?.[0],
-      });
+      const currentSignature = JSON.stringify(payload);
+      
+      if (currentSignature === lastSavedSignatureRef.current && isDraft) {
+        setStatus("saved");
+        setIsDirty(false);
+        isSavingRef.current = false;
+        setIsSaving(false);
+        return true;
+      }
       
       const endpoint = isDraft 
         ? `/api/workspace/${engagementId}/execution/draft`
@@ -115,19 +127,20 @@ export function useExecutionSaveBridge(
       });
       
       const result = await response.json();
-      console.log("[ExecutionSaveBridge] Save response:", result);
       
       if (result.success !== false) {
         setStatus("saved");
         setLastSavedAt(new Date());
         setIsDirty(false);
-        lastSavedSignatureRef.current = JSON.stringify(payload);
+        lastSavedSignatureRef.current = currentSignature;
         markSectionSaved(sectionKey);
         
-        toast({
-          title: isDraft ? "Draft Saved" : "Changes Saved",
-          description: result.message || "Your execution data has been saved successfully.",
-        });
+        if (!silent) {
+          toast({
+            title: isDraft ? "Draft Saved" : "Changes Saved",
+            description: result.message || "Your execution data has been saved successfully.",
+          });
+        }
         
         queryClient.invalidateQueries({ 
           queryKey: [`/api/workspace/${engagementId}/execution`] 
@@ -140,13 +153,16 @@ export function useExecutionSaveBridge(
     } catch (error: any) {
       setStatus("error");
       markSectionError(sectionKey);
-      toast({
-        title: "Save Failed",
-        description: error.message || "Failed to save execution data",
-        variant: "destructive",
-      });
+      if (!silent) {
+        toast({
+          title: "Save Failed",
+          description: error.message || "Failed to save execution data",
+          variant: "destructive",
+        });
+      }
       return false;
     } finally {
+      isSavingRef.current = false;
       setIsSaving(false);
     }
   }, [engagementId, buildPayload, toast, sectionKey, markSectionSaved, markSectionError]);
@@ -166,14 +182,39 @@ export function useExecutionSaveBridge(
     } else {
       setIsDirty(true);
       setStatus((prev: SaveStatus) => prev === "saving" ? "saving" : "dirty");
+
+      if (dataLoadedRef.current && !isSavingRef.current) {
+        if (autoSaveTimerRef.current) {
+          clearTimeout(autoSaveTimerRef.current);
+        }
+        autoSaveTimerRef.current = setTimeout(() => {
+          saveMutation(true, true);
+        }, AUTO_SAVE_DELAY);
+      }
     }
-  }, [buildPayload, initializeBaseline]);
+  }, [buildPayload, initializeBaseline, saveMutation]);
+
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, []);
 
   const saveDraft = useCallback(async (): Promise<boolean> => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
     return saveMutation(true);
   }, [saveMutation]);
 
   const saveFinal = useCallback(async (): Promise<boolean> => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
     return saveMutation(false);
   }, [saveMutation]);
 

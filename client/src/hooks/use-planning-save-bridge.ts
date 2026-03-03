@@ -23,7 +23,7 @@ export interface PlanningSaveBridgeResult {
   dataLoaded: boolean;
 }
 
-const AUTO_SAVE_DELAY = 3000;
+const AUTO_SAVE_DELAY = 10000;
 
 export function usePlanningSaveBridge(
   engagementId: string | undefined,

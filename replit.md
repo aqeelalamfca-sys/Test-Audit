@@ -135,7 +135,7 @@ Key architectural patterns and features include:
 - **Database Indexing**: 35+ indexes added across schema for query optimization.
 - **Connection Pooling**: Prisma configured for optimal database utilization.
 - **Database Retry Resilience**: `withRetry()` wrapper for failed database operations.
-- **Auto-Save System**: 3-second debounced auto-save for changes as drafts.
+- **Auto-Save System**: 10-second debounced silent auto-save across all workspace modules (Planning, Pre-Planning, Execution). Saves drafts automatically without toast notifications. Manual saves still show confirmation. Global save indicator shows real-time status (Saving/Unsaved/Saved). Uses signature-based change detection to avoid redundant saves. Save engine default auto-save enabled for all modules.
 - **Batched DB Operations**: N+1 query patterns converted to batched operations.
 - **Optimized Duplicate Detection**: GL duplicate detection uses accountCode-grouped comparison.
 - **Phase Progress Caching**: In-memory cache for phase progress lookups.
