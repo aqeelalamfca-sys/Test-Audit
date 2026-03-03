@@ -313,7 +313,7 @@ export default function PricingPage() {
                 </div>
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="h-3.5 w-3.5 mt-0.5 text-amber-500 shrink-0" />
-                  <p>If payment is not received within 15 days of invoice date, your account shall be suspended accordingly.</p>
+                  <p>If payment is not received within 15 days of invoice date, your account shall be suspended. After 50 days of non-payment, the account and all associated data shall be permanently deleted.</p>
                 </div>
                 <div className="flex items-start gap-2">
                   <Banknote className="h-3.5 w-3.5 mt-0.5 text-blue-500 shrink-0" />

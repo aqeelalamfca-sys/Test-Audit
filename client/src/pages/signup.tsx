@@ -161,7 +161,7 @@ export default function SignupPage() {
       </div>
 
       <div className="w-full max-w-2xl">
-        <div className="flex items-center gap-2 mb-6">
+        <div className="flex items-center gap-2 mb-3">
           <Button
             variant="ghost"
             size="sm"
@@ -174,12 +174,12 @@ export default function SignupPage() {
         </div>
 
         <Card className="border-t-4 border-t-primary">
-          <CardHeader className="text-center pb-4">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Shield className="h-8 w-8 text-primary" />
-              <CardTitle className="text-2xl">Start Your Free Trial</CardTitle>
+          <CardHeader className="text-center pb-2 pt-4">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <Shield className="h-7 w-7 text-primary" />
+              <CardTitle className="text-xl">Start Your Free Trial</CardTitle>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               30 days free. No credit card required. Cancel anytime.
             </p>
             {selectedPlan && (
@@ -191,7 +191,7 @@ export default function SignupPage() {
 
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
                 <FormField
                   control={form.control}
                   name="planKey"
@@ -217,9 +217,9 @@ export default function SignupPage() {
                   )}
                 />
 
-                <div className="border-t pt-4">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
+                <div className="border-t pt-3">
+                  <h3 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                    <Building2 className="h-3.5 w-3.5" />
                     Firm Information
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -313,7 +313,7 @@ export default function SignupPage() {
                                 <Input
                                   type={showPassword ? "text" : "password"}
                                   className="pr-10"
-                                  placeholder="Min 8 characters"
+                                  placeholder="Min 10 characters"
                                   data-testid="input-password"
                                   {...field}
                                 />
