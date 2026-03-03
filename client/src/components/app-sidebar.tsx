@@ -77,18 +77,18 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
   const isWorkspaceRoute = location.startsWith("/workspace/");
 
   return (
-    <Sidebar className={`border-r ${isSuperAdmin ? 'border-red-200 dark:border-red-900' : 'border-sidebar-border'}`}>
-      <SidebarHeader className={`border-b px-4 py-4 ${isSuperAdmin ? 'border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/30' : 'border-sidebar-border'}`}>
-        <Link href={isSuperAdmin ? "/platform" : "/"} className="flex items-center gap-3" data-testid="link-home">
-          <div className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold text-lg ${isSuperAdmin ? 'bg-red-600 text-white' : 'bg-primary text-primary-foreground'}`}>
-            {isSuperAdmin ? "SA" : "AW"}
+    <Sidebar className={`border-r ${isSuperAdmin ? 'border-red-200 dark:border-red-900' : isFirmAdmin ? 'border-emerald-200 dark:border-emerald-900' : 'border-sidebar-border'}`}>
+      <SidebarHeader className={`border-b px-4 py-4 ${isSuperAdmin ? 'border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/30' : isFirmAdmin ? 'border-emerald-200 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-950/30' : 'border-sidebar-border'}`}>
+        <Link href={isSuperAdmin ? "/platform" : isFirmAdmin ? "/firm-admin/settings" : "/"} className="flex items-center gap-3" data-testid="link-home">
+          <div className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold text-lg ${isSuperAdmin ? 'bg-red-600 text-white' : isFirmAdmin ? 'bg-emerald-600 text-white' : 'bg-primary text-primary-foreground'}`}>
+            {isSuperAdmin ? "SA" : isFirmAdmin ? "FA" : "AW"}
           </div>
           <div>
-            <h1 className={`text-lg font-semibold ${isSuperAdmin ? 'text-red-700 dark:text-red-400' : 'text-sidebar-foreground'}`}>
-              {isSuperAdmin ? "AuditWise" : "AuditWise"}
+            <h1 className={`text-lg font-semibold ${isSuperAdmin ? 'text-red-700 dark:text-red-400' : isFirmAdmin ? 'text-emerald-700 dark:text-emerald-400' : 'text-sidebar-foreground'}`}>
+              AuditWise
             </h1>
-            <p className={`text-xs ${isSuperAdmin ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground'}`}>
-              {isSuperAdmin ? "Platform Control" : "Statutory Audit"}
+            <p className={`text-xs ${isSuperAdmin ? 'text-red-500 dark:text-red-400' : isFirmAdmin ? 'text-emerald-500 dark:text-emerald-400' : 'text-muted-foreground'}`}>
+              {isSuperAdmin ? "Platform Control" : isFirmAdmin ? "Firm Administration" : "Statutory Audit"}
             </p>
           </div>
         </Link>
@@ -373,39 +373,60 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
 
             {isFirmAdmin && (
               <SidebarGroup>
-                <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+                  <Shield className="h-3 w-3 inline mr-1" />
                   Firm Administration
                 </SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location === "/firm-admin/users"} data-testid="nav-firm-users">
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === "/firm-admin/users"}
+                        data-testid="nav-firm-users"
+                        className="data-[active=true]:bg-emerald-100 data-[active=true]:text-emerald-800 dark:data-[active=true]:bg-emerald-950 dark:data-[active=true]:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-700 dark:hover:text-emerald-400"
+                      >
                         <Link href="/firm-admin/users">
-                          <Users className="h-4 w-4" />
+                          <Users className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                           <span>User Management</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location === "/firm-admin/settings" || location === "/firm-admin"} data-testid="nav-firm-settings">
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === "/firm-admin/settings" || location === "/firm-admin"}
+                        data-testid="nav-firm-settings"
+                        className="data-[active=true]:bg-emerald-100 data-[active=true]:text-emerald-800 dark:data-[active=true]:bg-emerald-950 dark:data-[active=true]:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-700 dark:hover:text-emerald-400"
+                      >
                         <Link href="/firm-admin/settings">
-                          <Settings className="h-4 w-4" />
+                          <Settings className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                           <span>Firm Settings</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location === "/firm-admin/audit-logs"} data-testid="nav-firm-audit-logs">
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === "/firm-admin/audit-logs"}
+                        data-testid="nav-firm-audit-logs"
+                        className="data-[active=true]:bg-emerald-100 data-[active=true]:text-emerald-800 dark:data-[active=true]:bg-emerald-950 dark:data-[active=true]:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-700 dark:hover:text-emerald-400"
+                      >
                         <Link href="/firm-admin/audit-logs">
-                          <FileText className="h-4 w-4" />
+                          <FileText className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                           <span>Audit Logs</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location === "/firm-admin/ai-usage"} data-testid="nav-firm-ai-usage">
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === "/firm-admin/ai-usage"}
+                        data-testid="nav-firm-ai-usage"
+                        className="data-[active=true]:bg-emerald-100 data-[active=true]:text-emerald-800 dark:data-[active=true]:bg-emerald-950 dark:data-[active=true]:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-700 dark:hover:text-emerald-400"
+                      >
                         <Link href="/firm-admin/ai-usage">
-                          <Bot className="h-4 w-4" />
+                          <Bot className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                           <span>AI Usage</span>
                         </Link>
                       </SidebarMenuButton>
@@ -418,10 +439,10 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
         )}
       </SidebarContent>
 
-      <SidebarFooter className={`border-t p-4 ${isSuperAdmin ? 'border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/30' : 'border-sidebar-border'}`}>
+      <SidebarFooter className={`border-t p-4 ${isSuperAdmin ? 'border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/30' : isFirmAdmin ? 'border-emerald-200 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-950/30' : 'border-sidebar-border'}`}>
         <div className="flex items-center gap-2.5">
           <Avatar className="h-9 w-9">
-            <AvatarFallback className={`text-sm font-medium ${isSuperAdmin ? 'bg-red-600 text-white' : 'bg-primary text-primary-foreground'}`}>
+            <AvatarFallback className={`text-sm font-medium ${isSuperAdmin ? 'bg-red-600 text-white' : isFirmAdmin ? 'bg-emerald-600 text-white' : 'bg-primary text-primary-foreground'}`}>
               {currentUser?.initials || "JD"}
             </AvatarFallback>
           </Avatar>
@@ -432,6 +453,10 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
             {isSuperAdmin ? (
               <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400" data-testid="badge-super-admin">
                 SUPER ADMIN
+              </span>
+            ) : isFirmAdmin ? (
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400" data-testid="badge-firm-admin">
+                FIRM ADMIN
               </span>
             ) : (
               <RoleBadge role={currentUser?.role || "partner"} />

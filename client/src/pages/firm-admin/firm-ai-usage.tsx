@@ -14,7 +14,7 @@ export default function FirmAIUsage() {
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto" data-testid="firm-ai-usage-page">
       <div className="flex items-center gap-3">
-        <Bot className="h-6 w-6 text-blue-600" />
+        <Bot className="h-6 w-6 text-emerald-600" />
         <h1 className="text-2xl font-bold" data-testid="text-page-title">AI Usage Analytics</h1>
       </div>
 
@@ -28,7 +28,7 @@ export default function FirmAIUsage() {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <ArrowUp className="h-6 w-6 mx-auto mb-2 text-blue-600" />
+            <ArrowUp className="h-6 w-6 mx-auto mb-2 text-emerald-600" />
             <div className="text-2xl font-bold" data-testid="text-tokens-in">{(summary.totalTokensIn || 0).toLocaleString()}</div>
             <div className="text-sm text-muted-foreground">Tokens In (Prompts)</div>
           </CardContent>

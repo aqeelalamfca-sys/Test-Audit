@@ -84,7 +84,7 @@ export default function FirmUsers() {
     <div className="p-6 space-y-6 max-w-5xl mx-auto" data-testid="firm-users-page">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Users className="h-6 w-6 text-blue-600" />
+          <Users className="h-6 w-6 text-emerald-600" />
           <h1 className="text-2xl font-bold" data-testid="text-page-title">Firm User Management</h1>
         </div>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>

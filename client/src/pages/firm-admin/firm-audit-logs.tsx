@@ -17,7 +17,7 @@ export default function FirmAuditLogs() {
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto" data-testid="firm-audit-logs-page">
       <div className="flex items-center gap-3">
-        <FileText className="h-6 w-6 text-blue-600" />
+        <FileText className="h-6 w-6 text-emerald-600" />
         <h1 className="text-2xl font-bold" data-testid="text-page-title">Firm Audit Logs</h1>
       </div>
 
