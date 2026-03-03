@@ -1,21 +1,31 @@
 process.on('uncaughtException', (err) => {
   console.error('[CRASH] Uncaught exception:', err);
-  process.exit(1);
+  if (process.env.NODE_ENV !== "production") {
+    process.exit(1);
+  }
 });
 process.on('unhandledRejection', (reason) => {
-  console.error('[CRASH] Unhandled rejection:', reason);
-  process.exit(1);
+  console.error('[WARN] Unhandled rejection:', reason);
 });
 
 const isProduction = process.env.NODE_ENV === "production";
 
 if (isProduction) {
-  const required = ["DATABASE_URL", "SESSION_SECRET"];
+  const required = ["DATABASE_URL"];
   const missing = required.filter(v => !process.env[v]);
   if (missing.length > 0) {
     console.error(`FATAL: Missing required environment variables: ${missing.join(", ")}`);
-    console.error("Set these in your deployment configuration (e.g., AWS Secrets Manager).");
     process.exit(1);
+  }
+  if (!process.env.SESSION_SECRET) {
+    const { randomBytes } = require("crypto");
+    process.env.SESSION_SECRET = randomBytes(32).toString("hex");
+    console.warn("WARNING: SESSION_SECRET not set, using auto-generated value. Sessions will not persist across restarts.");
+  }
+  if (!process.env.JWT_SECRET) {
+    const { randomBytes } = require("crypto");
+    process.env.JWT_SECRET = randomBytes(32).toString("hex");
+    console.warn("WARNING: JWT_SECRET not set, using auto-generated value. Tokens will not persist across restarts.");
   }
 }
 
