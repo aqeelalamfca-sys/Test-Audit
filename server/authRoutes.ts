@@ -20,6 +20,7 @@ import { validatePasswordPolicy } from "./utils/passwordPolicy";
 import { checkAccountLockout, recordFailedAttempt, clearLockout } from "./middleware/accountLockout";
 import { loginRateLimit } from "./middleware/rateLimiter";
 import { logSecurityEvent } from "./services/auditLogService";
+import { generateTwoFactorSecret, generateQRCodeDataURL, verifyTwoFactorToken } from "./services/twoFactorService";
 
 const router = Router();
 
@@ -277,6 +278,21 @@ router.post("/login", loginRateLimit(), async (req: AuthenticatedRequest, res: R
 
     clearLockout(lockoutKey);
 
+    if (user.twoFactorEnabled && user.twoFactorSecret) {
+      const twoFactorCode = req.body.twoFactorCode;
+      if (!twoFactorCode) {
+        return res.status(200).json({
+          requiresTwoFactor: true,
+          userId: user.id,
+          message: "Two-factor authentication code required",
+        });
+      }
+      const isValid2FA = verifyTwoFactorToken(twoFactorCode, user.twoFactorSecret);
+      if (!isValid2FA) {
+        return res.status(401).json({ error: "Invalid two-factor authentication code" });
+      }
+    }
+
     const accessToken = generateAccessToken(user);
     const refreshToken = await generateRefreshToken(user.id);
 
@@ -286,14 +302,14 @@ router.post("/login", loginRateLimit(), async (req: AuthenticatedRequest, res: R
       "user",
       user.id,
       null,
-      { authMethod: "jwt" },
+      { authMethod: user.twoFactorEnabled ? "jwt+2fa" : "jwt" },
       undefined,
       undefined,
       clientIp,
       req.get("user-agent")
     );
 
-    const { passwordHash, ...safeUser } = user;
+    const { passwordHash, twoFactorSecret, ...safeUser } = user;
 
     res.json({
       user: safeUser,
@@ -917,6 +933,80 @@ router.post("/change-password", requireAuth, async (req: AuthenticatedRequest, r
     console.error("Change password error:", error);
     res.status(500).json({ error: "Failed to change password" });
   }
+});
+
+router.post("/2fa/setup", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const user = req.user!;
+    if (user.twoFactorEnabled) {
+      return res.status(400).json({ error: "Two-factor authentication is already enabled" });
+    }
+    const { secret, otpauthUrl } = generateTwoFactorSecret(user.email);
+    const qrCodeDataURL = await generateQRCodeDataURL(otpauthUrl);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { twoFactorSecret: secret },
+    });
+
+    res.json({ secret, qrCode: qrCodeDataURL });
+  } catch (error) {
+    console.error("2FA setup error:", error);
+    res.status(500).json({ error: "Failed to set up two-factor authentication" });
+  }
+});
+
+router.post("/2fa/verify", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { code } = z.object({ code: z.string().length(6) }).parse(req.body);
+    const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+    if (!user || !user.twoFactorSecret) {
+      return res.status(400).json({ error: "Two-factor setup not initiated" });
+    }
+    const isValid = verifyTwoFactorToken(code, user.twoFactorSecret);
+    if (!isValid) {
+      return res.status(400).json({ error: "Invalid verification code. Please try again." });
+    }
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { twoFactorEnabled: true },
+    });
+    await logAuditTrail(user.id, "2FA_ENABLED", "user", user.id, null, null, undefined, undefined, req.ip, req.get("user-agent"));
+    res.json({ success: true, message: "Two-factor authentication enabled successfully" });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid code format" });
+    }
+    console.error("2FA verify error:", error);
+    res.status(500).json({ error: "Failed to verify two-factor code" });
+  }
+});
+
+router.post("/2fa/disable", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { password } = z.object({ password: z.string() }).parse(req.body);
+    const user = req.user!;
+    const isValid = await verifyPassword(password, user.passwordHash);
+    if (!isValid) {
+      return res.status(400).json({ error: "Incorrect password" });
+    }
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { twoFactorEnabled: false, twoFactorSecret: null },
+    });
+    await logAuditTrail(user.id, "2FA_DISABLED", "user", user.id, null, null, undefined, undefined, req.ip, req.get("user-agent"));
+    res.json({ success: true, message: "Two-factor authentication disabled" });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Password is required" });
+    }
+    console.error("2FA disable error:", error);
+    res.status(500).json({ error: "Failed to disable two-factor authentication" });
+  }
+});
+
+router.get("/2fa/status", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  res.json({ enabled: req.user!.twoFactorEnabled || false });
 });
 
 export default router;

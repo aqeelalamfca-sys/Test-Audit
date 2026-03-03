@@ -475,8 +475,10 @@ model User {
   isActive       Boolean    @default(true)
   status         UserStatus @default(ACTIVE)
   lastLoginAt    DateTime?
-  partnerPin     String?
-  activeClientId String?
+  partnerPin       String?
+  twoFactorSecret  String?
+  twoFactorEnabled Boolean  @default(false)
+  activeClientId   String?
   activePeriodId String?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt

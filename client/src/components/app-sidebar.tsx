@@ -27,6 +27,7 @@ import {
   Layers,
   BookOpen,
   Target,
+  Scale,
   Play,
   CheckCircle2,
   FileOutput,
@@ -432,6 +433,18 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       <Link href="/reports">
                         <BarChart3 className="h-4 w-4" />
                         <span>Reports</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/secp-compliance"}
+                      data-testid="nav-secp-compliance"
+                    >
+                      <Link href="/secp-compliance">
+                        <Scale className="h-4 w-4" />
+                        <span>SECP Compliance</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

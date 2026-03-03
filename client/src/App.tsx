@@ -148,6 +148,8 @@ const FirmAuditLogsLazy = withLazySuspense(FirmAuditLogsPage);
 const FirmAIUsageLazy = withLazySuspense(FirmAIUsagePage);
 
 const StandardsMatrix = lazy(() => import("@/pages/standards-matrix"));
+const SECPCompliance = lazy(() => retryImport(() => import("@/pages/secp-compliance")));
+const SECPComplianceLazy = withLazySuspense(SECPCompliance);
 const GuardedStandardsMatrix = createGuardedComponent(StandardsMatrix, "StandardsMatrix", true);
 
 function WorkspaceRedirect() {
@@ -292,6 +294,7 @@ function Router() {
       <Route path="/user-guide" component={UserGuideLazy} />
       <Route path="/deployment-guide" component={DeploymentGuideLazy} />
       <Route path="/phase/:phase" component={PhaseViewLazy} />
+      <Route path="/secp-compliance" component={SECPComplianceLazy} />
 
       {/* Platform Admin routes (SuperAdmin only - frontend role guard) */}
       <Route path="/platform" component={GuardedPlatformDashboard} />
