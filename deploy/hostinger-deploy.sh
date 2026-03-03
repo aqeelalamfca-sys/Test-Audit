@@ -62,8 +62,8 @@ JWT_SECRET=${JWT_SECRET}
 SESSION_SECRET=${SESSION_SECRET}
 ENCRYPTION_MASTER_KEY=${ENCRYPTION_KEY}
 
-INITIAL_SUPER_ADMIN_EMAIL=superadmin@auditwise.pk
-INITIAL_SUPER_ADMIN_PASSWORD=Admin@2024!Secure
+INITIAL_SUPER_ADMIN_EMAIL=aqeelalam2010@gmail.com
+INITIAL_SUPER_ADMIN_PASSWORD=Aqeel@123\$
 
 # Optional: set your OpenAI key for AI features
 # OPENAI_API_KEY=sk-...
@@ -77,8 +77,8 @@ EOF
   echo "║  JWT_SECRET:      ${JWT_SECRET}"
   echo "║  SESSION_SECRET:  ${SESSION_SECRET}"
   echo "║  ENCRYPTION_KEY:  ${ENCRYPTION_KEY}"
-  echo "║  SuperAdmin:      superadmin@auditwise.pk"
-  echo "║  SuperAdmin Pass: Admin@2024!Secure"
+  echo "║  SuperAdmin:      aqeelalam2010@gmail.com"
+  echo "║  SuperAdmin Pass: Aqeel@123\$"
   echo "╚══════════════════════════════════════════╝"
   echo ""
   echo "⚠  Change the SuperAdmin password after first login!"

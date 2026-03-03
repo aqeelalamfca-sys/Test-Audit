@@ -186,7 +186,7 @@ export default function Login() {
                         <FormControl>
                           <Input
                             type="email"
-                            placeholder="superadmin@auditwise.pk"
+                            placeholder="aqeelalam2010@gmail.com"
                             autoComplete="email"
                             className="bg-slate-900/50 border-slate-600/50 text-white placeholder:text-slate-500"
                             {...field}
