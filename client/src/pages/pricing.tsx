@@ -99,7 +99,7 @@ export default function PricingPage() {
           </p>
           <div className="flex items-center justify-center gap-2">
             <Badge variant="secondary" className="text-sm px-3 py-1">
-              60-day free trial
+              30-day free trial
             </Badge>
             <span className="text-sm text-muted-foreground">No credit card required</span>
           </div>
@@ -223,7 +223,7 @@ export default function PricingPage() {
 
         <div className="text-center mt-12 space-y-2">
           <p className="text-sm text-muted-foreground">
-            All plans include a 60-day free trial. No credit card required to start.
+            All plans include a 30-day free trial. No credit card required to start.
           </p>
           <p className="text-sm text-muted-foreground">
             Prices shown in Pakistani Rupees (PKR). Cancel anytime during the trial.

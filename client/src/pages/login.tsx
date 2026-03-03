@@ -356,7 +356,7 @@ export default function Login() {
                       onClick={() => setLocation("/pricing")}
                       data-testid="link-start-trial"
                     >
-                      Start your 60-day free trial
+                      Start your 30-day free trial
                       <ArrowRight className="h-3.5 w-3.5 ml-1" />
                     </Button>
                   </div>

@@ -403,7 +403,7 @@ router.post("/signup", async (req: AuthenticatedRequest, res: Response) => {
     }
 
     const now = new Date();
-    const trialEnd = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
+    const trialEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     const passwordHash = await hashPassword(data.password);
     const username = data.adminEmail.split("@")[0] + "_admin";
 

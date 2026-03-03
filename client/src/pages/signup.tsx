@@ -33,8 +33,6 @@ import {
   ArrowLeft,
   Building2,
   User,
-  Mail,
-  Lock,
   Loader2,
   CheckCircle2,
 } from "lucide-react";
@@ -139,7 +137,7 @@ export default function SignupPage() {
 
       toast({
         title: "Welcome to AuditWise!",
-        description: "Your 60-day free trial has started. You can now set up your firm.",
+        description: "Your 30-day free trial has started. You can now set up your firm.",
       });
 
       window.location.href = "/";
@@ -182,7 +180,7 @@ export default function SignupPage() {
               <CardTitle className="text-2xl">Start Your Free Trial</CardTitle>
             </div>
             <p className="text-sm text-muted-foreground">
-              60 days free. No credit card required. Cancel anytime.
+              30 days free. No credit card required. Cancel anytime.
             </p>
             {selectedPlan && (
               <Badge variant="outline" className="mt-2 mx-auto">
@@ -292,16 +290,12 @@ export default function SignupPage() {
                         <FormItem>
                           <FormLabel>Email Address *</FormLabel>
                           <FormControl>
-                            <div className="relative">
-                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input
-                                type="email"
-                                className="pl-10"
-                                placeholder="you@yourfirm.com"
-                                data-testid="input-admin-email"
-                                {...field}
-                              />
-                            </div>
+                            <Input
+                              type="email"
+                              placeholder="you@yourfirm.com"
+                              data-testid="input-admin-email"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -316,24 +310,22 @@ export default function SignupPage() {
                             <FormLabel>Password *</FormLabel>
                             <FormControl>
                               <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
                                   type={showPassword ? "text" : "password"}
-                                  className="pl-10 pr-10"
+                                  className="pr-10"
                                   placeholder="Min 8 characters"
                                   data-testid="input-password"
                                   {...field}
                                 />
-                                <Button
+                                <button
                                   type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                                   onClick={() => setShowPassword(!showPassword)}
                                   data-testid="button-toggle-password"
+                                  tabIndex={-1}
                                 >
                                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </Button>
+                                </button>
                               </div>
                             </FormControl>
                             <FormMessage />
@@ -347,12 +339,23 @@ export default function SignupPage() {
                           <FormItem>
                             <FormLabel>Confirm Password *</FormLabel>
                             <FormControl>
-                              <Input
-                                type={showPassword ? "text" : "password"}
-                                placeholder="Repeat password"
-                                data-testid="input-confirm-password"
-                                {...field}
-                              />
+                              <div className="relative">
+                                <Input
+                                  type={showPassword ? "text" : "password"}
+                                  className="pr-10"
+                                  placeholder="Repeat password"
+                                  data-testid="input-confirm-password"
+                                  {...field}
+                                />
+                                <button
+                                  type="button"
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                  tabIndex={-1}
+                                >
+                                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>

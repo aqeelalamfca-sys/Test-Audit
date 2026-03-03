@@ -4,8 +4,8 @@ const DEFAULT_PLANS = [
   {
     code: "STARTER",
     name: "Starter",
-    maxUsers: 5,
-    maxEngagements: 15,
+    maxUsers: 3,
+    maxEngagements: 2,
     maxOffices: 1,
     storageGb: 5,
     allowCustomAi: false,
@@ -13,7 +13,7 @@ const DEFAULT_PLANS = [
     monthlyPrice: 4900,
     userOveragePkr: 800,
     officeOveragePkr: 2500,
-    engagementPackSize: 10,
+    engagementPackSize: 5,
     engagementPackPkr: 2000,
     supportLevel: "standard",
     featureFlags: {
@@ -26,8 +26,8 @@ const DEFAULT_PLANS = [
   {
     code: "GROWTH",
     name: "Growth",
-    maxUsers: 20,
-    maxEngagements: 75,
+    maxUsers: 6,
+    maxEngagements: 10,
     maxOffices: 3,
     storageGb: 25,
     allowCustomAi: true,
@@ -35,7 +35,7 @@ const DEFAULT_PLANS = [
     monthlyPrice: 14900,
     userOveragePkr: 700,
     officeOveragePkr: 2000,
-    engagementPackSize: 25,
+    engagementPackSize: 10,
     engagementPackPkr: 4000,
     supportLevel: "standard",
     featureFlags: {
@@ -48,8 +48,8 @@ const DEFAULT_PLANS = [
   {
     code: "PROFESSIONAL",
     name: "Professional",
-    maxUsers: 60,
-    maxEngagements: 250,
+    maxUsers: 20,
+    maxEngagements: 25,
     maxOffices: 7,
     storageGb: 100,
     allowCustomAi: true,
@@ -57,7 +57,7 @@ const DEFAULT_PLANS = [
     monthlyPrice: 34900,
     userOveragePkr: 600,
     officeOveragePkr: 1500,
-    engagementPackSize: 50,
+    engagementPackSize: 25,
     engagementPackPkr: 6000,
     supportLevel: "priority",
     featureFlags: {
