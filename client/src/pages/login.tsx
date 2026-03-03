@@ -39,6 +39,13 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+const SUPER_ADMIN_IPS = ["187.77.130.117"];
+
+function isSuperAdminAccess(): boolean {
+  const hostname = window.location.hostname;
+  return SUPER_ADMIN_IPS.includes(hostname) || /^\d+\.\d+\.\d+\.\d+$/.test(hostname);
+}
+
 export default function Login() {
   const [, setLocation] = useLocation();
   const { login, isLoading } = useAuth();
@@ -47,6 +54,7 @@ export default function Login() {
   const [showPortalPassword, setShowPortalPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginType, setLoginType] = useState<"firm" | "portal">("firm");
+  const isSuperAdmin = isSuperAdminAccess();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -140,6 +148,120 @@ export default function Login() {
       )}
     />
   );
+
+  if (isSuperAdmin) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+        <div className="absolute top-3 right-3 z-50">
+          <ThemeToggle />
+        </div>
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M20 18v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
+        <div className="relative z-10 w-full max-w-[420px] px-6">
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-600/90 shadow-lg shadow-red-900/30 border border-red-500/30">
+                <Shield className="h-7 w-7 text-white" />
+              </div>
+            </div>
+            <h1 className="text-2xl font-bold text-white tracking-tight">Platform Administration</h1>
+            <p className="text-sm text-slate-400 mt-1.5">AuditWise SuperAdmin Console</p>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 mt-3">
+              <Lock className="h-3 w-3 text-red-400" />
+              <span className="text-[11px] font-medium text-red-300">Restricted Access</span>
+            </div>
+          </div>
+
+          <Card className="border-slate-700/60 bg-slate-800/50 backdrop-blur-sm shadow-2xl">
+            <CardContent className="p-6">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" data-testid="superadmin-login-form">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-medium text-slate-300">Admin Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="superadmin@auditwise.pk"
+                            autoComplete="email"
+                            className="bg-slate-900/50 border-slate-600/50 text-white placeholder:text-slate-500"
+                            {...field}
+                            data-testid="superadmin-input-email"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-medium text-slate-300">Password</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type={showFirmPassword ? "text" : "password"}
+                              placeholder="Enter admin password"
+                              autoComplete="current-password"
+                              className="pr-10 bg-slate-900/50 border-slate-600/50 text-white placeholder:text-slate-500"
+                              {...field}
+                              data-testid="superadmin-input-password"
+                            />
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              aria-label={showFirmPassword ? "Hide password" : "Show password"}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-md text-slate-400 cursor-pointer opacity-70 hover:opacity-100 no-default-hover-elevate"
+                              onClick={() => setShowFirmPassword(!showFirmPassword)}
+                              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowFirmPassword(!showFirmPassword); }}}
+                              data-testid="superadmin-toggle-password"
+                            >
+                              {showFirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </span>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button
+                    type="submit"
+                    className="w-full text-sm font-semibold gap-2 bg-red-600 hover:bg-red-700 text-white"
+                    disabled={isSubmitting || isLoading}
+                    data-testid="superadmin-button-login"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Authenticating...
+                      </>
+                    ) : (
+                      <>
+                        <Shield className="h-4 w-4" />
+                        Access Platform Console
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+
+          <p className="mt-6 text-[10px] text-slate-600 text-center">
+            IP-Restricted Access Point &middot; All attempts are logged
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex bg-background overflow-hidden">
