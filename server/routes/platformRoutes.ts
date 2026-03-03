@@ -3,6 +3,7 @@ import { prisma } from "../db";
 import { requireAuth, hashPassword, type AuthenticatedRequest } from "../auth";
 import { requireSuperAdmin } from "../middleware/rbacGuard";
 import { logPlatformAction, extractRequestMeta } from "../services/platformAuditService";
+import { generateMonthlyInvoice, enforceSubscriptionLifecycle } from "../services/billingService";
 import { z } from "zod";
 import { randomBytes } from "crypto";
 import multer from "multer";
@@ -86,7 +87,7 @@ router.post("/firms/:id/logo", logoUpload.single("logo"), async (req: Authentica
     await prisma.firm.update({ where: { id }, data: { logoUrl } });
 
     const { ip, userAgent } = extractRequestMeta(req);
-    await logPlatformAction(req.user!.id, id, "FIRM_LOGO_UPLOAD", "Firm", id, ip, userAgent, { logoUrl });
+    await logPlatformAction(req.user!.id, "FIRM_LOGO_UPLOAD", "Firm", id, undefined, ip, userAgent, { logoUrl });
 
     res.json({ logoUrl });
   } catch (error) {
@@ -339,9 +340,19 @@ const planSchema = z.object({
   name: z.string().min(2),
   maxUsers: z.number().min(1).optional(),
   maxEngagements: z.number().min(1).optional(),
+  maxOffices: z.number().min(1).optional(),
+  storageGb: z.number().min(1).optional(),
   allowCustomAi: z.boolean().optional(),
+  platformAiIncluded: z.boolean().optional(),
   monthlyPrice: z.number().min(0).optional(),
+  userOveragePkr: z.number().min(0).optional(),
+  officeOveragePkr: z.number().min(0).optional(),
+  engagementPackSize: z.number().min(1).optional(),
+  engagementPackPkr: z.number().min(0).optional(),
   featureFlags: z.record(z.any()).optional(),
+  isPublic: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+  supportLevel: z.string().optional(),
 });
 
 router.post("/plans", async (req: AuthenticatedRequest, res: Response) => {
@@ -623,6 +634,155 @@ router.post("/ai-config", async (req: AuthenticatedRequest, res: Response) => {
     }
     console.error("Update AI config error:", error);
     res.status(500).json({ error: "Failed to update AI config" });
+  }
+});
+
+// ========== INVOICES & BILLING ==========
+
+router.get("/invoices", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { firmId, status, page = "1", limit = "20" } = req.query;
+    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+    const take = parseInt(limit as string);
+
+    const where: any = {};
+    if (firmId) where.subscription = { firmId: firmId as string };
+    if (status) where.status = status;
+
+    const [invoices, total] = await Promise.all([
+      prisma.invoice.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { issuedAt: "desc" },
+        include: {
+          lines: true,
+          subscription: {
+            include: {
+              firm: { select: { id: true, name: true } },
+              plan: { select: { code: true, name: true } },
+            },
+          },
+        },
+      }),
+      prisma.invoice.count({ where }),
+    ]);
+
+    res.json({ invoices, total, page: parseInt(page as string), limit: take });
+  } catch (error) {
+    console.error("Invoice list error:", error);
+    res.status(500).json({ error: "Failed to list invoices" });
+  }
+});
+
+router.get("/invoices/:id", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: req.params.id },
+      include: {
+        lines: true,
+        subscription: {
+          include: {
+            firm: { select: { id: true, name: true, email: true } },
+            plan: { select: { code: true, name: true } },
+          },
+        },
+      },
+    });
+
+    if (!invoice) return res.status(404).json({ error: "Invoice not found" });
+    res.json(invoice);
+  } catch (error) {
+    console.error("Invoice detail error:", error);
+    res.status(500).json({ error: "Failed to get invoice" });
+  }
+});
+
+router.post("/invoices/generate/:subscriptionId", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const invoice = await generateMonthlyInvoice(req.params.subscriptionId);
+    if (!invoice) return res.status(404).json({ error: "Subscription not found" });
+
+    const { ip, userAgent } = extractRequestMeta(req);
+    await logPlatformAction(req.user!.id, "GENERATE_INVOICE", "Invoice", invoice.id, undefined, ip, userAgent, {
+      invoiceNo: invoice.invoiceNo,
+      amount: invoice.amount,
+    });
+
+    res.json(invoice);
+  } catch (error) {
+    console.error("Invoice generation error:", error);
+    res.status(500).json({ error: "Failed to generate invoice" });
+  }
+});
+
+router.post("/invoices/:id/mark-paid", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const invoice = await prisma.invoice.findUnique({ where: { id: req.params.id } });
+    if (!invoice) return res.status(404).json({ error: "Invoice not found" });
+    if (invoice.status === "PAID") return res.status(400).json({ error: "Invoice already paid" });
+
+    const updated = await prisma.invoice.update({
+      where: { id: req.params.id },
+      data: { status: "PAID", paidAt: new Date() },
+      include: { lines: true },
+    });
+
+    if (invoice.subscriptionId) {
+      await prisma.subscription.update({
+        where: { id: invoice.subscriptionId },
+        data: { status: "ACTIVE" },
+      });
+    }
+
+    const { ip, userAgent } = extractRequestMeta(req);
+    await logPlatformAction(req.user!.id, "MARK_INVOICE_PAID", "Invoice", invoice.id, undefined, ip, userAgent, {
+      invoiceNo: invoice.invoiceNo,
+      amount: invoice.amount,
+    });
+
+    res.json(updated);
+  } catch (error) {
+    console.error("Mark paid error:", error);
+    res.status(500).json({ error: "Failed to mark invoice as paid" });
+  }
+});
+
+router.post("/invoices/:id/void", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const invoice = await prisma.invoice.findUnique({ where: { id: req.params.id } });
+    if (!invoice) return res.status(404).json({ error: "Invoice not found" });
+    if (invoice.status === "PAID") return res.status(400).json({ error: "Cannot void a paid invoice" });
+
+    const updated = await prisma.invoice.update({
+      where: { id: req.params.id },
+      data: { status: "VOID" },
+      include: { lines: true },
+    });
+
+    const { ip, userAgent } = extractRequestMeta(req);
+    await logPlatformAction(req.user!.id, "VOID_INVOICE", "Invoice", invoice.id, undefined, ip, userAgent, {
+      invoiceNo: invoice.invoiceNo,
+    });
+
+    res.json(updated);
+  } catch (error) {
+    console.error("Void invoice error:", error);
+    res.status(500).json({ error: "Failed to void invoice" });
+  }
+});
+
+router.post("/billing/enforce-lifecycle", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = await enforceSubscriptionLifecycle();
+
+    const { ip, userAgent } = extractRequestMeta(req);
+    await logPlatformAction(req.user!.id, "ENFORCE_LIFECYCLE", "Billing", undefined, undefined, ip, userAgent, result);
+
+    res.json({ message: "Lifecycle enforcement completed", ...result });
+  } catch (error) {
+    console.error("Lifecycle enforcement error:", error);
+    res.status(500).json({ error: "Failed to enforce lifecycle" });
   }
 });
 

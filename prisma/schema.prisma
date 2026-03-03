@@ -38,8 +38,10 @@ enum SubscriptionStatus {
   TRIAL
   ACTIVE
   PAST_DUE
+  GRACE
   SUSPENDED
   CANCELED
+  EXPIRED
 }
 
 enum InvoiceStatus {
@@ -215,17 +217,26 @@ model Firm {
 }
 
 model Plan {
-  id                String   @id @default(uuid())
-  code              String   @unique
-  name              String
-  maxUsers          Int      @default(10)
-  maxEngagements    Int      @default(50)
-  allowCustomAi     Boolean  @default(false)
-  monthlyPrice      Decimal  @default(0)
-  featureFlags      Json     @default("{}")
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                    String   @id @default(uuid())
+  code                  String   @unique
+  name                  String
+  maxUsers              Int      @default(10)
+  maxEngagements        Int      @default(50)
+  maxOffices            Int      @default(1)
+  storageGb             Int      @default(5)
+  allowCustomAi         Boolean  @default(false)
+  platformAiIncluded    Boolean  @default(true)
+  monthlyPrice          Decimal  @default(0)
+  userOveragePkr        Decimal  @default(0)
+  officeOveragePkr      Decimal  @default(0)
+  engagementPackSize    Int      @default(10)
+  engagementPackPkr     Decimal  @default(0)
+  featureFlags          Json     @default("{}")
+  isPublic              Boolean  @default(true)
+  isActive              Boolean  @default(true)
+  supportLevel          String   @default("standard")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   subscriptions Subscription[]
 }
@@ -239,6 +250,9 @@ model Subscription {
   trialEnd           DateTime?
   currentPeriodStart DateTime?
   currentPeriodEnd   DateTime?
+  graceDays          Int                @default(7)
+  graceEndAt         DateTime?
+  nextInvoiceAt      DateTime?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
@@ -252,7 +266,10 @@ model Subscription {
 
 model Invoice {
   id             String        @id @default(uuid())
+  invoiceNo      String?       @unique
   subscriptionId String
+  subtotal       Decimal       @default(0)
+  tax            Decimal       @default(0)
   amount         Decimal
   currency       String        @default("PKR")
   status         InvoiceStatus @default(DRAFT)
@@ -263,10 +280,24 @@ model Invoice {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscription Subscription  @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  lines        InvoiceLine[]
 
   @@index([subscriptionId])
   @@index([status])
+}
+
+model InvoiceLine {
+  id          String  @id @default(uuid())
+  invoiceId   String
+  description String
+  quantity    Int     @default(1)
+  unitPrice   Decimal @default(0)
+  amount      Decimal @default(0)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
 }
 
 model PlatformNotification {

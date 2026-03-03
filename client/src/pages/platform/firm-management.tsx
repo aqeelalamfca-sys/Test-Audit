@@ -15,7 +15,7 @@ import { useAuth } from "@/lib/auth";
 
 const emptyForm = {
   name: "", adminEmail: "", adminFullName: "", email: "",
-  country: "", currency: "PKR", planCode: "BASIC", trialDays: 30,
+  country: "", currency: "PKR", planCode: "STARTER", trialDays: 14,
   headOfficeAddress: "", ntn: "",
   branches: [] as { name: string; address: string }[],
 };
@@ -401,24 +401,39 @@ export default function FirmManagement() {
                       />
                     )}
                     <div className="flex-1">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-wrap">
                         <h3 className="font-semibold text-lg" data-testid={`text-firm-name-${firm.id}`}>{firm.name}</h3>
                         <Badge className={statusColor[firm.status] || "bg-gray-100"} data-testid={`badge-firm-status-${firm.id}`}>
                           {firm.status}
                         </Badge>
                         {firm.subscriptions?.[0]?.plan && (
                           <Badge variant="outline" data-testid={`badge-firm-plan-${firm.id}`}>
-                            {firm.subscriptions[0].plan.name}
+                            {firm.subscriptions[0].plan.name} — PKR {Number(firm.subscriptions[0].plan.monthlyPrice).toLocaleString()}/mo
+                          </Badge>
+                        )}
+                        {firm.subscriptions?.[0]?.status && (
+                          <Badge variant="secondary" className="text-[10px]" data-testid={`badge-sub-status-${firm.id}`}>
+                            Sub: {firm.subscriptions[0].status}
                           </Badge>
                         )}
                       </div>
                       <div className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                        <div>
-                          {firm.email && <span>{firm.email} · </span>}
-                          <span>{firm._count?.users || 0} users</span>
-                          <span> · {firm._count?.engagements || 0} engagements</span>
-                          {firm.country && <span> · {firm.country}</span>}
+                        <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+                          {firm.email && <span>{firm.email}</span>}
+                          <span>{firm._count?.users || 0}/{firm.subscriptions?.[0]?.plan?.maxUsers || '?'} users</span>
+                          <span>{firm._count?.engagements || 0}/{firm.subscriptions?.[0]?.plan?.maxEngagements >= 9999 ? '∞' : firm.subscriptions?.[0]?.plan?.maxEngagements || '?'} engagements</span>
+                          {firm.country && <span>{firm.country}</span>}
                         </div>
+                        {firm.subscriptions?.[0]?.trialEnd && firm.subscriptions[0].status === "TRIAL" && (
+                          <div className="text-xs text-amber-600 dark:text-amber-400">
+                            Trial ends: {new Date(firm.subscriptions[0].trialEnd).toLocaleDateString()}
+                          </div>
+                        )}
+                        {firm.subscriptions?.[0]?.graceEndAt && (firm.subscriptions[0].status === "GRACE" || firm.subscriptions[0].status === "PAST_DUE") && (
+                          <div className="text-xs text-red-600 dark:text-red-400">
+                            Grace ends: {new Date(firm.subscriptions[0].graceEndAt).toLocaleDateString()}
+                          </div>
+                        )}
                         {firm.taxId && (
                           <div className="text-xs">NTN: {firm.taxId}</div>
                         )}

@@ -372,8 +372,24 @@ app.use((req, res, next) => {
       }
     }, 30000);
 
+    const { enforceSubscriptionLifecycle, processScheduledInvoices } = await import("./services/billingService");
+    const runBillingCycle = async () => {
+      try {
+        const lifecycle = await enforceSubscriptionLifecycle();
+        const invoicing = await processScheduledInvoices();
+        if (lifecycle.trialExpired || lifecycle.movedToGrace || lifecycle.suspended || lifecycle.overdueInvoices || invoicing.generated) {
+          console.log("[Billing]", JSON.stringify({ ...lifecycle, ...invoicing }));
+        }
+      } catch (err) {
+        console.error("[Billing] Cycle error:", err);
+      }
+    };
+    await runBillingCycle();
+    const billingInterval = setInterval(runBillingCycle, 60 * 60 * 1000);
+
     const shutdown = async () => {
       clearInterval(keepaliveInterval);
+      clearInterval(billingInterval);
       await prisma.$disconnect();
       httpServer.close();
       process.exit(0);

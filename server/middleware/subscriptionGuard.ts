@@ -66,13 +66,14 @@ export async function subscriptionGuard(req: AuthenticatedRequest, res: Response
         }
       }
 
-      if (subscription.status === "PAST_DUE") {
+      if (subscription.status === "PAST_DUE" || subscription.status === "GRACE") {
         const isWriteRequest = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
         if (isWriteRequest) {
+          const statusLabel = subscription.status === "GRACE" ? "in grace period" : "past due";
           return res.status(403).json({
-            error: "Payment past due",
-            code: "PAYMENT_PAST_DUE",
-            message: "Your payment is past due. Write operations are restricted until payment is resolved.",
+            error: `Payment ${statusLabel}`,
+            code: subscription.status === "GRACE" ? "PAYMENT_GRACE" : "PAYMENT_PAST_DUE",
+            message: `Your payment is ${statusLabel}. Write operations are restricted until payment is resolved.`,
           });
         }
       }

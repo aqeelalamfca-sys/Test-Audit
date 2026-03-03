@@ -78,11 +78,16 @@ Key architectural patterns and features include:
 - **Tenant Isolation**: All tenant-scoped queries enforce `firmId` from authenticated user. SuperAdmin bypasses but must specify firmId explicitly.
 - **Role Hierarchy**: STAFF(1) → SENIOR(2) → TEAM_LEAD(3) → MANAGER(5) → PARTNER(6) → MANAGING_PARTNER(7) → ADMIN(7) → FIRM_ADMIN(8) → SUPER_ADMIN(99)
 - **New Roles**: `SUPER_ADMIN` (platform-wide, no firmId), `FIRM_ADMIN` (firm-scoped admin)
-- **Subscription Plans**: BASIC (PKR 9,999/mo, 5 users, 10 engagements), PRO (PKR 39,999/mo, 25 users, 100 engagements), ENTERPRISE (PKR 99,999/mo, 999 users, 9999 engagements)
+- **Subscription Plans**: STARTER (PKR 4,900/mo, 5 users, 1 office, 15 eng, 5GB), GROWTH (PKR 14,900/mo, 20 users, 3 offices, 75 eng, 25GB), PROFESSIONAL (PKR 34,900/mo, 60 users, 7 offices, 250 eng, 100GB), ENTERPRISE (PKR 79,900/mo, unlimited, 500GB, dedicated support)
+- **Overage Pricing**: Per-plan overage rates for extra users/offices/engagements (stored in Plan model: userOveragePkr, officeOveragePkr, engagementPackSize, engagementPackPkr)
+- **Plan Model Extended Fields**: maxOffices, storageGb, platformAiIncluded, userOveragePkr, officeOveragePkr, engagementPackSize, engagementPackPkr, isPublic, supportLevel
+- **Subscription Extended Fields**: graceDays (default 7), graceEndAt, nextInvoiceAt; SubscriptionStatus enum: TRIAL/ACTIVE/PAST_DUE/GRACE/SUSPENDED/CANCELED/EXPIRED
+- **Invoice Model**: Added invoiceNo (unique, format INV-YYYY-NNNNNN), subtotal, tax fields; InvoiceLine model for itemized billing
 - **Default Currency**: PKR (Pakistani Rupee). Multi-currency supported: PKR, USD, GBP, EUR, AED, SAR, CAD, AUD, INR, BDT
 - **Firm Status Guards**: ACTIVE/TRIAL allowed, SUSPENDED/TERMINATED blocked with 403. PAST_DUE blocks writes only.
-- **Platform API** (`/api/platform/*`): SuperAdmin-only routes for firm CRUD, plan management, global notifications, audit logs, AI config, analytics
+- **Platform API** (`/api/platform/*`): SuperAdmin-only routes for firm CRUD, plan management, invoices (list/detail/generate/mark-paid/void), billing lifecycle enforcement, global notifications, audit logs, AI config, analytics
 - **Tenant API** (`/api/tenant/*`): Firm-scoped routes for user management, settings, AI key override, audit logs, AI usage
+- **Billing Service** (`server/services/billingService.ts`): Monthly invoice generation with overage line items, subscription lifecycle enforcement (TRIAL→PAST_DUE→GRACE→SUSPENDED), scheduled invoice processing. Runs hourly via setInterval in server startup.
 - **Middleware Stack**: `tenantIsolation.ts` (firm scope), `subscriptionGuard.ts` (status checks), `rbacGuard.ts` (role hierarchy)
 - **AI Key Encryption**: Firm AI API keys encrypted at rest using AES-256-GCM (`server/services/encryptionService.ts`)
 - **Platform Audit Logging**: All write actions logged to `PlatformAuditLog` via `server/services/platformAuditService.ts`
