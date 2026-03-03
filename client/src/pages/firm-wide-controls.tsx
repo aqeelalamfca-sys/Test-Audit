@@ -34,6 +34,7 @@ import {
 import {
   Building2,
   Shield,
+  ShieldCheck,
   Users,
   FileText,
   AlertTriangle,
@@ -50,6 +51,12 @@ import {
   BarChart3,
   Loader2,
   Save,
+  Library,
+  Gavel,
+  Activity,
+  ChevronRight,
+  TrendingUp,
+  CircleDot,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
@@ -105,6 +112,214 @@ export default function FirmWideControls() {
   const { data: dashboard, isLoading: dashboardLoading } = useQuery({
     queryKey: ["/api/isqm/dashboard"],
     queryFn: () => apiRequest("/api/isqm/dashboard"),
+  });
+
+  const { data: complianceDashboard } = useQuery({
+    queryKey: ["/api/firm-wide-controls/compliance-dashboard"],
+    queryFn: () => apiRequest("/api/firm-wide-controls/compliance-dashboard"),
+  });
+
+  const { data: fwcObjectives } = useQuery({
+    queryKey: ["/api/firm-wide-controls/quality-objectives"],
+    queryFn: () => apiRequest("/api/firm-wide-controls/quality-objectives"),
+  });
+
+  const { data: fwcRisks } = useQuery({
+    queryKey: ["/api/firm-wide-controls/quality-risks"],
+    queryFn: () => apiRequest("/api/firm-wide-controls/quality-risks"),
+  });
+
+  const { data: fwcResponses } = useQuery({
+    queryKey: ["/api/firm-wide-controls/quality-responses"],
+    queryFn: () => apiRequest("/api/firm-wide-controls/quality-responses"),
+  });
+
+  const { data: fwcDeficiencies } = useQuery({
+    queryKey: ["/api/firm-wide-controls/deficiencies"],
+    queryFn: () => apiRequest("/api/firm-wide-controls/deficiencies"),
+  });
+
+  const { data: fwcRemediations } = useQuery({
+    queryKey: ["/api/firm-wide-controls/remediations"],
+    queryFn: () => apiRequest("/api/firm-wide-controls/remediations"),
+  });
+
+  const { data: fwcMonitoringReviews } = useQuery({
+    queryKey: ["/api/firm-wide-controls/monitoring-reviews"],
+    queryFn: () => apiRequest("/api/firm-wide-controls/monitoring-reviews"),
+  });
+
+  const { data: eqcrPolicy } = useQuery({
+    queryKey: ["/api/firm-wide-controls/eqcr-policy"],
+    queryFn: () => apiRequest("/api/firm-wide-controls/eqcr-policy"),
+  });
+
+  const { data: eqcrAssignments } = useQuery({
+    queryKey: ["/api/firm-wide-controls/eqcr-assignments"],
+    queryFn: () => apiRequest("/api/firm-wide-controls/eqcr-assignments"),
+  });
+
+  const { data: policyDocuments } = useQuery({
+    queryKey: ["/api/firm-wide-controls/policy-documents"],
+    queryFn: () => apiRequest("/api/firm-wide-controls/policy-documents"),
+  });
+
+  const { data: isqmVersions } = useQuery({
+    queryKey: ["/api/firm-wide-controls/isqm-versions"],
+    queryFn: () => apiRequest("/api/firm-wide-controls/isqm-versions"),
+  });
+
+  const { data: activityLogs } = useQuery({
+    queryKey: ["/api/firm-wide-controls/activity-logs"],
+    queryFn: () => apiRequest("/api/firm-wide-controls/activity-logs"),
+    enabled: isManager,
+  });
+
+  const [showAddFwcObjectiveDialog, setShowAddFwcObjectiveDialog] = useState(false);
+  const [showAddFwcRiskDialog, setShowAddFwcRiskDialog] = useState(false);
+  const [showAddFwcResponseDialog, setShowAddFwcResponseDialog] = useState(false);
+  const [showAddFwcDeficiencyDialog, setShowAddFwcDeficiencyDialog] = useState(false);
+  const [showAddRemediationDialog, setShowAddRemediationDialog] = useState(false);
+  const [showAddEqcrDialog, setShowAddEqcrDialog] = useState(false);
+  const [showAddPolicyDocDialog, setShowAddPolicyDocDialog] = useState(false);
+  const [showAddVersionDialog, setShowAddVersionDialog] = useState(false);
+  const [showAddMonitoringDialog, setShowAddMonitoringDialog] = useState(false);
+  const [selectedComponent, setSelectedComponent] = useState<string>("governance");
+
+  const [fwcObjectiveForm, setFwcObjectiveForm] = useState({ componentType: "governance", title: "", description: "" });
+  const [fwcRiskForm, setFwcRiskForm] = useState({ objectiveId: "", riskTitle: "", riskDescription: "", likelihood: "medium", impact: "medium", riskRating: "medium" });
+  const [fwcResponseForm, setFwcResponseForm] = useState({ objectiveId: "", riskId: "", responseTitle: "", designDescription: "", implementationStatus: "planned" });
+  const [fwcDeficiencyForm, setFwcDeficiencyForm] = useState({ severity: "medium", deficiencyText: "", rootCause: "", dueAt: "" });
+  const [remediationForm, setRemediationForm] = useState({ deficiencyId: "", actionText: "", deadlineAt: "" });
+  const [eqcrForm, setEqcrForm] = useState({ eqcrPartnerUserId: "", engagementId: "" });
+  const [policyDocForm, setPolicyDocForm] = useState({ docType: "quality_manual", title: "", version: "1.0" });
+  const [versionForm, setVersionForm] = useState({ manualVersion: "", changeSummary: "" });
+  const [monitoringForm, setMonitoringForm] = useState({ reviewType: "internal_inspection", cycleCode: new Date().getFullYear().toString(), status: "planned" });
+
+  const createFwcObjectiveMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/firm-wide-controls/quality-objectives", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/quality-objectives"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/compliance-dashboard"] });
+      toast({ title: "Success", description: "Quality objective created" });
+      setShowAddFwcObjectiveDialog(false);
+      setFwcObjectiveForm({ componentType: "governance", title: "", description: "" });
+    },
+    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const createFwcRiskMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/firm-wide-controls/quality-risks", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/quality-risks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/compliance-dashboard"] });
+      toast({ title: "Success", description: "Quality risk identified" });
+      setShowAddFwcRiskDialog(false);
+    },
+    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const createFwcResponseMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/firm-wide-controls/quality-responses", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/quality-responses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/compliance-dashboard"] });
+      toast({ title: "Success", description: "Response created" });
+      setShowAddFwcResponseDialog(false);
+    },
+    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const createFwcDeficiencyMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/firm-wide-controls/deficiencies", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/deficiencies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/compliance-dashboard"] });
+      toast({ title: "Success", description: "Deficiency recorded" });
+      setShowAddFwcDeficiencyDialog(false);
+    },
+    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const createRemediationMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/firm-wide-controls/remediations", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/remediations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/compliance-dashboard"] });
+      toast({ title: "Success", description: "Remediation action created" });
+      setShowAddRemediationDialog(false);
+    },
+    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const createEqcrAssignmentMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/firm-wide-controls/eqcr-assignments", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/eqcr-assignments"] });
+      toast({ title: "Success", description: "EQCR assignment created" });
+      setShowAddEqcrDialog(false);
+    },
+    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const createPolicyDocMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/firm-wide-controls/policy-documents", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/policy-documents"] });
+      toast({ title: "Success", description: "Policy document added" });
+      setShowAddPolicyDocDialog(false);
+    },
+    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const createVersionMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/firm-wide-controls/isqm-versions", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/isqm-versions"] });
+      toast({ title: "Success", description: "Version record created" });
+      setShowAddVersionDialog(false);
+    },
+    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const createMonitoringReviewMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/firm-wide-controls/monitoring-reviews", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/monitoring-reviews"] });
+      toast({ title: "Success", description: "Monitoring review created" });
+      setShowAddMonitoringDialog(false);
+    },
+    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const updateFwcObjectiveMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => apiRequest(`/api/firm-wide-controls/quality-objectives/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/quality-objectives"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/compliance-dashboard"] });
+      toast({ title: "Success", description: "Objective updated" });
+    },
+    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const updateFwcRiskMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => apiRequest(`/api/firm-wide-controls/quality-risks/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/quality-risks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/compliance-dashboard"] });
+      toast({ title: "Success", description: "Risk updated" });
+    },
+    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const updateFwcResponseMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => apiRequest(`/api/firm-wide-controls/quality-responses/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/quality-responses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/firm-wide-controls/compliance-dashboard"] });
+      toast({ title: "Success", description: "Response updated" });
+    },
+    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
   const { data: affirmations } = useQuery({
@@ -675,69 +890,124 @@ export default function FirmWideControls() {
     }
   }, [isEditingPolicy, selectedPolicy]);
 
+  const ISQM_COMPONENTS = [
+    { key: "governance", label: "Governance & Leadership", icon: Building2 },
+    { key: "ethics", label: "Ethical Requirements", icon: Scale },
+    { key: "acceptance", label: "Acceptance & Continuance", icon: CheckCircle2 },
+    { key: "performance", label: "Engagement Performance", icon: Target },
+    { key: "resources", label: "Resources", icon: Users },
+    { key: "info_comm", label: "Information & Communication", icon: FileText },
+    { key: "monitoring", label: "Monitoring & Remediation", icon: ClipboardCheck },
+  ];
+
+  const getStatusColor = (status: string) => {
+    if (status === "green") return "bg-emerald-500";
+    if (status === "amber") return "bg-amber-500";
+    return "bg-red-500";
+  };
+
+  const getStatusBadge = (status: string) => {
+    if (status === "green") return "default";
+    if (status === "amber") return "secondary";
+    return "destructive";
+  };
+
+  const overallScore = complianceDashboard?.overallScore ?? 0;
+
   return (
     <div className="px-4 py-3 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-primary/10">
-            <Shield className="h-6 w-6 text-primary" />
+            <ShieldCheck className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">ISQM Firm-Wide Controls</h1>
-            <p className="text-muted-foreground">ISQM 1/2 Compliant Quality Management Framework</p>
+            <h1 className="text-2xl font-bold" data-testid="text-page-title">Firm Wide Controls</h1>
+            <p className="text-muted-foreground text-sm">ISQM 1 / ISQM 2 / Code of Ethics — Quality Management Framework</p>
           </div>
         </div>
-        {!isAdmin && (
-          <Badge variant="outline">
-            <Lock className="h-3 w-3 mr-1" />
-            Limited Access
-          </Badge>
-        )}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-card" data-testid="badge-compliance-score">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">ISQM Compliance:</span>
+            <span className={`text-lg font-bold ${overallScore >= 80 ? "text-emerald-600" : overallScore >= 50 ? "text-amber-600" : "text-red-600"}`}>
+              {overallScore}%
+            </span>
+          </div>
+          {!isAdmin && (
+            <Badge variant="outline">
+              <Lock className="h-3 w-3 mr-1" />
+              Limited Access
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      <div className="text-xs text-muted-foreground border-b pb-2">
+        Administration <ChevronRight className="h-3 w-3 inline" /> Firm Wide Controls
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10">
-          <TabsTrigger value="dashboard" className="text-xs">
-            <BarChart3 className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Dashboard</span>
-          </TabsTrigger>
-          <TabsTrigger value="governance" className="text-xs">
-            <Building2 className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Governance</span>
-          </TabsTrigger>
-          <TabsTrigger value="independence" className="text-xs">
-            <Scale className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Independence</span>
-          </TabsTrigger>
-          <TabsTrigger value="ethics" className="text-xs">
-            <Shield className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Ethics</span>
-          </TabsTrigger>
-          <TabsTrigger value="resources" className="text-xs">
-            <Users className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Resources</span>
-          </TabsTrigger>
-          <TabsTrigger value="training" className="text-xs">
-            <GraduationCap className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Training</span>
-          </TabsTrigger>
-          <TabsTrigger value="monitoring" className="text-xs">
-            <ClipboardCheck className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Monitoring</span>
-          </TabsTrigger>
-          <TabsTrigger value="deficiencies" className="text-xs">
-            <AlertTriangle className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Deficiencies</span>
-          </TabsTrigger>
-          <TabsTrigger value="objectives" className="text-xs">
-            <Target className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Objectives</span>
-          </TabsTrigger>
-          <TabsTrigger value="policies" className="text-xs">
-            <FileText className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Policies</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto">
+          <TabsList className="inline-flex w-auto min-w-full">
+            <TabsTrigger value="dashboard" className="text-xs" data-testid="tab-dashboard">
+              <BarChart3 className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="isqm1" className="text-xs" data-testid="tab-isqm1">
+              <ShieldCheck className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">ISQM 1</span>
+            </TabsTrigger>
+            <TabsTrigger value="governance" className="text-xs" data-testid="tab-governance">
+              <Building2 className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Governance</span>
+            </TabsTrigger>
+            <TabsTrigger value="independence" className="text-xs" data-testid="tab-independence">
+              <Scale className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Independence</span>
+            </TabsTrigger>
+            <TabsTrigger value="ethics" className="text-xs" data-testid="tab-ethics">
+              <Shield className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Ethics</span>
+            </TabsTrigger>
+            <TabsTrigger value="resources" className="text-xs" data-testid="tab-resources">
+              <Users className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Resources</span>
+            </TabsTrigger>
+            <TabsTrigger value="training" className="text-xs" data-testid="tab-training">
+              <GraduationCap className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Training</span>
+            </TabsTrigger>
+            <TabsTrigger value="monitoring" className="text-xs" data-testid="tab-monitoring">
+              <ClipboardCheck className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Monitoring</span>
+            </TabsTrigger>
+            <TabsTrigger value="deficiencies" className="text-xs" data-testid="tab-deficiencies">
+              <AlertTriangle className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Remediation</span>
+            </TabsTrigger>
+            <TabsTrigger value="eqcr" className="text-xs" data-testid="tab-eqcr">
+              <Gavel className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">EQR</span>
+            </TabsTrigger>
+            <TabsTrigger value="objectives" className="text-xs" data-testid="tab-objectives">
+              <Target className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Objectives</span>
+            </TabsTrigger>
+            <TabsTrigger value="policies" className="text-xs" data-testid="tab-policies">
+              <FileText className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Policies</span>
+            </TabsTrigger>
+            <TabsTrigger value="docs" className="text-xs" data-testid="tab-docs">
+              <Library className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Docs Library</span>
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="text-xs" data-testid="tab-activity">
+              <Activity className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Activity</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="dashboard" className="space-y-4">
           {dashboardLoading ? (
@@ -3627,6 +3897,599 @@ export default function FirmWideControls() {
               )}
             </DialogContent>
           </Dialog>
+        </TabsContent>
+
+        {/* ISQM 1 Components Tab */}
+        <TabsContent value="isqm1" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5" />
+                ISQM 1 — Quality Management Components
+              </CardTitle>
+              <CardDescription>7 ISQM 1 components with objectives, risks, responses, and compliance scoring</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {ISQM_COMPONENTS.map((comp) => {
+                  const cs = complianceDashboard?.componentScores?.[comp.key];
+                  const score = cs?.score ?? 0;
+                  const status = cs?.status ?? "red";
+                  const CompIcon = comp.icon;
+                  const compObjectives = (fwcObjectives || []).filter((o: any) => o.componentType === comp.key);
+                  const compRisks = (fwcRisks || []).filter((r: any) => compObjectives.some((o: any) => o.id === r.objectiveId));
+                  return (
+                    <Card key={comp.key} className={`cursor-pointer transition-all hover:shadow-md ${selectedComponent === comp.key ? "ring-2 ring-primary" : ""}`} onClick={() => setSelectedComponent(comp.key)} data-testid={`card-isqm-component-${comp.key}`}>
+                      <CardContent className="pt-4 pb-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <CompIcon className="h-4 w-4 text-primary" />
+                            <span className="font-medium text-sm">{comp.label}</span>
+                          </div>
+                          <div className={`w-3 h-3 rounded-full ${getStatusColor(status)}`} />
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${score >= 80 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-red-500"}`} style={{ width: `${score}%` }} />
+                          </div>
+                          <span className="text-xs font-semibold">{score}%</span>
+                        </div>
+                        <div className="flex gap-3 mt-2 text-xs text-muted-foreground">
+                          <span>{compObjectives.length} objectives</span>
+                          <span>{compRisks.length} risks</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {/* Selected Component Detail */}
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">{ISQM_COMPONENTS.find(c => c.key === selectedComponent)?.label || "Select Component"}</h3>
+                  {isAdmin && (
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => { setFwcObjectiveForm({ ...fwcObjectiveForm, componentType: selectedComponent }); setShowAddFwcObjectiveDialog(true); }} data-testid="button-add-objective">
+                        <Plus className="h-3 w-3 mr-1" /> Objective
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowAddFwcRiskDialog(true)} data-testid="button-add-risk">
+                        <Plus className="h-3 w-3 mr-1" /> Risk
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowAddFwcResponseDialog(true)} data-testid="button-add-response">
+                        <Plus className="h-3 w-3 mr-1" /> Response
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Objectives for selected component */}
+                <div className="space-y-2">
+                  {(fwcObjectives || []).filter((o: any) => o.componentType === selectedComponent).map((obj: any) => (
+                    <Card key={obj.id} className="border" data-testid={`card-objective-${obj.id}`}>
+                      <CardContent className="py-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <CircleDot className="h-4 w-4 text-primary" />
+                              <span className="font-medium">{obj.title}</span>
+                              <Badge variant={obj.status === "approved" ? "default" : obj.status === "draft" ? "secondary" : "outline"} className="text-xs">
+                                {obj.status}
+                              </Badge>
+                            </div>
+                            {obj.description && <p className="text-sm text-muted-foreground mt-1 ml-6">{obj.description}</p>}
+                          </div>
+                          {isAdmin && obj.status === "draft" && (
+                            <Button size="sm" variant="ghost" onClick={() => updateFwcObjectiveMutation.mutate({ id: obj.id, data: { status: "approved" } })} data-testid={`button-approve-objective-${obj.id}`}>
+                              <CheckCircle2 className="h-4 w-4 mr-1" /> Approve
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* Risks for this objective */}
+                        {obj.risks?.length > 0 && (
+                          <div className="ml-6 mt-2 space-y-1">
+                            <span className="text-xs font-medium text-muted-foreground">Risks:</span>
+                            {obj.risks.map((risk: any) => (
+                              <div key={risk.id} className="flex items-center gap-2 text-sm pl-2 border-l-2 border-amber-400" data-testid={`text-risk-${risk.id}`}>
+                                <AlertTriangle className="h-3 w-3 text-amber-500" />
+                                <span>{risk.riskTitle}</span>
+                                <Badge variant="outline" className="text-xs">{risk.riskRating}</Badge>
+                                <Badge variant={risk.status === "mitigated" ? "default" : "secondary"} className="text-xs">{risk.status}</Badge>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Responses for this objective */}
+                        {obj.responses?.length > 0 && (
+                          <div className="ml-6 mt-2 space-y-1">
+                            <span className="text-xs font-medium text-muted-foreground">Responses:</span>
+                            {obj.responses.map((resp: any) => (
+                              <div key={resp.id} className="flex items-center gap-2 text-sm pl-2 border-l-2 border-emerald-400" data-testid={`text-response-${resp.id}`}>
+                                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                                <span>{resp.responseTitle}</span>
+                                <Badge variant={resp.implementationStatus === "tested" ? "default" : resp.implementationStatus === "implemented" ? "secondary" : "outline"} className="text-xs">
+                                  {resp.implementationStatus}
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {(fwcObjectives || []).filter((o: any) => o.componentType === selectedComponent).length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No quality objectives defined for this component yet.</p>
+                      {isAdmin && <p className="text-xs mt-1">Click "Objective" to add one.</p>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Add Objective Dialog */}
+          <Dialog open={showAddFwcObjectiveDialog} onOpenChange={setShowAddFwcObjectiveDialog}>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Add Quality Objective</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <Label>Component</Label>
+                  <Select value={fwcObjectiveForm.componentType} onValueChange={(v) => setFwcObjectiveForm({ ...fwcObjectiveForm, componentType: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {ISQM_COMPONENTS.map(c => <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Title</Label>
+                  <Input value={fwcObjectiveForm.title} onChange={(e) => setFwcObjectiveForm({ ...fwcObjectiveForm, title: e.target.value })} data-testid="input-objective-title" />
+                </div>
+                <div>
+                  <Label>Description</Label>
+                  <Textarea value={fwcObjectiveForm.description} onChange={(e) => setFwcObjectiveForm({ ...fwcObjectiveForm, description: e.target.value })} data-testid="input-objective-description" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowAddFwcObjectiveDialog(false)}>Cancel</Button>
+                <Button onClick={() => createFwcObjectiveMutation.mutate(fwcObjectiveForm)} disabled={createFwcObjectiveMutation.isPending || !fwcObjectiveForm.title} data-testid="button-submit-objective">
+                  {createFwcObjectiveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Create Objective
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Add Risk Dialog */}
+          <Dialog open={showAddFwcRiskDialog} onOpenChange={setShowAddFwcRiskDialog}>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Identify Risk</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <Label>Linked Objective</Label>
+                  <Select value={fwcRiskForm.objectiveId} onValueChange={(v) => setFwcRiskForm({ ...fwcRiskForm, objectiveId: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select objective" /></SelectTrigger>
+                    <SelectContent>
+                      {(fwcObjectives || []).filter((o: any) => o.componentType === selectedComponent).map((o: any) => (
+                        <SelectItem key={o.id} value={o.id}>{o.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Risk Title</Label>
+                  <Input value={fwcRiskForm.riskTitle} onChange={(e) => setFwcRiskForm({ ...fwcRiskForm, riskTitle: e.target.value })} data-testid="input-risk-title" />
+                </div>
+                <div>
+                  <Label>Description</Label>
+                  <Textarea value={fwcRiskForm.riskDescription} onChange={(e) => setFwcRiskForm({ ...fwcRiskForm, riskDescription: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Label>Likelihood</Label>
+                    <Select value={fwcRiskForm.likelihood} onValueChange={(v) => setFwcRiskForm({ ...fwcRiskForm, likelihood: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Impact</Label>
+                    <Select value={fwcRiskForm.impact} onValueChange={(v) => setFwcRiskForm({ ...fwcRiskForm, impact: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Rating</Label>
+                    <Select value={fwcRiskForm.riskRating} onValueChange={(v) => setFwcRiskForm({ ...fwcRiskForm, riskRating: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="critical">Critical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowAddFwcRiskDialog(false)}>Cancel</Button>
+                <Button onClick={() => createFwcRiskMutation.mutate(fwcRiskForm)} disabled={createFwcRiskMutation.isPending || !fwcRiskForm.objectiveId || !fwcRiskForm.riskTitle} data-testid="button-submit-risk">
+                  {createFwcRiskMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Identify Risk
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Add Response Dialog */}
+          <Dialog open={showAddFwcResponseDialog} onOpenChange={setShowAddFwcResponseDialog}>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Design Response</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <Label>Linked Objective</Label>
+                  <Select value={fwcResponseForm.objectiveId} onValueChange={(v) => setFwcResponseForm({ ...fwcResponseForm, objectiveId: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select objective" /></SelectTrigger>
+                    <SelectContent>
+                      {(fwcObjectives || []).filter((o: any) => o.componentType === selectedComponent).map((o: any) => (
+                        <SelectItem key={o.id} value={o.id}>{o.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Response Title</Label>
+                  <Input value={fwcResponseForm.responseTitle} onChange={(e) => setFwcResponseForm({ ...fwcResponseForm, responseTitle: e.target.value })} data-testid="input-response-title" />
+                </div>
+                <div>
+                  <Label>Design Description</Label>
+                  <Textarea value={fwcResponseForm.designDescription} onChange={(e) => setFwcResponseForm({ ...fwcResponseForm, designDescription: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Implementation Status</Label>
+                  <Select value={fwcResponseForm.implementationStatus} onValueChange={(v) => setFwcResponseForm({ ...fwcResponseForm, implementationStatus: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="planned">Planned</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="implemented">Implemented</SelectItem>
+                      <SelectItem value="tested">Tested</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowAddFwcResponseDialog(false)}>Cancel</Button>
+                <Button onClick={() => createFwcResponseMutation.mutate(fwcResponseForm)} disabled={createFwcResponseMutation.isPending || !fwcResponseForm.objectiveId || !fwcResponseForm.responseTitle} data-testid="button-submit-response">
+                  {createFwcResponseMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Create Response
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
+
+        {/* EQR (ISQM 2) Tab */}
+        <TabsContent value="eqcr" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Gavel className="h-5 w-5" />
+                    ISQM 2 — Engagement Quality Review
+                  </CardTitle>
+                  <CardDescription>Manage EQR policy, assignments, and completion tracking</CardDescription>
+                </div>
+                {isAdmin && (
+                  <Button size="sm" onClick={() => setShowAddEqcrDialog(true)} data-testid="button-add-eqcr">
+                    <Plus className="h-4 w-4 mr-1" /> Assign EQR
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* EQCR Policy Summary */}
+              <Card className="bg-muted/50">
+                <CardContent className="pt-4">
+                  <h4 className="font-medium text-sm mb-2">EQR Policy Configuration</h4>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Independence Confirmation:</span>
+                      <Badge variant={eqcrPolicy?.independenceConfirmRequired !== false ? "default" : "secondary"} className="ml-2">
+                        {eqcrPolicy?.independenceConfirmRequired !== false ? "Required" : "Optional"}
+                      </Badge>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Checklist Required:</span>
+                      <Badge variant={eqcrPolicy?.checklistRequired !== false ? "default" : "secondary"} className="ml-2">
+                        {eqcrPolicy?.checklistRequired !== false ? "Yes" : "No"}
+                      </Badge>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Status:</span>
+                      <Badge variant={eqcrPolicy ? "default" : "outline"} className="ml-2">
+                        {eqcrPolicy ? "Configured" : "Not Set"}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* EQCR Assignments Table */}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>EQR Partner</TableHead>
+                    <TableHead>Engagement</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Completed</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(eqcrAssignments || []).map((a: any) => (
+                    <TableRow key={a.id} data-testid={`row-eqcr-${a.id}`}>
+                      <TableCell className="font-medium">{a.eqcrPartner?.fullName || "—"}</TableCell>
+                      <TableCell>{a.engagementId ? a.engagementId.substring(0, 8) + "..." : "Firm-level"}</TableCell>
+                      <TableCell>
+                        <Badge variant={a.status === "completed" ? "default" : a.status === "in_review" ? "secondary" : "outline"}>
+                          {a.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{a.completedAt ? format(new Date(a.completedAt), "dd MMM yyyy") : "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                  {(!eqcrAssignments || eqcrAssignments.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                        No EQR assignments yet
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Add EQCR Assignment Dialog */}
+          <Dialog open={showAddEqcrDialog} onOpenChange={setShowAddEqcrDialog}>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Assign EQR Partner</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <Label>EQR Partner User ID</Label>
+                  <Input value={eqcrForm.eqcrPartnerUserId} onChange={(e) => setEqcrForm({ ...eqcrForm, eqcrPartnerUserId: e.target.value })} placeholder="Enter partner user ID" data-testid="input-eqcr-partner" />
+                </div>
+                <div>
+                  <Label>Engagement ID (optional)</Label>
+                  <Input value={eqcrForm.engagementId} onChange={(e) => setEqcrForm({ ...eqcrForm, engagementId: e.target.value })} placeholder="Leave empty for firm-level" data-testid="input-eqcr-engagement" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowAddEqcrDialog(false)}>Cancel</Button>
+                <Button onClick={() => createEqcrAssignmentMutation.mutate(eqcrForm)} disabled={createEqcrAssignmentMutation.isPending || !eqcrForm.eqcrPartnerUserId} data-testid="button-submit-eqcr">
+                  {createEqcrAssignmentMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Assign
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
+
+        {/* Documentation Library Tab */}
+        <TabsContent value="docs" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Library className="h-5 w-5" />
+                    Documentation Library
+                  </CardTitle>
+                  <CardDescription>Centralized policy documents, quality manuals, and version control</CardDescription>
+                </div>
+                {isAdmin && (
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setShowAddPolicyDocDialog(true)} data-testid="button-add-policy-doc">
+                      <Plus className="h-4 w-4 mr-1" /> Add Document
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setShowAddVersionDialog(true)} data-testid="button-add-version">
+                      <Plus className="h-4 w-4 mr-1" /> New Version
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Version Control */}
+              <div>
+                <h4 className="font-medium text-sm mb-2">ISQM Version Control</h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Version</TableHead>
+                      <TableHead>Change Summary</TableHead>
+                      <TableHead>Approved By</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(isqmVersions || []).map((v: any) => (
+                      <TableRow key={v.id} data-testid={`row-version-${v.id}`}>
+                        <TableCell className="font-mono font-medium">{v.manualVersion}</TableCell>
+                        <TableCell>{v.changeSummary || "—"}</TableCell>
+                        <TableCell>{v.approvedBy?.fullName || "—"}</TableCell>
+                        <TableCell>{format(new Date(v.createdAt), "dd MMM yyyy")}</TableCell>
+                      </TableRow>
+                    ))}
+                    {(!isqmVersions || isqmVersions.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground py-6">No version records</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Policy Documents */}
+              <div>
+                <h4 className="font-medium text-sm mb-2">Firm Policy Documents</h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Version</TableHead>
+                      <TableHead>Uploaded By</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(policyDocuments || []).map((doc: any) => (
+                      <TableRow key={doc.id} data-testid={`row-policy-doc-${doc.id}`}>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{doc.docType.replace(/_/g, " ")}</Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">{doc.title}</TableCell>
+                        <TableCell>{doc.version || "—"}</TableCell>
+                        <TableCell>{doc.uploadedBy?.fullName || "—"}</TableCell>
+                        <TableCell>{format(new Date(doc.uploadedAt), "dd MMM yyyy")}</TableCell>
+                      </TableRow>
+                    ))}
+                    {(!policyDocuments || policyDocuments.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-6">No policy documents uploaded</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Add Policy Document Dialog */}
+          <Dialog open={showAddPolicyDocDialog} onOpenChange={setShowAddPolicyDocDialog}>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Add Policy Document</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <Label>Document Type</Label>
+                  <Select value={policyDocForm.docType} onValueChange={(v) => setPolicyDocForm({ ...policyDocForm, docType: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="quality_manual">Quality Manual</SelectItem>
+                      <SelectItem value="ethics_policy">Ethics Policy</SelectItem>
+                      <SelectItem value="acceptance_policy">Acceptance Policy</SelectItem>
+                      <SelectItem value="eqcr_policy">EQR Policy</SelectItem>
+                      <SelectItem value="monitoring_plan">Monitoring Plan</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Title</Label>
+                  <Input value={policyDocForm.title} onChange={(e) => setPolicyDocForm({ ...policyDocForm, title: e.target.value })} data-testid="input-policy-doc-title" />
+                </div>
+                <div>
+                  <Label>Version</Label>
+                  <Input value={policyDocForm.version} onChange={(e) => setPolicyDocForm({ ...policyDocForm, version: e.target.value })} />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowAddPolicyDocDialog(false)}>Cancel</Button>
+                <Button onClick={() => createPolicyDocMutation.mutate(policyDocForm)} disabled={createPolicyDocMutation.isPending || !policyDocForm.title} data-testid="button-submit-policy-doc">
+                  {createPolicyDocMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Add Document
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Add Version Dialog */}
+          <Dialog open={showAddVersionDialog} onOpenChange={setShowAddVersionDialog}>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Create Version Record</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <Label>Version Number</Label>
+                  <Input value={versionForm.manualVersion} onChange={(e) => setVersionForm({ ...versionForm, manualVersion: e.target.value })} placeholder="e.g. 2.0" data-testid="input-version-number" />
+                </div>
+                <div>
+                  <Label>Change Summary</Label>
+                  <Textarea value={versionForm.changeSummary} onChange={(e) => setVersionForm({ ...versionForm, changeSummary: e.target.value })} data-testid="input-version-summary" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowAddVersionDialog(false)}>Cancel</Button>
+                <Button onClick={() => createVersionMutation.mutate(versionForm)} disabled={createVersionMutation.isPending || !versionForm.manualVersion} data-testid="button-submit-version">
+                  {createVersionMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Create Version
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
+
+        {/* Activity Log Tab */}
+        <TabsContent value="activity" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Activity Log
+              </CardTitle>
+              <CardDescription>Complete audit trail of all firm-wide control changes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Timestamp</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Entity</TableHead>
+                    <TableHead>Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(activityLogs || []).map((log: any) => (
+                    <TableRow key={log.id} data-testid={`row-activity-${log.id}`}>
+                      <TableCell className="text-xs font-mono">{format(new Date(log.createdAt), "dd MMM yyyy HH:mm")}</TableCell>
+                      <TableCell>{log.actor?.fullName || log.actorUserId}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">{log.entityType}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={log.action === "create" ? "default" : log.action === "update" ? "secondary" : "destructive"} className="text-xs">
+                          {log.action}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {(!activityLogs || activityLogs.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                        No activity logs yet
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

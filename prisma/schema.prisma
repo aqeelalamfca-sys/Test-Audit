@@ -220,6 +220,19 @@ model Firm {
   aiUsageRecords        AIUsageRecord[]
   firmInvites           FirmInvite[]
   feedbacks             FirmFeedback[] @relation("FirmFeedbacks")
+
+  firmIsqmVersions       FirmIsqmVersionControl[]    @relation("FirmIsqmVersions")
+  firmQualityObjectives  FirmQualityObjective[]       @relation("FirmQualityObjectives")
+  firmQualityRisks       FirmQualityRisk[]            @relation("FirmQualityRisks")
+  firmQualityResponses   FirmQualityResponse[]        @relation("FirmQualityResponses")
+  firmPolicyDocuments    FirmPolicyDocument[]          @relation("FirmPolicyDocuments")
+  firmEthicsPrograms     FirmEthicsProgram[]           @relation("FirmEthicsPrograms")
+  firmEqcrPolicies       FirmEqcrPolicy[]              @relation("FirmEqcrPolicies")
+  firmEqcrAssignments    FirmEqcrAssignment[]          @relation("FirmEqcrAssignments")
+  firmMonitoringReviews  FirmMonitoringReview[]        @relation("FirmMonitoringReviews")
+  firmDeficiencies       FirmDeficiencyRecord[]        @relation("FirmDeficiencies")
+  firmRemediationActions FirmRemediationAction[]       @relation("FirmRemediationActions")
+  firmControlActivityLogs FirmControlActivityLog[]     @relation("FirmControlActivityLogs")
 }
 
 model Plan {
@@ -864,6 +877,14 @@ model User {
   generatedDraftFS    DraftFSSnapshot[] @relation("DraftFSSnapshotGenerator")
   finalizationBoards  FinalizationBoard[] @relation("UserFinalizationBoards")
   feedbacks           FirmFeedback[]     @relation("UserFeedbacks")
+
+  firmIsqmVersionsApproved   FirmIsqmVersionControl[]  @relation("IsqmVersionApprovedBy")
+  firmPolicyDocsUploaded     FirmPolicyDocument[]       @relation("FirmPolicyUploadedBy")
+  firmEqcrAssigned           FirmEqcrAssignment[]       @relation("FirmEqcrPartner")
+  firmMonitoringReviewsLed   FirmMonitoringReview[]     @relation("FirmMonitoringReviewLead")
+  firmDeficiencyOwned        FirmDeficiencyRecord[]     @relation("FirmDeficiencyOwner")
+  firmRemediationAssigned    FirmRemediationAction[]    @relation("FirmRemediationAssignee")
+  firmControlActivityLogs    FirmControlActivityLog[]   @relation("FirmControlActivityLogActor")
 }
 
 model Session {
@@ -12677,4 +12698,227 @@ model FirmFeedback {
   @@index([firmId])
   @@index([firmId, status])
   @@index([createdById])
+}
+
+model FirmIsqmVersionControl {
+  id               String   @id @default(uuid())
+  firmId           String
+  manualVersion    String
+  changeSummary    String?
+  approvedByUserId String?
+  approvalDate     DateTime?
+  createdAt        DateTime @default(now())
+
+  firm       Firm  @relation("FirmIsqmVersions", fields: [firmId], references: [id], onDelete: Cascade)
+  approvedBy User? @relation("IsqmVersionApprovedBy", fields: [approvedByUserId], references: [id])
+
+  @@index([firmId])
+}
+
+model FirmQualityObjective {
+  id            String   @id @default(uuid())
+  firmId        String
+  componentType String
+  title         String
+  description   String?
+  status        String   @default("draft")
+  lastReviewAt  DateTime?
+  nextReviewDue DateTime?
+  createdById   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  firm      Firm                   @relation("FirmQualityObjectives", fields: [firmId], references: [id], onDelete: Cascade)
+  risks     FirmQualityRisk[]      @relation("ObjectiveRisks")
+  responses FirmQualityResponse[]  @relation("ObjectiveResponses")
+
+  @@index([firmId])
+  @@index([firmId, componentType])
+}
+
+model FirmQualityRisk {
+  id              String   @id @default(uuid())
+  firmId          String
+  objectiveId     String
+  riskTitle       String
+  riskDescription String?
+  likelihood      String   @default("medium")
+  impact          String   @default("medium")
+  riskRating      String   @default("medium")
+  status          String   @default("open")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  firm      Firm                  @relation("FirmQualityRisks", fields: [firmId], references: [id], onDelete: Cascade)
+  objective FirmQualityObjective  @relation("ObjectiveRisks", fields: [objectiveId], references: [id], onDelete: Cascade)
+  responses FirmQualityResponse[] @relation("RiskResponses")
+
+  @@index([firmId])
+  @@index([objectiveId])
+}
+
+model FirmQualityResponse {
+  id                     String   @id @default(uuid())
+  firmId                 String
+  objectiveId            String
+  riskId                 String?
+  responseTitle          String
+  designDescription      String?
+  implementationStatus   String   @default("planned")
+  testingEvidenceRef     String?
+  implementedAt          DateTime?
+  lastTestedAt           DateTime?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  firm      Firm                 @relation("FirmQualityResponses", fields: [firmId], references: [id], onDelete: Cascade)
+  objective FirmQualityObjective @relation("ObjectiveResponses", fields: [objectiveId], references: [id], onDelete: Cascade)
+  risk      FirmQualityRisk?     @relation("RiskResponses", fields: [riskId], references: [id], onDelete: SetNull)
+
+  @@index([firmId])
+  @@index([objectiveId])
+  @@index([riskId])
+}
+
+model FirmPolicyDocument {
+  id               String   @id @default(uuid())
+  firmId           String
+  docType          String
+  title            String
+  storagePath      String?
+  version          String?
+  uploadedByUserId String?
+  uploadedAt       DateTime @default(now())
+
+  firm       Firm  @relation("FirmPolicyDocuments", fields: [firmId], references: [id], onDelete: Cascade)
+  uploadedBy User? @relation("FirmPolicyUploadedBy", fields: [uploadedByUserId], references: [id])
+
+  @@index([firmId])
+  @@index([firmId, docType])
+}
+
+model FirmEthicsProgram {
+  id                          String   @id @default(uuid())
+  firmId                      String
+  annualIndependenceRequired  Boolean  @default(true)
+  declarationCycle            String   @default("annual")
+  breachReportingChannel      String?
+  nonCompliancePolicyRef      String?
+  updatedAt                   DateTime @updatedAt
+
+  firm Firm @relation("FirmEthicsPrograms", fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId])
+}
+
+model FirmEqcrPolicy {
+  id                         String   @id @default(uuid())
+  firmId                     String
+  criteriaJson               Json?
+  independenceConfirmRequired Boolean @default(true)
+  checklistRequired          Boolean @default(true)
+  updatedAt                  DateTime @updatedAt
+
+  firm Firm @relation("FirmEqcrPolicies", fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId])
+}
+
+model FirmEqcrAssignment {
+  id                   String    @id @default(uuid())
+  firmId               String
+  engagementId         String?
+  eqcrPartnerUserId    String
+  status               String    @default("required")
+  checklistStoragePath String?
+  completedAt          DateTime?
+  createdAt            DateTime  @default(now())
+
+  firm        Firm @relation("FirmEqcrAssignments", fields: [firmId], references: [id], onDelete: Cascade)
+  eqcrPartner User @relation("FirmEqcrPartner", fields: [eqcrPartnerUserId], references: [id])
+
+  @@index([firmId])
+  @@index([engagementId])
+}
+
+model FirmMonitoringReview {
+  id                  String    @id @default(uuid())
+  firmId              String
+  reviewType          String
+  cycleCode           String
+  leadReviewerUserId  String?
+  status              String    @default("planned")
+  reportStoragePath   String?
+  issuedAt            DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  firm         Firm                   @relation("FirmMonitoringReviews", fields: [firmId], references: [id], onDelete: Cascade)
+  leadReviewer User?                  @relation("FirmMonitoringReviewLead", fields: [leadReviewerUserId], references: [id])
+  deficiencies FirmDeficiencyRecord[] @relation("MonitoringDeficiencies")
+
+  @@index([firmId])
+  @@index([firmId, reviewType])
+}
+
+model FirmDeficiencyRecord {
+  id                 String    @id @default(uuid())
+  firmId             String
+  monitoringReviewId String?
+  severity           String    @default("medium")
+  deficiencyText     String
+  rootCause          String?
+  status             String    @default("open")
+  ownerUserId        String?
+  dueAt              DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  firm             Firm                    @relation("FirmDeficiencies", fields: [firmId], references: [id], onDelete: Cascade)
+  monitoringReview FirmMonitoringReview?   @relation("MonitoringDeficiencies", fields: [monitoringReviewId], references: [id], onDelete: SetNull)
+  owner            User?                   @relation("FirmDeficiencyOwner", fields: [ownerUserId], references: [id])
+  remediations     FirmRemediationAction[] @relation("DeficiencyRemediations")
+
+  @@index([firmId])
+  @@index([monitoringReviewId])
+}
+
+model FirmRemediationAction {
+  id                  String    @id @default(uuid())
+  firmId              String
+  deficiencyId        String
+  actionText          String
+  assignedToUserId    String?
+  deadlineAt          DateTime?
+  status              String    @default("open")
+  evidenceStoragePath String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  firm       Firm                  @relation("FirmRemediationActions", fields: [firmId], references: [id], onDelete: Cascade)
+  deficiency FirmDeficiencyRecord  @relation("DeficiencyRemediations", fields: [deficiencyId], references: [id], onDelete: Cascade)
+  assignedTo User?                 @relation("FirmRemediationAssignee", fields: [assignedToUserId], references: [id])
+
+  @@index([firmId])
+  @@index([deficiencyId])
+}
+
+model FirmControlActivityLog {
+  id          String   @id @default(uuid())
+  firmId      String
+  actorUserId String
+  entityType  String
+  entityId    String?
+  action      String
+  beforeJson  Json?
+  afterJson   Json?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  firm  Firm @relation("FirmControlActivityLogs", fields: [firmId], references: [id], onDelete: Cascade)
+  actor User @relation("FirmControlActivityLogActor", fields: [actorUserId], references: [id])
+
+  @@index([firmId])
+  @@index([firmId, entityType])
+  @@index([actorUserId])
 }

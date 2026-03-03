@@ -323,7 +323,7 @@ router.get("/:engagementId/export-excel", requireAuth, async (req: Authenticated
 
     const engagement = await prisma.engagement.findUnique({
       where: { id: engagementId },
-      include: { client: true },
+      include: { client: true, firm: true },
     });
 
     const notes = await prisma.generatedNote.findMany({
@@ -336,6 +336,7 @@ router.get("/:engagementId/export-excel", requireAuth, async (req: Authenticated
     }
 
     const clientName = engagement?.client?.name || "Company";
+    const firmName = engagement?.firm?.name || "";
     const periodEnd = engagement?.periodEnd
       ? new Date(engagement.periodEnd).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })
       : "Year End";
@@ -343,6 +344,10 @@ router.get("/:engagementId/export-excel", requireAuth, async (req: Authenticated
     const wb = XLSX.utils.book_new();
 
     const notesRows: any[][] = [];
+    if (firmName) {
+      notesRows.push([firmName]);
+      notesRows.push([]);
+    }
     notesRows.push([clientName]);
     notesRows.push([]);
     notesRows.push(["NOTES TO THE FINANCIAL STATEMENTS"]);

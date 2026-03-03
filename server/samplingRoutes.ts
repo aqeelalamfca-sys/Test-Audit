@@ -1,6 +1,7 @@
 import { Router, Response } from "express";
 import { requireAuth, type AuthenticatedRequest } from "./auth";
 import { samplingService } from "./samplingService";
+import { prisma } from "./db";
 import { z } from "zod";
 
 const router = Router();
@@ -152,10 +153,19 @@ router.get("/run/:runId/export", requireAuth, async (req: AuthenticatedRequest, 
       stratum: item.stratum,
     }));
 
+    const run = await prisma.samplingRun.findUnique({
+      where: { id: runId },
+      include: { engagement: { include: { firm: true } } },
+    });
+    const firmName = run?.engagement?.firm?.name || "";
+
     const csv = samplingService.generateCSVExport(formattedItems);
+    const fileName = firmName
+      ? `${firmName.replace(/[^a-zA-Z0-9]/g, "_")}_sampling_run_${runId}.csv`
+      : `sampling_run_${runId}.csv`;
 
     res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", `attachment; filename=sampling_run_${runId}.csv`);
+    res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
     res.send(csv);
   } catch (error: any) {
     console.error("Export sample error:", error);

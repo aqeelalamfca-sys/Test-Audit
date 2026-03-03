@@ -3334,6 +3334,12 @@ router.get("/:engagementId/summary/export", requireAuth, async (req: Request, re
       return res.status(404).json({ error: "No summary data available" });
     }
 
+    const engagement = await prisma.engagement.findUnique({
+      where: { id: engagementId },
+      include: { firm: true },
+    });
+    const firmName = engagement?.firm?.name || "";
+
     const workbook = new ExcelJS.Workbook();
     
     const summarySheet = workbook.addWorksheet("Summary");
@@ -3342,6 +3348,13 @@ router.get("/:engagementId/summary/export", requireAuth, async (req: Request, re
       { header: "Value", key: "value", width: 20 },
       { header: "Status", key: "status", width: 15 },
     ];
+
+    if (firmName) {
+      summarySheet.insertRow(1, { metric: firmName, value: "", status: "" });
+      const firmRow = summarySheet.getRow(1);
+      firmRow.font = { bold: true, size: 14 };
+      summarySheet.insertRow(2, { metric: "", value: "", status: "" });
+    }
     
     summarySheet.addRows([
       { metric: "Upload Version", value: summaryRun.uploadVersion?.version || 1, status: summaryRun.uploadVersion?.status || 'ACTIVE' },

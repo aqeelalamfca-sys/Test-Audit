@@ -73,6 +73,7 @@ import reconIssuesRoutes from "./reconIssuesRoutes";
 import hardControlsRoutes from "./hardControlsRoutes";
 import aiUtilityRoutes from "./routes/aiUtilityRoutes";
 import finalizationBoardRoutes from "./finalizationBoardRoutes";
+import firmWideControlsRoutes from "./firmWideControlsRoutes";
 import { attachEnforcementContext, enforceInspectionMode } from "./middleware/enforcementMiddleware";
 import { generateInformationRequestLetter } from "./exportInfoRequestLetter";
 import { aiRateLimit, authRateLimit } from "./middleware/rateLimiter";
@@ -169,6 +170,7 @@ export async function registerRoutes(
   app.use("/api/substantive-testing", substantiveTestingRoutes);
   app.use("/api/audit-program", auditProgramRoutes);
   app.use("/api/isqm", isqmRoutes);
+  app.use("/api/firm-wide-controls", firmWideControlsRoutes);
   app.use("/api/rbac", permissionRoutes);
   app.use("/api/intelligence", intelligenceRoutes);
   app.use("/api/qcr", qcrRoutes);

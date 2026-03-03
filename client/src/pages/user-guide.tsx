@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { USER_GUIDE_REGISTRY } from "@/lib/user-guide-registry";
 import type { GuideModule, GuideModuleTab } from "@/lib/user-guide-registry";
 import { GUIDE_SCREENSHOTS } from "@/lib/guide-screenshots";
+import { logoToBase64 } from "@/lib/pdf-logo";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +45,7 @@ interface VersionInfo {
 }
 
 export default function UserGuide() {
-  const { user } = useAuth();
+  const { user, firm } = useAuth();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeGuideTab, setActiveGuideTab] = useState("guide");
@@ -135,20 +136,32 @@ export default function UserGuide() {
         return acc;
       }, {} as Record<string, GuideModule[]>);
 
+      const firmName = firm?.name || "AuditWise";
+      let coverLogoY = 50;
+      if (firm?.logoUrl) {
+        try {
+          const b64 = await logoToBase64(firm.logoUrl);
+          if (b64) {
+            doc.addImage(b64, "PNG", 67.5, 25, 70, 25);
+            coverLogoY = 60;
+          }
+        } catch {}
+      }
+
       doc.setFontSize(28);
       doc.setFont("helvetica", "bold");
-      doc.text("AuditWise", 105, 50, { align: "center" });
+      doc.text(firmName, 105, coverLogoY, { align: "center" });
       doc.setFontSize(18);
       doc.setFont("helvetica", "normal");
-      doc.text("Live User Guide", 105, 65, { align: "center" });
+      doc.text("Live User Guide", 105, coverLogoY + 15, { align: "center" });
       doc.setFontSize(11);
-      doc.text(`Version: ${versionInfo?.version || "1.0.0"}`, 105, 82, { align: "center" });
-      doc.text(`Generated: ${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })}`, 105, 90, { align: "center" });
+      doc.text(`Version: ${versionInfo?.version || "1.0.0"}`, 105, coverLogoY + 32, { align: "center" });
+      doc.text(`Generated: ${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })}`, 105, coverLogoY + 40, { align: "center" });
       doc.setFontSize(10);
-      doc.text("Statutory Audit Management Software", 105, 105, { align: "center" });
-      doc.text(`${USER_GUIDE_REGISTRY.length} Modules Documented`, 105, 113, { align: "center" });
+      doc.text("Statutory Audit Management Software", 105, coverLogoY + 55, { align: "center" });
+      doc.text(`${USER_GUIDE_REGISTRY.length} Modules Documented`, 105, coverLogoY + 63, { align: "center" });
       doc.setFontSize(9);
-      doc.text("CONFIDENTIAL - For Internal Use Only", 105, 130, { align: "center" });
+      doc.text("CONFIDENTIAL - For Internal Use Only", 105, coverLogoY + 80, { align: "center" });
 
       doc.addPage();
       doc.setFontSize(16);
@@ -310,10 +323,10 @@ export default function UserGuide() {
         doc.setPage(i);
         doc.setFontSize(8);
         doc.setFont("helvetica", "normal");
-        doc.text(`AuditWise User Guide | Page ${i} of ${totalPages}`, 105, 290, { align: "center" });
+        doc.text(`${firmName} User Guide | Page ${i} of ${totalPages}`, 105, 290, { align: "center" });
       }
 
-      doc.save("AuditWise-User-Guide.pdf");
+      doc.save(`${firmName.replace(/[^a-zA-Z0-9]/g, "_")}-User-Guide.pdf`);
       toast({ title: "Guide downloaded", description: `PDF with ${USER_GUIDE_REGISTRY.length} modules has been generated.` });
     } catch (err) {
       console.error("PDF generation error:", err);
