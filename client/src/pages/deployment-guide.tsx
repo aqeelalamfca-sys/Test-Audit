@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -1675,10 +1676,27 @@ function generateDeploymentPDF(versionInfo: VersionInfo | undefined) {
 
 export default function DeploymentGuide() {
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: versionInfo } = useQuery<VersionInfo>({
     queryKey: ["/api/version"],
   });
+
+  if (user?.role?.toLowerCase() !== "super_admin") {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Card className="max-w-md w-full">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Shield className="h-12 w-12 text-destructive mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Access Restricted</h2>
+            <p className="text-muted-foreground text-center">
+              The Deployment Guide is only available to Super Administrators.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleDownloadPDF = async () => {
     toast({ title: "Generating PDF...", description: "Please wait while the deployment guide is prepared." });

@@ -424,12 +424,6 @@ export function TopBar({}: TopBarProps) {
                 <span>Live User Guide</span>
               </DropdownMenuItem>
             </Link>
-            <Link href="/deployment-guide">
-              <DropdownMenuItem data-testid="nav-deployment-guide">
-                <FileText className="mr-2 h-4 w-4" />
-                <span>Deployment Guide</span>
-              </DropdownMenuItem>
-            </Link>
             <DropdownMenuItem>
               <HelpCircle className="mr-2 h-4 w-4" />
               <span>Help & Support</span>

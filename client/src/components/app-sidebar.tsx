@@ -33,6 +33,7 @@ import {
   Bell,
   Bot,
   Crown,
+  Rocket,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth";
@@ -252,6 +253,19 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       <Link href="/platform/ai-config">
                         <Bot className={`h-4 w-4 ${iconClasses}`} />
                         <span>AI Configuration</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/deployment-guide"}
+                      data-testid="nav-deployment-guide"
+                      className={activeClasses}
+                    >
+                      <Link href="/deployment-guide">
+                        <Rocket className={`h-4 w-4 ${iconClasses}`} />
+                        <span>Deployment Guide</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
