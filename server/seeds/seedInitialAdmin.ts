@@ -16,10 +16,10 @@ export async function seedInitialAdmin() {
   const adminEmail = process.env.ADMIN_EMAIL;
   const adminPassword = process.env.ADMIN_PASSWORD;
 
-  if (isProduction && (!adminEmail || !adminPassword)) {
-    console.error("FATAL: ADMIN_EMAIL and ADMIN_PASSWORD environment variables are required in production.");
-    console.error("Set these in your deployment configuration (e.g., AWS Secrets Manager).");
-    process.exit(1);
+  if (!adminEmail || !adminPassword) {
+    console.log("ADMIN_EMAIL/ADMIN_PASSWORD not set — skipping initial firm admin seed.");
+    console.log("SuperAdmin is already seeded. Create firms via the platform dashboard.");
+    return;
   }
 
   const email = adminEmail || "admin@auditwise.local";
