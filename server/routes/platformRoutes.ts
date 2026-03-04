@@ -932,7 +932,15 @@ router.post("/invoices/:id/dispatch", async (req: AuthenticatedRequest, res: Res
     const updated = await prisma.invoice.update({
       where: { id: req.params.id },
       data: { status: "ISSUED", issuedAt: now, dueAt },
-      include: { lines: true, subscription: { include: { firm: { select: { id: true, name: true } }, plan: { select: { code: true, name: true } } } } },
+      include: {
+        lines: true,
+        subscription: {
+          include: {
+            firm: { select: { id: true, name: true, displayName: true, email: true } },
+            plan: { select: { code: true, name: true } },
+          },
+        },
+      },
     });
 
     const { ip, userAgent } = extractRequestMeta(req);
@@ -942,7 +950,33 @@ router.post("/invoices/:id/dispatch", async (req: AuthenticatedRequest, res: Res
       dueAt,
     });
 
-    res.json(updated);
+    let emailResult = { sent: false, message: "No firm email" };
+    const firm = updated.subscription?.firm;
+    const plan = updated.subscription?.plan;
+    if (firm?.email && updated.invoiceNo) {
+      const { sendInvoiceEmail } = await import("../services/emailService");
+      const { format } = await import("date-fns");
+      emailResult = await sendInvoiceEmail({
+        firmName: firm.displayName || firm.name,
+        firmEmail: firm.email,
+        invoiceNo: updated.invoiceNo,
+        invoiceDate: format(now, "dd MMM yyyy"),
+        dueDate: format(dueAt, "dd MMM yyyy"),
+        currency: updated.currency,
+        lines: updated.lines.map((l: any) => ({
+          description: l.description,
+          quantity: l.quantity,
+          unitPrice: Number(l.unitPrice),
+          amount: Number(l.amount),
+        })),
+        subtotal: Number(updated.subtotal),
+        tax: Number(updated.tax),
+        total: Number(updated.amount),
+        planName: plan?.name || "Subscription",
+      });
+    }
+
+    res.json({ ...updated, emailResult });
   } catch (error) {
     console.error("Dispatch invoice error:", error);
     res.status(500).json({ error: "Failed to dispatch invoice" });

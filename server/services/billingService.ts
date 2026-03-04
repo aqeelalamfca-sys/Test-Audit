@@ -1,4 +1,6 @@
 import { prisma } from "../db";
+import { sendInvoiceEmail, type InvoiceEmailData } from "./emailService";
+import { format } from "date-fns";
 
 export async function generateInvoiceNo(): Promise<string> {
   const year = new Date().getFullYear();
@@ -129,6 +131,24 @@ export async function generateMonthlyInvoice(subscriptionId: string) {
       nextInvoiceAt,
     },
   });
+
+  if (firm.email) {
+    const emailData: InvoiceEmailData = {
+      firmName: firm.displayName || firm.name,
+      firmEmail: firm.email,
+      invoiceNo,
+      invoiceDate: format(now, "dd MMM yyyy"),
+      dueDate: format(dueAt, "dd MMM yyyy"),
+      currency: "PKR",
+      lines,
+      subtotal,
+      tax,
+      total,
+      planName: plan.name,
+    };
+    const emailResult = await sendInvoiceEmail(emailData);
+    (invoice as any).emailResult = emailResult;
+  }
 
   return invoice;
 }

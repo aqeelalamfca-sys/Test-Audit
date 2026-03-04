@@ -41,6 +41,9 @@ import {
   Activity,
   Building2,
   Calendar,
+  Mail,
+  MailCheck,
+  MailX,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 
@@ -137,8 +140,14 @@ function DispatchDialog({
       const res = await apiRequest("POST", `/api/platform/invoices/${invoice.id}/dispatch`, { daysUntilDue });
       return res.json();
     },
-    onSuccess: () => {
-      toast({ title: "Invoice Dispatched", description: `Invoice sent to ${firmName}. Due in ${daysUntilDue} days.` });
+    onSuccess: (data: any) => {
+      const emailMsg = data.emailResult?.sent
+        ? `Invoice emailed to firm contact.`
+        : data.emailResult?.message || "";
+      toast({
+        title: "Invoice Dispatched",
+        description: `Invoice dispatched to ${firmName}. Due in ${daysUntilDue} days. ${emailMsg}`,
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/platform/billing-summary"] });
       onClose();
     },
@@ -211,8 +220,14 @@ function FirmBillingRow({ firm }: { firm: FirmRow }) {
       const res = await apiRequest("POST", `/api/platform/invoices/generate/${sub.id}`);
       return res.json();
     },
-    onSuccess: () => {
-      toast({ title: "Invoice Generated", description: `Draft invoice created for ${firmLabel}.` });
+    onSuccess: (data: any) => {
+      const emailMsg = data.emailResult?.sent
+        ? `Invoice emailed to ${firm.email}`
+        : data.emailResult?.message || "Email not sent";
+      toast({
+        title: "Invoice Generated & Issued",
+        description: `${data.invoiceNo || "Invoice"} for ${firmLabel}. ${emailMsg}`,
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/platform/billing-summary"] });
     },
     onError: (e: any) => {
