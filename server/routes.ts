@@ -227,6 +227,46 @@ export async function registerRoutes(
   app.use("/api/compliance/checklists", regulatoryComplianceRoutes);
   app.use("/api/simulation", simulationRoutes);
 
+  app.get("/api/secp/opinions", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const firmId = req.user!.firmId;
+      if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
+
+      const engagements = await prisma.engagement.findMany({
+        where: { firmId },
+        include: {
+          client: { select: { name: true } },
+          auditReport: {
+            select: {
+              opinionType: true,
+              reportDate: true,
+              reportReference: true,
+              deliveredDate: true,
+              deliveredToClient: true,
+            },
+          },
+        },
+        orderBy: { updatedAt: "desc" },
+      });
+
+      const opinions = engagements.map((eng) => ({
+        engagementId: eng.id,
+        engagementName: eng.engagementCode || "",
+        clientName: eng.client?.name || "",
+        yearEnd: eng.periodEnd ? eng.periodEnd.toISOString() : eng.fiscalYearEnd ? eng.fiscalYearEnd.toISOString() : "",
+        opinionType: eng.auditReport?.opinionType || "NOT_APPLICABLE",
+        status: eng.auditReport?.deliveredToClient ? "ISSUED" : eng.auditReport ? "FINAL" : eng.status || "DRAFT",
+        deliveredDate: eng.auditReport?.deliveredDate?.toISOString() || null,
+        reportReference: eng.auditReport?.reportReference || null,
+      }));
+
+      res.json(opinions);
+    } catch (error) {
+      console.error("SECP opinions error:", error);
+      res.status(500).json({ error: "Failed to fetch opinion data" });
+    }
+  });
+
   app.get("/api/dashboard/stats", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const firmId = req.user!.firmId;

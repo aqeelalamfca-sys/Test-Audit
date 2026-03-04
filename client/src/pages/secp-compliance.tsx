@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -26,27 +27,45 @@ import {
   Shield,
   CheckCircle2,
   AlertTriangle,
-  AlertOctagon,
+  XCircle,
   FileCheck,
   BarChart3,
   ClipboardList,
   Loader2,
-  FileText,
   Download,
   Building2,
   Scale,
-  XCircle,
   Clock,
-  Eye,
   Gavel,
-  BookOpen,
+  Save,
+  RefreshCw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { fetchWithAuth } from "@/lib/fetchWithAuth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 type ComplianceStatus = "met" | "partial" | "not_met" | "na";
+type BackendStatus = "COMPLETED" | "IN_PROGRESS" | "PENDING" | "NOT_APPLICABLE";
 
-interface RegulatoryChecklistItem {
+function toBackendStatus(s: ComplianceStatus): BackendStatus {
+  switch (s) {
+    case "met": return "COMPLETED";
+    case "partial": return "IN_PROGRESS";
+    case "not_met": return "PENDING";
+    case "na": return "NOT_APPLICABLE";
+  }
+}
+
+function fromBackendStatus(s: string): ComplianceStatus {
+  switch (s) {
+    case "COMPLETED": return "met";
+    case "IN_PROGRESS": return "partial";
+    case "PENDING": return "not_met";
+    case "NOT_APPLICABLE": return "na";
+    default: return "not_met";
+  }
+}
+
+interface ChecklistItem {
   id: string;
   section: string;
   title: string;
@@ -65,9 +84,10 @@ interface OpinionTracker {
   opinionType: string;
   status: string;
   deliveredDate: string | null;
+  reportReference: string | null;
 }
 
-interface XBRLReadinessItem {
+interface XBRLItem {
   id: string;
   requirement: string;
   category: string;
@@ -75,168 +95,33 @@ interface XBRLReadinessItem {
   notes: string;
 }
 
-const COMPANIES_ACT_CHECKLIST: RegulatoryChecklistItem[] = [
-  {
-    id: "s223",
-    section: "S.223",
-    title: "Books of Account",
-    description: "Every company shall keep proper books of account with respect to all sums of money received and expended, all sales and purchases, and assets and liabilities.",
-    category: "Financial Records",
-    status: "met",
-    evidenceRef: "Trial Balance / GL Records",
-    notes: "",
-  },
-  {
-    id: "s225",
-    section: "S.225",
-    title: "Financial Statements Preparation",
-    description: "Directors shall prepare financial statements for every financial year which give a true and fair view of the state of affairs and profit or loss.",
-    category: "Financial Statements",
-    status: "met",
-    evidenceRef: "Draft FS / Board Approval",
-    notes: "",
-  },
-  {
-    id: "s226",
-    section: "S.226",
-    title: "Auditor Rights",
-    description: "Auditor has right of access at all times to the books, accounts and vouchers of the company, and is entitled to require information and explanations.",
-    category: "Audit Rights",
-    status: "met",
-    evidenceRef: "Management Representation Letter",
-    notes: "",
-  },
-  {
-    id: "s227",
-    section: "S.227",
-    title: "Audit Report Requirements",
-    description: "Auditor shall make a report to the members on the accounts examined. Report must state whether FS give a true and fair view per applicable framework.",
-    category: "Reporting",
-    status: "met",
-    evidenceRef: "Audit Report Draft",
-    notes: "",
-  },
-  {
-    id: "s228",
-    section: "S.228",
-    title: "Auditor Qualifications",
-    description: "Only qualified persons (practicing chartered accountants) meeting independence criteria can be appointed as auditors.",
-    category: "Independence",
-    status: "met",
-    evidenceRef: "Ethics & Independence Declaration",
-    notes: "",
-  },
-  {
-    id: "s204",
-    section: "S.204",
-    title: "Related Party Transactions - Disclosure",
-    description: "Every company shall maintain a register of related party transactions and disclose them in financial statements.",
-    category: "Related Parties",
-    status: "partial",
-    evidenceRef: "FS Note on Related Parties",
-    notes: "",
-  },
-  {
-    id: "s205",
-    section: "S.205",
-    title: "Related Party Transactions - Board Approval",
-    description: "Related party transactions must be approved by the board of directors with interested directors not participating.",
-    category: "Related Parties",
-    status: "partial",
-    evidenceRef: "Board Minutes",
-    notes: "",
-  },
-  {
-    id: "s206",
-    section: "S.206",
-    title: "Related Party Transactions - Arm's Length",
-    description: "Related party transactions shall be carried out at arm's length price and on arm's length terms.",
-    category: "Related Parties",
-    status: "partial",
-    evidenceRef: "Transfer Pricing Documentation",
-    notes: "",
-  },
-  {
-    id: "s233",
-    section: "S.233",
-    title: "Declaration and Payment of Dividend",
-    description: "Dividend shall be declared or paid only out of profits and in accordance with the provisions of this Act.",
-    category: "Dividends & Reserves",
-    status: "met",
-    evidenceRef: "Board Resolution / FS Appropriation",
-    notes: "",
-  },
-  {
-    id: "s234",
-    section: "S.234",
-    title: "Unpaid Dividend Account",
-    description: "Any dividend that remains unpaid after 30 days of declaration shall be transferred to a separate unpaid dividend account.",
-    category: "Dividends & Reserves",
-    status: "na",
-    evidenceRef: "",
-    notes: "",
-  },
-  {
-    id: "s235",
-    section: "S.235",
-    title: "Transfer to Reserve Fund",
-    description: "Where applicable, a portion of profits to be transferred to reserve fund before dividend declaration.",
-    category: "Dividends & Reserves",
-    status: "met",
-    evidenceRef: "FS Statement of Changes in Equity",
-    notes: "",
-  },
-  {
-    id: "s236",
-    section: "S.236",
-    title: "Bonus Shares",
-    description: "A company may issue bonus shares if authorized by its articles and approved by the members by a special resolution.",
-    category: "Dividends & Reserves",
-    status: "na",
-    evidenceRef: "",
-    notes: "",
-  },
-  {
-    id: "s230",
-    section: "S.230",
-    title: "Directors Report",
-    description: "Directors shall attach to every balance sheet a report with respect to state of company affairs, amount of dividend recommended, and material changes.",
-    category: "Reporting",
-    status: "met",
-    evidenceRef: "Directors Report Draft",
-    notes: "",
-  },
-  {
-    id: "s247",
-    section: "S.247",
-    title: "Annual Return",
-    description: "Every company shall file annual return with the registrar within the prescribed period.",
-    category: "Regulatory Filing",
-    status: "met",
-    evidenceRef: "SECP Filing Record",
-    notes: "",
-  },
-  {
-    id: "fourth_schedule",
-    section: "Fourth Schedule",
-    title: "Form and Contents of Financial Statements",
-    description: "Financial statements shall comply with the Fourth Schedule requirements regarding form, content, and disclosures.",
-    category: "Financial Statements",
-    status: "met",
-    evidenceRef: "FS Disclosure Checklist",
-    notes: "",
-  },
+const DEFAULT_CHECKLIST: ChecklistItem[] = [
+  { id: "s223", section: "S.223", title: "Books of Account", description: "Every company shall keep proper books of account with respect to all sums of money received and expended, all sales and purchases, and assets and liabilities.", category: "Financial Records", status: "not_met", evidenceRef: "Trial Balance / GL Records", notes: "" },
+  { id: "s225", section: "S.225", title: "Financial Statements Preparation", description: "Directors shall prepare financial statements for every financial year which give a true and fair view of the state of affairs and profit or loss.", category: "Financial Statements", status: "not_met", evidenceRef: "Draft FS / Board Approval", notes: "" },
+  { id: "s226", section: "S.226", title: "Auditor Rights", description: "Auditor has right of access at all times to the books, accounts and vouchers of the company, and is entitled to require information and explanations.", category: "Audit Rights", status: "not_met", evidenceRef: "Management Representation Letter", notes: "" },
+  { id: "s227", section: "S.227", title: "Audit Report Requirements", description: "Auditor shall make a report to the members on the accounts examined. Report must state whether FS give a true and fair view per applicable framework.", category: "Reporting", status: "not_met", evidenceRef: "Audit Report Draft", notes: "" },
+  { id: "s228", section: "S.228", title: "Auditor Qualifications", description: "Only qualified persons (practicing chartered accountants) meeting independence criteria can be appointed as auditors.", category: "Independence", status: "not_met", evidenceRef: "Ethics & Independence Declaration", notes: "" },
+  { id: "s204", section: "S.204", title: "Related Party Transactions - Disclosure", description: "Every company shall maintain a register of related party transactions and disclose them in financial statements.", category: "Related Parties", status: "not_met", evidenceRef: "FS Note on Related Parties", notes: "" },
+  { id: "s205", section: "S.205", title: "Related Party Transactions - Board Approval", description: "Related party transactions must be approved by the board of directors with interested directors not participating.", category: "Related Parties", status: "not_met", evidenceRef: "Board Minutes", notes: "" },
+  { id: "s206", section: "S.206", title: "Related Party Transactions - Arm's Length", description: "Related party transactions shall be carried out at arm's length price and on arm's length terms.", category: "Related Parties", status: "not_met", evidenceRef: "Transfer Pricing Documentation", notes: "" },
+  { id: "s233", section: "S.233", title: "Declaration and Payment of Dividend", description: "Dividend shall be declared or paid only out of profits and in accordance with the provisions of this Act.", category: "Dividends & Reserves", status: "not_met", evidenceRef: "Board Resolution / FS Appropriation", notes: "" },
+  { id: "s234", section: "S.234", title: "Unpaid Dividend Account", description: "Any dividend that remains unpaid after 30 days of declaration shall be transferred to a separate unpaid dividend account.", category: "Dividends & Reserves", status: "not_met", evidenceRef: "", notes: "" },
+  { id: "s235", section: "S.235", title: "Transfer to Reserve Fund", description: "Where applicable, a portion of profits to be transferred to reserve fund before dividend declaration.", category: "Dividends & Reserves", status: "not_met", evidenceRef: "FS Statement of Changes in Equity", notes: "" },
+  { id: "s236", section: "S.236", title: "Bonus Shares", description: "A company may issue bonus shares if authorized by its articles and approved by the members by a special resolution.", category: "Dividends & Reserves", status: "not_met", evidenceRef: "", notes: "" },
+  { id: "s230", section: "S.230", title: "Directors Report", description: "Directors shall attach to every balance sheet a report with respect to state of company affairs, amount of dividend recommended, and material changes.", category: "Reporting", status: "not_met", evidenceRef: "Directors Report Draft", notes: "" },
+  { id: "s247", section: "S.247", title: "Annual Return", description: "Every company shall file annual return with the registrar within the prescribed period.", category: "Regulatory Filing", status: "not_met", evidenceRef: "SECP Filing Record", notes: "" },
+  { id: "fourth_schedule", section: "Fourth Schedule", title: "Form and Contents of Financial Statements", description: "Financial statements shall comply with the Fourth Schedule requirements regarding form, content, and disclosures.", category: "Financial Statements", status: "not_met", evidenceRef: "FS Disclosure Checklist", notes: "" },
 ];
 
-const XBRL_READINESS_ITEMS: XBRLReadinessItem[] = [
+const DEFAULT_XBRL: XBRLItem[] = [
   { id: "xbrl1", requirement: "XBRL Taxonomy Mapping Complete", category: "Data Preparation", ready: false, notes: "SECP XBRL taxonomy alignment pending" },
   { id: "xbrl2", requirement: "Chart of Accounts Tagged", category: "Data Preparation", ready: false, notes: "CoA to XBRL element mapping required" },
-  { id: "xbrl3", requirement: "Financial Statement Elements Identified", category: "Data Preparation", ready: true, notes: "All FS line items identified from trial balance" },
+  { id: "xbrl3", requirement: "Financial Statement Elements Identified", category: "Data Preparation", ready: false, notes: "All FS line items identified from trial balance" },
   { id: "xbrl4", requirement: "Disclosure Notes Structured", category: "Content", ready: false, notes: "Notes need structured data format" },
   { id: "xbrl5", requirement: "Validation Rules Applied", category: "Quality", ready: false, notes: "XBRL validation formulas not yet applied" },
   { id: "xbrl6", requirement: "Instance Document Generation", category: "Output", ready: false, notes: "XBRL instance document generation not configured" },
   { id: "xbrl7", requirement: "Filing Format Compliance", category: "Output", ready: false, notes: "SECP e-filing format compliance check pending" },
-  { id: "xbrl8", requirement: "Comparative Data Available", category: "Data Preparation", ready: true, notes: "Prior year data available in system" },
+  { id: "xbrl8", requirement: "Comparative Data Available", category: "Data Preparation", ready: false, notes: "Prior year data available in system" },
 ];
 
 const STATUS_CONFIG: Record<ComplianceStatus, { label: string; color: string; icon: typeof CheckCircle2 }> = {
@@ -304,9 +189,9 @@ function KPICard({ title, value, subtitle, color, icon, testId }: {
 }
 
 function OverviewTab({ checklist, engagements, xbrlItems }: {
-  checklist: RegulatoryChecklistItem[];
+  checklist: ChecklistItem[];
   engagements: OpinionTracker[];
-  xbrlItems: XBRLReadinessItem[];
+  xbrlItems: XBRLItem[];
 }) {
   const met = checklist.filter(c => c.status === "met").length;
   const partial = checklist.filter(c => c.status === "partial").length;
@@ -334,52 +219,12 @@ function OverviewTab({ checklist, engagements, xbrlItems }: {
   return (
     <div className="space-y-4" data-testid="tab-secp-overview">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <KPICard
-          title="Compliance Score"
-          value={`${compliancePct}%`}
-          subtitle={`${met}/${applicable} requirements met`}
-          color={compliancePct >= 90 ? "green" : compliancePct >= 70 ? "amber" : "red"}
-          icon={<Shield className="w-4 h-4" />}
-          testId="kpi-compliance-score"
-        />
-        <KPICard
-          title="Partial Compliance"
-          value={partial}
-          color={partial > 0 ? "amber" : "green"}
-          icon={<AlertTriangle className="w-4 h-4" />}
-          testId="kpi-partial"
-        />
-        <KPICard
-          title="Non-Compliant"
-          value={notMet}
-          color={notMet > 0 ? "red" : "green"}
-          icon={<XCircle className="w-4 h-4" />}
-          testId="kpi-non-compliant"
-        />
-        <KPICard
-          title="Engagements"
-          value={totalEngagements}
-          subtitle={`${issuedCount} issued`}
-          color="neutral"
-          icon={<Building2 className="w-4 h-4" />}
-          testId="kpi-engagements"
-        />
-        <KPICard
-          title="Opinions"
-          value={`${unmodifiedCount}U / ${modifiedCount}M`}
-          subtitle="Unmodified / Modified"
-          color={modifiedCount > 0 ? "amber" : "green"}
-          icon={<Gavel className="w-4 h-4" />}
-          testId="kpi-opinions"
-        />
-        <KPICard
-          title="XBRL Ready"
-          value={`${xbrlPct}%`}
-          subtitle={`${xbrlReady}/${xbrlTotal} items`}
-          color={xbrlPct >= 80 ? "green" : xbrlPct >= 50 ? "amber" : "red"}
-          icon={<FileCheck className="w-4 h-4" />}
-          testId="kpi-xbrl"
-        />
+        <KPICard title="Compliance Score" value={`${compliancePct}%`} subtitle={`${met}/${applicable} requirements met`} color={compliancePct >= 90 ? "green" : compliancePct >= 70 ? "amber" : "red"} icon={<Shield className="w-4 h-4" />} testId="kpi-compliance-score" />
+        <KPICard title="Partial Compliance" value={partial} color={partial > 0 ? "amber" : "green"} icon={<AlertTriangle className="w-4 h-4" />} testId="kpi-partial" />
+        <KPICard title="Non-Compliant" value={notMet} color={notMet > 0 ? "red" : "green"} icon={<XCircle className="w-4 h-4" />} testId="kpi-non-compliant" />
+        <KPICard title="Engagements" value={totalEngagements} subtitle={`${issuedCount} issued`} color="neutral" icon={<Building2 className="w-4 h-4" />} testId="kpi-engagements" />
+        <KPICard title="Opinions" value={`${unmodifiedCount}U / ${modifiedCount}M`} subtitle="Unmodified / Modified" color={modifiedCount > 0 ? "amber" : "green"} icon={<Gavel className="w-4 h-4" />} testId="kpi-opinions" />
+        <KPICard title="XBRL Ready" value={`${xbrlPct}%`} subtitle={`${xbrlReady}/${xbrlTotal} items`} color={xbrlPct >= 80 ? "green" : xbrlPct >= 50 ? "amber" : "red"} icon={<FileCheck className="w-4 h-4" />} testId="kpi-xbrl" />
       </div>
 
       <Card data-testid="category-breakdown">
@@ -429,7 +274,7 @@ function OverviewTab({ checklist, engagements, xbrlItems }: {
                   <TableRow key={eng.engagementId} data-testid={`opinion-row-${eng.engagementId}`}>
                     <TableCell className="text-sm">
                       <div className="font-medium">{eng.engagementName || eng.clientName}</div>
-                      <div className="text-[10px] text-muted-foreground">{eng.yearEnd}</div>
+                      <div className="text-[10px] text-muted-foreground">{eng.yearEnd ? new Date(eng.yearEnd).toLocaleDateString() : "-"}</div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-[10px]" data-testid={`badge-opinion-${eng.engagementId}`}>
@@ -486,9 +331,13 @@ function OverviewTab({ checklist, engagements, xbrlItems }: {
   );
 }
 
-function RegulatoryChecklistTab({ checklist, onStatusChange }: {
-  checklist: RegulatoryChecklistItem[];
+function RegulatoryChecklistTab({ checklist, onStatusChange, onNotesChange, onSave, isSaving, hasChanges }: {
+  checklist: ChecklistItem[];
   onStatusChange: (id: string, status: ComplianceStatus) => void;
+  onNotesChange: (id: string, notes: string) => void;
+  onSave: () => void;
+  isSaving: boolean;
+  hasChanges: boolean;
 }) {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -531,9 +380,21 @@ function RegulatoryChecklistTab({ checklist, onStatusChange }: {
           </SelectContent>
         </Select>
 
-        <span className="text-sm text-muted-foreground ml-auto">
+        <span className="text-sm text-muted-foreground">
           Showing {filtered.length} of {checklist.length} items
         </span>
+
+        <div className="ml-auto">
+          <Button
+            onClick={onSave}
+            disabled={isSaving || !hasChanges}
+            size="sm"
+            data-testid="button-save-checklist"
+          >
+            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            {hasChanges ? "Save Changes" : "Saved"}
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -547,6 +408,7 @@ function RegulatoryChecklistTab({ checklist, onStatusChange }: {
                 <TableHead className="w-32">Category</TableHead>
                 <TableHead className="w-24">Status</TableHead>
                 <TableHead className="w-40">Evidence</TableHead>
+                <TableHead className="w-48">Notes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -561,7 +423,7 @@ function RegulatoryChecklistTab({ checklist, onStatusChange }: {
                   <TableCell>
                     <Select
                       value={item.status}
-                      onValueChange={(val: ComplianceStatus) => onStatusChange(item.id, val)}
+                      onValueChange={(val: string) => onStatusChange(item.id, val as ComplianceStatus)}
                     >
                       <SelectTrigger className="h-7 text-[10px] w-24" data-testid={`select-status-${item.id}`}>
                         <SelectValue />
@@ -575,6 +437,15 @@ function RegulatoryChecklistTab({ checklist, onStatusChange }: {
                     </Select>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{item.evidenceRef || "-"}</TableCell>
+                  <TableCell>
+                    <Textarea
+                      value={item.notes}
+                      onChange={(e) => onNotesChange(item.id, e.target.value)}
+                      placeholder="Add notes..."
+                      className="h-8 min-h-[32px] text-xs resize-none"
+                      data-testid={`input-notes-${item.id}`}
+                    />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -585,21 +456,12 @@ function RegulatoryChecklistTab({ checklist, onStatusChange }: {
   );
 }
 
-function OpinionTrackerTab({ engagements }: { engagements: OpinionTracker[] }) {
+function OpinionTrackerTab({ engagements, isLoading }: { engagements: OpinionTracker[]; isLoading: boolean }) {
   const opinionBreakdown = useMemo(() => {
     const counts: Record<string, number> = {};
     engagements.forEach(e => {
       const opinion = e.opinionType || "PENDING";
       counts[opinion] = (counts[opinion] || 0) + 1;
-    });
-    return counts;
-  }, [engagements]);
-
-  const statusBreakdown = useMemo(() => {
-    const counts: Record<string, number> = {};
-    engagements.forEach(e => {
-      const status = e.status || "DRAFT";
-      counts[status] = (counts[status] || 0) + 1;
     });
     return counts;
   }, [engagements]);
@@ -613,6 +475,8 @@ function OpinionTrackerTab({ engagements }: { engagements: OpinionTracker[] }) {
     PENDING: "bg-gray-400",
   };
 
+  if (isLoading) return <LoadingState message="Loading opinion data..." />;
+
   return (
     <div className="space-y-4" data-testid="tab-opinion-tracker">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -623,6 +487,11 @@ function OpinionTrackerTab({ engagements }: { engagements: OpinionTracker[] }) {
             <div className={`w-full h-1 rounded-full mt-2 ${opinionColors[opinion] || "bg-gray-300"}`} />
           </Card>
         ))}
+        {Object.keys(opinionBreakdown).length === 0 && (
+          <Card className="p-3 col-span-full">
+            <div className="text-sm text-muted-foreground text-center py-4">No engagement opinions available</div>
+          </Card>
+        )}
       </div>
 
       <Card>
@@ -650,7 +519,7 @@ function OpinionTrackerTab({ engagements }: { engagements: OpinionTracker[] }) {
                 <TableRow key={eng.engagementId} data-testid={`opinion-detail-${eng.engagementId}`}>
                   <TableCell className="font-medium text-sm">{eng.engagementName || "-"}</TableCell>
                   <TableCell className="text-sm">{eng.clientName || "-"}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{eng.yearEnd || "-"}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{eng.yearEnd ? new Date(eng.yearEnd).toLocaleDateString() : "-"}</TableCell>
                   <TableCell>
                     <Badge className={`text-[10px] border-0 text-white no-default-hover-elevate no-default-active-elevate ${opinionColors[eng.opinionType] || opinionColors.PENDING}`}>
                       {(eng.opinionType || "PENDING").replace(/_/g, " ")}
@@ -681,7 +550,13 @@ function OpinionTrackerTab({ engagements }: { engagements: OpinionTracker[] }) {
   );
 }
 
-function XBRLReadinessTab({ xbrlItems, onToggle }: { xbrlItems: XBRLReadinessItem[]; onToggle: (id: string) => void }) {
+function XBRLReadinessTab({ xbrlItems, onToggle, onSave, isSaving, hasChanges }: {
+  xbrlItems: XBRLItem[];
+  onToggle: (id: string) => void;
+  onSave: () => void;
+  isSaving: boolean;
+  hasChanges: boolean;
+}) {
   const readyCount = xbrlItems.filter(x => x.ready).length;
   const total = xbrlItems.length;
   const pct = total > 0 ? Math.round((readyCount / total) * 100) : 0;
@@ -706,6 +581,15 @@ function XBRLReadinessTab({ xbrlItems, onToggle }: { xbrlItems: XBRLReadinessIte
               <Badge className={`text-[10px] border-0 text-white no-default-hover-elevate no-default-active-elevate ${pct >= 80 ? "bg-green-500" : pct >= 50 ? "bg-amber-500" : "bg-red-500"}`}>
                 {pct >= 80 ? "Ready" : pct >= 50 ? "In Progress" : "Not Ready"}
               </Badge>
+              <Button
+                onClick={onSave}
+                disabled={isSaving || !hasChanges}
+                size="sm"
+                data-testid="button-save-xbrl"
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                {hasChanges ? "Save" : "Saved"}
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -749,20 +633,20 @@ function XBRLReadinessTab({ xbrlItems, onToggle }: { xbrlItems: XBRLReadinessIte
 }
 
 function ComplianceExportTab({ checklist, engagements, xbrlItems }: {
-  checklist: RegulatoryChecklistItem[];
+  checklist: ChecklistItem[];
   engagements: OpinionTracker[];
-  xbrlItems: XBRLReadinessItem[];
+  xbrlItems: XBRLItem[];
 }) {
   const { toast } = useToast();
 
-  const handleExport = (format: string) => {
+  const handleExport = () => {
     const met = checklist.filter(c => c.status === "met").length;
     const applicable = checklist.filter(c => c.status !== "na").length;
     const compliancePct = applicable > 0 ? Math.round((met / applicable) * 100) : 0;
 
     const lines: string[] = [];
     lines.push("SECP COMPLIANCE REPORT");
-    lines.push("=" .repeat(60));
+    lines.push("=".repeat(60));
     lines.push(`Generated: ${new Date().toLocaleString()}`);
     lines.push(`Overall Compliance: ${compliancePct}% (${met}/${applicable} requirements met)`);
     lines.push("");
@@ -770,22 +654,33 @@ function ComplianceExportTab({ checklist, engagements, xbrlItems }: {
     lines.push("REGULATORY CHECKLIST - COMPANIES ACT 2017");
     lines.push("-".repeat(60));
     checklist.forEach(item => {
-      lines.push(`[${item.status.toUpperCase().padEnd(7)}] ${item.section} - ${item.title}`);
+      const statusLabel = STATUS_CONFIG[item.status].label;
+      lines.push(`[${statusLabel.padEnd(7)}] ${item.section} - ${item.title}`);
       if (item.evidenceRef) lines.push(`          Evidence: ${item.evidenceRef}`);
+      if (item.notes) lines.push(`          Notes: ${item.notes}`);
     });
     lines.push("");
 
     lines.push("ENGAGEMENT OPINION TRACKER");
     lines.push("-".repeat(60));
-    engagements.forEach(eng => {
-      lines.push(`${eng.engagementName || eng.clientName} | ${eng.yearEnd} | Opinion: ${eng.opinionType || "PENDING"} | Status: ${eng.status || "DRAFT"}`);
-    });
+    if (engagements.length > 0) {
+      engagements.forEach(eng => {
+        const yearEnd = eng.yearEnd ? new Date(eng.yearEnd).toLocaleDateString() : "N/A";
+        lines.push(`${eng.engagementName || eng.clientName} | ${yearEnd} | Opinion: ${(eng.opinionType || "PENDING").replace(/_/g, " ")} | Status: ${eng.status || "DRAFT"}`);
+      });
+    } else {
+      lines.push("No engagement data available");
+    }
     lines.push("");
 
     lines.push("XBRL READINESS");
     lines.push("-".repeat(60));
+    const xbrlReady = xbrlItems.filter(x => x.ready).length;
+    lines.push(`Overall: ${xbrlReady}/${xbrlItems.length} items ready (${xbrlItems.length > 0 ? Math.round((xbrlReady / xbrlItems.length) * 100) : 0}%)`);
+    lines.push("");
     xbrlItems.forEach(item => {
       lines.push(`[${item.ready ? "READY  " : "PENDING"}] ${item.requirement}`);
+      if (item.notes) lines.push(`          ${item.notes}`);
     });
 
     const blob = new Blob([lines.join("\n")], { type: "text/plain" });
@@ -797,6 +692,24 @@ function ComplianceExportTab({ checklist, engagements, xbrlItems }: {
     URL.revokeObjectURL(url);
 
     toast({ title: "Export Complete", description: "SECP compliance report downloaded successfully." });
+  };
+
+  const handleExportCSV = () => {
+    const rows: string[][] = [["Section", "Title", "Category", "Status", "Evidence", "Notes"]];
+    checklist.forEach(item => {
+      rows.push([item.section, item.title, item.category, STATUS_CONFIG[item.status].label, item.evidenceRef, item.notes]);
+    });
+
+    const csv = rows.map(r => r.map(c => `"${(c || "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `secp-checklist-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast({ title: "CSV Export Complete", description: "Checklist exported as CSV." });
   };
 
   const met = checklist.filter(c => c.status === "met").length;
@@ -865,9 +778,13 @@ function ComplianceExportTab({ checklist, engagements, xbrlItems }: {
           </div>
 
           <div className="flex gap-3 flex-wrap">
-            <Button onClick={() => handleExport("txt")} data-testid="button-export-txt">
+            <Button onClick={handleExport} data-testid="button-export-txt">
               <Download className="w-4 h-4 mr-2" />
-              Export Report (TXT)
+              Export Full Report (TXT)
+            </Button>
+            <Button onClick={handleExportCSV} variant="outline" data-testid="button-export-csv">
+              <Download className="w-4 h-4 mr-2" />
+              Export Checklist (CSV)
             </Button>
           </div>
         </CardContent>
@@ -878,33 +795,138 @@ function ComplianceExportTab({ checklist, engagements, xbrlItems }: {
 
 export default function SECPCompliancePage() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [checklist, setChecklist] = useState<RegulatoryChecklistItem[]>(COMPANIES_ACT_CHECKLIST);
-  const [xbrlItems, setXbrlItems] = useState<XBRLReadinessItem[]>(XBRL_READINESS_ITEMS);
+  const [checklist, setChecklist] = useState<ChecklistItem[]>(DEFAULT_CHECKLIST);
+  const [xbrlItems, setXbrlItems] = useState<XBRLItem[]>(DEFAULT_XBRL);
+  const [checklistDirty, setChecklistDirty] = useState(false);
+  const [xbrlDirty, setXbrlDirty] = useState(false);
+  const { toast } = useToast();
+
+  const opinionsQuery = useQuery<OpinionTracker[]>({
+    queryKey: ["/api/secp/opinions"],
+  });
 
   const engagementsQuery = useQuery<any[]>({
     queryKey: ["/api/engagements"],
   });
 
-  const deliverableEngagements: OpinionTracker[] = useMemo(() => {
-    if (!engagementsQuery.data) return [];
-    return engagementsQuery.data.map((eng: any) => ({
-      engagementId: eng.id,
-      engagementName: eng.engagementName || eng.name || "",
-      clientName: eng.clientName || "",
-      yearEnd: eng.yearEnd ? new Date(eng.yearEnd).toLocaleDateString() : "",
-      opinionType: eng.opinionType || "NOT_APPLICABLE",
-      status: eng.status || "DRAFT",
-      deliveredDate: eng.deliveredDate || null,
-    }));
-  }, [engagementsQuery.data]);
+  const [selectedEngagementId, setSelectedEngagementId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (engagementsQuery.data?.length && !selectedEngagementId) {
+      setSelectedEngagementId(engagementsQuery.data[0]?.id || null);
+    }
+  }, [engagementsQuery.data, selectedEngagementId]);
+
+  const savedChecklistQuery = useQuery<any[]>({
+    queryKey: ["/api/compliance/checklists", selectedEngagementId],
+    enabled: !!selectedEngagementId,
+  });
+
+  useEffect(() => {
+    if (!savedChecklistQuery.data?.length) return;
+
+    const secpChecklist = savedChecklistQuery.data.find((cl: any) => cl.checklistType === "SECP_COMPLIANCE");
+    if (secpChecklist?.items && Array.isArray(secpChecklist.items)) {
+      setChecklist(prev => prev.map(item => {
+        const saved = (secpChecklist.items as any[]).find((s: any) => s.ref === item.id);
+        if (saved) {
+          return {
+            ...item,
+            status: fromBackendStatus(saved.status),
+            notes: saved.notes ?? "",
+          };
+        }
+        return item;
+      }));
+    }
+
+    const xbrlChecklist = savedChecklistQuery.data.find((cl: any) => cl.checklistType === "SECP_XBRL_READINESS");
+    if (xbrlChecklist?.items && Array.isArray(xbrlChecklist.items)) {
+      setXbrlItems(prev => prev.map(item => {
+        const saved = (xbrlChecklist.items as any[]).find((s: any) => s.ref === item.id);
+        if (saved) {
+          return {
+            ...item,
+            ready: saved.status === "COMPLETED",
+            notes: saved.notes ?? item.notes,
+          };
+        }
+        return item;
+      }));
+    }
+
+    setChecklistDirty(false);
+    setXbrlDirty(false);
+  }, [savedChecklistQuery.data]);
+
+  const saveChecklistMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedEngagementId) throw new Error("No engagement selected");
+      const items = checklist.map(item => ({
+        ref: item.id,
+        description: `${item.section} - ${item.title}`,
+        status: toBackendStatus(item.status),
+        notes: item.notes,
+        evidence: item.evidenceRef,
+      }));
+      await apiRequest("POST", `/api/compliance/checklists/${selectedEngagementId}`, {
+        checklistType: "SECP_COMPLIANCE",
+        checklistReference: "Companies Act 2017 - SECP Compliance Checklist",
+        items,
+      });
+    },
+    onSuccess: () => {
+      setChecklistDirty(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/compliance/checklists", selectedEngagementId] });
+      toast({ title: "Saved", description: "Regulatory checklist saved successfully." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Save Failed", description: error?.message || "Failed to save checklist.", variant: "destructive" });
+    },
+  });
+
+  const saveXbrlMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedEngagementId) throw new Error("No engagement selected");
+      const items = xbrlItems.map(item => ({
+        ref: item.id,
+        description: item.requirement,
+        status: item.ready ? "COMPLETED" as const : "PENDING" as const,
+        notes: item.notes,
+      }));
+      await apiRequest("POST", `/api/compliance/checklists/${selectedEngagementId}`, {
+        checklistType: "SECP_XBRL_READINESS",
+        checklistReference: "SECP XBRL Filing Readiness Assessment",
+        items,
+      });
+    },
+    onSuccess: () => {
+      setXbrlDirty(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/compliance/checklists", selectedEngagementId] });
+      toast({ title: "Saved", description: "XBRL readiness saved successfully." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Save Failed", description: error?.message || "Failed to save XBRL readiness.", variant: "destructive" });
+    },
+  });
 
   const handleStatusChange = (id: string, status: ComplianceStatus) => {
     setChecklist(prev => prev.map(item => item.id === id ? { ...item, status } : item));
+    setChecklistDirty(true);
+  };
+
+  const handleNotesChange = (id: string, notes: string) => {
+    setChecklist(prev => prev.map(item => item.id === id ? { ...item, notes } : item));
+    setChecklistDirty(true);
   };
 
   const handleXbrlToggle = (id: string) => {
     setXbrlItems(prev => prev.map(item => item.id === id ? { ...item, ready: !item.ready } : item));
+    setXbrlDirty(true);
   };
+
+  const deliverableEngagements = opinionsQuery.data || [];
+  const isLoading = opinionsQuery.isLoading || engagementsQuery.isLoading;
 
   return (
     <PageShell
@@ -920,7 +942,31 @@ export default function SECPCompliancePage() {
           onTabChange={setActiveTab}
         />
 
-        {engagementsQuery.isLoading ? (
+        {(activeTab === "checklist" || activeTab === "xbrl") && engagementsQuery.data && engagementsQuery.data.length > 1 && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Engagement:</span>
+            <Select value={selectedEngagementId || ""} onValueChange={(val) => {
+              setSelectedEngagementId(val);
+              setChecklist(DEFAULT_CHECKLIST);
+              setXbrlItems(DEFAULT_XBRL);
+              setChecklistDirty(false);
+              setXbrlDirty(false);
+            }}>
+              <SelectTrigger className="w-64" data-testid="select-engagement">
+                <SelectValue placeholder="Select Engagement" />
+              </SelectTrigger>
+              <SelectContent>
+                {engagementsQuery.data.map((eng: any) => (
+                  <SelectItem key={eng.id} value={eng.id}>
+                    {eng.engagementCode || eng.client?.name || eng.id}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {isLoading && activeTab === "overview" ? (
           <LoadingState message="Loading compliance data..." />
         ) : (
           <>
@@ -935,15 +981,25 @@ export default function SECPCompliancePage() {
               <RegulatoryChecklistTab
                 checklist={checklist}
                 onStatusChange={handleStatusChange}
+                onNotesChange={handleNotesChange}
+                onSave={() => saveChecklistMutation.mutate()}
+                isSaving={saveChecklistMutation.isPending}
+                hasChanges={checklistDirty}
               />
             )}
             {activeTab === "opinions" && (
-              <OpinionTrackerTab engagements={deliverableEngagements} />
+              <OpinionTrackerTab
+                engagements={deliverableEngagements}
+                isLoading={opinionsQuery.isLoading}
+              />
             )}
             {activeTab === "xbrl" && (
               <XBRLReadinessTab
                 xbrlItems={xbrlItems}
                 onToggle={handleXbrlToggle}
+                onSave={() => saveXbrlMutation.mutate()}
+                isSaving={saveXbrlMutation.isPending}
+                hasChanges={xbrlDirty}
               />
             )}
             {activeTab === "export" && (
@@ -954,6 +1010,17 @@ export default function SECPCompliancePage() {
               />
             )}
           </>
+        )}
+
+        {!selectedEngagementId && !isLoading && (activeTab === "checklist" || activeTab === "xbrl") && (
+          <Card className="p-6">
+            <div className="text-center text-sm text-muted-foreground">
+              <AlertTriangle className="w-5 h-5 mx-auto mb-2 text-amber-500" />
+              No engagements found. Create an engagement first to enable checklist persistence.
+              <br />
+              Changes will work locally but won't be saved to the database.
+            </div>
+          </Card>
         )}
       </div>
     </PageShell>
