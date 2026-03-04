@@ -45,6 +45,7 @@ import { enableRLS } from "./scripts/enable-rls";
 import platformRoutes from "./routes/platformRoutes";
 import tenantRoutes from "./routes/tenantRoutes";
 import { globalRateLimit } from "./middleware/rateLimiter";
+import { superAdminIpGuard } from "./middleware/superAdminIpAllowlist";
 import { auditLogMiddleware } from "./services/auditLogService";
 import logsRoutes from "./logsRoutes";
 import workspaceRoutes from "./workspaceRoutes";
@@ -136,6 +137,8 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
   }
   next();
 });
+
+app.use(superAdminIpGuard);
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.path.startsWith("/api/")) {

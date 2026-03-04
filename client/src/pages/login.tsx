@@ -47,11 +47,9 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-const SUPER_ADMIN_IPS = ["187.77.130.117"];
-
 function isSuperAdminAccess(): boolean {
-  const hostname = window.location.hostname;
-  return SUPER_ADMIN_IPS.includes(hostname) || /^\d+\.\d+\.\d+\.\d+$/.test(hostname);
+  return window.location.pathname === "/platform-login" ||
+    window.location.search.includes("portal=admin");
 }
 
 const FEATURES = [

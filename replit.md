@@ -184,15 +184,24 @@ Key architectural patterns and features include:
 - Each template includes ISA/IFRS references, applicable audit phases, and required/optional status
 - Managed in Administration > Templates tab with full CRUD
 
-### Production Deployment
-- **Docker**: Multi-stage Dockerfile with non-root user, `docker-entrypoint.sh` (auto-migrate + start)
-- **AWS ECS/Fargate**: `aws/task-definition.json` (1 vCPU, 4GB) + `aws/deploy.sh` for automated deployment with task definition registration
-- **Required Env Vars**: `DATABASE_URL`, `SESSION_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `FIRM_NAME`
-- **Recommended Env Vars**: `CORS_ORIGINS` (comma-separated allowed origins for production CORS)
-- **Optional Env Vars**: `OPENAI_API_KEY`, `NODE_HEAP_SIZE` (default 2560MB)
-- **Seeding**: Production runs `seedPermissions()` + `seedInitialAdmin()` + `seedTemplates()` only (no demo data)
-- **Startup Validation**: Production crashes immediately if `DATABASE_URL` or `SESSION_SECRET` missing
-- **Security**: Non-root Docker user, CORS origin allowlist in production, 500 errors sanitized, unhandled rejections cause exit
+### Production Deployment (Hostinger VPS / Docker)
+- **Docker**: Multi-stage Dockerfile (node:20-slim) with non-root user, health check, `docker-entrypoint.sh` (DB wait → prisma db push → start)
+- **docker-compose.yml**: App + Postgres 16 stack with `service_healthy` dependency, restart policy, persistent volume
+- **NGINX**: Reverse proxy configs in `deploy/nginx/` (HTTP + SSL). SSL via Let's Encrypt with auto-renewal. Security headers, gzip, rate limiting
+- **Super Admin IP Allowlist**: Dual-layer enforcement:
+  - NGINX `geo` block denies non-allowlisted IPs from `/api/platform` routes
+  - Backend middleware (`server/middleware/superAdminIpAllowlist.ts`) checks `SUPER_ADMIN_ALLOWED_IPS` env var on all Super Admin requests
+  - Login route (`server/authRoutes.ts`) blocks Super Admin login from non-allowlisted IPs before password verification
+- **Super Admin Credentials**: Seeded via `INITIAL_SUPER_ADMIN_EMAIL` / `INITIAL_SUPER_ADMIN_PASSWORD` env vars. Default: aqeelalam2010@gmail.com. Reset via `ADMIN_RESET=true` env var on restart
+- **Deploy Scripts**: `deploy/hostinger-deploy.sh` (first-time VPS setup: Docker, NGINX, SSL, secrets, cron), `deploy/vps-update.sh` (pull + rebuild + verify), `deploy/backup.sh` (daily Postgres dump with 30-day retention)
+- **Daily Backups**: Cron job at 02:00 UTC via `deploy/backup.sh`, gzipped pg_dump, 30-day retention
+- **Required Env Vars**: `DATABASE_URL`, `SESSION_SECRET`, `JWT_SECRET`, `ENCRYPTION_MASTER_KEY`, `DB_PASSWORD`
+- **Super Admin Env Vars**: `INITIAL_SUPER_ADMIN_EMAIL`, `INITIAL_SUPER_ADMIN_PASSWORD`, `SUPER_ADMIN_ALLOWED_IPS` (comma-separated)
+- **Optional Env Vars**: `OPENAI_API_KEY`, `NODE_HEAP_SIZE` (default 2560MB), `ADMIN_RESET`
+- **Health Checks**: `/__healthz` (liveness), `/health` (readiness), `/api/health/full` (deep check with DB ping)
+- **Seeding**: Production runs `seedPermissions()` + `seedInitialAdmin()` + `seedSuperAdmin()` + `seedTemplates()` + `seedPlans()`
+- **Startup Validation**: Production crashes immediately if `DATABASE_URL` missing. Auto-generates `SESSION_SECRET`/`JWT_SECRET` if not set (with warning)
+- **Security**: Non-root Docker user, IP allowlist, CORS origin allowlist, 500 errors sanitized, graceful shutdown on SIGTERM/SIGINT
 
 ## External Dependencies
 - **PostgreSQL**: Primary relational database.

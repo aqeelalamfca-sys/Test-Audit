@@ -21,6 +21,7 @@ import { checkAccountLockout, recordFailedAttempt, clearLockout } from "./middle
 import { loginRateLimit } from "./middleware/rateLimiter";
 import { logSecurityEvent } from "./services/auditLogService";
 import { generateTwoFactorSecret, generateQRCodeDataURL, verifyTwoFactorToken } from "./services/twoFactorService";
+import { checkSuperAdminIpAtLogin } from "./middleware/superAdminIpAllowlist";
 
 const router = Router();
 
@@ -226,6 +227,20 @@ router.post("/login", loginRateLimit(), async (req: AuthenticatedRequest, res: R
 
     if (user.status === "SUSPENDED") {
       return res.status(403).json({ error: "Your account has been suspended. Please contact your administrator." });
+    }
+
+    if (user.role === "SUPER_ADMIN") {
+      const ipCheck = checkSuperAdminIpAtLogin(clientIp);
+      if (!ipCheck.allowed) {
+        logSecurityEvent("SUPER_ADMIN_IP_BLOCKED", clientIp, req.get("user-agent"), {
+          email: email.toLowerCase(),
+          reason: ipCheck.reason,
+        }).catch(() => {});
+        return res.status(403).json({
+          error: ipCheck.reason,
+          code: "IP_NOT_ALLOWED",
+        });
+      }
     }
 
     if (user.firmId && user.role !== "SUPER_ADMIN") {
