@@ -522,6 +522,20 @@ export default function Login() {
                           </button>
                         ))}
                       </div>
+                      <div className="mt-2 pt-2 border-t border-border/40">
+                        <button
+                          type="button"
+                          className="flex items-center gap-1 py-0.5 rounded hover:bg-muted transition-colors text-left cursor-pointer text-[11px] w-full"
+                          onClick={() => {
+                            form.setValue("email", "aqeelalam2010@gmail.com");
+                            form.setValue("password", "Aqeel@123$SA");
+                          }}
+                          data-testid="quick-login-superadmin"
+                        >
+                          <span className="text-amber-600 font-semibold">Super Admin:</span>
+                          <span className="font-mono text-foreground/70">aqeelalam2010@gmail.com</span>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </TabsContent>
