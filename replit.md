@@ -193,7 +193,8 @@ Key architectural patterns and features include:
   - Backend middleware (`server/middleware/superAdminIpAllowlist.ts`) checks `SUPER_ADMIN_ALLOWED_IPS` env var on all Super Admin requests
   - Login route (`server/authRoutes.ts`) blocks Super Admin login from non-allowlisted IPs before password verification
 - **Super Admin Credentials**: Seeded via `INITIAL_SUPER_ADMIN_EMAIL` / `INITIAL_SUPER_ADMIN_PASSWORD` env vars. Default: aqeelalam2010@gmail.com. Reset via `ADMIN_RESET=true` env var on restart
-- **Deploy Scripts**: `deploy/hostinger-deploy.sh` (first-time VPS setup: Docker, NGINX, SSL, secrets, cron), `deploy/vps-update.sh` (pull + rebuild + verify), `deploy/backup.sh` (daily Postgres dump with 30-day retention)
+- **Deploy Scripts**: `deploy.sh` (canonical single-command deploy: system deps, Docker, code, secrets, build, NGINX, SSL, backups, verification), `deploy/vps-update.sh` (pull + rebuild + verify homepage + health), `deploy/backup.sh` (daily Postgres dump with 30-day retention), `scripts/healthcheck.sh` (endpoint verification: /, /health, SPA routes)
+- **DEPLOYMENT.md**: Comprehensive deployment guide with architecture overview, quick deploy, manual setup, endpoint table, troubleshooting matrix, backup/restore procedures
 - **Daily Backups**: Cron job at 02:00 UTC via `deploy/backup.sh`, gzipped pg_dump, 30-day retention
 - **Required Env Vars**: `DATABASE_URL`, `SESSION_SECRET`, `JWT_SECRET`, `ENCRYPTION_MASTER_KEY`, `DB_PASSWORD`
 - **Super Admin Env Vars**: `INITIAL_SUPER_ADMIN_EMAIL`, `INITIAL_SUPER_ADMIN_PASSWORD`, `SUPER_ADMIN_ALLOWED_IPS` (comma-separated)

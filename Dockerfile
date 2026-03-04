@@ -4,7 +4,12 @@ WORKDIR /app
 
 FROM base AS deps
 COPY package.json package-lock.json* ./
-RUN npm ci --ignore-scripts --maxsockets 5
+RUN if [ -f package-lock.json ]; then \
+      npm ci --ignore-scripts --maxsockets 5; \
+    else \
+      echo "WARN: No lockfile found, using npm install"; \
+      npm install --ignore-scripts --maxsockets 5; \
+    fi
 COPY prisma ./prisma/
 RUN npx prisma generate
 

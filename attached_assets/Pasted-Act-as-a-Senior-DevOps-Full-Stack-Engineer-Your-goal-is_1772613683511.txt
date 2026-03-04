@@ -1,0 +1,49 @@
+Act as a Senior DevOps + Full-Stack Engineer. Your goal is to make this codebase “Hostinger VPS production-proof” (Ubuntu 24.04, Docker Compose, Nginx reverse proxy, domain auditwise.tech) so deployment never fails due to missing routes, missing builds, wrong paths, lockfile issues, or misconfigured ports.
+
+MANDATORY FIRST: Scan the entire repo (frontend + backend + docker + nginx configs). Identify the current architecture: (A) API-only backend, (B) backend serving UI statically, (C) separate frontend app (React/Vite/CRA) + API, or (D) Next.js app. Do NOT guess. Output a short findings list, then implement fixes.
+
+NON-NEGOTIABLE ACCEPTANCE CRITERIA (must all pass):
+1) Visiting “/” must NEVER return 404 or “Cannot GET /”. It must load the UI or redirect to the UI route (e.g., /app) with HTTP 200/302.
+2) “/health” must return 200 JSON with status=ok (include uptime + version).
+3) “/api/…” routes must work consistently and must not conflict with UI routing.
+4) One single port exposed by the app stack: 5000. Nginx proxies HTTPS->:5000 (or proxies UI + API correctly if separate).
+5) Build is deterministic: NO “npm ci” failure. Ensure lockfiles exist (package-lock.json) and are committed OR logic selects npm install when lockfile missing. Same for pnpm/yarn if used.
+6) If UI is separate: the Docker image MUST build UI during image build and ship the compiled assets. At runtime, UI must be served either by the backend or by Nginx container—no manual copying.
+7) Docker Compose must define healthchecks for app + db. “docker compose ps” must show healthy.
+8) Nginx config must be correct, validated by “nginx -t”, and include websocket headers and correct proxy headers.
+9) SSL readiness: Provide a “certbot one-liner” in docs, but code/config must not break if SSL not yet installed (HTTP still works).
+10) Provide a single “deploy.sh” script that runs idempotently on VPS: pull latest → build → up → migrate → health check → nginx reload; must fail fast with clear error messages.
+
+IMPLEMENTATION TASKS (do all that apply based on architecture detection):
+A) Backend routing guard:
+- Add a root route handler for GET “/” that serves index.html if present OR redirects to “/app” (or “/login”) OR returns a friendly HTML page pointing to UI.
+- Ensure SPA fallback routing is supported (if UI is SPA) so refresh deep links do not 404.
+
+B) Frontend build & packaging:
+- If React/Vite/CRA: build output must be placed in a canonical path (e.g., /app/public or /app/dist/public) and served by backend or Nginx.
+- If Next.js: choose one of: (1) run Next server behind backend on port 5000 (recommended: integrate with reverse proxy paths), OR (2) export static if possible. Implement the chosen option and document.
+
+C) Docker hardening:
+- Create/repair Dockerfile(s) with multi-stage builds (deps → build → runtime).
+- Ensure correct WORKDIR and paths: no /var/www assumptions; use /app consistently.
+- Add HEALTHCHECK in Dockerfile or compose.
+- Ensure Node listens on 0.0.0.0:5000 and respects PORT env var.
+
+D) Compose:
+- docker-compose.yml must map only 5000 externally (and db internal). Include restart policies, env_file, volumes, and healthcheck dependencies.
+- Ensure Prisma migrations (or equivalent) run automatically in entrypoint safely (idempotent).
+
+E) Nginx:
+- Provide /etc/nginx/conf.d/auditwise.conf template: HTTP→HTTPS redirect when SSL exists; proxy all to 127.0.0.1:5000; include upgrade headers; set client_max_body_size 50M.
+- Do NOT create invalid contexts (e.g., proxy_pass outside location). Must pass nginx -t.
+
+F) Operational scripts + docs:
+- Add scripts/deploy.sh and scripts/healthcheck.sh.
+- Add a DEPLOYMENT.md with exact Hostinger VPS commands (git clone path /opt/auditwise, docker compose up, nginx config placement, certbot command).
+- Add troubleshooting section mapping symptoms→fixes (Cannot GET /, 404 /, connection refused 443, npm ci error, connection reset by peer).
+
+FINAL OUTPUT REQUIRED:
+1) Code changes applied across repo (Dockerfile(s), compose, nginx template, backend root route, UI build integration, scripts).
+2) A “single-line VPS command” that runs deploy.sh and prints “LIVE” only after /health=200 and homepage returns 200/302.
+3) Show the exact endpoints and expected responses: /, /health, /api/… with examples.
+Do NOT remove existing working modules; only refactor to meet criteria. Validate with a local compose run and simulated curl checks in the prompt output.
