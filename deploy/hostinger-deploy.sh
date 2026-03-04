@@ -5,52 +5,76 @@ DOMAIN="auditwise.tech"
 EMAIL="aqeelalam2010@gmail.com"
 APP_DIR="/opt/auditwise"
 REPO="https://github.com/aqeelalamfca-sys/Test-Audit.git"
-BRANCH="main"
+BRANCH="${1:-main}"
 BACKUP_DIR="${APP_DIR}/backups"
 
-echo "=========================================="
-echo "  AuditWise Production Deploy"
-echo "  Domain: ${DOMAIN}"
-echo "=========================================="
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
 
-# ── 1. System dependencies ──
+log()  { echo -e "${GREEN}[✓]${NC} $1"; }
+warn() { echo -e "${YELLOW}[!]${NC} $1"; }
+fail() { echo -e "${RED}[✗]${NC} $1"; exit 1; }
+
+echo "══════════════════════════════════════════"
+echo "  AuditWise — Hostinger VPS Deploy"
+echo "  Domain: ${DOMAIN}"
+echo "  Branch: ${BRANCH}"
+echo "  $(date -Is)"
+echo "══════════════════════════════════════════"
+echo ""
+
+if [ "$(id -u)" -ne 0 ]; then
+  fail "Must run as root. Use: sudo bash deploy/hostinger-deploy.sh"
+fi
+
 echo "[1/10] Installing system dependencies..."
 apt-get update -y -qq
-apt-get install -y -qq ca-certificates curl git nginx ufw certbot python3-certbot-nginx > /dev/null
+apt-get install -y -qq ca-certificates curl git nginx ufw certbot python3-certbot-nginx logrotate > /dev/null 2>&1
+log "System packages installed"
 
-# ── 2. Docker Engine + Compose v2 ──
 echo "[2/10] Setting up Docker..."
 if ! command -v docker &>/dev/null; then
   curl -fsSL https://get.docker.com | sh
+  log "Docker installed"
+else
+  log "Docker already present"
 fi
 systemctl enable --now docker
 
-# ── 3. Firewall ──
+if ! docker compose version &>/dev/null; then
+  apt-get install -y docker-compose-plugin 2>/dev/null || fail "Cannot install Docker Compose"
+fi
+log "Docker Compose ready"
+
 echo "[3/10] Configuring firewall..."
 ufw allow OpenSSH   > /dev/null 2>&1 || true
 ufw allow 80/tcp    > /dev/null 2>&1 || true
 ufw allow 443/tcp   > /dev/null 2>&1 || true
 ufw --force enable  > /dev/null 2>&1 || true
+log "Firewall active (SSH + HTTP + HTTPS)"
 
-# ── 4. Clone / pull latest code ──
 echo "[4/10] Fetching latest code..."
 if [ -d "$APP_DIR/.git" ]; then
   cd "$APP_DIR"
   git fetch --all -q
   git reset --hard "origin/${BRANCH}" -q
+  log "Updated to $(git log --oneline -1)"
 else
   rm -rf "$APP_DIR"
   git clone -b "$BRANCH" "$REPO" "$APP_DIR"
   cd "$APP_DIR"
+  log "Cloned branch ${BRANCH}"
 fi
 
-# ── 5. Generate production .env (only on first deploy) ──
+echo "[5/10] Generating production secrets..."
 if [ ! -f .env ]; then
-  echo "[5/10] Generating production secrets..."
   DB_PASSWORD="$(openssl rand -hex 24)"
   JWT_SECRET="$(openssl rand -hex 32)"
   SESSION_SECRET="$(openssl rand -hex 32)"
   ENCRYPTION_KEY="$(openssl rand -hex 32)"
+  SA_PASSWORD="${INITIAL_SUPER_ADMIN_PASSWORD:-$(openssl rand -base64 18 | tr -d '/+=' | head -c 16)Aa1!}"
 
   cat > .env <<EOF
 NODE_ENV=production
@@ -63,68 +87,71 @@ JWT_SECRET=${JWT_SECRET}
 SESSION_SECRET=${SESSION_SECRET}
 ENCRYPTION_MASTER_KEY=${ENCRYPTION_KEY}
 
-INITIAL_SUPER_ADMIN_EMAIL=aqeelalam2010@gmail.com
-INITIAL_SUPER_ADMIN_PASSWORD=Aqeel@123\$
+INITIAL_SUPER_ADMIN_EMAIL=${EMAIL}
+INITIAL_SUPER_ADMIN_PASSWORD=${SA_PASSWORD}
 
-# Comma-separated IPs allowed for Super Admin login
-# Add your static IP here, e.g.: SUPER_ADMIN_ALLOWED_IPS=203.0.113.50,198.51.100.25
 SUPER_ADMIN_ALLOWED_IPS=
-
 ADMIN_RESET=false
 
-# Optional: set your OpenAI key for AI features
-# OPENAI_API_KEY=sk-...
+NODE_HEAP_SIZE=2560
+
+# OPENAI_API_KEY=sk-proj-...
+# SMTP_HOST=
+# SMTP_PORT=587
+# SMTP_USER=
+# SMTP_PASS=
+# SMTP_FROM=
 EOF
 
   chmod 600 .env
 
   echo ""
-  echo "============================================"
-  echo "  SAVE THESE SECRETS (shown only once)"
-  echo "============================================"
-  echo "  DB_PASSWORD:     ${DB_PASSWORD}"
-  echo "  JWT_SECRET:      ${JWT_SECRET}"
-  echo "  SESSION_SECRET:  ${SESSION_SECRET}"
-  echo "  ENCRYPTION_KEY:  ${ENCRYPTION_KEY}"
-  echo "  SuperAdmin:      aqeelalam2010@gmail.com"
-  echo "  SuperAdmin Pass: Aqeel@123\$"
-  echo "============================================"
+  echo "  ┌─────────────────────────────────────────┐"
+  echo "  │  SAVE THESE SECRETS (shown only once)    │"
+  echo "  ├─────────────────────────────────────────┤"
+  echo "  │  DB_PASSWORD:     ${DB_PASSWORD}"
+  echo "  │  JWT_SECRET:      ${JWT_SECRET:0:16}..."
+  echo "  │  SESSION_SECRET:  ${SESSION_SECRET:0:16}..."
+  echo "  │  ENCRYPTION_KEY:  ${ENCRYPTION_KEY:0:16}..."
+  echo "  │  SuperAdmin:      ${EMAIL}"
+  echo "  │  SuperAdmin Pass: (see .env file)"
+  echo "  └─────────────────────────────────────────┘"
   echo ""
   echo "  Change the SuperAdmin password after first login!"
   echo "  Set SUPER_ADMIN_ALLOWED_IPS in .env to your IP!"
   echo ""
+  log "Secrets generated"
 else
-  echo "[5/10] .env already exists -- keeping existing secrets."
+  log ".env already exists — keeping existing secrets"
 fi
 
-# ── 6. Build & start containers ──
-echo "[6/10] Building and starting containers (this may take 3-5 minutes)..."
+echo "[6/10] Building and starting containers..."
 docker compose down --remove-orphans 2>/dev/null || true
 docker compose up -d --build --force-recreate
 
-echo "    Waiting for database to be healthy..."
-for i in $(seq 1 30); do
+echo "  Waiting for database..."
+for i in $(seq 1 60); do
   if docker compose exec -T db pg_isready -U auditwise -d auditwise &>/dev/null; then
-    echo "    Database ready."
+    log "Database healthy"
     break
   fi
-  [ "$i" -eq 30 ] && { echo "ERROR: Database did not become healthy in 30s"; exit 1; }
+  [ "$i" -eq 60 ] && fail "Database did not become healthy in 60s"
   sleep 1
 done
 
-echo "    Waiting for app to start..."
-for i in $(seq 1 180); do
+echo "  Waiting for app (up to 4 min)..."
+for i in $(seq 1 240); do
   if curl -sf http://127.0.0.1:5000/health &>/dev/null; then
-    echo "    App is running on port 5000."
+    log "App healthy after ${i}s"
     break
   fi
-  [ "$i" -eq 180 ] && { echo "ERROR: App did not start within 180s. Check: docker compose logs app"; exit 1; }
+  [ "$i" -eq 240 ] && fail "App did not start within 240s. Check: docker compose logs app"
   sleep 1
 done
 
-# ── 7. Nginx reverse proxy ──
 echo "[7/10] Configuring Nginx..."
 rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
+mkdir -p /var/www/certbot 2>/dev/null || true
 
 cp deploy/nginx/auditwise.conf /etc/nginx/sites-available/auditwise
 
@@ -137,66 +164,85 @@ if [ -n "$SA_IPS" ]; then
   IFS=',' read -ra IP_ARRAY <<< "$SA_IPS"
   for ip in "${IP_ARRAY[@]}"; do
     ip=$(echo "$ip" | xargs)
-    if [ -n "$ip" ]; then
-      GEO_ENTRIES="${GEO_ENTRIES}    ${ip}/32    1;\n"
-    fi
+    [ -n "$ip" ] && GEO_ENTRIES="${GEO_ENTRIES}    ${ip}/32    1;\n"
   done
-  if [ -n "$GEO_ENTRIES" ]; then
-    sed -i "/# Example: 203.0.113.50\/32 1;/a\\${GEO_ENTRIES}" /etc/nginx/sites-available/auditwise
-    echo "    Super Admin IP allowlist configured in NGINX."
-  fi
+  [ -n "$GEO_ENTRIES" ] && sed -i "/# Example: 203.0.113.50\/32 1;/a\\${GEO_ENTRIES}" /etc/nginx/sites-available/auditwise
 fi
 
 ln -sf /etc/nginx/sites-available/auditwise /etc/nginx/sites-enabled/auditwise
-nginx -t
-systemctl reload nginx
+nginx -t && systemctl reload nginx
+log "NGINX configured"
 
-# ── 8. SSL certificate ──
 echo "[8/10] Setting up SSL certificate..."
-certbot --nginx \
-  -d "${DOMAIN}" -d "www.${DOMAIN}" \
-  --non-interactive --agree-tos -m "${EMAIL}" \
-  --redirect 2>&1 || echo "    SSL setup failed -- site will work on HTTP. Run certbot manually later."
-systemctl reload nginx
+if [ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
+  log "SSL certificate already exists"
+  cp deploy/nginx/auditwise-ssl.conf /etc/nginx/sites-available/auditwise
+  if [ -n "$SA_IPS" ]; then
+    GEO_ENTRIES=""
+    IFS=',' read -ra IP_ARRAY <<< "$SA_IPS"
+    for ip in "${IP_ARRAY[@]}"; do
+      ip=$(echo "$ip" | xargs)
+      [ -n "$ip" ] && GEO_ENTRIES="${GEO_ENTRIES}    ${ip}/32    1;\n"
+    done
+    [ -n "$GEO_ENTRIES" ] && sed -i "/# Example: 203.0.113.50\/32 1;/a\\${GEO_ENTRIES}" /etc/nginx/sites-available/auditwise
+  fi
+  nginx -t 2>&1 && systemctl reload nginx
+  log "SSL config active"
+else
+  certbot --nginx \
+    -d "${DOMAIN}" -d "www.${DOMAIN}" \
+    --non-interactive --agree-tos -m "${EMAIL}" \
+    --redirect 2>&1 || warn "SSL setup failed — site works on HTTP. Run certbot manually later."
+  systemctl reload nginx
+fi
 
-# ── 9. Daily backup cron ──
-echo "[9/10] Setting up daily database backups..."
-mkdir -p "$BACKUP_DIR"
+echo "[9/10] Setting up backups & log rotation..."
+mkdir -p "$BACKUP_DIR" "${APP_DIR}/logs"
 chmod +x "${APP_DIR}/deploy/backup.sh" 2>/dev/null || true
 
 CRON_JOB="0 2 * * * BACKUP_DIR=${BACKUP_DIR} DB_CONTAINER=auditwise-db ${APP_DIR}/deploy/backup.sh >> ${APP_DIR}/logs/backup.log 2>&1"
-mkdir -p "${APP_DIR}/logs"
-
 (crontab -l 2>/dev/null | grep -v "deploy/backup.sh" ; echo "$CRON_JOB") | crontab -
-echo "    Daily backup scheduled at 02:00 UTC."
+log "Daily backup at 02:00 UTC"
 
-# ── 10. Verify ──
+cat > /etc/logrotate.d/auditwise <<LOGROTATE
+${APP_DIR}/logs/*.log {
+    daily
+    missingok
+    rotate 14
+    compress
+    delaycompress
+    notifempty
+    copytruncate
+}
+LOGROTATE
+log "Log rotation configured"
+
 echo "[10/10] Verifying deployment..."
 echo ""
 
-HTTP_CODE=$(curl -so /dev/null -w '%{http_code}' "http://127.0.0.1:5000/health" 2>/dev/null || echo "000")
-if [ "$HTTP_CODE" = "200" ]; then
-  echo "============================================"
+HEALTH=$(curl -sf http://127.0.0.1:5000/health 2>/dev/null || echo '{}')
+HOME_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/ 2>/dev/null || echo "000")
+
+if echo "$HEALTH" | grep -q '"status":"ok"' && [ "$HOME_CODE" = "200" ]; then
+  echo "══════════════════════════════════════════"
   echo "  DEPLOYMENT SUCCESSFUL"
   echo ""
   echo "  URL:     https://${DOMAIN}/"
-  echo "  Port:    5000 (internal)"
-  echo "  Docker:  auditwise-app + auditwise-db"
-  echo "  Backups: Daily at 02:00 UTC -> ${BACKUP_DIR}/"
-  echo "============================================"
+  echo "  Login:   $(grep INITIAL_SUPER_ADMIN_EMAIL .env 2>/dev/null | cut -d= -f2 || echo "$EMAIL")"
+  echo "  Pass:    (see .env INITIAL_SUPER_ADMIN_PASSWORD)"
+  echo ""
+  echo "  Containers:"
+  docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || docker compose ps
+  echo "══════════════════════════════════════════"
 else
-  echo "  App returned HTTP ${HTTP_CODE}. Check logs:"
-  echo "   docker compose -f ${APP_DIR}/docker-compose.yml logs --tail 50 app"
+  warn "App returned HTTP ${HOME_CODE}. Check: docker compose logs --tail 50 app"
 fi
 
 echo ""
-echo "Useful commands:"
-echo "  cd ${APP_DIR}"
-echo "  docker compose ps              # container status"
-echo "  docker compose logs -f app     # app logs (live)"
-echo "  docker compose logs -f db      # database logs"
-echo "  docker compose restart app     # restart app"
-echo "  ./deploy/backup.sh             # manual backup"
+echo "  Commands:"
+echo "    cd ${APP_DIR}"
+echo "    docker compose logs -f app     # live logs"
+echo "    docker compose ps              # container status"
+echo "    bash deploy/vps-update.sh      # update from GitHub"
+echo "    bash deploy/backup.sh          # manual backup"
 echo ""
-echo "To update (after pushing to GitHub):"
-echo "  cd ${APP_DIR} && bash deploy/vps-update.sh"

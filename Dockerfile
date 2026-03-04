@@ -1,5 +1,5 @@
 FROM node:20-slim AS base
-RUN apt-get update && apt-get install -y openssl ca-certificates libvips-dev && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 FROM base AS deps
@@ -18,13 +18,24 @@ COPY . .
 RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
 RUN ls -la dist/index.cjs dist/public/index.html
 
+FROM base AS proddeps
+COPY package.json package-lock.json* ./
+RUN if [ -f package-lock.json ]; then \
+      npm ci --omit=dev --maxsockets 5; \
+    else \
+      npm install --omit=dev --maxsockets 5; \
+    fi
+COPY prisma ./prisma/
+RUN NODE_OPTIONS="--max-old-space-size=2048" npx prisma generate
+
 FROM base AS production
 ENV NODE_ENV=production
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/prisma ./prisma
+COPY --from=proddeps /app/node_modules ./node_modules
+COPY --from=proddeps /app/prisma ./prisma
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json ./
+COPY public ./public/
 COPY docker-entrypoint.sh ./
 RUN mkdir -p uploads/logos uploads/notifications && \
     chmod +x docker-entrypoint.sh && \

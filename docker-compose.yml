@@ -17,6 +17,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    mem_limit: 3g
+    mem_reservation: 1g
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://localhost:5000/health').then(r=>{if(!r.ok)throw 1}).catch(()=>process.exit(1))\""]
       interval: 30s
@@ -38,9 +40,30 @@ services:
     environment:
       POSTGRES_DB: auditwise
       POSTGRES_USER: auditwise
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    mem_limit: 1g
+    mem_reservation: 256m
+    shm_size: 256m
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "effective_cache_size=512MB"
+      - "-c"
+      - "work_mem=8MB"
+      - "-c"
+      - "maintenance_work_mem=128MB"
+      - "-c"
+      - "max_connections=100"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "log_min_duration_statement=1000"
+      - "-c"
+      - "idle_in_transaction_session_timeout=60000"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U auditwise -d auditwise"]
       interval: 10s

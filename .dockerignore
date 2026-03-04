@@ -4,6 +4,7 @@ dist
 .gitignore
 .env
 .env.local
+.env.*
 *.log
 .replit
 replit.nix
@@ -18,6 +19,11 @@ attached_assets
 docs
 backups
 logs
+deploy
+aws
+scripts
 DEPLOYMENT.md
 README.md
 references
+*.md
+!package.json

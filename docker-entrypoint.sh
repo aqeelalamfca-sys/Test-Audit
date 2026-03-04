@@ -17,6 +17,11 @@ if [ -z "$DATABASE_URL" ]; then
   ERRORS=1
 fi
 
+if [ -z "$JWT_SECRET" ]; then
+  echo "  FATAL: JWT_SECRET is not set."
+  ERRORS=1
+fi
+
 if [ -n "$POSTGRES_PASSWORD" ] && [ -n "$DATABASE_URL" ]; then
   URL_PASS=$(echo "$DATABASE_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
   DECODED_PASS=$(node -e "console.log(decodeURIComponent('$URL_PASS'))" 2>/dev/null || echo "$URL_PASS")

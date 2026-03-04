@@ -31,7 +31,7 @@ fi
 
 echo "── Step 1/10: System dependencies ──"
 apt-get update -y -qq
-apt-get install -y -qq ca-certificates curl git nginx ufw certbot python3-certbot-nginx > /dev/null 2>&1
+apt-get install -y -qq ca-certificates curl git nginx ufw certbot python3-certbot-nginx logrotate > /dev/null 2>&1
 log "System packages installed"
 
 echo "── Step 2/10: Docker Engine ──"
@@ -59,6 +59,9 @@ if [ ! -f /swapfile ]; then
 else
   log "Swap already exists"
 fi
+
+sysctl -w vm.swappiness=10 > /dev/null 2>&1
+grep -q 'vm.swappiness' /etc/sysctl.conf || echo 'vm.swappiness=10' >> /etc/sysctl.conf
 
 ufw allow OpenSSH > /dev/null 2>&1 || true
 ufw allow 80/tcp  > /dev/null 2>&1 || true
@@ -107,13 +110,14 @@ INITIAL_SUPER_ADMIN_PASSWORD=${SA_PASSWORD}
 SUPER_ADMIN_ALLOWED_IPS=
 ADMIN_RESET=false
 
+NODE_HEAP_SIZE=2560
+
 # OPENAI_API_KEY=sk-proj-...
 # SMTP_HOST=
 # SMTP_PORT=587
 # SMTP_USER=
 # SMTP_PASS=
 # SMTP_FROM=
-# NODE_HEAP_SIZE=2560
 EOF
 
   chmod 600 .env
@@ -126,7 +130,7 @@ EOF
   echo "  │  SESSION_SECRET:  ${SESSION_SECRET:0:16}..."
   echo "  │  ENCRYPTION_KEY:  ${ENCRYPTION_KEY:0:16}..."
   echo "  │  SuperAdmin:      ${EMAIL}"
-  echo "  │  SuperAdmin Pass: ${SA_PASSWORD}"
+  echo "  │  SuperAdmin Pass: (see .env file)"
   echo "  └─────────────────────────────────────────┘"
   echo ""
   log "Production .env generated"
@@ -213,7 +217,7 @@ fi
 
 echo "── Step 8/10: NGINX reverse proxy ──"
 rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
-mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled 2>/dev/null || true
+mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled /var/www/certbot 2>/dev/null || true
 
 if [ -d /etc/nginx/sites-available ]; then
   cp deploy/nginx/auditwise.conf /etc/nginx/sites-available/auditwise
@@ -271,13 +275,26 @@ else
   fi
 fi
 
-echo "── Step 10/10: Backups & Final verification ──"
+echo "── Step 10/10: Backups, log rotation & verification ──"
 mkdir -p "${APP_DIR}/backups" "${APP_DIR}/logs"
 chmod +x deploy/backup.sh 2>/dev/null || true
 
 CRON_LINE="0 2 * * * BACKUP_DIR=${APP_DIR}/backups DB_CONTAINER=auditwise-db ${APP_DIR}/deploy/backup.sh >> ${APP_DIR}/logs/backup.log 2>&1"
 (crontab -l 2>/dev/null | grep -v "deploy/backup.sh"; echo "$CRON_LINE") | crontab -
 log "Daily backup cron at 02:00 UTC"
+
+cat > /etc/logrotate.d/auditwise <<LOGROTATE
+${APP_DIR}/logs/*.log {
+    daily
+    missingok
+    rotate 14
+    compress
+    delaycompress
+    notifempty
+    copytruncate
+}
+LOGROTATE
+log "Log rotation configured (14 days)"
 
 HEALTH_RESP=$(curl -sf http://127.0.0.1:5000/health 2>/dev/null || echo '{}')
 HEALTH_OK=$(echo "$HEALTH_RESP" | grep -c '"status":"ok"' || true)

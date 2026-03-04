@@ -41,7 +41,8 @@ if [ "$PREV_COMMIT" = "$NEW_COMMIT" ]; then
 fi
 
 echo "[3/6] Rebuilding containers..."
-docker compose up -d --build --force-recreate
+docker compose build --no-cache 2>&1
+docker compose up -d --force-recreate
 log "Containers started"
 
 echo "[4/6] Waiting for app to become healthy..."
@@ -62,7 +63,8 @@ if [ "$APP_HEALTHY" = "false" ]; then
   echo ""
   docker compose down 2>/dev/null || true
   git reset --hard "$PREV_COMMIT" -q
-  docker compose up -d --build --force-recreate
+  docker compose build --no-cache 2>&1
+  docker compose up -d --force-recreate
 
   for i in $(seq 1 180); do
     ROLLBACK_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/health 2>/dev/null || echo "000")
@@ -75,7 +77,47 @@ if [ "$APP_HEALTHY" = "false" ]; then
   fail "Deployment failed — rolled back to ${PREV_COMMIT:0:8}"
 fi
 
-echo "[5/6] Verifying endpoints..."
+echo "[5/6] Updating NGINX config..."
+SA_IPS=""
+if [ -f .env ]; then
+  SA_IPS=$(grep -oP 'SUPER_ADMIN_ALLOWED_IPS=\K.*' .env 2>/dev/null || true)
+fi
+
+NGINX_CONF=""
+if [ -f /etc/nginx/sites-available/auditwise ]; then
+  NGINX_CONF="/etc/nginx/sites-available/auditwise"
+elif [ -f /etc/nginx/conf.d/auditwise.conf ]; then
+  NGINX_CONF="/etc/nginx/conf.d/auditwise.conf"
+fi
+
+if [ -n "$NGINX_CONF" ]; then
+  if [ -f "/etc/letsencrypt/live/auditwise.tech/fullchain.pem" ] && [ -f deploy/nginx/auditwise-ssl.conf ]; then
+    cp deploy/nginx/auditwise-ssl.conf "$NGINX_CONF"
+  elif [ -f deploy/nginx/auditwise.conf ]; then
+    cp deploy/nginx/auditwise.conf "$NGINX_CONF"
+  fi
+
+  if [ -n "$SA_IPS" ]; then
+    GEO_ENTRIES=""
+    IFS=',' read -ra IP_ARRAY <<< "$SA_IPS"
+    for ip in "${IP_ARRAY[@]}"; do
+      ip=$(echo "$ip" | xargs)
+      [ -n "$ip" ] && GEO_ENTRIES="${GEO_ENTRIES}    ${ip}/32    1;\n"
+    done
+    [ -n "$GEO_ENTRIES" ] && sed -i "/# Example: 203.0.113.50\/32 1;/a\\${GEO_ENTRIES}" "$NGINX_CONF"
+  fi
+
+  if nginx -t 2>&1; then
+    systemctl reload nginx
+    log "NGINX updated and reloaded"
+  else
+    warn "NGINX config test failed — keeping previous config"
+  fi
+else
+  warn "No NGINX config found — skipping"
+fi
+
+echo "[6/6] Verifying endpoints..."
 HEALTH=$(curl -sf http://127.0.0.1:5000/health 2>/dev/null || echo '{"status":"error"}')
 HOME_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/ 2>/dev/null || echo "000")
 HOME_HTML=$(curl -sf http://127.0.0.1:5000/ 2>/dev/null | grep -c '<html' || true)
@@ -85,7 +127,6 @@ echo "  /health  -> $(echo "$HEALTH" | head -c 80)"
 echo "  /        -> HTTP ${HOME_CODE} (HTML: ${HOME_HTML})"
 echo ""
 
-echo "[6/6] Cleanup..."
 docker image prune -f > /dev/null 2>&1 || true
 
 if echo "$HEALTH" | grep -q '"status":"ok"' && [ "$HOME_CODE" = "200" ] && [ "$HOME_HTML" -ge 1 ]; then
