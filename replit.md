@@ -54,6 +54,9 @@ Key architectural patterns and features include:
 - **ISA Compliance Engine**: Full ISA/ISQM-1 compliance monitoring system with a comprehensive frontend dashboard.
 - **Execution Phase Redesign (ISA 330/500/520/230)**: Redesigned to a sequential wizard workflow per FS Head with integrated AI assistance.
 - **Stepper + Accordion Hybrid UI Pattern**: App-wide architectural pattern for ISA-aligned workflow navigation.
+- **Compliance Export API**: REST endpoints for ISA coverage matrix, ISQM register, RBAC matrix, security checklist, and QCR readiness data (MANAGER+ role-gated).
+- **Regulatory Compliance Checklists**: Backend persistence for Companies Act 2017, FBR, and SECP checklists with engagement-scoped CRUD and export.
+- **Compliance Simulation Engine**: Read-only sandbox simulation covering ISA coverage gaps, engagement file review, ISQM stress test, security checks, and AI governance validation. Results dashboard at `/workspace/:engagementId/compliance-simulation`.
 
 ### AI Audit Utilities Module
 - **AI Service Integration**: Uses Replit AI Integrations (OpenAI-compatible) with multi-provider failover.

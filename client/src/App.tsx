@@ -152,6 +152,9 @@ const SECPCompliance = lazy(() => retryImport(() => import("@/pages/secp-complia
 const SECPComplianceLazy = withLazySuspense(SECPCompliance);
 const GuardedStandardsMatrix = createGuardedComponent(StandardsMatrix, "StandardsMatrix", true);
 
+const ComplianceSimulation = lazy(() => retryImport(() => import("@/pages/compliance-simulation")));
+const GuardedComplianceSimulation = createGuardedComponent(ComplianceSimulation, "ComplianceSimulation", true);
+
 function WorkspaceRedirect() {
   return <Redirect to="/engagements" />;
 }
@@ -340,6 +343,7 @@ function Router() {
       <Route path="/workspace/:engagementId/observations" component={GuardedObservations} />
       <Route path="/workspace/:engagementId/post-upload-workflow" component={GuardedPostUploadWorkflow} />
       <Route path="/workspace/:engagementId/standards-matrix" component={GuardedStandardsMatrix} />
+      <Route path="/workspace/:engagementId/compliance-simulation" component={GuardedComplianceSimulation} />
       
       {/* Legacy routes - redirect to workspace with access guard */}
       <Route path="/engagement/:id/information-requisition" component={createLegacyRedirect("information-requisition", "requisition")} />
