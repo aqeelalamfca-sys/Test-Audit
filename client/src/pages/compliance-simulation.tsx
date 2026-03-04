@@ -21,10 +21,11 @@ interface SimulationFinding {
 
 interface SimulationSection {
   name: string;
-  status: "PASS" | "FAIL" | "WARNING" | "SKIPPED";
+  status: "PASS" | "FAIL" | "WARNING" | "SKIPPED" | "ERROR";
   findings: SimulationFinding[];
   score: number;
   maxScore: number;
+  error?: string;
 }
 
 interface SimulationResult {
@@ -58,6 +59,8 @@ function getStatusIcon(status: string) {
       return <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />;
     case "SKIPPED":
       return <Info className="h-5 w-5 text-muted-foreground" />;
+    case "ERROR":
+      return <XCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />;
     default:
       return null;
   }
@@ -213,7 +216,11 @@ export default function ComplianceSimulation() {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-2">
-                  {section.findings.length === 0 ? (
+                  {section.status === "ERROR" ? (
+                    <p className="text-sm text-orange-600 dark:text-orange-400 py-2" data-testid={`text-error-${i}`}>
+                      {section.error || "A database error occurred during this check. Results may be incomplete."}
+                    </p>
+                  ) : section.findings.length === 0 ? (
                     <p className="text-sm text-muted-foreground py-2" data-testid={`text-no-findings-${i}`}>
                       All checks passed. No findings.
                     </p>
