@@ -35,6 +35,9 @@ interface Plan {
   allowCustomAi: boolean;
   platformAiIncluded: boolean;
   monthlyPrice: string;
+  monthlyDiscount: number;
+  yearlyDiscount: number;
+  specialOffer: string | null;
   supportLevel: string;
   featureFlags: any;
 }
@@ -45,16 +48,12 @@ const tierConfig: Record<string, {
   icon: any;
   tagline: string;
   popular?: boolean;
-  yearlyDiscount: number;
-  monthlyDiscount: number;
 }> = {
   STARTER: {
     color: "text-blue-600 dark:text-blue-400",
     borderColor: "border-blue-500",
     icon: Zap,
     tagline: "Perfect for solo practitioners",
-    yearlyDiscount: 0,
-    monthlyDiscount: 0,
   },
   GROWTH: {
     color: "text-emerald-600 dark:text-emerald-400",
@@ -62,24 +61,18 @@ const tierConfig: Record<string, {
     icon: Building2,
     tagline: "For growing audit teams",
     popular: true,
-    yearlyDiscount: 40,
-    monthlyDiscount: 20,
   },
   PROFESSIONAL: {
     color: "text-purple-600 dark:text-purple-400",
     borderColor: "border-purple-500",
     icon: Crown,
     tagline: "For established firms",
-    yearlyDiscount: 30,
-    monthlyDiscount: 15,
   },
   ENTERPRISE: {
     color: "text-amber-600 dark:text-amber-400",
     borderColor: "border-amber-500",
     icon: Shield,
     tagline: "Unlimited scale & support",
-    yearlyDiscount: 45,
-    monthlyDiscount: 22,
   },
 };
 
@@ -102,11 +95,12 @@ export default function PricingPage() {
 
   function getPrice(plan: Plan) {
     const base = Number(plan.monthlyPrice);
-    const config = tierConfig[plan.code] || tierConfig.STARTER;
-    const discount = billingCycle === "yearly" ? config.yearlyDiscount : config.monthlyDiscount;
+    const discount = billingCycle === "yearly" ? (plan.yearlyDiscount || 0) : (plan.monthlyDiscount || 0);
     const discounted = Math.round(base * (1 - discount / 100));
     return { base, discounted, discount };
   }
+
+  const maxYearlyDiscount = plans?.reduce((max, p) => Math.max(max, p.yearlyDiscount || 0), 0) || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950">
@@ -161,9 +155,11 @@ export default function PricingPage() {
               data-testid="toggle-yearly"
             >
               Yearly
-              <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
-                Save up to 45%
-              </Badge>
+              {maxYearlyDiscount > 0 && (
+                <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+                  Save up to {maxYearlyDiscount}%
+                </Badge>
+              )}
             </button>
           </div>
 
@@ -238,6 +234,11 @@ export default function PricingPage() {
                           <span> · Billed PKR {formatPrice(discounted * 12)}/year</span>
                         )}
                       </p>
+                      {plan.specialOffer && (
+                        <Badge variant="outline" className="mt-1.5 text-[10px] text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-700" data-testid={`badge-offer-${plan.code.toLowerCase()}`}>
+                          {plan.specialOffer}
+                        </Badge>
+                      )}
                     </div>
                   </CardHeader>
 

@@ -1,0 +1,217 @@
+(Review Notes shown mainly in User Dashboard, referenced to Client + Engagement)
+
+Build a complete “Review Notes / White Paper” module where review issues, questions, and To-Dos are created in the context of a Client + Engagement + Period + Workpaper/Section, but are displayed primarily at user level (Dashboard / Inbox), not only inside the engagement page. Do not break existing architecture: scan the codebase first (tenancy, RBAC, engagement membership, routing, UI patterns, notifications, storage). Only add what is missing, refactor only if required.
+
+1) Core Requirement (Main UX Change)
+
+Primary UI location = User Dashboard
+
+Add a main, top-level navigation item: “Review Notes” (or “White Paper Inbox”).
+
+Default view on open: My Assigned Notes (for current user) across all clients and engagements.
+
+Each note must clearly show context badges:
+
+Client Name
+
+Engagement Name/Code
+
+Period / FY
+
+Workpaper / Section reference
+
+From the dashboard list, user can open the note thread and act (reply, upload file, mark resolved, etc.) without going into engagement pages.
+
+Engagement-level view is optional/secondary:
+
+Inside engagement page, include a tab “Review Notes” that shows the same notes filtered to that engagement, but this is NOT the primary workflow.
+
+2) Functional Scope (Mandatory)
+
+Reviewer/Manager/Partner can create a Review Note with:
+
+Title, Description (rich text/markdown)
+
+Type: Issue / Question / To-Do
+
+Severity/Priority (Low/Med/High), Due date
+
+Reference fields: ClientId + EngagementId + PeriodId + WorkpaperId/SectionKey
+
+Assign to one or more users (assignees)
+
+Status: Open → In Progress → Resolved → Reopened → Closed
+
+Each Note has a threaded message trail (chat-like).
+
+Messages support attachments (PDF/Excel/Word/images).
+
+Actions:
+
+Assignee: Mark In Progress, Mark Resolved
+
+Reviewer/Partner: Approve Resolution, Reopen, Close
+
+Search/Filter on dashboard:
+
+Client, Engagement, Period, Status, Type, Severity, Assignee, Due date, Created by, Workpaper/Section
+
+Dashboards / views:
+
+My Assigned Notes (default)
+
+Notes I Created
+
+All Notes (role-based: reviewer/partner/engagement manager only)
+
+Maintain complete audit trail (who, when, what changed, optional IP/user agent).
+
+3) Database Design (Mandatory)
+
+Ensure tenant/firm isolation in every table and query.
+
+Tables (use your naming convention):
+
+review_notes
+(id, tenant_id/firm_id, client_id, engagement_id, period_id, workpaper_id OR section_key, title, body, type, severity, status, due_date, created_by, created_at, updated_at, is_locked, closed_at)
+
+review_note_assignees
+(note_id, user_id, assigned_by, assigned_at)
+
+review_note_messages
+(id, note_id, sender_id, message_body, created_at, edited_at, is_system_message)
+
+review_note_attachments
+(id, note_id, message_id nullable, file_name, mime_type, file_size, storage_path, checksum, uploaded_by, uploaded_at)
+
+review_note_audit_log
+(id, tenant_id/firm_id, note_id, actor_id, action_type, before_json, after_json, ip_address, user_agent, created_at)
+
+Indexes (minimum):
+
+tenant_id, client_id, engagement_id, period_id
+
+status, severity, type
+
+assignee user_id
+
+created_at, due_date
+
+4) Security, RBAC, Tenancy (Mandatory)
+
+Enforce tenant_id/firm_id filter at all endpoints.
+
+Super Admin can manage platform billing/tenants but cannot view firm data.
+
+Note visibility:
+
+Creator + assignees + engagement team members with reviewer rights may view.
+
+Enforce engagement membership checks (unless your system uses broader firm roles).
+
+Locking:
+
+On engagement finalization, lock notes to read-only.
+
+5) Storage & Retention (Mandatory)
+
+Store attachments securely per tenant/client/engagement:
+
+uploads/<tenantId>/<clientId>/<engagementId>/review-notes/<randomName>
+
+Secure download endpoint with permission check.
+
+Attachments retained until engagement finalization; after finalization = read-only but accessible.
+
+6) API Endpoints (Mandatory)
+
+Primary endpoints should support dashboard listing:
+
+POST /api/review-notes (create note; must include client_id + engagement_id + period_id + reference)
+
+GET /api/review-notes/my (assigned to me; filters)
+
+GET /api/review-notes/created-by-me
+
+GET /api/review-notes (role-based; supports client/engagement/period filters)
+
+GET /api/review-notes/:id
+
+PATCH /api/review-notes/:id (blocked if locked)
+
+POST /api/review-notes/:id/messages
+
+POST /api/review-notes/:id/attachments
+
+POST /api/review-notes/:id/status (rule-based transitions)
+
+GET /api/review-notes/:id/audit-log
+
+Log all actions to audit log.
+
+7) Frontend UX (Mandatory)
+A) Main module (Primary)
+
+Create a top-level page: /review-notes
+
+Default tab: My Assigned
+
+List rows must show (at minimum):
+
+Client, Engagement, Period, Workpaper/Section
+
+Note title + type + severity
+
+Status, due date, last activity, unread indicator (if implemented)
+
+Right panel: note details + thread + attachments + actions.
+
+B) Engagement module (Secondary)
+
+Inside engagement page: add “Review Notes” tab that filters notes by that engagement, but treat it as a convenience view only.
+
+8) Notifications (Mandatory)
+
+Add in-app notifications/badges:
+
+Assigned note
+
+New message on note I’m involved in
+
+Status change
+
+9) Finalization Lock (Mandatory)
+
+When engagement status becomes Finalized:
+
+is_locked = true for notes under that engagement
+
+Disable edits/messages/attachments/status changes (read-only allowed)
+
+Log “ENGAGEMENT_FINALIZED_LOCK” in audit log
+
+10) Quality Gates (Mandatory)
+
+DB migrations included
+
+Basic permission + tenant isolation tests
+
+Seed/demo data
+
+README: how to use dashboard module, endpoints, storage config
+
+11) Output Required
+
+Provide:
+
+DB migrations/DDL
+
+Backend services/controllers + RBAC/tenant guards
+
+Frontend components/pages for dashboard-first workflow
+
+Minimal tests
+
+Checklist of additions and file locations
+
+Implement now.

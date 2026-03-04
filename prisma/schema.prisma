@@ -247,6 +247,9 @@ model Plan {
   allowCustomAi         Boolean  @default(false)
   platformAiIncluded    Boolean  @default(true)
   monthlyPrice          Decimal  @default(0)
+  monthlyDiscount       Int      @default(0)
+  yearlyDiscount        Int      @default(0)
+  specialOffer          String?
   userOveragePkr        Decimal  @default(0)
   officeOveragePkr      Decimal  @default(0)
   engagementPackSize    Int      @default(10)

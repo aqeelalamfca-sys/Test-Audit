@@ -75,6 +75,9 @@ interface Plan {
   code: string;
   name: string;
   monthlyPrice: string;
+  monthlyDiscount: number;
+  yearlyDiscount: number;
+  specialOffer: string | null;
   maxUsers: number;
   maxEngagements: number;
 }
@@ -115,17 +118,9 @@ export default function SignupPage() {
   const preselectedPlan = params.get("plan") || "";
   const billingCycle = (params.get("billing") || "monthly") as "monthly" | "yearly";
 
-  const PLAN_DISCOUNTS: Record<string, { yearly: number; monthly: number }> = {
-    STARTER:      { yearly: 0,  monthly: 0  },
-    GROWTH:       { yearly: 40, monthly: 20 },
-    PROFESSIONAL: { yearly: 30, monthly: 15 },
-    ENTERPRISE:   { yearly: 45, monthly: 22 },
-  };
-
   function getPlanDisplayPrice(plan: Plan) {
     const base = Number(plan.monthlyPrice);
-    const discounts = PLAN_DISCOUNTS[plan.code] || { yearly: 0, monthly: 0 };
-    const discount = billingCycle === "yearly" ? discounts.yearly : discounts.monthly;
+    const discount = billingCycle === "yearly" ? (plan.yearlyDiscount || 0) : (plan.monthlyDiscount || 0);
     const discounted = Math.round(base * (1 - discount / 100));
     return { base, discounted, discount };
   }
@@ -269,6 +264,11 @@ export default function SignupPage() {
                       {billingCycle === "yearly" ? "Yearly" : "Monthly"} billing — {discount}% discount applied
                     </span>
                   )}
+                  {billingCycle === "yearly" && (
+                    <span className="text-[11px] text-muted-foreground">
+                      Billed PKR {discounted * 12 > 0 ? (discounted * 12).toLocaleString("en-PK") : 0}/year
+                    </span>
+                  )}
                 </div>
               );
             })()}
@@ -296,6 +296,7 @@ export default function SignupPage() {
                               <SelectItem key={plan.code} value={plan.code}>
                                 {plan.name} — PKR {discounted.toLocaleString("en-PK")}/mo
                                 {discount > 0 ? ` (${discount}% off)` : ""}
+                                {billingCycle === "yearly" ? ` · PKR ${(discounted * 12).toLocaleString("en-PK")}/yr` : ""}
                               </SelectItem>
                             );
                           })}

@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 const emptyForm = {
   code: "", name: "", maxUsers: 10, maxEngagements: 50, maxOffices: 1, storageGb: 5,
   allowCustomAi: false, platformAiIncluded: true, monthlyPrice: 0,
+  monthlyDiscount: 0, yearlyDiscount: 0, specialOffer: "",
   userOveragePkr: 0, officeOveragePkr: 0, engagementPackSize: 10, engagementPackPkr: 0,
   isPublic: true, isActive: true, supportLevel: "standard",
 };
@@ -74,6 +75,9 @@ export default function PlanManagement() {
       allowCustomAi: plan.allowCustomAi,
       platformAiIncluded: plan.platformAiIncluded ?? true,
       monthlyPrice: Number(plan.monthlyPrice),
+      monthlyDiscount: plan.monthlyDiscount || 0,
+      yearlyDiscount: plan.yearlyDiscount || 0,
+      specialOffer: plan.specialOffer || "",
       userOveragePkr: Number(plan.userOveragePkr || 0),
       officeOveragePkr: Number(plan.officeOveragePkr || 0),
       engagementPackSize: plan.engagementPackSize || 10,
@@ -175,6 +179,33 @@ export default function PlanManagement() {
               </div>
 
               <Separator />
+              <p className="text-sm font-medium text-muted-foreground">Discounts & Offers</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Monthly Discount (%)</Label>
+                  <Input data-testid="input-monthly-discount" type="number" min={0} max={100} value={form.monthlyDiscount} onChange={(e) => setForm({ ...form, monthlyDiscount: parseInt(e.target.value) || 0 })} />
+                  {form.monthlyDiscount > 0 && form.monthlyPrice > 0 && (
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Monthly: PKR {formatPkr(Math.round(form.monthlyPrice * (1 - form.monthlyDiscount / 100)))}/mo
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label>Annual Discount (%)</Label>
+                  <Input data-testid="input-yearly-discount" type="number" min={0} max={100} value={form.yearlyDiscount} onChange={(e) => setForm({ ...form, yearlyDiscount: parseInt(e.target.value) || 0 })} />
+                  {form.yearlyDiscount > 0 && form.monthlyPrice > 0 && (
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Annual: PKR {formatPkr(Math.round(form.monthlyPrice * (1 - form.yearlyDiscount / 100)))}/mo · PKR {formatPkr(Math.round(form.monthlyPrice * (1 - form.yearlyDiscount / 100)) * 12)}/yr
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label>Special Offer</Label>
+                <Input data-testid="input-special-offer" value={form.specialOffer} onChange={(e) => setForm({ ...form, specialOffer: e.target.value })} placeholder="e.g. Launch offer — 50% off first 3 months" />
+              </div>
+
+              <Separator />
               <p className="text-sm font-medium text-muted-foreground">Overage Pricing (PKR)</p>
               <div className="grid grid-cols-4 gap-3">
                 <div>
@@ -220,7 +251,10 @@ export default function PlanManagement() {
                 className="w-full"
                 data-testid="button-submit-plan"
                 disabled={savePlanMutation.isPending || !form.code || !form.name}
-                onClick={() => savePlanMutation.mutate(form)}
+                onClick={() => savePlanMutation.mutate({
+                  ...form,
+                  specialOffer: form.specialOffer || null,
+                })}
               >
                 {savePlanMutation.isPending ? "Saving..." : editingPlan ? "Update Plan" : "Create Plan"}
               </Button>
@@ -264,6 +298,25 @@ export default function PlanManagement() {
                       <span className="text-3xl font-bold">PKR {formatPkr(plan.monthlyPrice)}</span>
                       <span className="text-sm text-muted-foreground">/mo</span>
                       <p className="text-xs text-muted-foreground mt-0.5">≈ USD {formatUsd(plan.monthlyPrice)}/mo</p>
+                      {(plan.monthlyDiscount > 0 || plan.yearlyDiscount > 0) && (
+                        <div className="mt-1.5 space-y-0.5">
+                          {plan.monthlyDiscount > 0 && (
+                            <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
+                              Monthly: PKR {formatPkr(Math.round(Number(plan.monthlyPrice) * (1 - plan.monthlyDiscount / 100)))}/mo ({plan.monthlyDiscount}% off)
+                            </p>
+                          )}
+                          {plan.yearlyDiscount > 0 && (
+                            <p className="text-[11px] text-blue-600 dark:text-blue-400">
+                              Annual: PKR {formatPkr(Math.round(Number(plan.monthlyPrice) * (1 - plan.yearlyDiscount / 100)))}/mo ({plan.yearlyDiscount}% off) · PKR {formatPkr(Math.round(Number(plan.monthlyPrice) * (1 - plan.yearlyDiscount / 100)) * 12)}/yr
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      {plan.specialOffer && (
+                        <Badge variant="outline" className="mt-1.5 text-[10px] text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-700">
+                          {plan.specialOffer}
+                        </Badge>
+                      )}
                     </div>
 
                     <Separator />
