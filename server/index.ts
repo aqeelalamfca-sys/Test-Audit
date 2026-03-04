@@ -29,6 +29,21 @@ if (isProduction) {
   }
 }
 
+import { validateDatabaseEnv } from "./db";
+const envCheck = validateDatabaseEnv();
+if (!envCheck.valid) {
+  console.error("═══════════════════════════════════════════════");
+  console.error("  DATABASE CONFIGURATION ERROR");
+  console.error("═══════════════════════════════════════════════");
+  envCheck.errors.forEach(e => console.error(`  ✗ ${e}`));
+  console.error("");
+  console.error("  Fix your .env file or environment variables:");
+  console.error("    DATABASE_URL=postgresql://user:pass@host:5432/dbname");
+  console.error("═══════════════════════════════════════════════");
+  if (isProduction) process.exit(1);
+}
+envCheck.warnings.forEach(w => console.warn(`[ENV] ⚠ ${w}`));
+
 import express, { type Request, Response, NextFunction } from "express";
 import path from "path";
 import { registerRoutes } from "./routes";
@@ -71,7 +86,7 @@ import preplanningAiRoutes from "./routes/preplanning-ai";
 
 import compression from "compression";
 import cookieParser from "cookie-parser";
-import { prisma, withRetry } from "./db";
+import { prisma, withRetry, getDbStatus, setDbStatus, waitForDatabase } from "./db";
 
 const app = express();
 const httpServer = createServer(app);
@@ -255,6 +270,28 @@ app.get("/api/health/full", async (_req: Request, res: Response) => {
   });
 });
 
+app.get("/api/system/status", (_req: Request, res: Response) => {
+  const status = getDbStatus();
+  const isReady = status.state === "ready";
+  const safeMessages: Record<string, string> = {
+    initializing: "System starting up",
+    connecting: "Connecting to database",
+    ready: "System operational",
+    error: "Database connection issue",
+    reconnecting: "Attempting to reconnect",
+  };
+  res.status(isReady ? 200 : 503).json({
+    ready: isReady,
+    database: {
+      state: status.state,
+      message: safeMessages[status.state] || "System busy",
+      lastCheck: status.lastCheck,
+      retryCount: status.retryCount,
+    },
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // AUTH DEBUG logging middleware
 if (AUTH_DEBUG) {
   app.use((req: Request, res: Response, next: NextFunction) => {
@@ -375,12 +412,35 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
-    const message = status >= 500 && isProduction
-      ? "Internal Server Error"
-      : (err.message || "Internal Server Error");
+    const errMsg = String(err.message || "");
+    const errCode = String(err.code || err.errorCode || "");
+    const errMsgLower = errMsg.toLowerCase();
 
-    res.status(status).json({ message });
-    if (status >= 500) {
+    const prismaConnCodes = ["P1001", "P1002", "P1008", "P1017"];
+    const isDbError =
+      prismaConnCodes.some(c => errCode.includes(c) || errMsg.includes(c)) ||
+      errMsgLower.includes("can't reach database") ||
+      errMsgLower.includes("econnrefused") ||
+      errMsgLower.includes("password authentication failed") ||
+      errMsgLower.includes("connection refused") ||
+      errMsgLower.includes("connection reset") ||
+      errMsgLower.includes("connection closed");
+
+    let message: string;
+    if (isDbError) {
+      message = "Database connection error. The system is attempting to reconnect.";
+      console.error("[DB ERROR]", errMsgLower.substring(0, 200));
+    } else if (status >= 500 && isProduction) {
+      message = "Internal Server Error";
+    } else {
+      message = errMsg || "Internal Server Error";
+    }
+
+    res.status(isDbError ? 503 : status).json({
+      message,
+      ...(isDbError ? { code: "DB_UNAVAILABLE" } : {}),
+    });
+    if (status >= 500 && !isDbError) {
       console.error("[EXPRESS ERROR]", err);
     }
   });
@@ -400,6 +460,24 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   });
 
   (async () => {
+    const dbReady = await waitForDatabase(90);
+    if (!dbReady) {
+      console.error("[STARTUP] Database not available. Server is running in degraded mode.");
+      console.error("[STARTUP] Check DATABASE_URL and ensure PostgreSQL is running.");
+      console.error("[STARTUP] Seeding and RLS will be skipped. Only health/status endpoints are functional.");
+      setDbStatus({ state: "error", message: "Database unavailable" });
+
+      const reconnectInterval = setInterval(async () => {
+        try {
+          await prisma.$queryRaw`SELECT 1`;
+          setDbStatus({ state: "ready", message: "Database connection restored", retryCount: 0 });
+          console.log("[STARTUP] Database connection restored. Restart the application to complete initialization.");
+          clearInterval(reconnectInterval);
+        } catch {}
+      }, 15000);
+      return;
+    }
+
     const seedKeepalive = setInterval(async () => {
       try { await prisma.$queryRaw`SELECT 1`; } catch (_) {}
     }, 10000);
@@ -469,8 +547,17 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     const keepaliveInterval = setInterval(async () => {
       try {
         await withRetry(() => prisma.$queryRaw`SELECT 1`);
-      } catch (e) {
-        console.error("[KEEPALIVE] DB ping failed:", e);
+        const currentStatus = getDbStatus();
+        if (currentStatus.state !== "ready") {
+          setDbStatus({ state: "ready", message: "Database connection restored", retryCount: 0 });
+          console.log("[KEEPALIVE] Database connection restored.");
+        }
+      } catch (e: any) {
+        const currentStatus = getDbStatus();
+        if (currentStatus.state === "ready") {
+          setDbStatus({ state: "reconnecting", message: "Database connection lost — attempting reconnection" });
+          console.error("[KEEPALIVE] DB ping failed, entering reconnection mode:", e?.message?.substring(0, 100));
+        }
       }
     }, 30000);
 

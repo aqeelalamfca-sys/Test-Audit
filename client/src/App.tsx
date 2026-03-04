@@ -23,6 +23,7 @@ import { WorkspaceRibbon } from "@/components/workspace-ribbon";
 import { TrialBanner } from "@/components/trial-banner";
 
 import { ErrorBoundary } from "@/components/error-boundary";
+import { SystemStatusOverlay } from "@/components/system-status-overlay";
 import { EnforcementProvider } from "@/lib/enforcement-context";
 
 function retryImport<T>(importFn: () => Promise<T>, retries = 3): Promise<T> {
@@ -514,6 +515,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
+          <SystemStatusOverlay />
           {isPortalRoute ? (
             <PortalRouter />
           ) : isPublicRoute ? (
