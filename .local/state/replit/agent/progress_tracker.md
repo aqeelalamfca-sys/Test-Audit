@@ -100,68 +100,15 @@
 [x] 39. Full System Scan & Gap Analysis + Compliance Implementation:
     - SCAN: Complete 6-layer system scan (frontend 60+ routes, backend 60+ route groups, 180+ DB models, AI multi-provider, security 37 controls, compliance ISA/ISQM/SECP/FBR)
     - GAP ANALYSIS: Classified all components as ✅ Implemented / 🟡 Partial / 🟠 Inactive / ❌ Missing
-    - T001: Generated 8 compliance deliverable documents in docs/compliance/:
-      - ISA_Coverage_Matrix.md (33 ISA standards mapped, 70% full coverage)
-      - ISQM1_Control_Register.md (33 controls across 8 domains)
-      - RBAC_Matrix.md (10 roles × 5 permission categories)
-      - ERD.md (Mermaid entity relationship diagram)
-      - Engagement_Workflow_Flowchart.md (9-phase state diagram)
-      - Security_Checklist.md (37 security controls inventory)
-      - QCR_Readiness_Report.md (43 inspection items, 100% ready)
-      - Production_Validation_Summary.md (98% overall readiness)
-    - T002: Created server/routes/complianceExportRoutes.ts with 5 MANAGER+ role-gated API endpoints:
-      - GET /api/compliance-export/isa-coverage-matrix
-      - GET /api/compliance-export/isqm-register
-      - GET /api/compliance-export/rbac-matrix
-      - GET /api/compliance-export/security-checklist
-      - GET /api/compliance-export/qcr-readiness/:engagementId (live DB queries)
-    - T003: Created server/routes/regulatoryComplianceRoutes.ts for Companies Act/FBR/SECP checklist persistence:
-      - GET/POST /api/compliance/checklists/:engagementId (CRUD with Zod validation)
-      - GET /api/compliance/checklists/:engagementId/export (structured JSON export)
-      - ComplianceChecklist model already existed in schema
-    - T004: Created Compliance Simulation Engine:
-      - server/services/complianceSimulationService.ts (5 check modules: ISA gaps, file review, ISQM stress, security, AI governance)
-      - server/routes/simulationRoutes.ts (POST run + GET results, MANAGER+ gated)
-      - client/src/pages/compliance-simulation.tsx (dashboard with accordion sections, severity badges, ISA references)
-      - Route registered at /workspace/:engagementId/compliance-simulation
-    - Updated replit.md with new compliance modules
-    - All items marked [x] in progress tracker
-    - T005: Standards Matrix Enhancement:
-      - Added ISA Coverage Matrix tab consuming /api/compliance-export/isa-coverage-matrix
-      - Added ISQM Register tab consuming /api/compliance-export/isqm-register
-      - Coverage heatbar visualization (emerald/amber/red proportional bar)
-      - Stats cards for Full/Partial/Missing coverage counts
-      - ISQM controls grouped by domain with color-coded badges
-      - Falls back to local ISA_COVERAGE_DATA/ISQM_REGISTER_DATA if API unavailable
-[x] 40. Animated "Agents are helping" loading system:
-    - Created client/src/components/agents-loading.tsx with CSS-animated thinking people characters
-    - 3 diverse agent characters with bouncing, blinking, thinking arm animations
-    - Thought bubble dots with staggered bounce animations
-    - Rotating messages every 3s: "Agents are helping...", "Preparing your workspace...", etc.
-    - 1-second delay threshold (showDelay=1000) — only shows after 1s of loading
-    - AgentsLoading (full-page) replaces LoadingSpinner for all Suspense boundaries
-    - AgentsLoadingInline (compact) for inline data loading states
-    - Updated 9 pages: client-detail, evidence-vault, engagement-control, audit-health-dashboard, inspection-dashboard, engagement-edit, portal-dashboard, standards-matrix (LoadingState), plus all lazy-loaded page transitions via LoadingSpinner
-[x] 41. Firm Control Compliance Log:
-    - Enhanced FirmControlActivityLog schema with actorRole, controlDomain, status, description, userAgent fields
-    - Backend routes at /api/firm-control-compliance-log (paginated GET, /summary, /users, /:logId)
-    - Frontend at /firm-admin/control-compliance-log with Summary/Log/User tabs
-    - Filtering by role/domain/status/search, pagination, detail dialog
-    - logFirmControlActivity helper function exported for cross-route integration
-[x] 42. ISQM Route Compliance Logging Integration:
-    - Added logFirmControlActivity calls to isqmRoutes.ts for governance structure, affirmations, independence declarations, ethics breach endpoints
-    - Domain classification: Governance & Leadership, Ethical Requirements
-    - Status tracking: APPROVED, SUBMITTED
-[x] 43. Sidebar Navigation Update:
-    - Added Control Compliance Log entry in Administration section (MANAGER+ visibility)
-    - Uses ClipboardList icon, routes to /firm-admin/control-compliance-log
-[x] 44. Compliance Deliverable Documents (8 files in docs/compliance/):
-    - ISA_Coverage_Matrix.md — ISA 200-720 mapped to system components (23 full, 7 partial, 4 niche)
-    - ISQM1_Control_Register.md — 38 controls across 9 domains (100% active)
-    - RBAC_Matrix.md — 10-level role hierarchy with permissions matrix
-    - ERD.md — Mermaid ERD of core domain entities
-    - Engagement_Workflow_Flowchart.md — 9-phase state diagram with gate conditions
-    - Security_Checklist.md — 37 security controls (100% active)
-    - QCR_Readiness_Report.md — 43 inspection items (100% ready)
-    - Production_Validation_Summary.md — Full system validation (98% score)
+    - T001: Generated 8 compliance deliverable documents in docs/compliance/
+    - T002: Created server/routes/complianceExportRoutes.ts with 5 MANAGER+ role-gated API endpoints
+    - T003: Created server/routes/regulatoryComplianceRoutes.ts for Companies Act/FBR/SECP checklist persistence
+    - T004: Created Compliance Simulation Engine
+    - T005: Standards Matrix Enhancement
+[x] 40. Animated "Agents are helping" loading system
+[x] 41. Firm Control Compliance Log
+[x] 42. ISQM Route Compliance Logging Integration
+[x] 43. Sidebar Navigation Update
+[x] 44. Compliance Deliverable Documents (8 files in docs/compliance/)
 [x] 45. Updated replit.md with Compliance Log and Deliverable Documents entries
+[x] 46. Replit migration complete - Fixed tsx path issue in start.sh, pushed Prisma schema, app verified running on port 5000 with login page confirmed
