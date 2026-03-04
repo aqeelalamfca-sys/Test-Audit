@@ -67,9 +67,9 @@ export function GlobalSaveIndicator({ className, showDetails = true }: GlobalSav
       return dirtyCount > 1 ? `${dirtyCount} unsaved sections` : "Unsaved changes";
     }
     if (lastGlobalSave) {
-      return `All saved ${formatTime(lastGlobalSave)}`;
+      return `Saved changes ${formatTime(lastGlobalSave)}`;
     }
-    return "All saved";
+    return "Saved changes";
   };
 
   const getStatusColor = () => {
@@ -117,15 +117,24 @@ export function GlobalSaveIndicator({ className, showDetails = true }: GlobalSav
 
           {sectionList.length > 0 ? (
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Active sections:</p>
+              <p className="text-xs text-muted-foreground">
+                {hasAnyUnsaved ? "Active sections:" : "Last saved sections:"}
+              </p>
               <div className="max-h-48 overflow-y-auto space-y-1">
                 {sectionList.map((section) => (
                   <div
                     key={section.sectionKey}
                     className="flex items-center justify-between text-sm py-1 px-2 rounded hover:bg-muted/50"
                   >
-                    <span className="truncate">{formatSectionName(section.sectionKey)}</span>
-                    <div className="flex items-center gap-1">
+                    <div className="flex flex-col min-w-0">
+                      <span className="truncate">{formatSectionName(section.sectionKey)}</span>
+                      {!section.isDirty && section.lastSavedAt && (
+                        <span className="text-[10px] text-muted-foreground truncate">
+                          Saved {formatTime(section.lastSavedAt)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
                       {section.isSaving && (
                         <Loader2 className="h-3 w-3 animate-spin text-blue-500" />
                       )}
@@ -148,11 +157,20 @@ export function GlobalSaveIndicator({ className, showDetails = true }: GlobalSav
           )}
 
           {autoSaveState.lastSavedAt && (
-            <div className="pt-2 border-t">
+            <div className="pt-2 border-t space-y-1">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 <span>Progress saved {formatTime(autoSaveState.lastSavedAt)}</span>
               </div>
+              {(autoSaveState.lastSavedPhase || autoSaveState.lastSavedRoute) && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground pl-5">
+                  <span>
+                    {autoSaveState.lastSavedPhase && formatSectionName(autoSaveState.lastSavedPhase)}
+                    {autoSaveState.lastSavedRoute && autoSaveState.lastSavedPhase && " / "}
+                    {autoSaveState.lastSavedRoute && formatSectionName(autoSaveState.lastSavedRoute)}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>

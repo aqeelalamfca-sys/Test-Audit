@@ -53,6 +53,8 @@ interface Engagement {
 interface AutoSaveState {
   isSaving: boolean;
   lastSavedAt: Date | null;
+  lastSavedPhase: string | null;
+  lastSavedRoute: string | null;
 }
 
 interface SectionSaveState {
@@ -231,7 +233,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   
   const [autoSaveState, setAutoSaveState] = useState<AutoSaveState>({
     isSaving: false,
-    lastSavedAt: null
+    lastSavedAt: null,
+    lastSavedPhase: null,
+    lastSavedRoute: null,
   });
   
   const [sectionStates, setSectionStates] = useState<Map<string, SectionSaveState>>(new Map());
@@ -383,7 +387,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           }),
         });
         if (res.ok) {
-          setAutoSaveState({ isSaving: false, lastSavedAt: new Date() });
+          setAutoSaveState({ isSaving: false, lastSavedAt: new Date(), lastSavedPhase: currentPhase, lastSavedRoute: currentPhaseRoute });
         } else {
           setAutoSaveState(prev => ({ ...prev, isSaving: false }));
         }
