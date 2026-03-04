@@ -23,18 +23,16 @@ const updateUserSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-router.get("/", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const firmId = req.user!.role === "ADMIN" ? (req.query.firmId as string | undefined) : req.user!.firmId;
+    const firmId = req.user!.firmId;
     
-    if (!firmId && req.user!.role !== "ADMIN") {
+    if (!firmId) {
       return res.status(400).json({ error: "User not associated with a firm" });
     }
 
-    const where = firmId ? { firmId } : {};
-
     const users = await prisma.user.findMany({
-      where,
+      where: { firmId },
       select: {
         id: true,
         email: true,
@@ -65,7 +63,7 @@ router.get("/", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: Authe
   }
 });
 
-router.get("/:id", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/:id", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.params.id },
@@ -114,7 +112,7 @@ router.get("/:id", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: Au
       return res.status(404).json({ error: "User not found" });
     }
 
-    if (req.user!.role !== "ADMIN" && user.firmId !== req.user!.firmId) {
+    if (user.firmId !== req.user!.firmId) {
       return res.status(403).json({ error: "Access denied" });
     }
 
@@ -125,7 +123,7 @@ router.get("/:id", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: Au
   }
 });
 
-router.post("/", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const data = createUserSchema.parse(req.body);
 
@@ -146,28 +144,31 @@ router.post("/", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: Auth
       });
     }
 
-    const firmId = req.user!.role === "ADMIN" 
-      ? (req.body.firmId as string | undefined)
-      : req.user!.firmId;
+    const firmId = req.user!.firmId;
 
     if (!firmId) {
       return res.status(400).json({ error: "Firm ID is required" });
     }
 
-    if (req.user!.role !== "ADMIN") {
-      const roleHierarchy: Record<UserRole, number> = {
-        STAFF: 1,
-        SENIOR: 2,
-        TEAM_LEAD: 25,
-        MANAGER: 3,
-        MANAGING_PARTNER: 90,
-        PARTNER: 4,
-        EQCR: 5,
-        ADMIN: 100,
-      };
-      if (roleHierarchy[data.role as UserRole] >= roleHierarchy[req.user!.role]) {
-        return res.status(403).json({ error: "Cannot create user with equal or higher role than yourself" });
-      }
+    if (req.user!.role === "FIRM_ADMIN" && (data.role === "ADMIN" || data.role === "FIRM_ADMIN")) {
+      return res.status(403).json({ error: "Firm Admin cannot create Admin or Firm Admin users. Only Super Admin can assign these roles." });
+    }
+
+    const roleHierarchy: Record<string, number> = {
+      STAFF: 1,
+      SENIOR: 2,
+      TEAM_LEAD: 3,
+      MANAGER: 4,
+      MANAGING_PARTNER: 5,
+      PARTNER: 6,
+      EQCR: 7,
+      ADMIN: 8,
+      FIRM_ADMIN: 9,
+    };
+    const creatorLevel = roleHierarchy[req.user!.role] || 0;
+    const targetLevel = roleHierarchy[data.role as string] || 0;
+    if (targetLevel >= creatorLevel) {
+      return res.status(403).json({ error: "Cannot create user with equal or higher role than yourself" });
     }
 
     const passwordHash = await hashPassword(data.password);
@@ -215,7 +216,7 @@ router.post("/", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: Auth
   }
 });
 
-router.patch("/:id", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.patch("/:id", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const existing = await prisma.user.findUnique({
       where: { id: req.params.id },
@@ -225,24 +226,17 @@ router.patch("/:id", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: 
       return res.status(404).json({ error: "User not found" });
     }
 
-    if (req.user!.role !== "ADMIN" && existing.firmId !== req.user!.firmId) {
+    if (existing.firmId !== req.user!.firmId) {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    if (req.user!.role !== "ADMIN") {
-      const roleHierarchy: Record<UserRole, number> = {
-        STAFF: 1,
-        SENIOR: 2,
-        TEAM_LEAD: 25,
-        MANAGER: 3,
-        MANAGING_PARTNER: 90,
-        PARTNER: 4,
-        EQCR: 5,
-        ADMIN: 100,
-      };
-      if (roleHierarchy[existing.role] >= roleHierarchy[req.user!.role]) {
-        return res.status(403).json({ error: "Cannot modify user with equal or higher role" });
-      }
+    const roleHierarchy: Record<string, number> = {
+      STAFF: 1, SENIOR: 2, TEAM_LEAD: 3, MANAGER: 4, MANAGING_PARTNER: 5,
+      PARTNER: 6, EQCR: 7, ADMIN: 8, FIRM_ADMIN: 9,
+    };
+    const creatorLevel = roleHierarchy[req.user!.role] || 0;
+    if (roleHierarchy[existing.role] >= creatorLevel) {
+      return res.status(403).json({ error: "Cannot modify user with equal or higher role" });
     }
 
     const data = updateUserSchema.parse(req.body);
@@ -254,18 +248,12 @@ router.patch("/:id", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: 
       }
     }
 
-    if (data.role && req.user!.role !== "ADMIN") {
-      const roleHierarchy: Record<UserRole, number> = {
-        STAFF: 1,
-        SENIOR: 2,
-        TEAM_LEAD: 25,
-        MANAGER: 3,
-        MANAGING_PARTNER: 90,
-        PARTNER: 4,
-        EQCR: 5,
-        ADMIN: 100,
-      };
-      if (roleHierarchy[data.role as UserRole] >= roleHierarchy[req.user!.role]) {
+    if (data.role) {
+      if (req.user!.role === "FIRM_ADMIN" && (data.role === "ADMIN" || data.role === "FIRM_ADMIN")) {
+        return res.status(403).json({ error: "Firm Admin cannot assign Admin or Firm Admin roles" });
+      }
+      const targetLevel = roleHierarchy[data.role as string] || 0;
+      if (targetLevel >= creatorLevel) {
         return res.status(403).json({ error: "Cannot assign role equal or higher than your own" });
       }
     }
@@ -307,7 +295,7 @@ router.patch("/:id", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: 
   }
 });
 
-router.post("/:id/reset-password", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/:id/reset-password", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const existing = await prisma.user.findUnique({
       where: { id: req.params.id },
@@ -317,7 +305,7 @@ router.post("/:id/reset-password", requireAuth, requireRoles("ADMIN", "PARTNER")
       return res.status(404).json({ error: "User not found" });
     }
 
-    if (req.user!.role !== "ADMIN" && existing.firmId !== req.user!.firmId) {
+    if (existing.firmId !== req.user!.firmId) {
       return res.status(403).json({ error: "Access denied" });
     }
 
@@ -362,7 +350,7 @@ router.post("/:id/reset-password", requireAuth, requireRoles("ADMIN", "PARTNER")
   }
 });
 
-router.post("/:id/toggle-status", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/:id/toggle-status", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const existing = await prisma.user.findUnique({
       where: { id: req.params.id },
@@ -372,7 +360,7 @@ router.post("/:id/toggle-status", requireAuth, requireRoles("ADMIN", "PARTNER"),
       return res.status(404).json({ error: "User not found" });
     }
 
-    if (req.user!.role !== "ADMIN" && existing.firmId !== req.user!.firmId) {
+    if (existing.firmId !== req.user!.firmId) {
       return res.status(403).json({ error: "Access denied" });
     }
 
@@ -416,7 +404,7 @@ router.post("/:id/toggle-status", requireAuth, requireRoles("ADMIN", "PARTNER"),
   }
 });
 
-router.get("/:id/activity", requireAuth, requireRoles("ADMIN", "PARTNER", "MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/:id/activity", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER", "MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.params.id },
@@ -427,7 +415,7 @@ router.get("/:id/activity", requireAuth, requireRoles("ADMIN", "PARTNER", "MANAG
       return res.status(404).json({ error: "User not found" });
     }
 
-    if (req.user!.role !== "ADMIN" && user.firmId !== req.user!.firmId) {
+    if (user.firmId !== req.user!.firmId) {
       return res.status(403).json({ error: "Access denied" });
     }
 

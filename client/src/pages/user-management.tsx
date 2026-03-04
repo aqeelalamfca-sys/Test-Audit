@@ -34,8 +34,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Users, Plus, Search, Eye, Edit, Shield, Loader2, Check, X, AlertCircle, Info } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 
 interface User {
   id: string;
@@ -98,6 +99,14 @@ export default function UserManagement() {
   const [overrideReason, setOverrideReason] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
+
+  const availableRoles = useMemo(() => {
+    if (currentUser?.role === "FIRM_ADMIN") {
+      return ROLES.filter(r => r.value !== "ADMIN" && r.value !== "FIRM_ADMIN");
+    }
+    return ROLES;
+  }, [currentUser?.role]);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -332,7 +341,7 @@ export default function UserManagement() {
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ROLES.map((role) => (
+                    {availableRoles.map((role) => (
                       <SelectItem key={role.value} value={role.value}>
                         <div className="flex flex-col">
                           <span>{role.label}</span>

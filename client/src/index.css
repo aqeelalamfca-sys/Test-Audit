@@ -312,24 +312,24 @@
   --chart-1: 0 68% 68%;
 }
 
-/* Orange - Firm Admin */
+/* Dark Green - Firm Admin */
 :root.role-orange {
-  --primary: 25 90% 42%;
-  --primary-foreground: 25 100% 98%;
-  --ring: 25 85% 50%;
-  --sidebar-primary: 25 90% 42%;
-  --sidebar-primary-foreground: 25 100% 98%;
-  --sidebar-ring: 25 85% 50%;
-  --chart-1: 25 90% 45%;
+  --primary: 160 84% 24%;
+  --primary-foreground: 160 100% 98%;
+  --ring: 160 75% 32%;
+  --sidebar-primary: 160 84% 24%;
+  --sidebar-primary-foreground: 160 100% 98%;
+  --sidebar-ring: 160 75% 32%;
+  --chart-1: 160 84% 28%;
 }
 .dark.role-orange {
-  --primary: 25 85% 52%;
-  --primary-foreground: 25 100% 98%;
-  --ring: 25 80% 58%;
-  --sidebar-primary: 25 85% 52%;
-  --sidebar-primary-foreground: 25 100% 98%;
-  --sidebar-ring: 25 80% 58%;
-  --chart-1: 25 85% 65%;
+  --primary: 160 70% 40%;
+  --primary-foreground: 160 100% 98%;
+  --ring: 160 65% 48%;
+  --sidebar-primary: 160 70% 40%;
+  --sidebar-primary-foreground: 160 100% 98%;
+  --sidebar-ring: 160 65% 48%;
+  --chart-1: 160 70% 52%;
 }
 
 /* Purple - Partner / Approver / EQCR */

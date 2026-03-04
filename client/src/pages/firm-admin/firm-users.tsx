@@ -18,7 +18,7 @@ const ROLES = [
   { value: "MANAGER", label: "Manager / Reviewer" },
   { value: "PARTNER", label: "Partner / Approver" },
   { value: "MANAGING_PARTNER", label: "Managing Partner" },
-  { value: "ADMIN", label: "Admin" },
+  { value: "EQCR", label: "Engagement Quality Reviewer" },
 ];
 
 export default function FirmUsers() {

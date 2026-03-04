@@ -68,6 +68,10 @@ router.post("/users", requirePlatformOrFirmAdmin, async (req: AuthenticatedReque
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(403).json({ error: "No firm context" });
 
+    if (req.user!.role === "FIRM_ADMIN" && (data.role === "ADMIN" || data.role === "FIRM_ADMIN")) {
+      return res.status(403).json({ error: "Firm Admin cannot create Admin or Firm Admin users" });
+    }
+
     const { ip, userAgent } = extractRequestMeta(req);
 
     const existing = await prisma.user.findFirst({
@@ -140,6 +144,11 @@ router.patch("/users/:id", requirePlatformOrFirmAdmin, async (req: Authenticated
       role: z.enum(["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "MANAGING_PARTNER", "PARTNER", "EQCR", "ADMIN"]).optional(),
     });
     const data = updateSchema.parse(req.body);
+
+    if (req.user!.role === "FIRM_ADMIN" && data.role && (data.role === "ADMIN" || data.role === "FIRM_ADMIN")) {
+      return res.status(403).json({ error: "Firm Admin cannot assign Admin or Firm Admin roles" });
+    }
+
     const { ip, userAgent } = extractRequestMeta(req);
 
     const updated = await prisma.user.update({
