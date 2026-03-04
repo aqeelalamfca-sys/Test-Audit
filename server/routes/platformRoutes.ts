@@ -630,14 +630,24 @@ router.get("/audit-logs", async (req: AuthenticatedRequest, res: Response) => {
     const take = parseInt(limit as string);
 
     const where: any = {};
-    if (firmId) where.firmId = firmId;
+    if (firmId !== undefined && firmId !== null) {
+      if (firmId === "" || firmId === "null") {
+        where.firmId = null;
+      } else {
+        where.firmId = firmId;
+      }
+    }
     if (userId) where.userId = userId;
     if (action) where.action = { contains: action as string, mode: "insensitive" };
     if (entity) where.entity = entity;
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = new Date(startDate as string);
-      if (endDate) where.createdAt.lte = new Date(endDate as string);
+      if (endDate) {
+        const end = new Date(endDate as string);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
     }
 
     const [logs, total] = await Promise.all([
@@ -646,14 +656,77 @@ router.get("/audit-logs", async (req: AuthenticatedRequest, res: Response) => {
         skip,
         take,
         orderBy: { createdAt: "desc" },
+        include: {
+          firm: { select: { id: true, name: true } },
+        },
       }),
       prisma.platformAuditLog.count({ where }),
     ]);
 
-    res.json({ logs, total, page: parseInt(page as string), limit: take });
+    const userIds = [...new Set(logs.map((l: any) => l.userId).filter(Boolean))];
+    const users = userIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: userIds } },
+          select: { id: true, fullName: true, email: true, role: true },
+        })
+      : [];
+    const userMap = Object.fromEntries(users.map(u => [u.id, u]));
+
+    const enriched = logs.map((log: any) => ({
+      ...log,
+      userName: userMap[log.userId]?.fullName || null,
+      userEmail: userMap[log.userId]?.email || null,
+      userRole: userMap[log.userId]?.role || null,
+      firmName: log.firm?.name || null,
+    }));
+
+    res.json({ logs: enriched, total, page: parseInt(page as string), limit: take });
   } catch (error) {
     console.error("List audit logs error:", error);
     res.status(500).json({ error: "Failed to list audit logs" });
+  }
+});
+
+router.get("/audit-logs/firms-summary", async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const firms = await prisma.firm.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+    const firmCounts = await prisma.platformAuditLog.groupBy({
+      by: ["firmId"],
+      _count: { id: true },
+    });
+    const countMap = Object.fromEntries(firmCounts.map(c => [c.firmId || "__platform__", c._count.id]));
+    const result = [
+      { id: "__platform__", name: "Platform (No Firm)", count: countMap["__platform__"] || 0 },
+      ...firms.map(f => ({ id: f.id, name: f.name, count: countMap[f.id] || 0 })),
+    ].filter(f => f.count > 0);
+    res.json(result);
+  } catch (error) {
+    console.error("Audit log firms summary error:", error);
+    res.status(500).json({ error: "Failed to get firms summary" });
+  }
+});
+
+router.get("/audit-logs/users", async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userIds = await prisma.platformAuditLog.findMany({
+      select: { userId: true },
+      distinct: ["userId"],
+    });
+    const ids = userIds.map(u => u.userId).filter(Boolean);
+    const users = ids.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: ids } },
+          select: { id: true, fullName: true, email: true, role: true, firmId: true },
+          orderBy: { fullName: "asc" },
+        })
+      : [];
+    res.json(users);
+  } catch (error) {
+    console.error("Audit log users error:", error);
+    res.status(500).json({ error: "Failed to get users" });
   }
 });
 

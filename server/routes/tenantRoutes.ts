@@ -319,23 +319,66 @@ router.get("/audit-logs", async (req: AuthenticatedRequest, res: Response) => {
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(403).json({ error: "No firm context" });
 
-    const { action, entity, page = "1", limit = "50" } = req.query;
+    const { action, entity, userId, page = "1", limit = "50", startDate, endDate } = req.query;
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
     const take = parseInt(limit as string);
 
     const where: any = { firmId };
     if (action) where.action = { contains: action as string, mode: "insensitive" };
     if (entity) where.entity = entity;
+    if (userId) where.userId = userId;
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate as string);
+      if (endDate) {
+        const end = new Date(endDate as string);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
 
     const [logs, total] = await Promise.all([
       prisma.platformAuditLog.findMany({ where, skip, take, orderBy: { createdAt: "desc" } }),
       prisma.platformAuditLog.count({ where }),
     ]);
 
-    res.json({ logs, total, page: parseInt(page as string), limit: take });
+    const userIds = [...new Set(logs.map((l: any) => l.userId).filter(Boolean))];
+    const users = userIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: userIds } },
+          select: { id: true, fullName: true, email: true, role: true },
+        })
+      : [];
+    const userMap = Object.fromEntries(users.map(u => [u.id, u]));
+
+    const enriched = logs.map((log: any) => ({
+      ...log,
+      userName: userMap[log.userId]?.fullName || null,
+      userEmail: userMap[log.userId]?.email || null,
+      userRole: userMap[log.userId]?.role || null,
+    }));
+
+    res.json({ logs: enriched, total, page: parseInt(page as string), limit: take });
   } catch (error) {
     console.error("Firm audit logs error:", error);
     res.status(500).json({ error: "Failed to get audit logs" });
+  }
+});
+
+router.get("/audit-logs/users", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(403).json({ error: "No firm context" });
+
+    const users = await prisma.user.findMany({
+      where: { firmId },
+      select: { id: true, fullName: true, email: true, role: true },
+      orderBy: { fullName: "asc" },
+    });
+    res.json(users);
+  } catch (error) {
+    console.error("Firm audit log users error:", error);
+    res.status(500).json({ error: "Failed to get users" });
   }
 });
 
