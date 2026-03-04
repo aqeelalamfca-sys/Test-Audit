@@ -12,6 +12,13 @@ HEAP_SIZE="${NODE_HEAP_SIZE:-2560}"
 echo "[1/4] Validating environment..."
 ERRORS=0
 
+if [ -z "$DB_PASSWORD" ] && [ -n "$POSTGRES_PASSWORD" ]; then
+  export DB_PASSWORD="$POSTGRES_PASSWORD"
+fi
+if [ -z "$POSTGRES_PASSWORD" ] && [ -n "$DB_PASSWORD" ]; then
+  export POSTGRES_PASSWORD="$DB_PASSWORD"
+fi
+
 if [ -z "$DATABASE_URL" ]; then
   if [ -n "$DB_PASSWORD" ]; then
     PG_USER="${POSTGRES_USER:-auditwise}"
@@ -22,7 +29,7 @@ if [ -z "$DATABASE_URL" ]; then
     export DATABASE_URL="postgresql://${PG_USER}:${ENCODED_PASS}@${PG_HOST}:${PG_PORT}/${PG_DB}?schema=public"
     echo "  DATABASE_URL constructed from component vars (password URL-encoded)."
   else
-    echo "  FATAL: Neither DATABASE_URL nor DB_PASSWORD is set."
+    echo "  FATAL: Neither DATABASE_URL nor DB_PASSWORD/POSTGRES_PASSWORD is set."
     ERRORS=1
   fi
 fi
@@ -40,11 +47,14 @@ if [ -z "$SESSION_SECRET" ]; then
   export SESSION_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
 fi
 
-if [ -n "$POSTGRES_PASSWORD" ] && [ -n "$DATABASE_URL" ]; then
-  URL_PASS=$(node -e "try{const u=new URL(process.env.DATABASE_URL);console.log(decodeURIComponent(u.password))}catch(e){console.log('')}" 2>/dev/null)
-  if [ -n "$URL_PASS" ] && [ "$URL_PASS" != "$POSTGRES_PASSWORD" ]; then
-    echo "  WARNING: DATABASE_URL password does not match POSTGRES_PASSWORD."
-    echo "  This may cause authentication failures between app and PostgreSQL."
+if [ -z "$ENCRYPTION_MASTER_KEY" ]; then
+  if [ "$NODE_ENV" = "production" ]; then
+    echo "  FATAL: ENCRYPTION_MASTER_KEY is not set. Required in production."
+    echo "  Generate with: openssl rand -hex 32"
+    ERRORS=1
+  else
+    echo "  WARN: ENCRYPTION_MASTER_KEY is not set. Auto-generating (dev only)."
+    export ENCRYPTION_MASTER_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
   fi
 fi
 
