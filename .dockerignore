@@ -9,7 +9,6 @@ dist
 replit.nix
 .config
 .local
-attached_assets
 .upm
 .cache
 tests
