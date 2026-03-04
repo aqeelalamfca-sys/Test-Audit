@@ -1,6 +1,6 @@
 // @ts-ignore - ExcelJS has no default export in types but works at runtime
 import ExcelJS from 'exceljs';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import {
   TEMPLATE_SHEETS,
   REQUIRED_SHEET_KEYS,
@@ -51,7 +51,7 @@ function makeError(
   opts?: { row?: number; column?: string; field?: string; expected?: string; actual?: string; fixHint?: string }
 ): ImportValidationError {
   return {
-    id: uuidv4(),
+    id: randomUUID(),
     severity,
     category,
     sheet,

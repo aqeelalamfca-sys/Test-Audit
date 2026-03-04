@@ -185,7 +185,7 @@ Key architectural patterns and features include:
 - Managed in Administration > Templates tab with full CRUD
 
 ### Production Deployment (Hostinger VPS / Docker)
-- **Docker**: Multi-stage Dockerfile (node:20-slim) with non-root user, health check, `docker-entrypoint.sh` (DB wait → prisma db push → start)
+- **Docker**: Multi-stage Dockerfile (node:20-slim + libvips-dev for sharp) with non-root user, health check, `docker-entrypoint.sh` (DB wait → prisma db push → start). esbuild bundles 25 server deps into dist/index.cjs; native modules (sharp, @prisma/client, otplib, qrcode) kept external via node_modules copy. uploads/logos directory pre-created in production image.
 - **docker-compose.yml**: App + Postgres 16 stack with `service_healthy` dependency, restart policy, persistent volume
 - **NGINX**: Reverse proxy configs in `deploy/nginx/` (HTTP + SSL). SSL via Let's Encrypt with auto-renewal. Security headers, gzip, rate limiting
 - **Super Admin IP Allowlist**: Dual-layer enforcement:
