@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { z } from "zod";
 import { prisma } from "./db";
 import { requireAuth, requireMinRole, requireRoles, logAuditTrail, AuthenticatedRequest } from "./auth";
+import { logFirmControlActivity } from "./routes/firmControlComplianceLogRoutes";
 
 const router = Router();
 
@@ -53,6 +54,20 @@ router.post("/governance/structure", requireAuth, requireRoles("PARTNER", "ADMIN
     });
 
     await logAuditTrail(req.user!.id, "GOVERNANCE_STRUCTURE_CREATED", "quality_management_structure", structure.id, null, structure, undefined, "Governance structure updated", req.ip, req.get("user-agent"));
+
+    void logFirmControlActivity({
+      firmId,
+      actorUserId: req.user!.id,
+      actorRole: req.user!.role,
+      entityType: "QualityManagementStructure",
+      entityId: structure.id,
+      controlDomain: "Governance & Leadership",
+      action: "POLICY_UPDATED",
+      status: "APPROVED",
+      description: "Governance structure created/updated",
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    }).catch(() => {});
 
     res.status(201).json(structure);
   } catch (error) {
@@ -107,6 +122,20 @@ router.post("/affirmations", requireAuth, async (req: AuthenticatedRequest, res:
         ipAddress: req.ip,
       },
     });
+
+    void logFirmControlActivity({
+      firmId,
+      actorUserId: req.user!.id,
+      actorRole: req.user!.role,
+      entityType: "LeadershipAffirmation",
+      entityId: affirmation.id,
+      controlDomain: "Governance & Leadership",
+      action: "AFFIRMATION_SUBMITTED",
+      status: "SUBMITTED",
+      description: `${data.affirmationType} affirmation submitted`,
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    }).catch(() => {});
 
     res.status(201).json(affirmation);
   } catch (error) {
@@ -174,6 +203,22 @@ router.post("/independence/declarations", requireAuth, async (req: Authenticated
         declarationDate: new Date(),
       },
     });
+
+    if (req.user!.firmId) {
+      void logFirmControlActivity({
+        firmId: req.user!.firmId,
+        actorUserId: req.user!.id,
+        actorRole: req.user!.role,
+        entityType: "FirmIndependenceDeclaration",
+        entityId: declaration.id,
+        controlDomain: "Ethical Requirements",
+        action: "INDEPENDENCE_DECLARED",
+        status: "SUBMITTED",
+        description: `Independence declaration for year ${data.declarationYear}`,
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      }).catch(() => {});
+    }
 
     res.status(201).json(declaration);
   } catch (error) {
@@ -359,6 +404,20 @@ router.post("/ethics-breaches", requireAuth, async (req: AuthenticatedRequest, r
         reportedDate: new Date(),
       },
     });
+
+    void logFirmControlActivity({
+      firmId,
+      actorUserId: req.user!.id,
+      actorRole: req.user!.role,
+      entityType: "EthicsBreach",
+      entityId: breach.id,
+      controlDomain: "Ethical Requirements",
+      action: "ETHICS_BREACH_REPORTED",
+      status: "SUBMITTED",
+      description: `Ethics breach reported: ${data.description?.substring(0, 80) || "No description"}`,
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    }).catch(() => {});
 
     res.status(201).json(breach);
   } catch (error) {

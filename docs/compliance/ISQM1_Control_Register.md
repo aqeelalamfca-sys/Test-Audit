@@ -76,8 +76,18 @@
 | ISQM-EQR-003 | EQR | EQCR comments and resolution | EQCR comments management | ✅ Active |
 | ISQM-EQR-004 | EQR | EQR independence from engagement team | Role-based access control | ✅ Active |
 
+## 9. Firm Control Compliance Logging
+
+| Control ID | Domain | Control Description | System Component | Status |
+|---|---|---|---|---|
+| ISQM-LOG-001 | Compliance Logging | Automated activity logging for all firm-wide control actions | firmControlComplianceLogRoutes.ts | ✅ Active |
+| ISQM-LOG-002 | Compliance Logging | Domain-classified audit trail (Governance, Ethics, Monitoring) | FirmControlActivityLog model with controlDomain | ✅ Active |
+| ISQM-LOG-003 | Compliance Logging | Actor role capture on every control action | actorRole field, auto-fetched from DB | ✅ Active |
+| ISQM-LOG-004 | Compliance Logging | ISQM route integration (governance, affirmations, independence, ethics) | logFirmControlActivity in isqmRoutes.ts | ✅ Active |
+| ISQM-LOG-005 | Compliance Logging | Paginated log viewer with role/domain/status filtering | firm-control-compliance-log.tsx | ✅ Active |
+
 ## Register Statistics
-- **Total Controls**: 33
-- **Active**: 33 (100%)
+- **Total Controls**: 38
+- **Active**: 38 (100%)
 - **Inactive**: 0
 - **Missing**: 0

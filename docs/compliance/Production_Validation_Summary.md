@@ -55,6 +55,8 @@
 | Companies Act 2017 | ✅ Pass | Checklist coverage (S.223-227, S.204-206) |
 | SECP compliance | ✅ Pass | Dashboard, opinion tracker, XBRL readiness |
 | FBR documentation | ✅ Pass | Tax computation, WHT reconciliation, NTN verification |
+| Compliance simulation | ✅ Pass | Read-only checks: ISA, ISQM, security, AI governance |
+| Control compliance logging | ✅ Pass | Firm-wide control activity log with domain classification |
 
 ### 4. Data Integrity
 

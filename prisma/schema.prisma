@@ -12922,21 +12922,30 @@ model FirmRemediationAction {
 }
 
 model FirmControlActivityLog {
-  id          String   @id @default(uuid())
-  firmId      String
-  actorUserId String
-  entityType  String
-  entityId    String?
-  action      String
-  beforeJson  Json?
-  afterJson   Json?
-  ipAddress   String?
-  createdAt   DateTime @default(now())
+  id             String   @id @default(uuid())
+  firmId         String
+  actorUserId    String
+  actorRole      String?
+  entityType     String
+  entityId       String?
+  controlDomain  String?
+  action         String
+  status         String   @default("SUBMITTED")
+  beforeJson     Json?
+  afterJson      Json?
+  description    String?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
 
   firm  Firm @relation("FirmControlActivityLogs", fields: [firmId], references: [id], onDelete: Cascade)
   actor User @relation("FirmControlActivityLogActor", fields: [actorUserId], references: [id])
 
   @@index([firmId])
   @@index([firmId, entityType])
+  @@index([firmId, controlDomain])
+  @@index([firmId, status])
+  @@index([firmId, actorRole])
   @@index([actorUserId])
+  @@index([createdAt])
 }

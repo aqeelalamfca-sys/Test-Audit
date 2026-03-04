@@ -18,9 +18,56 @@ function requireFirmScope(req: AuthenticatedRequest, res: Response): string | nu
   return firmId;
 }
 
-async function logActivity(firmId: string, actorUserId: string, entityType: string, entityId: string | null, action: string, beforeJson?: any, afterJson?: any) {
+const ENTITY_DOMAIN_MAP: Record<string, string> = {
+  FirmQualityObjective: "Governance & Leadership",
+  FirmQualityRisk: "Monitoring & Remediation",
+  FirmQualityResponse: "Engagement Performance",
+  FirmMonitoringReview: "Monitoring & Remediation",
+  FirmDeficiencyRecord: "Monitoring & Remediation",
+  FirmRemediationAction: "Monitoring & Remediation",
+  FirmEqcrPolicy: "ISQM 2 / Engagement Quality Review",
+  FirmEqcrAssignment: "ISQM 2 / Engagement Quality Review",
+  FirmEthicsProgram: "Ethical Requirements",
+  FirmPolicyDocument: "Governance & Leadership",
+  FirmIsqmVersionControl: "Governance & Leadership",
+};
+
+const ACTION_STATUS_MAP: Record<string, string> = {
+  create: "SUBMITTED",
+  update: "REVIEWED",
+  approve: "APPROVED",
+  reject: "REJECTED",
+};
+
+async function logActivity(firmId: string, actorUserId: string, entityType: string, entityId: string | null, action: string, beforeJson?: any, afterJson?: any, extra?: { actorRole?: string; controlDomain?: string; status?: string; description?: string; ipAddress?: string; userAgent?: string }) {
+  let actorRole = extra?.actorRole || null;
+  if (!actorRole) {
+    try {
+      const user = await prisma.user.findUnique({ where: { id: actorUserId }, select: { role: true } });
+      actorRole = user?.role || null;
+    } catch {}
+  }
+
+  const controlDomain = extra?.controlDomain || ENTITY_DOMAIN_MAP[entityType] || null;
+  const status = extra?.status || ACTION_STATUS_MAP[action] || "SUBMITTED";
+  const description = extra?.description || `${action} ${entityType}${entityId ? ` (${entityId.substring(0, 8)})` : ""}`;
+
   await prisma.firmControlActivityLog.create({
-    data: { firmId, actorUserId, entityType, entityId, action, beforeJson, afterJson },
+    data: {
+      firmId,
+      actorUserId,
+      actorRole,
+      entityType,
+      entityId,
+      action,
+      controlDomain,
+      status,
+      description,
+      beforeJson,
+      afterJson,
+      ipAddress: extra?.ipAddress || null,
+      userAgent: extra?.userAgent || null,
+    },
   });
 }
 

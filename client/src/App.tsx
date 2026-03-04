@@ -93,6 +93,7 @@ const PlatformFeedback = lazy(() => retryImport(() => import("@/pages/platform/p
 const FirmUsersPage = lazy(() => retryImport(() => import("@/pages/firm-admin/firm-users")));
 const FirmSettingsPage = lazy(() => retryImport(() => import("@/pages/firm-admin/firm-settings")));
 const FirmAuditLogsPage = lazy(() => retryImport(() => import("@/pages/firm-admin/firm-audit-logs")));
+const FirmControlComplianceLogPage = lazy(() => retryImport(() => import("@/pages/firm-admin/firm-control-compliance-log")));
 const FirmAIUsagePage = lazy(() => retryImport(() => import("@/pages/firm-admin/firm-ai-usage")));
 
 
@@ -231,6 +232,7 @@ const GuardedPlatformFeedback = createRoleGuardedComponent(PlatformFeedback, "SU
 const GuardedFirmUsers = createRoleGuardedComponent(FirmUsersPage, "FIRM_ADMIN");
 const GuardedFirmSettings = createRoleGuardedComponent(FirmSettingsPage, "FIRM_ADMIN");
 const GuardedFirmAuditLogs = createRoleGuardedComponent(FirmAuditLogsPage, "FIRM_ADMIN");
+const GuardedFirmControlComplianceLog = createRoleGuardedComponent(FirmControlComplianceLogPage, "MANAGER");
 const GuardedFirmAIUsage = createRoleGuardedComponent(FirmAIUsagePage, "FIRM_ADMIN");
 
 function createGuardedComponent(Component: React.ComponentType<any>, displayName: string, isLazy = false) {
@@ -314,6 +316,7 @@ function Router() {
       <Route path="/firm-admin/users" component={GuardedFirmUsers} />
       <Route path="/firm-admin/settings" component={GuardedFirmSettings} />
       <Route path="/firm-admin/audit-logs" component={GuardedFirmAuditLogs} />
+      <Route path="/firm-admin/control-compliance-log" component={GuardedFirmControlComplianceLog} />
       <Route path="/firm-admin/ai-usage" component={GuardedFirmAIUsage} />
       
       {/* Redirect bare /workspace to engagements */}

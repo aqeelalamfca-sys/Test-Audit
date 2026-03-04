@@ -77,6 +77,7 @@ import firmWideControlsRoutes from "./firmWideControlsRoutes";
 import regulatoryComplianceRoutes from "./routes/regulatoryComplianceRoutes";
 import simulationRoutes from "./routes/simulationRoutes";
 import complianceExportRoutes from "./routes/complianceExportRoutes";
+import firmControlComplianceLogRoutes from "./routes/firmControlComplianceLogRoutes";
 import { attachEnforcementContext, enforceInspectionMode } from "./middleware/enforcementMiddleware";
 import { generateInformationRequestLetter } from "./exportInfoRequestLetter";
 import { aiRateLimit, authRateLimit } from "./middleware/rateLimiter";
@@ -175,6 +176,7 @@ export async function registerRoutes(
   app.use("/api/audit-program", auditProgramRoutes);
   app.use("/api/isqm", isqmRoutes);
   app.use("/api/firm-wide-controls", firmWideControlsRoutes);
+  app.use("/api/firm-control-compliance-log", firmControlComplianceLogRoutes);
   app.use("/api/rbac", permissionRoutes);
   app.use("/api/intelligence", intelligenceRoutes);
   app.use("/api/qcr", qcrRoutes);

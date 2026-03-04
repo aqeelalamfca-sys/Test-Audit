@@ -424,6 +424,20 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   )}
+                  {isManager && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === "/firm-admin/control-compliance-log"}
+                        data-testid="nav-control-compliance-log"
+                      >
+                        <Link href="/firm-admin/control-compliance-log">
+                          <ClipboardList className="h-4 w-4" />
+                          <span>Control Compliance Log</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild

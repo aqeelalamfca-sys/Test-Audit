@@ -57,6 +57,8 @@ Key architectural patterns and features include:
 - **Compliance Export API**: REST endpoints for ISA coverage matrix, ISQM register, RBAC matrix, security checklist, and QCR readiness data (MANAGER+ role-gated).
 - **Regulatory Compliance Checklists**: Backend persistence for Companies Act 2017, FBR, and SECP checklists with engagement-scoped CRUD and export.
 - **Compliance Simulation Engine**: Read-only sandbox simulation covering ISA coverage gaps, engagement file review, ISQM stress test, security checks, and AI governance validation. Results dashboard at `/workspace/:engagementId/compliance-simulation`.
+- **Firm Control Compliance Log**: Comprehensive firm-wide control activity logging with domain classification (Governance, Ethics, Monitoring, etc.), actor role capture, status tracking, and paginated log viewer with filtering. Backend at `/api/firm-control-compliance-log`, frontend at `/firm-admin/control-compliance-log` (MANAGER+ access). Auto-logs ISQM governance, affirmation, independence, and ethics breach actions.
+- **Compliance Deliverable Documents**: 8 static compliance deliverables in `docs/compliance/`: ISA Coverage Matrix, ISQM-1 Control Register (38 controls across 9 domains), RBAC Matrix, ERD (Mermaid), Engagement Workflow Flowchart, Security Checklist (37 controls), QCR Readiness Report (43 items), Production Validation Summary.
 
 ### AI Audit Utilities Module
 - **AI Service Integration**: Uses Replit AI Integrations (OpenAI-compatible) with multi-provider failover.
