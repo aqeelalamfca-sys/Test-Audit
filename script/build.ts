@@ -46,7 +46,10 @@ async function buildAll() {
   await rm("dist", { recursive: true, force: true });
 
   console.log("generating prisma client...");
-  execSync("npx prisma generate", { stdio: "inherit" });
+  execSync("npx prisma generate", {
+    stdio: "inherit",
+    env: { ...process.env, NODE_OPTIONS: "--max-old-space-size=2048" },
+  });
 
   console.log("building client...");
   await viteBuild();
