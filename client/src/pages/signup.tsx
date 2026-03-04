@@ -43,8 +43,12 @@ import {
 const signupSchema = z.object({
   firmLegalName: z.string().min(2, "Firm name must be at least 2 characters"),
   firmDisplayName: z.string().optional(),
+  firmEmail: z.string().email("Please enter a valid email").optional().or(z.literal("")),
   headOfficeAddress: z.string().optional(),
   mobileNumber: z.string().optional(),
+  ntn: z.string().optional(),
+  country: z.string().optional(),
+  currency: z.string().optional(),
   adminFullName: z.string().min(2, "Full name must be at least 2 characters"),
   adminEmail: z.string().email("Please enter a valid email"),
   password: z.string()
@@ -135,8 +139,12 @@ export default function SignupPage() {
     defaultValues: {
       firmLegalName: "",
       firmDisplayName: "",
+      firmEmail: "",
       headOfficeAddress: "",
       mobileNumber: "",
+      ntn: "",
+      country: "",
+      currency: "PKR",
       adminFullName: "",
       adminEmail: "",
       password: "",
@@ -161,8 +169,12 @@ export default function SignupPage() {
         body: JSON.stringify({
           firmLegalName: data.firmLegalName,
           firmDisplayName: data.firmDisplayName,
+          firmEmail: data.firmEmail || "",
           headOfficeAddress: data.headOfficeAddress || "",
           mobileNumber: data.mobileNumber || "",
+          ntn: data.ntn || "",
+          country: data.country || "Pakistan",
+          currency: data.currency || "PKR",
           adminFullName: data.adminFullName,
           adminEmail: data.adminEmail,
           password: data.password,
@@ -335,6 +347,24 @@ export default function SignupPage() {
                       )}
                     />
                   </div>
+                  <FormField
+                    control={form.control}
+                    name="firmEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Firm Email (optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="e.g. info@yourfirm.com"
+                            data-testid="input-firm-email"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <div className="space-y-1.5">
                     <FormLabel>Firm Logo (optional)</FormLabel>
                     <div className="flex items-center gap-3">
@@ -411,6 +441,71 @@ export default function SignupPage() {
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    control={form.control}
+                    name="ntn"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>NTN - National Tax Number (optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g. 1234567-8"
+                            data-testid="input-ntn"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="country"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Country (optional)</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g. Pakistan"
+                              data-testid="input-country"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="currency"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Currency (optional)</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || "PKR"}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-currency">
+                                <SelectValue placeholder="PKR - Pakistani Rupee" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="PKR">PKR - Pakistani Rupee</SelectItem>
+                              <SelectItem value="USD">USD - US Dollar</SelectItem>
+                              <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                              <SelectItem value="EUR">EUR - Euro</SelectItem>
+                              <SelectItem value="AED">AED - UAE Dirham</SelectItem>
+                              <SelectItem value="SAR">SAR - Saudi Riyal</SelectItem>
+                              <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
+                              <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
+                              <SelectItem value="INR">INR - Indian Rupee</SelectItem>
+                              <SelectItem value="BDT">BDT - Bangladeshi Taka</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
                 <div className="border-t pt-3">

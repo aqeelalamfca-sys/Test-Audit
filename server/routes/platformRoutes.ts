@@ -94,7 +94,9 @@ router.post("/firms/:id/logo", logoMemoryUpload.single("logo"), async (req: Auth
 
 const createFirmSchema = z.object({
   name: z.string().min(2),
+  displayName: z.string().optional(),
   email: z.string().email().optional(),
+  phone: z.string().optional(),
   country: z.string().optional(),
   currency: z.string().optional(),
   timezone: z.string().optional(),
@@ -119,7 +121,9 @@ router.post("/firms", async (req: AuthenticatedRequest, res: Response) => {
     const firm = await prisma.firm.create({
       data: {
         name: data.name,
+        displayName: data.displayName || null,
         email: data.email,
+        phone: data.phone || null,
         country: data.country,
         currency: data.currency,
         timezone: data.timezone,

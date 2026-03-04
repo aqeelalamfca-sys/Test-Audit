@@ -14,8 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 
 const emptyForm = {
-  name: "", adminEmail: "", adminFullName: "", email: "",
-  country: "", currency: "PKR", planCode: "STARTER", trialDays: 14,
+  name: "", displayName: "", adminEmail: "", adminFullName: "", email: "",
+  phone: "", country: "Pakistan", currency: "PKR", planCode: "STARTER", trialDays: 14,
   headOfficeAddress: "", ntn: "",
   branches: [] as { name: string; address: string }[],
 };
@@ -222,14 +222,29 @@ export default function FirmManagement() {
               <DialogTitle>Create New Firm</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
+              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1">
+                <Building2 className="h-3.5 w-3.5" />
+                Firm Information
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Firm Name *</Label>
-                  <Input data-testid="input-firm-name" value={createForm.name} onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} />
+                  <Label>Firm Legal Name *</Label>
+                  <Input data-testid="input-firm-name" placeholder="e.g. Ahmad & Co. Chartered Accountants" value={createForm.name} onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} />
                 </div>
                 <div>
-                  <Label>Firm Email</Label>
-                  <Input data-testid="input-firm-email" type="email" value={createForm.email} onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })} />
+                  <Label>Display Name (optional)</Label>
+                  <Input data-testid="input-firm-display-name" placeholder="e.g. Ahmad & Co." value={createForm.displayName} onChange={(e) => setCreateForm({ ...createForm, displayName: e.target.value })} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Firm Email (optional)</Label>
+                  <Input data-testid="input-firm-email" type="email" placeholder="firm@example.com" value={createForm.email} onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Mobile Number (optional)</Label>
+                  <Input data-testid="input-firm-phone" type="tel" placeholder="e.g. +92 300 1234567" value={createForm.phone} onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })} />
                 </div>
               </div>
 
@@ -239,7 +254,7 @@ export default function FirmManagement() {
                   <Input data-testid="input-firm-ntn" placeholder="e.g. 1234567-8" value={createForm.ntn} onChange={(e) => setCreateForm({ ...createForm, ntn: e.target.value })} />
                 </div>
                 <div>
-                  <Label>Logo</Label>
+                  <Label>Firm Logo (optional)</Label>
                   <div className="flex items-center gap-2">
                     <input
                       ref={logoInputRef}
@@ -276,13 +291,12 @@ export default function FirmManagement() {
               </div>
 
               <div>
-                <Label>Head Office Address</Label>
-                <Textarea
+                <Label>Head Office Address (optional)</Label>
+                <Input
                   data-testid="input-firm-address"
-                  placeholder="Full address of head office"
+                  placeholder="e.g. Suite 201, 2nd Floor, Business Tower, Lahore"
                   value={createForm.headOfficeAddress}
                   onChange={(e) => setCreateForm({ ...createForm, headOfficeAddress: e.target.value })}
-                  rows={2}
                 />
               </div>
 
@@ -392,9 +406,12 @@ export default function FirmManagement() {
                 data-testid="button-submit-create-firm"
                 disabled={createFirmMutation.isPending || !createForm.name || !createForm.adminEmail || !createForm.adminFullName}
                 onClick={() => {
-                  const { branches, ...rest } = createForm;
+                  const { branches, displayName, phone, email, ...rest } = createForm;
                   const payload = {
                     ...rest,
+                    displayName: displayName || undefined,
+                    phone: phone || undefined,
+                    email: email || undefined,
                     branches: branches.filter(b => b.name || b.address),
                   };
                   createFirmMutation.mutate(payload);

@@ -412,8 +412,16 @@ router.post("/register", async (req: AuthenticatedRequest, res: Response) => {
 const signupSchema = z.object({
   firmLegalName: z.string().min(2, "Firm name must be at least 2 characters"),
   firmDisplayName: z.string().optional(),
+  firmEmail: z.string().email().optional().or(z.literal("")),
   headOfficeAddress: z.string().min(5, "Head office address is required").optional().or(z.literal("")),
   mobileNumber: z.string().min(7, "Valid mobile number is required").optional().or(z.literal("")),
+  ntn: z.string().optional(),
+  country: z.string().optional(),
+  currency: z.string().optional(),
+  branches: z.array(z.object({
+    name: z.string(),
+    address: z.string(),
+  })).optional(),
   adminFullName: z.string().min(2, "Full name must be at least 2 characters"),
   adminEmail: z.string().email("Invalid email address"),
   password: z.string().min(10, "Password must be at least 10 characters"),
@@ -453,12 +461,14 @@ router.post("/signup", async (req: AuthenticatedRequest, res: Response) => {
         data: {
           name: data.firmLegalName,
           displayName: data.firmDisplayName || null,
-          email: data.adminEmail,
+          email: data.firmEmail || data.adminEmail,
           headOfficeAddress: data.headOfficeAddress || null,
           phone: data.mobileNumber || null,
+          taxId: data.ntn || null,
+          country: data.country || "Pakistan",
+          currency: data.currency || "PKR",
+          offices: data.branches?.filter(b => b.name || b.address) || undefined,
           status: "TRIAL",
-          currency: "PKR",
-          country: "Pakistan",
         },
       });
 
