@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bell, Search, Settings, LogOut, User, HelpCircle, Building2, Calendar, ChevronDown, Plus, FileText, BookOpen } from "lucide-react";
+import { Bell, Search, Settings, LogOut, User, Building2, Calendar, ChevronDown, Plus, FileText, BookOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -424,10 +424,6 @@ export function TopBar({}: TopBarProps) {
                 <span>Live User Guide</span>
               </DropdownMenuItem>
             </Link>
-            <DropdownMenuItem>
-              <HelpCircle className="mr-2 h-4 w-4" />
-              <span>Help & Support</span>
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-red-600">
               <LogOut className="mr-2 h-4 w-4" />

@@ -119,6 +119,7 @@ export default function PricingPage() {
           <Button
             variant="ghost"
             size="sm"
+            className="cursor-pointer"
             onClick={() => navigate("/")}
             data-testid="link-back-login"
           >
@@ -138,12 +139,12 @@ export default function PricingPage() {
             Choose the plan that fits your firm
           </p>
 
-          <div className="inline-flex items-center bg-muted/60 dark:bg-muted/30 rounded-full p-1 mb-2">
+          <div className="inline-flex items-center bg-muted/60 dark:bg-muted/30 rounded-full p-1.5 mb-2 shadow-sm border border-border/40">
             <button
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer ${
                 billingCycle === "monthly"
-                  ? "bg-white dark:bg-gray-800 shadow-sm text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-primary text-primary-foreground shadow-md scale-105"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
               onClick={() => setBillingCycle("monthly")}
               data-testid="toggle-monthly"
@@ -151,10 +152,10 @@ export default function PricingPage() {
               Monthly
             </button>
             <button
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer ${
                 billingCycle === "yearly"
-                  ? "bg-white dark:bg-gray-800 shadow-sm text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-primary text-primary-foreground shadow-md scale-105"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
               onClick={() => setBillingCycle("yearly")}
               data-testid="toggle-yearly"
@@ -242,13 +243,12 @@ export default function PricingPage() {
 
                   <CardContent className="flex-1 flex flex-col pt-0 px-4 pb-4">
                     <Button
-                      className="w-full h-9 text-sm mb-3"
-                      variant={config.popular ? "default" : "outline"}
+                      className="w-full h-10 text-sm font-semibold mb-3 cursor-pointer shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90"
                       onClick={() => navigate(`/signup?plan=${plan.code.toLowerCase()}&billing=${billingCycle}`)}
                       data-testid={`button-start-trial-${plan.code.toLowerCase()}`}
                     >
                       Start Free Trial
-                      <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                      <ArrowRight className="h-4 w-4 ml-1.5" />
                     </Button>
 
                     <ul className="space-y-1.5 flex-1 text-[13px]">
