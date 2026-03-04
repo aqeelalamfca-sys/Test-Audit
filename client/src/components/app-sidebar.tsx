@@ -477,6 +477,18 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
+                      isActive={location === "/fbr-documentation"}
+                      data-testid="nav-fbr-documentation"
+                    >
+                      <Link href="/fbr-documentation">
+                        <FileText className="h-4 w-4" />
+                        <span>FBR Documentation</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
                       isActive={location === "/settings"}
                       data-testid="nav-settings"
                     >

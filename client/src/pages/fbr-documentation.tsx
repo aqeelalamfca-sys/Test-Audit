@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,9 +38,12 @@ import {
   ClipboardCheck,
   FileSpreadsheet,
   Shield,
+  Save,
+  Loader2,
 } from "lucide-react";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { useWorkspace } from "@/lib/workspace-context";
+import { useToast } from "@/hooks/use-toast";
 
 interface TaxComputationLine {
   id: string;
@@ -177,9 +181,12 @@ function getStatusBadge(status: string) {
   }
 }
 
-function TaxComputationTab() {
-  const [lines, setLines] = useState<TaxComputationLine[]>(DEFAULT_TAX_COMPUTATION);
-  const [taxRate, setTaxRate] = useState(29);
+function TaxComputationTab({ lines, setLines, taxRate, setTaxRate }: {
+  lines: TaxComputationLine[];
+  setLines: React.Dispatch<React.SetStateAction<TaxComputationLine[]>>;
+  taxRate: number;
+  setTaxRate: React.Dispatch<React.SetStateAction<number>>;
+}) {
 
   const updateLine = (id: string, field: keyof TaxComputationLine, value: any) => {
     setLines(prev => prev.map(l => l.id === id ? { ...l, [field]: value } : l));
@@ -316,8 +323,10 @@ function TaxComputationTab() {
   );
 }
 
-function WHTReconciliationTab() {
-  const [entries, setEntries] = useState<WHTEntry[]>(DEFAULT_WHT_ENTRIES);
+function WHTReconciliationTab({ entries, setEntries }: {
+  entries: WHTEntry[];
+  setEntries: React.Dispatch<React.SetStateAction<WHTEntry[]>>;
+}) {
 
   const updateEntry = (id: string, field: keyof WHTEntry, value: any) => {
     setEntries(prev => prev.map(e => {
@@ -452,8 +461,10 @@ function WHTReconciliationTab() {
   );
 }
 
-function AdvanceTaxTab() {
-  const [entries, setEntries] = useState<AdvanceTaxEntry[]>(DEFAULT_ADVANCE_TAX);
+function AdvanceTaxTab({ entries, setEntries }: {
+  entries: AdvanceTaxEntry[];
+  setEntries: React.Dispatch<React.SetStateAction<AdvanceTaxEntry[]>>;
+}) {
 
   const updateEntry = (id: string, field: keyof AdvanceTaxEntry, value: any) => {
     setEntries(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
@@ -563,8 +574,10 @@ function AdvanceTaxTab() {
   );
 }
 
-function TaxAdjustmentsTab() {
-  const [adjustments, setAdjustments] = useState<TaxAdjustment[]>(DEFAULT_TAX_ADJUSTMENTS);
+function TaxAdjustmentsTab({ adjustments, setAdjustments }: {
+  adjustments: TaxAdjustment[];
+  setAdjustments: React.Dispatch<React.SetStateAction<TaxAdjustment[]>>;
+}) {
 
   const updateAdjustment = (id: string, field: keyof TaxAdjustment, value: any) => {
     setAdjustments(prev => prev.map(a => a.id === id ? { ...a, [field]: value } : a));
@@ -651,8 +664,10 @@ function TaxAdjustmentsTab() {
   );
 }
 
-function NTNValidationTab() {
-  const [validation, setValidation] = useState<NTNValidation>(DEFAULT_NTN_VALIDATION);
+function NTNValidationTab({ validation, setValidation }: {
+  validation: NTNValidation;
+  setValidation: React.Dispatch<React.SetStateAction<NTNValidation>>;
+}) {
 
   const updateField = (field: keyof NTNValidation, value: string) => {
     setValidation(prev => ({ ...prev, [field]: value }));
@@ -926,6 +941,92 @@ function generateExportContent(format: "excel" | "pdf"): string {
 
 export default function FBRDocumentation() {
   const [activeTab, setActiveTab] = useState("computation");
+  const { activeEngagement } = useWorkspace();
+  const engagementId = activeEngagement?.id;
+  const { toast } = useToast();
+  const [isDirty, setIsDirty] = useState(false);
+
+  const [taxLines, setTaxLines] = useState<TaxComputationLine[]>(DEFAULT_TAX_COMPUTATION);
+  const [taxRate, setTaxRate] = useState(29);
+  const [whtEntries, setWhtEntries] = useState<WHTEntry[]>(DEFAULT_WHT_ENTRIES);
+  const [advanceEntries, setAdvanceEntries] = useState<AdvanceTaxEntry[]>(DEFAULT_ADVANCE_TAX);
+  const [adjustments, setAdjustments] = useState<TaxAdjustment[]>(DEFAULT_TAX_ADJUSTMENTS);
+  const [ntnValidation, setNtnValidation] = useState<NTNValidation>(DEFAULT_NTN_VALIDATION);
+
+  const markDirty = useCallback(() => setIsDirty(true), []);
+
+  const wrappedSetTaxLines: typeof setTaxLines = useCallback((v) => { setTaxLines(v); markDirty(); }, [markDirty]);
+  const wrappedSetTaxRate: typeof setTaxRate = useCallback((v) => { setTaxRate(v); markDirty(); }, [markDirty]);
+  const wrappedSetWht: typeof setWhtEntries = useCallback((v) => { setWhtEntries(v); markDirty(); }, [markDirty]);
+  const wrappedSetAdvance: typeof setAdvanceEntries = useCallback((v) => { setAdvanceEntries(v); markDirty(); }, [markDirty]);
+  const wrappedSetAdj: typeof setAdjustments = useCallback((v) => { setAdjustments(v); markDirty(); }, [markDirty]);
+  const wrappedSetNtn: typeof setNtnValidation = useCallback((v) => { setNtnValidation(v); markDirty(); }, [markDirty]);
+
+  const savedQuery = useQuery<any[]>({
+    queryKey: ["/api/compliance/checklists", engagementId],
+    enabled: !!engagementId,
+  });
+
+  const resetToDefaults = useCallback(() => {
+    setTaxLines(DEFAULT_TAX_COMPUTATION);
+    setTaxRate(29);
+    setWhtEntries(DEFAULT_WHT_ENTRIES);
+    setAdvanceEntries(DEFAULT_ADVANCE_TAX);
+    setAdjustments(DEFAULT_TAX_ADJUSTMENTS);
+    setNtnValidation(DEFAULT_NTN_VALIDATION);
+    setIsDirty(false);
+  }, []);
+
+  useEffect(() => {
+    resetToDefaults();
+  }, [engagementId, resetToDefaults]);
+
+  useEffect(() => {
+    if (!savedQuery.data?.length) return;
+    const saved = savedQuery.data.find((cl: any) => cl.checklistType === "FBR_TAX_COMPLIANCE");
+    if (!saved?.items || !Array.isArray(saved.items)) return;
+    const packItem = (saved.items as any[]).find((i: any) => i.ref === "fbr-pack");
+    if (!packItem?.notes) return;
+    try {
+      const d = JSON.parse(packItem.notes);
+      if (d.taxLines) setTaxLines(d.taxLines);
+      if (d.taxRate !== undefined) setTaxRate(d.taxRate);
+      if (d.whtEntries) setWhtEntries(d.whtEntries);
+      if (d.advanceEntries) setAdvanceEntries(d.advanceEntries);
+      if (d.adjustments) setAdjustments(d.adjustments);
+      if (d.ntnValidation) setNtnValidation(d.ntnValidation);
+      setIsDirty(false);
+    } catch (e) {
+      console.error("Failed to parse saved FBR data:", e);
+    }
+  }, [savedQuery.data]);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!engagementId) throw new Error("No engagement selected");
+      const pack = JSON.stringify({
+        taxLines,
+        taxRate,
+        whtEntries,
+        advanceEntries,
+        adjustments,
+        ntnValidation,
+      });
+      await apiRequest("POST", `/api/compliance/checklists/${engagementId}`, {
+        checklistType: "FBR_TAX_COMPLIANCE",
+        checklistReference: "FBR Tax Compliance Documentation Pack",
+        items: [{ ref: "fbr-pack", description: "FBR Documentation Pack", status: "IN_PROGRESS" as const, notes: pack }],
+      });
+    },
+    onSuccess: () => {
+      setIsDirty(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/compliance/checklists", engagementId] });
+      toast({ title: "Saved", description: "FBR documentation saved successfully." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Save Failed", description: error?.message || "Failed to save FBR documentation.", variant: "destructive" });
+    },
+  });
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -937,6 +1038,18 @@ export default function FBRDocumentation() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {engagementId && (
+            <Button
+              size="sm"
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending || !isDirty}
+              className="gap-1.5"
+              data-testid="button-save-fbr"
+            >
+              {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          )}
           <Badge variant="outline" className="text-xs">
             Income Tax Ordinance 2001
           </Badge>
@@ -975,19 +1088,19 @@ export default function FBRDocumentation() {
         </TabsList>
 
         <TabsContent value="computation">
-          <TaxComputationTab />
+          <TaxComputationTab lines={taxLines} setLines={wrappedSetTaxLines} taxRate={taxRate} setTaxRate={wrappedSetTaxRate} />
         </TabsContent>
         <TabsContent value="wht">
-          <WHTReconciliationTab />
+          <WHTReconciliationTab entries={whtEntries} setEntries={wrappedSetWht} />
         </TabsContent>
         <TabsContent value="advance">
-          <AdvanceTaxTab />
+          <AdvanceTaxTab entries={advanceEntries} setEntries={wrappedSetAdvance} />
         </TabsContent>
         <TabsContent value="adjustments">
-          <TaxAdjustmentsTab />
+          <TaxAdjustmentsTab adjustments={adjustments} setAdjustments={wrappedSetAdj} />
         </TabsContent>
         <TabsContent value="ntn">
-          <NTNValidationTab />
+          <NTNValidationTab validation={ntnValidation} setValidation={wrappedSetNtn} />
         </TabsContent>
         <TabsContent value="export">
           <ExportTab />

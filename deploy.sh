@@ -67,8 +67,10 @@ ufw --force enable > /dev/null 2>&1 || true
 log "Firewall configured (SSH + HTTP + HTTPS)"
 
 echo "── Step 4/10: Fetch latest code ──"
+PREV_COMMIT=""
 if [ -d "$APP_DIR/.git" ]; then
   cd "$APP_DIR"
+  PREV_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "")
   git fetch --all -q
   git reset --hard "origin/${BRANCH}" -q
   log "Updated to $(git log --oneline -1)"
@@ -78,6 +80,7 @@ else
   cd "$APP_DIR"
   log "Cloned branch ${BRANCH}"
 fi
+NEW_COMMIT=$(git rev-parse HEAD)
 
 echo "── Step 5/10: Environment secrets ──"
 if [ ! -f .env ]; then
@@ -103,6 +106,14 @@ INITIAL_SUPER_ADMIN_PASSWORD=${SA_PASSWORD}
 
 SUPER_ADMIN_ALLOWED_IPS=
 ADMIN_RESET=false
+
+# OPENAI_API_KEY=sk-proj-...
+# SMTP_HOST=
+# SMTP_PORT=587
+# SMTP_USER=
+# SMTP_PASS=
+# SMTP_FROM=
+# NODE_HEAP_SIZE=2560
 EOF
 
   chmod 600 .env
@@ -123,12 +134,32 @@ else
   log ".env already exists — keeping existing secrets"
 fi
 
-echo "── Step 6/10: Docker build & start ──"
+echo "── Step 6/10: Pre-deploy backup ──"
+if docker ps --format '{{.Names}}' | grep -q "auditwise-db"; then
+  mkdir -p "${APP_DIR}/backups"
+  BACKUP_FILE="${APP_DIR}/backups/pre-deploy_$(date +%Y%m%d_%H%M%S).sql.gz"
+  if docker exec auditwise-db pg_dump -U auditwise -d auditwise --no-owner --no-privileges 2>/dev/null | gzip > "$BACKUP_FILE"; then
+    log "Pre-deploy backup saved: $(du -h "$BACKUP_FILE" | cut -f1)"
+  else
+    warn "Pre-deploy backup failed (non-fatal, continuing)"
+    rm -f "$BACKUP_FILE"
+  fi
+else
+  log "No running database — skipping pre-deploy backup"
+fi
+
+echo "── Step 7/10: Docker build & start ──"
 docker compose down --remove-orphans 2>/dev/null || true
 docker image prune -f 2>/dev/null || true
 
-echo "  Building images (3-5 min on first run)..."
+echo "  Building images (3-8 min on first run)..."
 if ! docker compose up -d --build --force-recreate 2>&1; then
+  if [ -n "$PREV_COMMIT" ]; then
+    warn "Build failed — rolling back to previous commit ${PREV_COMMIT:0:8}"
+    git reset --hard "$PREV_COMMIT" -q
+    docker compose up -d --build --force-recreate 2>&1 || fail "Rollback build also failed"
+    log "Rolled back to ${PREV_COMMIT:0:8}"
+  fi
   fail "Docker build failed. Check Dockerfile and logs."
 fi
 log "Containers started"
@@ -143,24 +174,44 @@ for i in $(seq 1 60); do
   sleep 1
 done
 
-echo "  Waiting for app (up to 3 min for first-time DB sync + seeding)..."
+echo "  Waiting for app (up to 4 min for DB sync + seeding)..."
+APP_HEALTHY=false
 for i in $(seq 1 240); do
   HTTP_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/health 2>/dev/null || echo "000")
   if [ "$HTTP_CODE" = "200" ]; then
     log "App healthy after ${i}s"
+    APP_HEALTHY=true
     break
-  fi
-  if [ "$i" -eq 240 ]; then
-    echo ""
-    warn "App did not respond within 240s. Last HTTP code: ${HTTP_CODE}"
-    echo "  Recent logs:"
-    docker compose logs --tail 30 app
-    fail "App startup timeout"
   fi
   sleep 1
 done
 
-echo "── Step 7/10: NGINX reverse proxy ──"
+if [ "$APP_HEALTHY" = "false" ]; then
+  warn "App did not respond within 240s. Last HTTP code: ${HTTP_CODE}"
+  echo "  Recent logs:"
+  docker compose logs --tail 40 app
+  echo ""
+
+  if [ -n "$PREV_COMMIT" ] && [ "$PREV_COMMIT" != "$NEW_COMMIT" ]; then
+    warn "Rolling back to previous commit ${PREV_COMMIT:0:8}..."
+    docker compose down 2>/dev/null || true
+    git reset --hard "$PREV_COMMIT" -q
+    docker compose up -d --build --force-recreate 2>&1 || true
+
+    for i in $(seq 1 180); do
+      ROLLBACK_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/health 2>/dev/null || echo "000")
+      if [ "$ROLLBACK_CODE" = "200" ]; then
+        log "Rollback successful — running on ${PREV_COMMIT:0:8}"
+        break
+      fi
+      sleep 1
+    done
+  fi
+
+  fail "App startup timeout — deployment failed"
+fi
+
+echo "── Step 8/10: NGINX reverse proxy ──"
 rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
 mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled 2>/dev/null || true
 
@@ -194,11 +245,20 @@ else
   fail "NGINX config invalid. Check: nginx -t"
 fi
 
-echo "── Step 8/10: SSL certificate ──"
+echo "── Step 9/10: SSL certificate ──"
 if [ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
   log "SSL certificate already exists"
   if [ -f deploy/nginx/auditwise-ssl.conf ]; then
     cp deploy/nginx/auditwise-ssl.conf "$NGINX_CONF"
+    if [ -n "$SA_IPS" ]; then
+      GEO_ENTRIES=""
+      IFS=',' read -ra IP_ARRAY <<< "$SA_IPS"
+      for ip in "${IP_ARRAY[@]}"; do
+        ip=$(echo "$ip" | xargs)
+        [ -n "$ip" ] && GEO_ENTRIES="${GEO_ENTRIES}    ${ip}/32    1;\n"
+      done
+      [ -n "$GEO_ENTRIES" ] && sed -i "/# Example: 203.0.113.50\/32 1;/a\\${GEO_ENTRIES}" "$NGINX_CONF"
+    fi
     nginx -t 2>&1 && systemctl reload nginx
     log "Switched to SSL config"
   fi
@@ -211,16 +271,13 @@ else
   fi
 fi
 
-echo "── Step 9/10: Backups & Cron ──"
+echo "── Step 10/10: Backups & Final verification ──"
 mkdir -p "${APP_DIR}/backups" "${APP_DIR}/logs"
 chmod +x deploy/backup.sh 2>/dev/null || true
 
 CRON_LINE="0 2 * * * BACKUP_DIR=${APP_DIR}/backups DB_CONTAINER=auditwise-db ${APP_DIR}/deploy/backup.sh >> ${APP_DIR}/logs/backup.log 2>&1"
 (crontab -l 2>/dev/null | grep -v "deploy/backup.sh"; echo "$CRON_LINE") | crontab -
 log "Daily backup cron at 02:00 UTC"
-
-echo "── Step 10/10: Final verification ──"
-echo ""
 
 HEALTH_RESP=$(curl -sf http://127.0.0.1:5000/health 2>/dev/null || echo '{}')
 HEALTH_OK=$(echo "$HEALTH_RESP" | grep -c '"status":"ok"' || true)
@@ -230,12 +287,14 @@ HOME_HTML=$(curl -sf http://127.0.0.1:5000/ 2>/dev/null | grep -c '<html' || tru
 
 API_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/api/health/full 2>/dev/null || echo "000")
 
+echo ""
 echo "  ┌─────────────────────────────────────────┐"
 echo "  │  Endpoint Verification                   │"
 echo "  ├─────────────────────────────────────────┤"
 echo "  │  GET /         -> HTTP ${HOME_CODE} (HTML: ${HOME_HTML})"
 echo "  │  GET /health   -> ${HEALTH_RESP:0:60}"
 echo "  │  GET /api/...  -> HTTP ${API_CODE}"
+echo "  │  Commit:       -> ${NEW_COMMIT:0:8}"
 echo "  └─────────────────────────────────────────┘"
 echo ""
 

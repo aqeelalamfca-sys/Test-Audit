@@ -153,6 +153,8 @@ const ReviewNotesLazy = withLazySuspense(ReviewNotes);
 const StandardsMatrix = lazy(() => import("@/pages/standards-matrix"));
 const SECPCompliance = lazy(() => retryImport(() => import("@/pages/secp-compliance")));
 const SECPComplianceLazy = withLazySuspense(SECPCompliance);
+const FBRDocumentation = lazy(() => retryImport(() => import("@/pages/fbr-documentation")));
+const FBRDocumentationLazy = withLazySuspense(FBRDocumentation);
 const GuardedStandardsMatrix = createGuardedComponent(StandardsMatrix, "StandardsMatrix", true);
 
 const ComplianceSimulation = lazy(() => retryImport(() => import("@/pages/compliance-simulation")));
@@ -302,6 +304,7 @@ function Router() {
       <Route path="/deployment-guide" component={DeploymentGuideLazy} />
       <Route path="/phase/:phase" component={PhaseViewLazy} />
       <Route path="/secp-compliance" component={SECPComplianceLazy} />
+      <Route path="/fbr-documentation" component={FBRDocumentationLazy} />
       <Route path="/review-notes" component={ReviewNotesLazy} />
 
       {/* Platform Admin routes (SuperAdmin only - frontend role guard) */}

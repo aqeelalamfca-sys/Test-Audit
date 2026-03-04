@@ -1,6 +1,8 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: auditwise-app
     restart: unless-stopped
     ports:
@@ -10,6 +12,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=5000
+    volumes:
+      - uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -19,6 +23,11 @@ services:
       timeout: 10s
       start_period: 120s
       retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
 
   db:
     image: postgres:16-alpine
@@ -37,7 +46,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
 volumes:
   pgdata:
+    driver: local
+  uploads:
     driver: local

@@ -16,10 +16,8 @@ tests
 *.spec.ts
 attached_assets
 docs
+backups
+logs
 DEPLOYMENT.md
 README.md
-*.md
-!prisma/**
-scripts
-deploy
-deploy.sh
+references

@@ -1,4 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,7 +17,10 @@ import {
   Scale,
   BookOpen,
   Download,
+  Save,
+  Loader2,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 type ComplianceStatus = "met" | "partial" | "not_met" | "not_applicable" | "";
 
@@ -161,9 +166,88 @@ function buildInitialGroups(): ChecklistGroup[] {
   ];
 }
 
-export function CompaniesActChecklist() {
+function toBackendStatus(status: ComplianceStatus): "PENDING" | "IN_PROGRESS" | "COMPLETED" | "NOT_APPLICABLE" {
+  switch (status) {
+    case "met": return "COMPLETED";
+    case "partial": return "IN_PROGRESS";
+    case "not_met": return "PENDING";
+    case "not_applicable": return "NOT_APPLICABLE";
+    default: return "PENDING";
+  }
+}
+
+function fromBackendStatus(status: string): ComplianceStatus {
+  switch (status) {
+    case "COMPLETED": return "met";
+    case "IN_PROGRESS": return "partial";
+    case "NOT_APPLICABLE": return "not_applicable";
+    default: return "";
+  }
+}
+
+export function CompaniesActChecklist({ engagementId }: { engagementId?: string }) {
   const [groups, setGroups] = useState<ChecklistGroup[]>(buildInitialGroups);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [isDirty, setIsDirty] = useState(false);
+  const { toast } = useToast();
+
+  const savedChecklistQuery = useQuery<any[]>({
+    queryKey: ["/api/compliance/checklists", engagementId],
+    enabled: !!engagementId,
+  });
+
+  useEffect(() => {
+    if (!savedChecklistQuery.data?.length) return;
+    const saved = savedChecklistQuery.data.find((cl: any) => cl.checklistType === "COMPANIES_ACT_2017");
+    if (saved?.items && Array.isArray(saved.items)) {
+      setGroups(prev =>
+        prev.map(g => ({
+          ...g,
+          items: g.items.map(item => {
+            const s = (saved.items as any[]).find((si: any) => si.ref === item.id);
+            if (s) {
+              return {
+                ...item,
+                status: fromBackendStatus(s.status),
+                notes: s.notes ?? item.notes,
+                evidenceLink: s.evidence ?? item.evidenceLink,
+              };
+            }
+            return item;
+          }),
+        }))
+      );
+      setIsDirty(false);
+    }
+  }, [savedChecklistQuery.data]);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!engagementId) throw new Error("No engagement selected");
+      const items = groups.flatMap(g =>
+        g.items.map(item => ({
+          ref: item.id,
+          description: `${item.sectionRef} - ${item.requirement}`,
+          status: toBackendStatus(item.status),
+          notes: item.notes,
+          evidence: item.evidenceLink,
+        }))
+      );
+      await apiRequest("POST", `/api/compliance/checklists/${engagementId}`, {
+        checklistType: "COMPANIES_ACT_2017",
+        checklistReference: "Companies Act 2017 - Statutory Compliance Checklist",
+        items,
+      });
+    },
+    onSuccess: () => {
+      setIsDirty(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/compliance/checklists", engagementId] });
+      toast({ title: "Saved", description: "Companies Act checklist saved successfully." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Save Failed", description: error?.message || "Failed to save checklist.", variant: "destructive" });
+    },
+  });
 
   const updateItem = (groupId: string, itemId: string, field: keyof ChecklistItem, value: string) => {
     setGroups(prev =>
@@ -178,6 +262,7 @@ export function CompaniesActChecklist() {
         };
       })
     );
+    setIsDirty(true);
   };
 
   const stats = useMemo(() => {
@@ -242,10 +327,24 @@ export function CompaniesActChecklist() {
             Compliance checklist covering key statutory requirements for directors and auditors
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5" data-testid="button-export-checklist">
-          <Download className="h-4 w-4" />
-          Export CSV
-        </Button>
+        <div className="flex items-center gap-2">
+          {engagementId && (
+            <Button
+              size="sm"
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending || !isDirty}
+              className="gap-1.5"
+              data-testid="button-save-checklist"
+            >
+              {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5" data-testid="button-export-checklist">
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       <Card data-testid="card-checklist-summary">

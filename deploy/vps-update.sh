@@ -19,37 +19,63 @@ echo "  $(date -Is)"
 echo "══════════════════════════════════════════"
 
 cd "$APP_DIR"
+PREV_COMMIT=$(git rev-parse HEAD)
 
-echo "[1/5] Pulling latest from GitHub (${BRANCH})..."
-git fetch --all -q
-git reset --hard "origin/${BRANCH}" -q
-log "Commit: $(git log --oneline -1)"
-
-echo "[2/5] Pre-deploy backup..."
-if [ -f deploy/backup.sh ]; then
-  bash deploy/backup.sh 2>/dev/null && log "Backup complete" || warn "Backup failed (non-fatal)"
+echo "[1/6] Pre-deploy backup..."
+mkdir -p backups
+if docker ps --format '{{.Names}}' | grep -q "auditwise-db"; then
+  BACKUP_FILE="backups/pre-update_$(date +%Y%m%d_%H%M%S).sql.gz"
+  docker exec auditwise-db pg_dump -U auditwise -d auditwise --no-owner --no-privileges 2>/dev/null | gzip > "$BACKUP_FILE" \
+    && log "Backup: $(du -h "$BACKUP_FILE" | cut -f1)" \
+    || warn "Backup failed (non-fatal)"
 fi
 
-echo "[3/5] Rebuilding containers..."
+echo "[2/6] Pulling latest from GitHub (${BRANCH})..."
+git fetch --all -q
+git reset --hard "origin/${BRANCH}" -q
+NEW_COMMIT=$(git rev-parse HEAD)
+log "Commit: $(git log --oneline -1)"
+
+if [ "$PREV_COMMIT" = "$NEW_COMMIT" ]; then
+  warn "No new commits. Rebuilding anyway."
+fi
+
+echo "[3/6] Rebuilding containers..."
 docker compose up -d --build --force-recreate
 log "Containers started"
 
-echo "[4/5] Waiting for app to become healthy..."
+echo "[4/6] Waiting for app to become healthy..."
+APP_HEALTHY=false
 for i in $(seq 1 240); do
   HTTP_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/health 2>/dev/null || echo "000")
   if [ "$HTTP_CODE" = "200" ]; then
     log "App healthy after ${i}s"
+    APP_HEALTHY=true
     break
-  fi
-  if [ "$i" -eq 240 ]; then
-    warn "App did not respond within 240s"
-    docker compose logs --tail 30 app
-    fail "App startup timeout"
   fi
   sleep 1
 done
 
-echo "[5/5] Verifying endpoints..."
+if [ "$APP_HEALTHY" = "false" ]; then
+  warn "App failed to start. Rolling back to ${PREV_COMMIT:0:8}..."
+  docker compose logs --tail 40 app
+  echo ""
+  docker compose down 2>/dev/null || true
+  git reset --hard "$PREV_COMMIT" -q
+  docker compose up -d --build --force-recreate
+
+  for i in $(seq 1 180); do
+    ROLLBACK_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/health 2>/dev/null || echo "000")
+    if [ "$ROLLBACK_CODE" = "200" ]; then
+      log "Rollback successful — running on ${PREV_COMMIT:0:8}"
+      break
+    fi
+    sleep 1
+  done
+  fail "Deployment failed — rolled back to ${PREV_COMMIT:0:8}"
+fi
+
+echo "[5/6] Verifying endpoints..."
 HEALTH=$(curl -sf http://127.0.0.1:5000/health 2>/dev/null || echo '{"status":"error"}')
 HOME_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/ 2>/dev/null || echo "000")
 HOME_HTML=$(curl -sf http://127.0.0.1:5000/ 2>/dev/null | grep -c '<html' || true)
@@ -59,12 +85,15 @@ echo "  /health  -> $(echo "$HEALTH" | head -c 80)"
 echo "  /        -> HTTP ${HOME_CODE} (HTML: ${HOME_HTML})"
 echo ""
 
+echo "[6/6] Cleanup..."
+docker image prune -f > /dev/null 2>&1 || true
+
 if echo "$HEALTH" | grep -q '"status":"ok"' && [ "$HOME_CODE" = "200" ] && [ "$HOME_HTML" -ge 1 ]; then
   echo -e "  ${GREEN}UPDATE SUCCESSFUL — LIVE${NC}"
+  echo "  Commit: ${NEW_COMMIT:0:8} (was: ${PREV_COMMIT:0:8})"
 else
-  [ "$HOME_CODE" != "200" ] && warn "/ returned HTTP ${HOME_CODE} — check static file serving"
+  [ "$HOME_CODE" != "200" ] && warn "/ returned HTTP ${HOME_CODE}"
   echo "$HEALTH" | grep -q '"status":"ok"' || warn "/health not ok"
-  echo ""
   echo "  Debug: docker compose logs --tail 50 app"
 fi
 
