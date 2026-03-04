@@ -16,6 +16,7 @@ RUN NODE_OPTIONS="--max-old-space-size=2048" npx prisma generate
 FROM deps AS build
 COPY . .
 RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
+RUN cp -rn public/* dist/public/ 2>/dev/null || true
 RUN ls -la dist/index.cjs dist/public/index.html
 
 FROM base AS proddeps
@@ -35,7 +36,6 @@ COPY --from=proddeps /app/node_modules ./node_modules
 COPY --from=proddeps /app/prisma ./prisma
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json ./
-COPY public ./public/
 COPY docker-entrypoint.sh ./
 RUN mkdir -p uploads/logos uploads/notifications && \
     chmod +x docker-entrypoint.sh && \

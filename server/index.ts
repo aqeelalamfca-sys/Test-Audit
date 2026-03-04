@@ -343,13 +343,15 @@ const SUPER_ADMIN_ALLOWED_PREFIXES = [
   "/api/platform",
   "/api/auth",
   "/api/health",
+  "/api/system",
+  "/api/logs",
   "/__healthz",
   "/health",
   "/uploads",
 ];
 
 app.use((req: Request, res: Response, next: NextFunction) => {
-  if (!req.path.startsWith("/api/") || req.path.startsWith("/api/platform") || req.path.startsWith("/api/auth") || req.path.startsWith("/api/health") || req.path.startsWith("/api/logs")) {
+  if (!req.path.startsWith("/api/") || req.path.startsWith("/api/platform") || req.path.startsWith("/api/auth") || req.path.startsWith("/api/health") || req.path.startsWith("/api/logs") || req.path.startsWith("/api/system")) {
     return next();
   }
 
