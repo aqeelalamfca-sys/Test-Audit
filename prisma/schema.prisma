@@ -496,8 +496,10 @@ model User {
   teamAssignments     EngagementTeam[]
   checklistsCompleted ChecklistItem[]  @relation("CompletedBy")
   checklistsAssigned  ChecklistItem[]  @relation("AssignedTo")
-  reviewNotesAuthored ReviewNote[]     @relation("AuthoredBy")
-  reviewNotesResolved ReviewNote[]     @relation("ResolvedBy")
+  reviewNotesAuthored  ReviewNote[]          @relation("AuthoredBy")
+  reviewNotesResolved  ReviewNote[]          @relation("ResolvedBy")
+  reviewNoteAssignments ReviewNoteAssignee[] @relation("ReviewNoteAssigned")
+  reviewNoteAssignedBy  ReviewNoteAssignee[] @relation("ReviewNoteAssigner")
   documentsUploaded   Document[]
   auditTrailEntries   AuditTrail[]
   phasesLocked        PhaseProgress[]  @relation("LockedBy")
@@ -1710,10 +1712,15 @@ model ReviewNote {
   phase           AuditPhase
   checklistItemId String?
 
-  authorId String
-  content  String
-  severity ReviewNoteSeverity @default(INFO)
-  status   ReviewNoteStatus   @default(OPEN)
+  authorId   String
+  title      String?
+  content    String
+  noteType   String           @default("ISSUE")
+  severity   ReviewNoteSeverity @default(INFO)
+  status     ReviewNoteStatus   @default(OPEN)
+  sectionKey String?
+  dueDate    DateTime?
+  isLocked   Boolean          @default(false)
 
   resolvedById String?
   resolvedAt   DateTime?
@@ -1722,13 +1729,32 @@ model ReviewNote {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  engagement    Engagement     @relation(fields: [engagementId], references: [id])
-  checklistItem ChecklistItem? @relation(fields: [checklistItemId], references: [id])
-  author        User           @relation("AuthoredBy", fields: [authorId], references: [id])
-  resolvedBy    User?          @relation("ResolvedBy", fields: [resolvedById], references: [id])
+  engagement    Engagement           @relation(fields: [engagementId], references: [id])
+  checklistItem ChecklistItem?       @relation(fields: [checklistItemId], references: [id])
+  author        User                 @relation("AuthoredBy", fields: [authorId], references: [id])
+  resolvedBy    User?                @relation("ResolvedBy", fields: [resolvedById], references: [id])
   threads       ReviewThread[]
+  assignees     ReviewNoteAssignee[]
+
   @@index([engagementId, phase])
   @@index([engagementId, status])
+  @@index([status])
+  @@index([authorId])
+}
+
+model ReviewNoteAssignee {
+  id           String   @id @default(uuid())
+  reviewNoteId String
+  userId       String
+  assignedById String?
+  assignedAt   DateTime @default(now())
+
+  reviewNote ReviewNote @relation(fields: [reviewNoteId], references: [id], onDelete: Cascade)
+  user       User       @relation("ReviewNoteAssigned", fields: [userId], references: [id])
+  assignedBy User?      @relation("ReviewNoteAssigner", fields: [assignedById], references: [id])
+
+  @@unique([reviewNoteId, userId])
+  @@index([userId])
 }
 
 model Document {

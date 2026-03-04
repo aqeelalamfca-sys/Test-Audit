@@ -77,6 +77,7 @@ import firmWideControlsRoutes from "./firmWideControlsRoutes";
 import regulatoryComplianceRoutes from "./routes/regulatoryComplianceRoutes";
 import simulationRoutes from "./routes/simulationRoutes";
 import complianceExportRoutes from "./routes/complianceExportRoutes";
+import reviewNoteRoutes from "./routes/reviewNoteRoutes";
 import firmControlComplianceLogRoutes from "./routes/firmControlComplianceLogRoutes";
 import { attachEnforcementContext, enforceInspectionMode } from "./middleware/enforcementMiddleware";
 import { generateInformationRequestLetter } from "./exportInfoRequestLetter";
@@ -226,6 +227,7 @@ export async function registerRoutes(
   app.use(hardControlsRoutes);
   app.use("/api/compliance/checklists", regulatoryComplianceRoutes);
   app.use("/api/simulation", simulationRoutes);
+  app.use("/api/review-notes-v2", reviewNoteRoutes);
 
   app.get("/api/secp/opinions", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {

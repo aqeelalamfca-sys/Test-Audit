@@ -28,6 +28,7 @@ Key architectural patterns and features include:
 - **Standard Audit Templates**: Auto-seeded templates (68 ISA/ISQM) covering various audit phases, manageable through an administration module.
 - **Enhanced Platform Notifications**: Rich notification system with image upload (PNG/JPG/WEBP/GIF up to 10MB), YouTube video link embedding with preview, AI-powered content generation (topic + tone), and granular firm targeting (Global/Selected Firms with multi-select, search, and select-all). Preview dialog for media-rich notifications. Static file serving for uploaded notification images.
 - **Invoice Auto-Email**: Automated invoice email delivery via Nodemailer on invoice generation and dispatch. Professional HTML email template with firm branding, line items, payment instructions. Graceful degradation when SMTP not configured.
+- **Review Notes Dashboard**: Dedicated `/review-notes` page aggregating review notes across all engagements. Three tabs (Assigned to Me, Created by Me, All Notes for managers). Stats cards showing open/total counts. Filters by status, severity, and search. Reply threads, status transitions (Open→Addressed→Cleared), resolution workflow with justification. Links to engagement workspace. API: `/api/review-notes-v2/*` routes with multi-user assignment via `ReviewNoteAssignee` model.
 
 ## External Dependencies
 - **PostgreSQL**: The primary relational database for data storage.

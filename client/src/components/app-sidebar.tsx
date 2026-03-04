@@ -358,6 +358,18 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/review-notes"}
+                      data-testid="nav-review-notes"
+                    >
+                      <Link href="/review-notes">
+                        <MessageSquare className="h-4 w-4" />
+                        <span>Review Notes</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                   {isManager && (
                     <SidebarMenuItem>
                       <SidebarMenuButton

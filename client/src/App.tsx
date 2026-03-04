@@ -78,6 +78,7 @@ const PortalLogin = lazy(() => retryImport(() => import("@/pages/portal-login"))
 const PortalDashboard = lazy(() => retryImport(() => import("@/pages/portal-dashboard")));
 const PortalRequests = lazy(() => retryImport(() => import("@/pages/portal-requests")));
 
+const ReviewNotes = lazy(() => retryImport(() => import("@/pages/review-notes")));
 const PricingPage = lazy(() => retryImport(() => import("@/pages/pricing")));
 const SignupPage = lazy(() => retryImport(() => import("@/pages/signup")));
 const InviteAcceptPage = lazy(() => retryImport(() => import("@/pages/invite-accept")));
@@ -147,6 +148,7 @@ const FirmUsersLazy = withLazySuspense(FirmUsersPage);
 const FirmSettingsLazy = withLazySuspense(FirmSettingsPage);
 const FirmAuditLogsLazy = withLazySuspense(FirmAuditLogsPage);
 const FirmAIUsageLazy = withLazySuspense(FirmAIUsagePage);
+const ReviewNotesLazy = withLazySuspense(ReviewNotes);
 
 const StandardsMatrix = lazy(() => import("@/pages/standards-matrix"));
 const SECPCompliance = lazy(() => retryImport(() => import("@/pages/secp-compliance")));
@@ -300,6 +302,7 @@ function Router() {
       <Route path="/deployment-guide" component={DeploymentGuideLazy} />
       <Route path="/phase/:phase" component={PhaseViewLazy} />
       <Route path="/secp-compliance" component={SECPComplianceLazy} />
+      <Route path="/review-notes" component={ReviewNotesLazy} />
 
       {/* Platform Admin routes (SuperAdmin only - frontend role guard) */}
       <Route path="/platform" component={GuardedPlatformDashboard} />
