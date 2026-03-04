@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "wouter";
+import { AgentsLoadingInline } from "@/components/agents-loading";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -326,11 +327,7 @@ export default function AuditHealthDashboard() {
   const isManager = userRole === 'MANAGER' || isPartner;
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <AgentsLoadingInline showDelay={1000} />;
   }
 
   if (!dashboard) {

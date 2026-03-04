@@ -1,4 +1,5 @@
 import { useParams, Link } from "wouter";
+import { AgentsLoadingInline } from "@/components/agents-loading";
 import { useEngagement } from "@/lib/workspace-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -437,11 +438,7 @@ export default function EvidenceVault() {
   });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <AgentsLoadingInline showDelay={1000} />;
   }
 
   if (error) {

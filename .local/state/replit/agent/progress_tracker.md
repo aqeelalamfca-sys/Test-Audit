@@ -126,3 +126,19 @@
       - Route registered at /workspace/:engagementId/compliance-simulation
     - Updated replit.md with new compliance modules
     - All items marked [x] in progress tracker
+    - T005: Standards Matrix Enhancement:
+      - Added ISA Coverage Matrix tab consuming /api/compliance-export/isa-coverage-matrix
+      - Added ISQM Register tab consuming /api/compliance-export/isqm-register
+      - Coverage heatbar visualization (emerald/amber/red proportional bar)
+      - Stats cards for Full/Partial/Missing coverage counts
+      - ISQM controls grouped by domain with color-coded badges
+      - Falls back to local ISA_COVERAGE_DATA/ISQM_REGISTER_DATA if API unavailable
+[x] 40. Animated "Agents are helping" loading system:
+    - Created client/src/components/agents-loading.tsx with CSS-animated thinking people characters
+    - 3 diverse agent characters with bouncing, blinking, thinking arm animations
+    - Thought bubble dots with staggered bounce animations
+    - Rotating messages every 3s: "Agents are helping...", "Preparing your workspace...", etc.
+    - 1-second delay threshold (showDelay=1000) — only shows after 1s of loading
+    - AgentsLoading (full-page) replaces LoadingSpinner for all Suspense boundaries
+    - AgentsLoadingInline (compact) for inline data loading states
+    - Updated 9 pages: client-detail, evidence-vault, engagement-control, audit-health-dashboard, inspection-dashboard, engagement-edit, portal-dashboard, standards-matrix (LoadingState), plus all lazy-loaded page transitions via LoadingSpinner

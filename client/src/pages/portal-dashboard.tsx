@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { AgentsLoadingInline } from "@/components/agents-loading";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -115,14 +116,7 @@ export default function PortalDashboard() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <div className="text-center">
-          <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto" />
-          <p className="mt-4 text-muted-foreground">Loading your portal...</p>
-        </div>
-      </div>
-    );
+    return <AgentsLoadingInline showDelay={1000} />;
   }
 
   return (

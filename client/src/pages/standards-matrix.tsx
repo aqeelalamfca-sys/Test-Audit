@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useParams } from "wouter";
+import { AgentsLoadingInline } from "@/components/agents-loading";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   STANDARDS_MAP,
@@ -265,12 +266,7 @@ function StatusLegend() {
 }
 
 function LoadingState({ message = "Loading..." }: { message?: string }) {
-  return (
-    <div className="flex items-center justify-center py-20">
-      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      <span className="ml-2 text-muted-foreground">{message}</span>
-    </div>
-  );
+  return <AgentsLoadingInline showDelay={1000} />;
 }
 
 function ErrorState({ message = "Failed to load data", onRetry }: { message?: string; onRetry?: () => void }) {
@@ -337,6 +333,8 @@ const VIEW_TABS = [
   { id: "gap-analysis", label: "Gap Analysis", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
   { id: "risk-trace", label: "Risk Traceability", icon: <Link2 className="w-3.5 h-3.5" /> },
   { id: "signoff", label: "Sign-off Register", icon: <ClipboardList className="w-3.5 h-3.5" /> },
+  { id: "isa-matrix", label: "ISA Coverage Matrix", icon: <BookMarked className="w-3.5 h-3.5" /> },
+  { id: "isqm-register", label: "ISQM Register", icon: <FileText className="w-3.5 h-3.5" /> },
   { id: "integration", label: "Integration Matrix", icon: <Layers className="w-3.5 h-3.5" /> },
   { id: "ai-assist", label: "AI Assistance", icon: <Sparkles className="w-3.5 h-3.5" /> },
 ];
@@ -1300,6 +1298,196 @@ function AIAssistTab({ engagementId }: { engagementId?: string }) {
   );
 }
 
+function ISACoverageMatrixTab() {
+  const { data } = useQuery<{ standards: any[] }>({
+    queryKey: ["/api/compliance-export/isa-coverage-matrix"],
+  });
+
+  const coverageData = data?.standards || ISA_COVERAGE_DATA;
+
+  const stats = useMemo(() => {
+    const full = coverageData.filter((d: any) => d.coverage === "FULL").length;
+    const partial = coverageData.filter((d: any) => d.coverage === "PARTIAL").length;
+    const missing = coverageData.filter((d: any) => d.coverage === "MISSING").length;
+    return { full, partial, missing, total: coverageData.length };
+  }, [coverageData]);
+
+  const coverageBadge = (cov: string) => {
+    switch (cov) {
+      case "FULL": return <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200" data-testid="badge-coverage-full">Full</Badge>;
+      case "PARTIAL": return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200" data-testid="badge-coverage-partial">Partial</Badge>;
+      case "MISSING": return <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" data-testid="badge-coverage-missing">Missing</Badge>;
+      default: return <Badge variant="secondary">{cov}</Badge>;
+    }
+  };
+
+  return (
+    <div className="space-y-4" data-testid="isa-coverage-matrix-tab">
+      <div className="grid grid-cols-4 gap-3">
+        <Card className="p-3 text-center">
+          <p className="text-2xl font-bold" data-testid="stat-total-isa">{stats.total}</p>
+          <p className="text-xs text-muted-foreground">Total ISA Standards</p>
+        </Card>
+        <Card className="p-3 text-center border-emerald-200 dark:border-emerald-800">
+          <p className="text-2xl font-bold text-emerald-600" data-testid="stat-full-coverage">{stats.full}</p>
+          <p className="text-xs text-muted-foreground">Full Coverage</p>
+        </Card>
+        <Card className="p-3 text-center border-amber-200 dark:border-amber-800">
+          <p className="text-2xl font-bold text-amber-600" data-testid="stat-partial-coverage">{stats.partial}</p>
+          <p className="text-xs text-muted-foreground">Partial Coverage</p>
+        </Card>
+        <Card className="p-3 text-center border-red-200 dark:border-red-800">
+          <p className="text-2xl font-bold text-red-600" data-testid="stat-missing-coverage">{stats.missing}</p>
+          <p className="text-xs text-muted-foreground">Missing</p>
+        </Card>
+      </div>
+
+      {stats.total > 0 && (
+        <div className="flex gap-1 h-3 rounded-full overflow-hidden" data-testid="coverage-heatbar">
+          <div className="bg-emerald-500" style={{ width: `${(stats.full / stats.total) * 100}%` }} />
+          <div className="bg-amber-500" style={{ width: `${(stats.partial / stats.total) * 100}%` }} />
+          <div className="bg-red-500" style={{ width: `${(stats.missing / stats.total) * 100}%` }} />
+        </div>
+      )}
+
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-24">Standard</TableHead>
+                <TableHead>Title</TableHead>
+                <TableHead className="w-24">Coverage</TableHead>
+                <TableHead>System Components</TableHead>
+                <TableHead>Gaps</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {coverageData.map((item: any, idx: number) => (
+                <TableRow key={idx} data-testid={`row-isa-${item.standard?.replace(/\s/g, '-')}`}>
+                  <TableCell className="font-mono text-xs font-semibold">{item.standard}</TableCell>
+                  <TableCell className="text-sm">{item.title}</TableCell>
+                  <TableCell>{coverageBadge(item.coverage)}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {(item.components || []).map((c: string, i: number) => (
+                        <Badge key={i} variant="outline" className="text-xs">{c}</Badge>
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {item.gaps && item.gaps.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {item.gaps.map((g: string, i: number) => (
+                          <Badge key={i} variant="destructive" className="text-xs">{g}</Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function ISQMRegisterTab() {
+  const { data } = useQuery<{ controls: any[] }>({
+    queryKey: ["/api/compliance-export/isqm-register"],
+  });
+
+  const registerData = data?.controls || ISQM_REGISTER_DATA;
+
+  const domains = useMemo(() => {
+    const grouped: Record<string, any[]> = {};
+    for (const item of registerData) {
+      const d = item.domain || "Other";
+      if (!grouped[d]) grouped[d] = [];
+      grouped[d].push(item);
+    }
+    return grouped;
+  }, [registerData]);
+
+  const domainColors: Record<string, string> = {
+    "Governance & Leadership": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+    "Ethical Requirements": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+    "Acceptance & Continuance": "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200",
+    "Engagement Performance": "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
+    "Resources": "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+    "Information & Communication": "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200",
+    "Monitoring & Remediation": "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+    "ISQM 2 / Engagement Quality Review": "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200",
+  };
+
+  return (
+    <div className="space-y-4" data-testid="isqm-register-tab">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card className="p-3 text-center">
+          <p className="text-2xl font-bold" data-testid="stat-total-controls">{registerData.length}</p>
+          <p className="text-xs text-muted-foreground">Total Controls</p>
+        </Card>
+        <Card className="p-3 text-center border-emerald-200 dark:border-emerald-800">
+          <p className="text-2xl font-bold text-emerald-600" data-testid="stat-active-controls">{registerData.filter((r: any) => r.status === "ACTIVE").length}</p>
+          <p className="text-xs text-muted-foreground">Active Controls</p>
+        </Card>
+        <Card className="p-3 text-center">
+          <p className="text-2xl font-bold" data-testid="stat-domains">{Object.keys(domains).length}</p>
+          <p className="text-xs text-muted-foreground">Domains</p>
+        </Card>
+        <Card className="p-3 text-center border-emerald-200 dark:border-emerald-800">
+          <p className="text-2xl font-bold text-emerald-600">100%</p>
+          <p className="text-xs text-muted-foreground">Implementation Rate</p>
+        </Card>
+      </div>
+
+      {Object.entries(domains).map(([domain, controls]) => (
+        <Card key={domain} data-testid={`card-domain-${domain.replace(/\s/g, '-').toLowerCase()}`}>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold">{domain}</CardTitle>
+              <Badge className={domainColors[domain] || "bg-gray-100 text-gray-800"}>
+                {controls.length} controls
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-36">Control ID</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Component</TableHead>
+                  <TableHead className="w-20">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {controls.map((ctrl: any) => (
+                  <TableRow key={ctrl.controlId} data-testid={`row-isqm-${ctrl.controlId}`}>
+                    <TableCell className="font-mono text-xs font-semibold">{ctrl.controlId}</TableCell>
+                    <TableCell className="text-sm">{ctrl.description}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{ctrl.component}</TableCell>
+                    <TableCell>
+                      <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 text-xs">
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                        {ctrl.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 function GovernanceItem({ icon, bgClass, title, description }: { icon: React.ReactNode; bgClass: string; title: string; description: string }) {
   return (
     <div className="flex items-start gap-2.5">
@@ -1372,10 +1560,12 @@ export default function StandardsMatrixPage() {
         {activeTab === "gap-analysis" && <GapAnalysisTab data={complianceData} engagementId={engagementId} />}
         {activeTab === "risk-trace" && engagementId && <RiskTraceabilityTab data={complianceData} />}
         {activeTab === "signoff" && engagementId && <SignoffRegisterTab data={complianceData} />}
+        {activeTab === "isa-matrix" && <ISACoverageMatrixTab />}
+        {activeTab === "isqm-register" && <ISQMRegisterTab />}
         {activeTab === "integration" && <IntegrationMatrixTab />}
         {activeTab === "ai-assist" && <AIAssistTab engagementId={engagementId} />}
 
-        {!engagementId && activeTab !== "integration" && activeTab !== "ai-assist" && (
+        {!engagementId && activeTab !== "integration" && activeTab !== "ai-assist" && activeTab !== "isa-matrix" && activeTab !== "isqm-register" && (
           <Card className="p-8 text-center">
             <Shield className="w-8 h-8 mx-auto text-muted-foreground mb-3" />
             <p className="text-sm text-muted-foreground" data-testid="text-select-engagement">Select an engagement from the workspace to view compliance data</p>

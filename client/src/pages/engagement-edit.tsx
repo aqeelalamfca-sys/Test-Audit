@@ -1,4 +1,5 @@
 import { useParams, Link, useLocation } from "wouter";
+import { AgentsLoadingInline } from "@/components/agents-loading";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -156,11 +157,7 @@ export default function EngagementEdit() {
   };
 
   if (isLoading) {
-    return (
-      <div className="p-6 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <AgentsLoadingInline showDelay={1000} />;
   }
 
   if (error || !engagement) {

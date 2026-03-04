@@ -994,3 +994,25 @@ a[href*="replit.com"] > img,
   height: 0 !important;
   overflow: hidden !important;
 }
+
+@keyframes agentThink {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-3px) rotate(-5deg); }
+  75% { transform: translateY(-1px) rotate(3deg); }
+}
+@keyframes agentBlink {
+  0%, 95%, 100% { opacity: 1; }
+  97% { opacity: 0; }
+}
+@keyframes agentBubble {
+  0%, 100% { transform: scale(1) translateY(0); opacity: 1; }
+  50% { transform: scale(1.15) translateY(-3px); opacity: 0.8; }
+}
+@keyframes agentDots {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+@keyframes agentBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}

@@ -1,4 +1,5 @@
 import { useParams, Link, useLocation } from "wouter";
+import { AgentsLoadingInline } from "@/components/agents-loading";
 import { CreateEngagementDialog } from "@/components/create-engagement-dialog";
 import { EngagementLink } from "@/components/engagement-link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -286,11 +287,7 @@ export default function ClientDetail() {
   };
 
   if (isLoading) {
-    return (
-      <div className="p-4 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <AgentsLoadingInline showDelay={1000} />;
   }
 
   if (error || !client) {

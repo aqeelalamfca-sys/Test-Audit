@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'wouter';
+import { AgentsLoadingInline } from "@/components/agents-loading";
 import { useQuery } from '@tanstack/react-query';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import { 
@@ -500,7 +501,7 @@ function SectionDetailView({ sectionNumber, engagementId, isReadOnly }: { sectio
   const [selectedCheckpoint, setSelectedCheckpoint] = useState<any>(null);
 
   if (isLoading) {
-    return <div className="text-slate-400">Loading section...</div>;
+    return <AgentsLoadingInline showDelay={1000} />;
   }
 
   return (
