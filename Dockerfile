@@ -19,8 +19,9 @@ RUN NODE_OPTIONS="--max-old-space-size=1024" node -e " \
   const allow = ['@google/generative-ai','axios','bcryptjs','compression','connect-pg-simple','cookie-parser','cors','csv-parse','date-fns','docx','drizzle-orm','drizzle-zod','exceljs','express','express-rate-limit','express-session','jsonwebtoken','memorystore','multer','nanoid','nodemailer','openai','p-limit','p-retry','passport','passport-local','stripe','uuid','ws','xlsx','zod','zod-validation-error']; \
   const allDeps = [...Object.keys(pkg.dependencies||{}),...Object.keys(pkg.devDependencies||{})]; \
   const ext = allDeps.filter(d=>!allow.includes(d)); \
-  esbuild.build({ entryPoints:['server/index.ts'], platform:'node', bundle:true, format:'cjs', outfile:'dist/index.cjs', define:{'process.env.NODE_ENV':'\"production\"'}, minify:true, external:ext, logLevel:'info', alias:{'@shared':path.resolve('shared')}, tsconfig:'server/tsconfig.json' }); \
+  esbuild.buildSync({ entryPoints:['server/index.ts'], platform:'node', bundle:true, format:'cjs', outfile:'dist/index.cjs', define:{'process.env.NODE_ENV':'\"production\"'}, minify:true, external:ext, logLevel:'info', alias:{'@shared':path.resolve('shared')}, tsconfig:'server/tsconfig.json' }); \
 "
+RUN ls -la dist/index.cjs dist/public/index.html
 
 FROM base AS production
 ENV NODE_ENV=production
