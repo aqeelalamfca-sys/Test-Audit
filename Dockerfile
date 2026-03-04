@@ -4,13 +4,23 @@ WORKDIR /app
 
 FROM base AS deps
 COPY package.json package-lock.json* ./
-RUN npm ci --ignore-scripts
+RUN npm ci --ignore-scripts --maxsockets 5
 COPY prisma ./prisma/
-RUN NODE_OPTIONS="--max-old-space-size=4096" npx prisma generate
+RUN npx prisma generate
 
 FROM deps AS build
 COPY . .
-RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build
+RUN NODE_OPTIONS="--max-old-space-size=2048" npx vite build --outDir dist/public
+RUN NODE_OPTIONS="--max-old-space-size=1024" node -e " \
+  const esbuild = require('esbuild'); \
+  const fs = require('fs'); \
+  const path = require('path'); \
+  const pkg = JSON.parse(fs.readFileSync('package.json','utf-8')); \
+  const allow = ['@google/generative-ai','axios','bcryptjs','compression','connect-pg-simple','cookie-parser','cors','csv-parse','date-fns','docx','drizzle-orm','drizzle-zod','exceljs','express','express-rate-limit','express-session','jsonwebtoken','memorystore','multer','nanoid','nodemailer','openai','p-limit','p-retry','passport','passport-local','stripe','uuid','ws','xlsx','zod','zod-validation-error']; \
+  const allDeps = [...Object.keys(pkg.dependencies||{}),...Object.keys(pkg.devDependencies||{})]; \
+  const ext = allDeps.filter(d=>!allow.includes(d)); \
+  esbuild.build({ entryPoints:['server/index.ts'], platform:'node', bundle:true, format:'cjs', outfile:'dist/index.cjs', define:{'process.env.NODE_ENV':'\"production\"'}, minify:true, external:ext, logLevel:'info', alias:{'@shared':path.resolve('shared')}, tsconfig:'server/tsconfig.json' }); \
+"
 
 FROM base AS production
 ENV NODE_ENV=production
