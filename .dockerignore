@@ -14,3 +14,12 @@ replit.nix
 tests
 *.test.ts
 *.spec.ts
+attached_assets
+docs
+DEPLOYMENT.md
+README.md
+*.md
+!prisma/**
+scripts
+deploy
+deploy.sh
