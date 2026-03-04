@@ -13,22 +13,38 @@ echo "[1/4] Validating environment..."
 ERRORS=0
 
 if [ -z "$DATABASE_URL" ]; then
-  echo "  FATAL: DATABASE_URL is not set."
-  ERRORS=1
+  if [ -n "$DB_PASSWORD" ]; then
+    PG_USER="${POSTGRES_USER:-auditwise}"
+    PG_DB="${POSTGRES_DB:-auditwise}"
+    PG_HOST="${POSTGRES_HOST:-db}"
+    PG_PORT="${POSTGRES_PORT:-5432}"
+    ENCODED_PASS=$(node -e "console.log(encodeURIComponent(process.env.DB_PASSWORD))")
+    export DATABASE_URL="postgresql://${PG_USER}:${ENCODED_PASS}@${PG_HOST}:${PG_PORT}/${PG_DB}?schema=public"
+    echo "  DATABASE_URL constructed from component vars (password URL-encoded)."
+  else
+    echo "  FATAL: Neither DATABASE_URL nor DB_PASSWORD is set."
+    ERRORS=1
+  fi
+fi
+
+if [ -n "$DATABASE_URL" ]; then
+  node -e "try { new URL(process.env.DATABASE_URL); } catch(e) { console.error('  FATAL: DATABASE_URL is not a valid URL:', e.message); process.exit(1); }" || ERRORS=1
 fi
 
 if [ -z "$JWT_SECRET" ]; then
-  echo "  FATAL: JWT_SECRET is not set."
-  ERRORS=1
+  echo "  WARN: JWT_SECRET is not set. Auto-generating (tokens will not persist across restarts)."
+  export JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+fi
+
+if [ -z "$SESSION_SECRET" ]; then
+  export SESSION_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
 fi
 
 if [ -n "$POSTGRES_PASSWORD" ] && [ -n "$DATABASE_URL" ]; then
-  URL_PASS=$(echo "$DATABASE_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
-  DECODED_PASS=$(node -e "console.log(decodeURIComponent('$URL_PASS'))" 2>/dev/null || echo "$URL_PASS")
-  if [ -n "$URL_PASS" ] && [ "$DECODED_PASS" != "$POSTGRES_PASSWORD" ]; then
+  URL_PASS=$(node -e "try{const u=new URL(process.env.DATABASE_URL);console.log(decodeURIComponent(u.password))}catch(e){console.log('')}" 2>/dev/null)
+  if [ -n "$URL_PASS" ] && [ "$URL_PASS" != "$POSTGRES_PASSWORD" ]; then
     echo "  WARNING: DATABASE_URL password does not match POSTGRES_PASSWORD."
     echo "  This may cause authentication failures between app and PostgreSQL."
-    echo "  Verify both values are identical in your .env file."
   fi
 fi
 
@@ -47,14 +63,11 @@ DELAY=1
 while [ "$ATTEMPT" -lt "$MAX_WAIT" ]; do
   ATTEMPT=$((ATTEMPT + 1))
   if node -e "
-    const url = process.env.DATABASE_URL;
-    if (!url) { process.exit(1); }
-    const m = url.match(/\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/([^?]+)/);
-    if (!m) { process.exit(1); }
+    const url = new URL(process.env.DATABASE_URL);
     const net = require('net');
     const s = new net.Socket();
     s.setTimeout(2000);
-    s.connect(parseInt(m[4]), m[3], () => { s.destroy(); process.exit(0); });
+    s.connect(parseInt(url.port) || 5432, url.hostname, () => { s.destroy(); process.exit(0); });
     s.on('error', () => process.exit(1));
     s.on('timeout', () => { s.destroy(); process.exit(1); });
   " 2>/dev/null; then
@@ -63,8 +76,7 @@ while [ "$ATTEMPT" -lt "$MAX_WAIT" ]; do
   fi
   if [ "$ATTEMPT" -eq "$MAX_WAIT" ]; then
     echo "FATAL: Database not reachable after ${MAX_WAIT}s."
-    echo "Check DATABASE_URL: ${DATABASE_URL:0:40}..."
-    echo "Ensure PostgreSQL container is running and healthy."
+    echo "Check DATABASE_URL and ensure PostgreSQL container is running and healthy."
     exit 1
   fi
   if [ "$((ATTEMPT % 10))" -eq 0 ]; then

@@ -49,7 +49,10 @@ export function serveStatic(app: Express) {
     },
   }));
 
-  app.use("*", (_req, res) => {
+  app.use("*", (req, res, next) => {
+    if (req.originalUrl.startsWith("/api/") || req.originalUrl.startsWith("/__healthz")) {
+      return next();
+    }
     res.sendFile(indexPath);
   });
 }
