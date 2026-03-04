@@ -287,7 +287,7 @@ router.post("/login", loginRateLimit(), async (req: AuthenticatedRequest, res: R
           message: "Two-factor authentication code required",
         });
       }
-      const isValid2FA = verifyTwoFactorToken(twoFactorCode, user.twoFactorSecret);
+      const isValid2FA = await verifyTwoFactorToken(twoFactorCode, user.twoFactorSecret);
       if (!isValid2FA) {
         return res.status(401).json({ error: "Invalid two-factor authentication code" });
       }
@@ -963,7 +963,7 @@ router.post("/2fa/verify", requireAuth, async (req: AuthenticatedRequest, res: R
     if (!user || !user.twoFactorSecret) {
       return res.status(400).json({ error: "Two-factor setup not initiated" });
     }
-    const isValid = verifyTwoFactorToken(code, user.twoFactorSecret);
+    const isValid = await verifyTwoFactorToken(code, user.twoFactorSecret);
     if (!isValid) {
       return res.status(400).json({ error: "Invalid verification code. Please try again." });
     }
