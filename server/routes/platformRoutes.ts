@@ -584,8 +584,11 @@ const notificationSchema = z.object({
   message: z.string().min(1),
   scope: z.enum(["GLOBAL", "FIRM", "ENGAGEMENT"]),
   firmId: z.string().uuid().optional(),
+  firmIds: z.array(z.string().uuid()).optional(),
   engagementId: z.string().uuid().optional(),
   type: z.enum(["POPUP", "BANNER", "EMAIL"]).optional(),
+  imageUrl: z.string().optional(),
+  youtubeUrl: z.string().optional(),
   priority: z.number().optional(),
   startAt: z.string().optional(),
   endAt: z.string().optional(),
@@ -596,9 +599,48 @@ router.post("/notifications", async (req: AuthenticatedRequest, res: Response) =
     const data = notificationSchema.parse(req.body);
     const { ip, userAgent } = extractRequestMeta(req);
 
+    if (data.scope === "FIRM" && (!data.firmIds || data.firmIds.length === 0) && !data.firmId) {
+      return res.status(400).json({ error: "Firm scope requires at least one firm to be selected" });
+    }
+
+    if (data.scope === "FIRM" && data.firmIds && data.firmIds.length > 0) {
+      const notifications = [];
+      for (const fId of data.firmIds) {
+        const notification = await prisma.platformNotification.create({
+          data: {
+            title: data.title,
+            message: data.message,
+            scope: data.scope,
+            type: data.type || "POPUP",
+            imageUrl: data.imageUrl || undefined,
+            youtubeUrl: data.youtubeUrl || undefined,
+            firmId: fId,
+            firmIds: data.firmIds,
+            engagementId: data.engagementId || undefined,
+            priority: data.priority || 0,
+            startAt: data.startAt ? new Date(data.startAt) : new Date(),
+            endAt: data.endAt ? new Date(data.endAt) : undefined,
+            createdById: req.user!.id,
+          },
+        });
+        notifications.push(notification);
+        await logPlatformAction(req.user!.id, "NOTIFICATION_CREATED", "notification", notification.id, fId, ip, userAgent);
+      }
+      return res.status(201).json({ ...notifications[0], createdCount: notifications.length, allIds: notifications.map(n => n.id) });
+    }
+
     const notification = await prisma.platformNotification.create({
       data: {
-        ...data,
+        title: data.title,
+        message: data.message,
+        scope: data.scope,
+        type: data.type || "POPUP",
+        imageUrl: data.imageUrl || undefined,
+        youtubeUrl: data.youtubeUrl || undefined,
+        firmId: data.firmId || undefined,
+        firmIds: data.firmIds || undefined,
+        engagementId: data.engagementId || undefined,
+        priority: data.priority || 0,
         startAt: data.startAt ? new Date(data.startAt) : new Date(),
         endAt: data.endAt ? new Date(data.endAt) : undefined,
         createdById: req.user!.id,
@@ -613,6 +655,97 @@ router.post("/notifications", async (req: AuthenticatedRequest, res: Response) =
     }
     console.error("Create notification error:", error);
     res.status(500).json({ error: "Failed to create notification" });
+  }
+});
+
+const notifImageUpload = multer({
+  storage: multer.diskStorage({
+    destination: async (_req, _file, cb) => {
+      const dir = path.join(process.cwd(), "uploads", "notifications");
+      await fs.mkdir(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (_req, file, cb) => {
+      const unique = Date.now() + "-" + Math.round(Math.random() * 1e6);
+      cb(null, unique + path.extname(file.originalname));
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
+    const allowedMimes = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, allowed.includes(ext) && allowedMimes.includes(file.mimetype));
+  },
+});
+
+router.post("/notifications/upload-image", notifImageUpload.single("image"), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "No image file. Accepted: PNG, JPG, JPEG, WEBP, GIF (max 10MB)" });
+    const imageUrl = `/uploads/notifications/${req.file.filename}`;
+    res.json({ imageUrl });
+  } catch (error) {
+    console.error("Notification image upload error:", error);
+    res.status(500).json({ error: "Failed to upload image" });
+  }
+});
+
+router.post("/notifications/ai-generate", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { topic, tone, type } = req.body;
+    if (!topic) return res.status(400).json({ error: "Topic is required" });
+
+    const OpenAI = (await import("openai")).default;
+
+    let apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+    let baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+
+    if (!apiKey) {
+      const aiConfig = await prisma.aISettings.findFirst({
+        where: { openaiEnabled: true, openaiApiKey: { not: null } },
+        select: { openaiApiKey: true },
+      });
+      if (aiConfig?.openaiApiKey) {
+        apiKey = aiConfig.openaiApiKey;
+      }
+    }
+
+    if (!apiKey) {
+      return res.status(400).json({ error: "AI is not configured. No OpenAI API key found in environment or firm settings." });
+    }
+
+    const openai = new OpenAI({ apiKey, baseURL, timeout: 30000 });
+    const toneGuide = tone === "formal" ? "formal and professional" : tone === "friendly" ? "warm, friendly and engaging" : tone === "urgent" ? "urgent and action-oriented" : "professional and clear";
+    const typeGuide = type === "BANNER" ? "Keep it concise (1-2 sentences for title, 2-3 sentences for message). Banners need to be quick to read." : "Create an engaging pop-up notification with a compelling title and detailed message body (3-5 sentences).";
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are a professional communications specialist for AuditWise, a statutory audit management platform. Generate attractive, engaging notification content. Tone: ${toneGuide}. ${typeGuide}. Respond in JSON format with "title" and "message" fields only. Do not use markdown formatting in the values.`
+        },
+        {
+          role: "user",
+          content: `Generate a ${type || "POPUP"} notification about: ${topic}`
+        }
+      ],
+      temperature: 0.8,
+      max_tokens: 500,
+      response_format: { type: "json_object" },
+    });
+
+    const raw = completion.choices[0]?.message?.content || "{}";
+    const parsed = JSON.parse(raw);
+
+    res.json({
+      title: parsed.title || "",
+      message: parsed.message || "",
+      tokens: completion.usage?.total_tokens || 0,
+    });
+  } catch (error: any) {
+    console.error("AI notification generation error:", error.message);
+    res.status(500).json({ error: "AI generation failed: " + (error.message || "Unknown error") });
   }
 });
 

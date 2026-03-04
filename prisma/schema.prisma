@@ -331,11 +331,14 @@ model InvoiceLine {
 model PlatformNotification {
   id           String            @id @default(uuid())
   firmId       String?
+  firmIds      Json?
   scope        NotificationScope @default(GLOBAL)
   engagementId String?
   type         NotificationType  @default(POPUP)
   title        String
   message      String
+  imageUrl     String?
+  youtubeUrl   String?
   startAt      DateTime          @default(now())
   endAt        DateTime?
   priority     Int               @default(0)

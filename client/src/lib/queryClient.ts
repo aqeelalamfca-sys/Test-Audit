@@ -21,7 +21,7 @@ function getAuthHeaders(): Record<string, string> {
   return headers;
 }
 
-async function fetchWithAutoRefresh(url: string, options: RequestInit = {}): Promise<Response> {
+export async function fetchWithAutoRefresh(url: string, options: RequestInit = {}): Promise<Response> {
   let res = await fetch(url, {
     ...options,
     headers: { ...getAuthHeaders(), ...(options.headers || {}) },

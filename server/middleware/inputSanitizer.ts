@@ -66,9 +66,15 @@ function detectSqlInjection(value: string): boolean {
 }
 
 const PASSWORD_FIELDS = new Set(["password", "currentPassword", "newPassword", "confirmPassword", "passwordHash"]);
+const CONTENT_FIELDS = new Set([
+  "message", "title", "description", "content", "notes", "comment", "body",
+  "youtubeUrl", "imageUrl", "url", "link", "topic", "memo", "narrative",
+  "explanation", "recommendation", "finding", "observation", "response",
+  "rationale", "conclusion", "summary", "detail", "reason", "text",
+]);
 
 function checkSqlInjectionDeep(value: unknown, key?: string): boolean {
-  if (typeof value === "string" && key && !PASSWORD_FIELDS.has(key)) {
+  if (typeof value === "string" && key && !PASSWORD_FIELDS.has(key) && !CONTENT_FIELDS.has(key)) {
     return detectSqlInjection(value);
   }
   if (Array.isArray(value)) {

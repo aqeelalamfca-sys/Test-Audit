@@ -119,6 +119,13 @@ app.use("/uploads/logos", express.static(path.join(process.cwd(), "uploads", "lo
   },
 }));
 
+app.use("/uploads/notifications", express.static(path.join(process.cwd(), "uploads", "notifications"), {
+  setHeaders: (res) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+  },
+}));
+
 app.use(compression());
 
 app.use((_req: Request, res: Response, next: NextFunction) => {
