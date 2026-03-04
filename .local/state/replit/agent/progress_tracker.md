@@ -112,3 +112,22 @@
 [x] 44. Compliance Deliverable Documents (8 files in docs/compliance/)
 [x] 45. Updated replit.md with Compliance Log and Deliverable Documents entries
 [x] 46. Replit migration complete - Fixed tsx path issue in start.sh, pushed Prisma schema, app verified running on port 5000 with login page confirmed
+[x] 47. Full Production Deployment Audit:
+    - PORT binding: Verified server binds to process.env.PORT || 5000 on 0.0.0.0 (already correct)
+    - package.json: Removed hardcoded NODE_ENV=production from start script (should come from environment)
+    - Build output: Verified dist/index.cjs (server) + dist/public/ (frontend) structure is correct
+    - API before frontend: Verified routes registered before static file serving in production
+    - Cleanup: Removed tmpa/, tmpb/ temp directories, stale dist/ artifacts, .env.production with placeholder values
+    - Prisma/DATABASE_URL: Verified loads from environment with proper validation and fallback construction
+    - Replit independence: No Replit-specific code in server (only in vite dev plugins, properly gated)
+    - Vite config: Removed unused proxy config (dev uses integrated Vite middleware, not proxy)
+    - Nginx compatibility: trust proxy enabled, deploy/nginx/ configs have proper headers, rate limiting, WebSocket support
+    - Dockerfile: Multi-stage build verified (deps → build → proddeps → production), healthcheck configured
+    - Docker Compose: Full production stack with PostgreSQL, volume persistence, health checks, logging
+    - docker-entrypoint.sh: ENV validation, DB wait loop, schema sync, proper exec startup
+    - PM2 ecosystem: Configured for production with memory limits and auto-restart
+    - GitHub Actions: CI/CD pipeline for Docker image build and push to GHCR
+    - Security headers: X-Content-Type-Options, X-Frame-Options, HSTS, CSP all present
+    - Health endpoints: /__healthz and /health verified working
+    - .gitignore: Updated to exclude .env.production, added node_modules/ and dist/
+    - Graceful shutdown: SIGTERM/SIGINT handlers with 15s drain timeout verified

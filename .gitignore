@@ -3,7 +3,8 @@
 .env.*
 !.env.example
 
-# But keep the production template
-!.env.production
+node_modules/
+dist/
+*.log
 auditwise-deploy.tar.gz
 .jwt_secret

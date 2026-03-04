@@ -1,8 +1,0 @@
-import{j as r,a9 as g}from"./index-oPlpVJNV.js";function h({activeTab:u,setActiveTab:o,tabs:t,ariaLabel:c="Navigation tabs",className:m,tabStatuses:x}){const p=e=>{switch(e){case"complete":return"bg-green-500";case"warning":return"bg-amber-500";case"incomplete":return"bg-red-500";case"not_started":return null;default:return null}};return r.jsx("div",{className:g("relative",m),children:r.jsx("div",{role:"tablist","aria-label":c,className:"flex items-center gap-1 p-1 bg-muted/40 rounded-xl border border-border/30 overflow-x-auto",children:t.map((e,a)=>{const n=e.id===u,i=x?.[e.id],l=i?p(i.status):null;return r.jsxs("button",{role:"tab","aria-selected":n,"aria-controls":`tabpanel-${e.id}`,tabIndex:n?0:-1,onClick:()=>o(e.id),onKeyDown:d=>{if(d.key==="ArrowRight"){const s=Math.min(a+1,t.length-1);o(t[s].id)}else if(d.key==="ArrowLeft"){const s=Math.max(a-1,0);o(t[s].id)}},"data-testid":`tab-${e.id}`,className:`
-                group relative flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-medium whitespace-nowrap
-                transition-all duration-150 ease-out min-w-fit focus:outline-none focus:ring-2 focus:ring-primary/50
-                ${n?"bg-primary/10 text-primary shadow-sm":"text-muted-foreground hover:text-foreground hover:bg-muted/50"}
-              `,children:[r.jsx("span",{className:`
-                flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-semibold
-                ${n?"bg-primary text-primary-foreground":"bg-muted text-muted-foreground group-hover:text-foreground"}
-              `,children:a+1}),r.jsx("span",{children:e.label}),l&&r.jsx("span",{className:`w-1.5 h-1.5 rounded-full ${l}`,title:i?.label})]},e.id)})})})}export{h as S};

@@ -126,7 +126,7 @@
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "tsx script/build.ts",
-    "start": "NODE_ENV=production node dist/index.cjs",
+    "start": "node dist/index.cjs",
     "test:e2e": "playwright test",
     "test:smoke": "tsx tests/smoke.ts",
     "check": "tsc --noEmit",
