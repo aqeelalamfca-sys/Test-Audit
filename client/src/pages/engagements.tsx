@@ -68,7 +68,7 @@ export default function Engagements() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const isAdmin = user?.role?.toLowerCase() === "admin" || user?.role?.toLowerCase() === "partner";
+  const isAdmin = ["admin", "partner", "firm_admin", "manager"].includes(user?.role?.toLowerCase() || "");
 
   const handleStartEngagement = async (engagement: Engagement) => {
     const buttonInfo = getButtonLabel(engagement);
