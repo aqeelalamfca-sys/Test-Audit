@@ -315,7 +315,7 @@ export default function ClientOnboarding() {
 
       if (response.ok) {
         saveBridge.setSaved();
-        await queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+        queryClient.removeQueries({ queryKey: ["/api/clients"] });
         toast({ title: "Success", description: isEditMode ? "Client updated successfully" : "Client created successfully" });
         navigate("/clients");
       } else {
