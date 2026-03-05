@@ -4,6 +4,7 @@ import { requireAuth, hashPassword, type AuthenticatedRequest } from "../auth";
 import { requireSuperAdmin } from "../middleware/rbacGuard";
 import { logPlatformAction, extractRequestMeta } from "../services/platformAuditService";
 import { generateMonthlyInvoice, enforceSubscriptionLifecycle } from "../services/billingService";
+import { withPlatformContext } from "../middleware/tenantDbContext";
 import { z } from "zod";
 import { randomBytes } from "crypto";
 import multer from "multer";
@@ -32,23 +33,26 @@ router.get("/firms", async (req: AuthenticatedRequest, res: Response) => {
       ];
     }
 
-    const [firms, total] = await Promise.all([
-      prisma.firm.findMany({
-        where,
-        skip,
-        take,
-        orderBy: { createdAt: "desc" },
-        include: {
-          _count: { select: { users: true, engagements: true } },
-          subscriptions: {
-            take: 1,
-            orderBy: { createdAt: "desc" },
-            include: { plan: true },
+    const { firms, total } = await withPlatformContext(async (tx) => {
+      const [firms, total] = await Promise.all([
+        tx.firm.findMany({
+          where,
+          skip,
+          take,
+          orderBy: { createdAt: "desc" },
+          include: {
+            _count: { select: { users: true, engagements: true } },
+            subscriptions: {
+              take: 1,
+              orderBy: { createdAt: "desc" },
+              include: { plan: true },
+            },
           },
-        },
-      }),
-      prisma.firm.count({ where }),
-    ]);
+        }),
+        tx.firm.count({ where }),
+      ]);
+      return { firms, total };
+    });
 
     res.json({ firms, total, page: parseInt(page as string), limit: take });
   } catch (error) {
@@ -147,16 +151,18 @@ router.post("/firms", async (req: AuthenticatedRequest, res: Response) => {
     let subscription = null;
     if (plan) {
       const now = new Date();
-      subscription = await prisma.subscription.create({
-        data: {
-          firmId: firm.id,
-          planId: plan.id,
-          status: data.trialDays ? "TRIAL" : "ACTIVE",
-          trialStart: data.trialDays ? now : undefined,
-          trialEnd: data.trialDays ? new Date(now.getTime() + data.trialDays * 86400000) : undefined,
-          currentPeriodStart: now,
-          currentPeriodEnd: new Date(now.getTime() + 30 * 86400000),
-        },
+      subscription = await withPlatformContext(async (tx) => {
+        return tx.subscription.create({
+          data: {
+            firmId: firm.id,
+            planId: plan!.id,
+            status: data.trialDays ? "TRIAL" : "ACTIVE",
+            trialStart: data.trialDays ? now : undefined,
+            trialEnd: data.trialDays ? new Date(now.getTime() + data.trialDays * 86400000) : undefined,
+            currentPeriodStart: now,
+            currentPeriodEnd: new Date(now.getTime() + 30 * 86400000),
+          },
+        });
       });
     }
 
@@ -200,17 +206,19 @@ router.post("/firms", async (req: AuthenticatedRequest, res: Response) => {
 
 router.get("/firms/:id", async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const firm = await prisma.firm.findUnique({
-      where: { id: req.params.id },
-      include: {
-        _count: { select: { users: true, engagements: true, clients: true } },
-        subscriptions: {
-          take: 1,
-          orderBy: { createdAt: "desc" },
-          include: { plan: true },
+    const firm = await withPlatformContext(async (tx) => {
+      return tx.firm.findUnique({
+        where: { id: req.params.id },
+        include: {
+          _count: { select: { users: true, engagements: true, clients: true } },
+          subscriptions: {
+            take: 1,
+            orderBy: { createdAt: "desc" },
+            include: { plan: true },
+          },
+          firmSettings: true,
         },
-        firmSettings: true,
-      },
+      });
     });
 
     if (!firm) return res.status(404).json({ error: "Firm not found" });
@@ -277,47 +285,49 @@ router.post("/firms/:id/activate", async (req: AuthenticatedRequest, res: Respon
       data: { status: "ACTIVE", suspendedAt: null },
     });
 
-    const subscription = await prisma.subscription.findFirst({
-      where: { firmId },
-      orderBy: { createdAt: "desc" },
+    await withPlatformContext(async (tx) => {
+      const subscription = await tx.subscription.findFirst({
+        where: { firmId },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (subscription) {
+        const beforeState = {
+          status: subscription.status,
+          isActivated: subscription.isActivated,
+          deleteAt: subscription.deleteAt,
+        };
+
+        const now = new Date();
+        const periodEnd = new Date(now);
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+        await tx.subscription.update({
+          where: { id: subscription.id },
+          data: {
+            isActivated: true,
+            status: "ACTIVE",
+            deleteAt: null,
+            currentPeriodStart: now,
+            currentPeriodEnd: periodEnd,
+            nextInvoiceAt: periodEnd,
+          },
+        });
+
+        await logBillingAction({
+          actorUserId: req.user!.id,
+          firmId,
+          subscriptionId: subscription.id,
+          action: "ACTIVATED_BY_ADMIN",
+          beforeState,
+          afterState: {
+            status: "ACTIVE",
+            isActivated: true,
+            deleteAt: null,
+          },
+        });
+      }
     });
-
-    if (subscription) {
-      const beforeState = {
-        status: subscription.status,
-        isActivated: subscription.isActivated,
-        deleteAt: subscription.deleteAt,
-      };
-
-      const now = new Date();
-      const periodEnd = new Date(now);
-      periodEnd.setMonth(periodEnd.getMonth() + 1);
-
-      await prisma.subscription.update({
-        where: { id: subscription.id },
-        data: {
-          isActivated: true,
-          status: "ACTIVE",
-          deleteAt: null,
-          currentPeriodStart: now,
-          currentPeriodEnd: periodEnd,
-          nextInvoiceAt: periodEnd,
-        },
-      });
-
-      await logBillingAction({
-        actorUserId: req.user!.id,
-        firmId,
-        subscriptionId: subscription.id,
-        action: "ACTIVATED_BY_ADMIN",
-        beforeState,
-        afterState: {
-          status: "ACTIVE",
-          isActivated: true,
-          deleteAt: null,
-        },
-      });
-    }
 
     await logPlatformAction(req.user!.id, "FIRM_ACTIVATED", "firm", firm.id, firm.id, ip, userAgent);
     res.json(firm);
@@ -347,8 +357,10 @@ router.post("/firms/:id/reset-admin", async (req: AuthenticatedRequest, res: Res
   try {
     const { ip, userAgent } = extractRequestMeta(req);
     const firmId = req.params.id;
-    const firmAdmin = await prisma.user.findFirst({
-      where: { firmId, role: "FIRM_ADMIN" },
+    const firmAdmin = await withPlatformContext(async (tx) => {
+      return tx.user.findFirst({
+        where: { firmId, role: "FIRM_ADMIN" },
+      });
     });
 
     if (!firmAdmin) return res.status(404).json({ error: "Firm admin not found" });
@@ -480,50 +492,54 @@ router.post("/firms/:id/trial", async (req: AuthenticatedRequest, res: Response)
     if (!plan) return res.status(400).json({ error: "No plan available" });
 
     const now = new Date();
-    const existingSub = await prisma.subscription.findFirst({
-      where: { firmId: req.params.id },
-      orderBy: { createdAt: "desc" },
-    });
+    const result = await withPlatformContext(async (tx) => {
+      const existingSub = await tx.subscription.findFirst({
+        where: { firmId: req.params.id },
+        orderBy: { createdAt: "desc" },
+      });
 
-    if (existingSub) {
-      const updated = await prisma.subscription.update({
-        where: { id: existingSub.id },
+      if (existingSub) {
+        const updated = await tx.subscription.update({
+          where: { id: existingSub.id },
+          data: {
+            status: "TRIAL",
+            trialStart: now,
+            trialEnd: new Date(now.getTime() + data.trialDays * 86400000),
+            planId: plan.id,
+          },
+        });
+
+        await tx.firm.update({
+          where: { id: req.params.id },
+          data: { status: "TRIAL" },
+        });
+
+        await logPlatformAction(req.user!.id, "TRIAL_EXTENDED", "subscription", updated.id, req.params.id, ip, userAgent, data);
+        return { subscription: updated, created: false };
+      }
+
+      const subscription = await tx.subscription.create({
         data: {
+          firmId: req.params.id,
+          planId: plan.id,
           status: "TRIAL",
           trialStart: now,
           trialEnd: new Date(now.getTime() + data.trialDays * 86400000),
-          planId: plan.id,
+          currentPeriodStart: now,
+          currentPeriodEnd: new Date(now.getTime() + data.trialDays * 86400000),
         },
       });
 
-      await prisma.firm.update({
+      await tx.firm.update({
         where: { id: req.params.id },
         data: { status: "TRIAL" },
       });
 
-      await logPlatformAction(req.user!.id, "TRIAL_EXTENDED", "subscription", updated.id, req.params.id, ip, userAgent, data);
-      return res.json(updated);
-    }
-
-    const subscription = await prisma.subscription.create({
-      data: {
-        firmId: req.params.id,
-        planId: plan.id,
-        status: "TRIAL",
-        trialStart: now,
-        trialEnd: new Date(now.getTime() + data.trialDays * 86400000),
-        currentPeriodStart: now,
-        currentPeriodEnd: new Date(now.getTime() + data.trialDays * 86400000),
-      },
+      await logPlatformAction(req.user!.id, "TRIAL_ASSIGNED", "subscription", subscription.id, req.params.id, ip, userAgent, data);
+      return { subscription, created: true };
     });
 
-    await prisma.firm.update({
-      where: { id: req.params.id },
-      data: { status: "TRIAL" },
-    });
-
-    await logPlatformAction(req.user!.id, "TRIAL_ASSIGNED", "subscription", subscription.id, req.params.id, ip, userAgent, data);
-    res.status(201).json(subscription);
+    res.status(result.created ? 201 : 200).json(result.subscription);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: "Invalid request", details: error.errors });
@@ -542,9 +558,11 @@ router.patch("/subscriptions/:id", async (req: AuthenticatedRequest, res: Respon
     const data = schema.parse(req.body);
     const { ip, userAgent } = extractRequestMeta(req);
 
-    const subscription = await prisma.subscription.update({
-      where: { id: req.params.id },
-      data,
+    const subscription = await withPlatformContext(async (tx) => {
+      return tx.subscription.update({
+        where: { id: req.params.id },
+        data,
+      });
     });
 
     await logPlatformAction(req.user!.id, "SUBSCRIPTION_UPDATED", "subscription", subscription.id, subscription.firmId, ip, userAgent, data);
@@ -805,10 +823,10 @@ router.get("/audit-logs", async (req: AuthenticatedRequest, res: Response) => {
 
     const userIds = [...new Set(logs.map((l: any) => l.userId).filter(Boolean))];
     const users = userIds.length > 0
-      ? await prisma.user.findMany({
+      ? await withPlatformContext(async (tx) => tx.user.findMany({
           where: { id: { in: userIds } },
           select: { id: true, fullName: true, email: true, role: true },
-        })
+        }))
       : [];
     const userMap = Object.fromEntries(users.map(u => [u.id, u]));
 
@@ -857,11 +875,11 @@ router.get("/audit-logs/users", async (_req: AuthenticatedRequest, res: Response
     });
     const ids = userIds.map(u => u.userId).filter(Boolean);
     const users = ids.length > 0
-      ? await prisma.user.findMany({
+      ? await withPlatformContext(async (tx) => tx.user.findMany({
           where: { id: { in: ids } },
           select: { id: true, fullName: true, email: true, role: true, firmId: true },
           orderBy: { fullName: "asc" },
-        })
+        }))
       : [];
     res.json(users);
   } catch (error) {
@@ -1008,9 +1026,11 @@ router.post("/invoices/:id/mark-paid", async (req: AuthenticatedRequest, res: Re
     });
 
     if (invoice.subscriptionId) {
-      await prisma.subscription.update({
-        where: { id: invoice.subscriptionId },
-        data: { status: "ACTIVE" },
+      await withPlatformContext(async (tx) => {
+        await tx.subscription.update({
+          where: { id: invoice.subscriptionId! },
+          data: { status: "ACTIVE" },
+        });
       });
     }
 
@@ -1118,45 +1138,47 @@ router.post("/invoices/:id/dispatch", async (req: AuthenticatedRequest, res: Res
 
 router.get("/billing-summary", async (_req: AuthenticatedRequest, res: Response) => {
   try {
-    const firms = await prisma.firm.findMany({
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        name: true,
-        displayName: true,
-        email: true,
-        status: true,
-        subscriptions: {
-          take: 1,
-          orderBy: { createdAt: "desc" },
-          select: {
-            id: true,
-            status: true,
-            trialStart: true,
-            trialEnd: true,
-            currentPeriodStart: true,
-            currentPeriodEnd: true,
-            nextInvoiceAt: true,
-            priceSnapshot: true,
-            plan: { select: { id: true, code: true, name: true, monthlyPrice: true } },
-            invoices: {
-              orderBy: { createdAt: "desc" },
-              take: 5,
-              select: {
-                id: true,
-                invoiceNo: true,
-                amount: true,
-                currency: true,
-                status: true,
-                issuedAt: true,
-                dueAt: true,
-                paidAt: true,
-                createdAt: true,
+    const firms = await withPlatformContext(async (tx) => {
+      return tx.firm.findMany({
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          displayName: true,
+          email: true,
+          status: true,
+          subscriptions: {
+            take: 1,
+            orderBy: { createdAt: "desc" },
+            select: {
+              id: true,
+              status: true,
+              trialStart: true,
+              trialEnd: true,
+              currentPeriodStart: true,
+              currentPeriodEnd: true,
+              nextInvoiceAt: true,
+              priceSnapshot: true,
+              plan: { select: { id: true, code: true, name: true, monthlyPrice: true } },
+              invoices: {
+                orderBy: { createdAt: "desc" },
+                take: 5,
+                select: {
+                  id: true,
+                  invoiceNo: true,
+                  amount: true,
+                  currency: true,
+                  status: true,
+                  issuedAt: true,
+                  dueAt: true,
+                  paidAt: true,
+                  createdAt: true,
+                },
               },
             },
           },
         },
-      },
+      });
     });
 
     res.json({ firms });
@@ -1184,40 +1206,34 @@ router.post("/billing/enforce-lifecycle", async (req: AuthenticatedRequest, res:
 
 router.get("/analytics", async (_req: AuthenticatedRequest, res: Response) => {
   try {
-    const [
-      totalFirms,
-      activeFirms,
-      trialFirms,
-      dormantFirms,
-      suspendedFirms,
-      totalUsers,
-      totalEngagements,
-      aiUsageThisMonth,
-    ] = await Promise.all([
-      prisma.firm.count(),
-      prisma.firm.count({ where: { status: "ACTIVE" } }),
-      prisma.firm.count({ where: { status: "TRIAL" } }),
-      prisma.firm.count({ where: { status: "DORMANT" } }),
-      prisma.firm.count({ where: { status: "SUSPENDED" } }),
-      prisma.user.count({ where: { status: "ACTIVE" } }),
-      prisma.engagement.count(),
-      prisma.aIUsageRecord.count({
-        where: {
-          createdAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
-        },
-      }),
-    ]);
-
-    res.json({
-      totalFirms,
-      activeFirms,
-      trialFirms,
-      dormantFirms,
-      suspendedFirms,
-      totalUsers,
-      totalEngagements,
-      aiUsageThisMonth,
+    const result = await withPlatformContext(async (tx) => {
+      const [
+        totalFirms,
+        activeFirms,
+        trialFirms,
+        dormantFirms,
+        suspendedFirms,
+        totalUsers,
+        totalEngagements,
+        aiUsageThisMonth,
+      ] = await Promise.all([
+        tx.firm.count(),
+        tx.firm.count({ where: { status: "ACTIVE" } }),
+        tx.firm.count({ where: { status: "TRIAL" } }),
+        tx.firm.count({ where: { status: "DORMANT" } }),
+        tx.firm.count({ where: { status: "SUSPENDED" } }),
+        tx.user.count({ where: { status: "ACTIVE" } }),
+        tx.engagement.count(),
+        tx.aIUsageRecord.count({
+          where: {
+            createdAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
+          },
+        }),
+      ]);
+      return { totalFirms, activeFirms, trialFirms, dormantFirms, suspendedFirms, totalUsers, totalEngagements, aiUsageThisMonth };
     });
+
+    res.json(result);
   } catch (error) {
     console.error("Analytics error:", error);
     res.status(500).json({ error: "Failed to get analytics" });
@@ -1269,7 +1285,7 @@ router.post("/firms/:id/invite-admin", async (req: AuthenticatedRequest, res: Re
     const firm = await prisma.firm.findUnique({ where: { id } });
     if (!firm) return res.status(404).json({ error: "Firm not found" });
 
-    const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
+    const existingUser = await withPlatformContext(async (tx) => tx.user.findUnique({ where: { email: data.email } }));
     if (existingUser) {
       return res.status(400).json({ error: "A user with this email already exists" });
     }

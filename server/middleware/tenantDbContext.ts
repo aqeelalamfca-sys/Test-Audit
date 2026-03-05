@@ -15,6 +15,15 @@ export async function withTenantContext<T>(
   }, { timeout: 30000 });
 }
 
+export async function withPlatformContext<T>(
+  fn: (tx: typeof prisma) => Promise<T>
+): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRawUnsafe(`SET LOCAL row_security = off`);
+    return fn(tx as unknown as typeof prisma);
+  }, { timeout: 30000 });
+}
+
 export function setTenantDbContext(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   if (!req.user) {
     return res.status(401).json({ error: "Authentication required" });
