@@ -44,6 +44,6 @@ publicDir = "dist/public"
 
 [userenv.shared]
 INITIAL_SUPER_ADMIN_EMAIL = "aqeelalam2010@gmail.com"
-INITIAL_SUPER_ADMIN_PASSWORD = "Aqeel@123$SA"
+INITIAL_SUPER_ADMIN_PASSWORD = "Aqeel@123$"
 SUPER_ADMIN_PASSWORD = "Aqeel@123$"
 ADMIN_RESET = "true"
