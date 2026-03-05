@@ -719,9 +719,11 @@ router.post("/notifications/ai-generate", async (req: AuthenticatedRequest, res:
     let baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
 
     if (!apiKey) {
-      const aiConfig = await prisma.aISettings.findFirst({
-        where: { openaiEnabled: true, openaiApiKey: { not: null } },
-        select: { openaiApiKey: true },
+      const aiConfig = await withPlatformContext(async (tx) => {
+        return tx.aISettings.findFirst({
+          where: { openaiEnabled: true, openaiApiKey: { not: null } },
+          select: { openaiApiKey: true },
+        });
       });
       if (aiConfig?.openaiApiKey) {
         apiKey = aiConfig.openaiApiKey;
