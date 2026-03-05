@@ -117,14 +117,17 @@ export default function PlatformAuditLogs() {
 
   const { data, isLoading } = useQuery<any>({
     queryKey: [queryUrl],
+    refetchInterval: 30000,
   });
 
   const { data: firmsSummary } = useQuery<any[]>({
     queryKey: ["/api/platform/audit-logs/firms-summary"],
+    refetchInterval: 30000,
   });
 
   const { data: allUsers } = useQuery<any[]>({
     queryKey: ["/api/platform/audit-logs/users"],
+    refetchInterval: 60000,
   });
 
   const logs = data?.logs || [];

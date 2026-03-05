@@ -64,8 +64,19 @@ export default function PlatformNotifications() {
   const [previewNotification, setPreviewNotification] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: notifications, isLoading } = useQuery<any[]>({ queryKey: ["/api/platform/notifications"] });
-  const { data: firmsResponse } = useQuery<any>({ queryKey: ["/api/platform/firms?limit=500"] });
+  const { data: notifications, isLoading } = useQuery<any[]>({ queryKey: ["/api/platform/notifications"], refetchInterval: 30000 });
+  const { data: firmsResponse } = useQuery<any>({
+    queryKey: ["/api/platform/firms", "notifications"],
+    queryFn: async () => {
+      const token = localStorage.getItem("auditwise_token");
+      const res = await fetch("/api/platform/firms?limit=500", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+      return res.json();
+    },
+  });
   const firms: any[] = firmsResponse?.firms || firmsResponse || [];
 
   const createMutation = useMutation({

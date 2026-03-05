@@ -40,7 +40,7 @@ export default function PlanManagement() {
   const [editingPlan, setEditingPlan] = useState<any | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
 
-  const { data: plans, isLoading } = useQuery<any[]>({ queryKey: ["/api/platform/plans"] });
+  const { data: plans, isLoading } = useQuery<any[]>({ queryKey: ["/api/platform/plans"], refetchInterval: 30000 });
 
   const savePlanMutation = useMutation({
     mutationFn: async (data: any) => {

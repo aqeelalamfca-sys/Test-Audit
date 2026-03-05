@@ -431,6 +431,7 @@ export default function BillingManagement() {
 
   const { data, isLoading, refetch } = useQuery<{ firms: FirmRow[] }>({
     queryKey: ["/api/platform/billing-summary"],
+    refetchInterval: 30000,
   });
 
   const lifecycleMutation = useMutation({

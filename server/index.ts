@@ -499,6 +499,28 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     }
 
     try {
+      const firmsCleaned = await prisma.$executeRawUnsafe(`
+        UPDATE "Firm" SET 
+          name = REPLACE(REPLACE(REPLACE(name, '&amp;', '&'), '&lt;', '<'), '&gt;', '>'),
+          "displayName" = REPLACE(REPLACE(REPLACE(COALESCE("displayName",''), '&amp;', '&'), '&lt;', '<'), '&gt;', '>')
+        WHERE name LIKE '%&amp;%' OR name LIKE '%&lt;%' OR name LIKE '%&gt;%'
+          OR "displayName" LIKE '%&amp;%' OR "displayName" LIKE '%&lt;%' OR "displayName" LIKE '%&gt;%'
+      `);
+      const clientsCleaned = await prisma.$executeRawUnsafe(`
+        UPDATE "Client" SET 
+          name = REPLACE(REPLACE(REPLACE(name, '&amp;', '&'), '&lt;', '<'), '&gt;', '>'),
+          "tradingName" = REPLACE(REPLACE(REPLACE(COALESCE("tradingName",''), '&amp;', '&'), '&lt;', '<'), '&gt;', '>')
+        WHERE name LIKE '%&amp;%' OR name LIKE '%&lt;%' OR name LIKE '%&gt;%'
+          OR "tradingName" LIKE '%&amp;%' OR "tradingName" LIKE '%&lt;%' OR "tradingName" LIKE '%&gt;%'
+      `);
+      if (firmsCleaned > 0 || clientsCleaned > 0) {
+        console.log(`[Startup] Cleaned HTML entities: ${firmsCleaned} firms, ${clientsCleaned} clients`);
+      }
+    } catch (err) {
+      console.error("Failed to clean HTML entities:", err);
+    }
+
+    try {
       await seedPlans();
       console.log("Plans seeded successfully");
     } catch (err) {

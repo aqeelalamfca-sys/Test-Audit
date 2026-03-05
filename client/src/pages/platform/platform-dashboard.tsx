@@ -8,6 +8,7 @@ export default function PlatformDashboard() {
 
   const { data: analytics, isLoading } = useQuery<any>({
     queryKey: ["/api/platform/analytics"],
+    refetchInterval: 30000,
   });
 
   const stats = [

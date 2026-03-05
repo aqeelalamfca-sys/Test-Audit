@@ -43,7 +43,6 @@ function sanitizeString(value: string, isPasswordField: boolean = false): string
   }
 
   cleaned = cleaned
-    .replace(/&(?!amp;|lt;|gt;|quot;|#39;)/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 

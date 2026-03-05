@@ -33,6 +33,20 @@ export default function FirmManagement() {
 
   const { data, isLoading } = useQuery<any>({
     queryKey: ["/api/platform/firms", search, statusFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      if (statusFilter && statusFilter !== "all") params.set("status", statusFilter);
+      const url = `/api/platform/firms${params.toString() ? `?${params}` : ""}`;
+      const token = localStorage.getItem("auditwise_token");
+      const res = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+      return res.json();
+    },
+    refetchInterval: 30000,
   });
 
   const { data: plans } = useQuery<any>({ queryKey: ["/api/platform/plans"] });
