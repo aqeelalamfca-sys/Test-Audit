@@ -14,10 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 const ROLES = [
   { value: "STAFF", label: "Staff / Associate" },
   { value: "SENIOR", label: "Senior" },
-  { value: "TEAM_LEAD", label: "Team Lead" },
   { value: "MANAGER", label: "Manager / Reviewer" },
   { value: "PARTNER", label: "Partner / Approver" },
-  { value: "MANAGING_PARTNER", label: "Managing Partner" },
   { value: "EQCR", label: "Engagement Quality Reviewer" },
 ];
 

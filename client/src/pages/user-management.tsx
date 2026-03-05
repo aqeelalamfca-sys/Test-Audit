@@ -68,12 +68,9 @@ interface UserPermissions {
 }
 
 const ROLES = [
-  { value: "ADMIN", label: "Admin", description: "Full system control, user management, master data setup" },
   { value: "PARTNER", label: "Engagement Partner", description: "Final review, approval, sign-off, overall engagement responsibility" },
   { value: "EQCR", label: "Engagement Quality Reviewer", description: "Independent review access, challenge/comment, no edit rights" },
-  { value: "MANAGING_PARTNER", label: "Managing Partner", description: "Practice-wide dashboards, portfolio reporting" },
   { value: "MANAGER", label: "Manager", description: "Planning, supervision, review rights, budget/timeline management" },
-  { value: "TEAM_LEAD", label: "Team Lead / Audit Senior", description: "Fieldwork execution, workpaper preparation, initial review" },
   { value: "SENIOR", label: "Senior", description: "Workpaper preparation, initial review, team support" },
   { value: "STAFF", label: "Audit Team", description: "Workpaper completion, task execution" },
 ];

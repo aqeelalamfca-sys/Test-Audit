@@ -59,7 +59,7 @@ const createUserSchema = z.object({
   username: z.string().min(3),
   fullName: z.string().min(2),
   password: z.string().min(8),
-  role: z.enum(["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "MANAGING_PARTNER", "PARTNER", "EQCR", "ADMIN"]),
+  role: z.enum(["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR"]),
 });
 
 router.post("/users", requirePlatformOrFirmAdmin, async (req: AuthenticatedRequest, res: Response) => {
@@ -141,7 +141,7 @@ router.patch("/users/:id", requirePlatformOrFirmAdmin, async (req: Authenticated
     const updateSchema = z.object({
       fullName: z.string().min(2).optional(),
       email: z.string().email().optional(),
-      role: z.enum(["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "MANAGING_PARTNER", "PARTNER", "EQCR", "ADMIN"]).optional(),
+      role: z.enum(["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR"]).optional(),
     });
     const data = updateSchema.parse(req.body);
 
