@@ -159,7 +159,10 @@ export async function enableRLS(): Promise<{ enabled: number; skipped: number; e
 
       await prisma.$executeRawUnsafe(
         `CREATE POLICY firm_isolation_policy ON "${tableName}"
-         USING ("firmId"::text = current_setting('app.firm_id', true))`
+         USING (
+           current_setting('app.platform_bypass', true) = 'true'
+           OR "firmId"::text = current_setting('app.firm_id', true)
+         )`
       );
 
       await prisma.$executeRawUnsafe(
@@ -198,7 +201,10 @@ export async function enableRLS(): Promise<{ enabled: number; skipped: number; e
         );
         await prisma.$executeRawUnsafe(
           `CREATE POLICY firm_isolation_policy ON "${tableName}"
-           USING ("firmId"::text = current_setting('app.firm_id', true))`
+           USING (
+             current_setting('app.platform_bypass', true) = 'true'
+             OR "firmId"::text = current_setting('app.firm_id', true)
+           )`
         );
         enabled++;
         continue;
@@ -218,7 +224,8 @@ export async function enableRLS(): Promise<{ enabled: number; skipped: number; e
         await prisma.$executeRawUnsafe(
           `CREATE POLICY firm_isolation_policy ON "${tableName}"
            USING (
-             EXISTS (
+             current_setting('app.platform_bypass', true) = 'true'
+             OR EXISTS (
                SELECT 1 FROM "Engagement" e 
                WHERE e.id = "${tableName}"."engagementId" 
                AND e."firmId"::text = current_setting('app.firm_id', true)
