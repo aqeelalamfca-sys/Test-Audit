@@ -247,10 +247,8 @@ export default function ClientOnboarding() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.clientLegalName || !formData.ntn || !formData.registeredAddress || !formData.city || 
-        !formData.companyType || !formData.sizeClassification || !formData.ownershipType || 
-        !formData.industrySector || !formData.lifecycleStatus) {
-      toast({ title: "Validation Error", description: "Please fill all mandatory fields", variant: "destructive" });
+    if (!formData.clientLegalName || !formData.companyType || !formData.industrySector) {
+      toast({ title: "Validation Error", description: "Please fill: Legal Name, Company Type, and Industry", variant: "destructive" });
       return;
     }
 
@@ -380,10 +378,11 @@ export default function ClientOnboarding() {
               <h3 className="text-sm font-medium text-muted-foreground">Client Identification</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="space-y-1 col-span-2">
-                  <Label htmlFor="clientLegalName" className="text-xs">Legal Name *</Label>
+                  <Label htmlFor="clientLegalName" className="text-xs">Legal Name <span className="text-destructive">*</span></Label>
                   <Input
                     id="clientLegalName"
                     data-testid="input-client-legal-name"
+                    placeholder="e.g., ABC Private Limited"
                     value={formData.clientLegalName}
                     onChange={(e) => setFormData({ ...formData, clientLegalName: e.target.value })}
                     className=""
@@ -401,14 +400,14 @@ export default function ClientOnboarding() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="ntn" className="text-xs">NTN *</Label>
+                  <Label htmlFor="ntn" className="text-xs">NTN</Label>
                   <Input
                     id="ntn"
                     data-testid="input-ntn"
+                    placeholder="7 digits"
                     value={formData.ntn}
                     onChange={(e) => setFormData({ ...formData, ntn: e.target.value })}
                     className=""
-                    required
                   />
                 </div>
                 <div className="space-y-1">
@@ -433,7 +432,7 @@ export default function ClientOnboarding() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="city" className="text-xs">City *</Label>
+                  <Label htmlFor="city" className="text-xs">City</Label>
                   <Select value={formData.city} onValueChange={(v) => setFormData({ ...formData, city: v })}>
                     <SelectTrigger id="city" data-testid="select-city" className="">
                       <SelectValue placeholder="Select" />
@@ -446,13 +445,12 @@ export default function ClientOnboarding() {
                   </Select>
                 </div>
                 <div className="space-y-1 col-span-2 md:col-span-4">
-                  <Label htmlFor="registeredAddress" className="text-xs">Registered Address *</Label>
+                  <Label htmlFor="registeredAddress" className="text-xs">Registered Address</Label>
                   <Textarea
                     id="registeredAddress"
                     data-testid="input-registered-address"
                     value={formData.registeredAddress}
                     onChange={(e) => setFormData({ ...formData, registeredAddress: e.target.value })}
-                    required
                     rows={2}
                     className="text-sm resize-none"
                   />
@@ -498,10 +496,10 @@ export default function ClientOnboarding() {
 
           <Card>
             <CardContent className="pt-4 space-y-3">
-              <h3 className="text-sm font-medium text-muted-foreground">Company Classification *</h3>
+              <h3 className="text-sm font-medium text-muted-foreground">Company Classification</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="companyType" className="text-xs">Company Type</Label>
+                  <Label htmlFor="companyType" className="text-xs">Company Type <span className="text-destructive">*</span></Label>
                   <Select value={formData.companyType} onValueChange={(v) => setFormData({ ...formData, companyType: v })}>
                     <SelectTrigger id="companyType" data-testid="select-company-type" className="">
                       <SelectValue placeholder="Select" />
@@ -540,7 +538,7 @@ export default function ClientOnboarding() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="industrySector" className="text-xs">Industry</Label>
+                  <Label htmlFor="industrySector" className="text-xs">Industry <span className="text-destructive">*</span></Label>
                   <Select value={formData.industrySector} onValueChange={(v) => setFormData({ ...formData, industrySector: v })}>
                     <SelectTrigger id="industrySector" data-testid="select-industry" className="">
                       <SelectValue placeholder="Select" />
