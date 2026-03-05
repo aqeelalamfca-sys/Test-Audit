@@ -19,7 +19,13 @@ export async function withPlatformContext<T>(
   fn: (tx: typeof prisma) => Promise<T>
 ): Promise<T> {
   return prisma.$transaction(async (tx) => {
-    await tx.$executeRawUnsafe(`SET LOCAL row_security = off`);
+    await tx.$executeRawUnsafe(
+      `SELECT set_config('app.platform_bypass', 'true', true)`
+    );
+    try {
+      await tx.$executeRawUnsafe(`SET LOCAL row_security = off`);
+    } catch (_e) {
+    }
     return fn(tx as unknown as typeof prisma);
   }, { timeout: 30000 });
 }
