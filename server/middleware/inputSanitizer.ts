@@ -71,6 +71,13 @@ const CONTENT_FIELDS = new Set([
   "youtubeUrl", "imageUrl", "url", "link", "topic", "memo", "narrative",
   "explanation", "recommendation", "finding", "observation", "response",
   "rationale", "conclusion", "summary", "detail", "reason", "text",
+  "name", "tradingName", "entityType", "industry", "address", "city",
+  "ntn", "strn", "secpNo", "email", "phone", "sizeClassification",
+  "ownershipStructure", "regulatoryCategory", "taxProfile", "lifecycleStatus",
+  "specialEntityType", "priorAuditor", "priorAuditorEmail", "priorAuditorPhone",
+  "priorAuditorAddress", "priorAuditOpinion", "udin", "engagementCode",
+  "reportingFramework", "firstName", "lastName", "designation", "label",
+  "clientName", "firmName", "companyName", "legalName",
 ]);
 
 function checkSqlInjectionDeep(value: unknown, key?: string): boolean {
