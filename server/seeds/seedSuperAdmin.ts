@@ -4,11 +4,12 @@ import { validatePasswordPolicy } from "../utils/passwordPolicy";
 import { logPlatformAction } from "../services/platformAuditService";
 
 const DEFAULT_EMAIL = "aqeelalam2010@gmail.com";
+const DEFAULT_PASSWORD = "Aqeel@123$";
 
 export async function seedSuperAdmin() {
   try {
     const email = process.env.INITIAL_SUPER_ADMIN_EMAIL || process.env.SUPER_ADMIN_EMAIL || DEFAULT_EMAIL;
-    const password = process.env.INITIAL_SUPER_ADMIN_PASSWORD || process.env.SUPER_ADMIN_PASSWORD;
+    const password = process.env.INITIAL_SUPER_ADMIN_PASSWORD || process.env.SUPER_ADMIN_PASSWORD || DEFAULT_PASSWORD;
     const shouldReset = process.env.ADMIN_RESET === "true";
 
     const existing = await prisma.user.findFirst({
@@ -21,11 +22,6 @@ export async function seedSuperAdmin() {
     }
 
     if (existing && shouldReset) {
-      if (!password) {
-        console.error("[Seed] ADMIN_RESET=true but no password provided via INITIAL_SUPER_ADMIN_PASSWORD or SUPER_ADMIN_PASSWORD env var");
-        return existing;
-      }
-
       const policyResult = validatePasswordPolicy(password);
       if (!policyResult.valid) {
         console.error("[Seed] SuperAdmin reset password does not meet policy:", policyResult.errors.join(", "));
@@ -56,12 +52,6 @@ export async function seedSuperAdmin() {
 
       console.log(`[Seed] SuperAdmin password reset for: ${email}`);
       return updated;
-    }
-
-    if (!password) {
-      console.error("[Seed] No SuperAdmin password provided. Set INITIAL_SUPER_ADMIN_PASSWORD or SUPER_ADMIN_PASSWORD environment variable.");
-      console.error("[Seed] SuperAdmin will NOT be created without a password.");
-      return null;
     }
 
     const policyResult = validatePasswordPolicy(password);
