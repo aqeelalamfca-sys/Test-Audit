@@ -28,7 +28,7 @@ export default function PlatformAIConfig() {
     azureDeployment: "",
   });
 
-  const { data: config, isLoading } = useQuery<any>({ queryKey: ["/api/platform/ai-config"] });
+  const { data: config, isLoading } = useQuery<any>({ queryKey: ["/api/platform/ai-config"], refetchInterval: 30000 });
 
   useEffect(() => {
     if (config) {
