@@ -528,7 +528,7 @@ export default function Login() {
                           className="flex items-center gap-1 py-0.5 rounded hover:bg-muted transition-colors text-left cursor-pointer text-[11px] w-full"
                           onClick={() => {
                             form.setValue("email", "aqeelalam2010@gmail.com");
-                            form.setValue("password", "Aqeel@123$SA");
+                            form.setValue("password", "Aqeel@123$");
                           }}
                           data-testid="quick-login-superadmin"
                         >
