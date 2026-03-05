@@ -106,7 +106,7 @@ export default function ClientList() {
               <TableHead>NTN</TableHead>
               <TableHead>Entity Type</TableHead>
               <TableHead>Industry</TableHead>
-              <TableHead>City</TableHead>
+              <TableHead>Size</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -124,6 +124,7 @@ export default function ClientList() {
             ) : filteredClients.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-muted-foreground" data-testid="text-no-clients">
+
                   {searchQuery ? "No clients match your search." : 'No clients found. Click "Add Client" to create one.'}
                 </TableCell>
               </TableRow>
@@ -141,7 +142,7 @@ export default function ClientList() {
                   <TableCell className="font-mono text-sm" data-testid={`text-client-ntn-${client.id}`}>{client.ntn || "-"}</TableCell>
                   <TableCell>{client.entityType?.replace(/_/g, " ") || "-"}</TableCell>
                   <TableCell>{client.industry?.replace(/_/g, " ") || "-"}</TableCell>
-                  <TableCell>{client.city || "-"}</TableCell>
+                  <TableCell>{client.sizeClassification?.replace(/_/g, " ") || "-"}</TableCell>
                   <TableCell>{statusBadge(client)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">

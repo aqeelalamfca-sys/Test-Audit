@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Save, Building2, Eye, EyeOff, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { useFormSaveBridge } from "@/hooks/use-form-save-bridge";
 
@@ -315,6 +315,7 @@ export default function ClientOnboarding() {
 
       if (response.ok) {
         saveBridge.setSaved();
+        await queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
         toast({ title: "Success", description: isEditMode ? "Client updated successfully" : "Client created successfully" });
         navigate("/clients");
       } else {
