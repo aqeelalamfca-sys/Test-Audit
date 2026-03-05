@@ -1253,15 +1253,17 @@ router.get("/ai-usage", async (req: AuthenticatedRequest, res: Response) => {
     const where: any = {};
     if (firmId) where.firmId = firmId;
 
-    const [records, total] = await Promise.all([
-      prisma.aIUsageRecord.findMany({
-        where,
-        skip,
-        take,
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.aIUsageRecord.count({ where }),
-    ]);
+    const [records, total] = await withPlatformContext(async (tx) => {
+      return Promise.all([
+        tx.aIUsageRecord.findMany({
+          where,
+          skip,
+          take,
+          orderBy: { createdAt: "desc" },
+        }),
+        tx.aIUsageRecord.count({ where }),
+      ]);
+    });
 
     res.json({ records, total, page: parseInt(page as string), limit: take });
   } catch (error) {
