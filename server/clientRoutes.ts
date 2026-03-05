@@ -334,7 +334,18 @@ router.post("/", requireAuth, requireMinRole("MANAGER"), async (req: Authenticat
             isPrimaryContact: true,
           }
         });
+      }
 
+      return { error: false, client, portalContactCreated };
+    });
+
+    if ('error' in result && result.error === true) {
+      return res.status((result as any).status).json((result as any).body);
+    }
+
+    const { client, portalContactCreated } = result as { error: false; client: any; portalContactCreated: any };
+
+    if (portalContactCreated) {
       await logAuditTrail(
         req.user!.id,
         "PORTAL_CONTACT_CREATED",
@@ -380,15 +391,20 @@ router.post("/", requireAuth, requireMinRole("MANAGER"), async (req: Authenticat
 
 router.patch("/:id", requireAuth, requireMinRole("SENIOR"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const existing = await prisma.client.findUnique({
-      where: { id: req.params.id },
-    });
+    const firmId = req.user!.firmId;
+    if (!firmId) {
+      return res.status(400).json({ error: "User not associated with a firm" });
+    }
+
+    const existing = await withTenantContext(firmId, (tx) =>
+      tx.client.findUnique({ where: { id: req.params.id } })
+    );
 
     if (!existing) {
       return res.status(404).json({ error: "Client not found" });
     }
 
-    if (existing.firmId !== req.user!.firmId) {
+    if (existing.firmId !== firmId) {
       return res.status(403).json({ error: "Access denied" });
     }
 
@@ -407,56 +423,66 @@ router.patch("/:id", requireAuth, requireMinRole("SENIOR"), async (req: Authenti
     
     const riskAssessment = calculateRiskScore({ ...existing, ...clientData });
 
-    const client = await prisma.client.update({
-      where: { id: req.params.id },
-      data: {
-        ...clientData,
-        dateOfIncorporation: clientData.dateOfIncorporation ? new Date(clientData.dateOfIncorporation) : undefined,
-        riskScore: riskAssessment.score,
-        riskCategory: riskAssessment.category,
-        riskFactors: riskAssessment.factors,
-      },
-    });
-
-    let portalContactResult = null;
-    if (portalContact) {
-      const existingContact = await prisma.clientPortalContact.findFirst({
-        where: { email: portalContact.email, firmId: req.user!.firmId }
+    const txResult = await withTenantContext(firmId, async (tx) => {
+      const client = await tx.client.update({
+        where: { id: req.params.id },
+        data: {
+          ...clientData,
+          dateOfIncorporation: clientData.dateOfIncorporation ? new Date(clientData.dateOfIncorporation) : undefined,
+          riskScore: riskAssessment.score,
+          riskCategory: riskAssessment.category,
+          riskFactors: riskAssessment.factors,
+        },
       });
 
-      if (existingContact && existingContact.clientId !== client.id) {
-        return res.status(400).json({ 
-          error: `A portal contact with email ${portalContact.email} already exists for another client`
+      let portalContactResult = null;
+      if (portalContact) {
+        const existingContact = await tx.clientPortalContact.findFirst({
+          where: { email: portalContact.email, firmId }
         });
+
+        if (existingContact && existingContact.clientId !== client.id) {
+          return { error: true, status: 400, body: { 
+            error: `A portal contact with email ${portalContact.email} already exists for another client`
+          }};
+        }
+
+        if (existingContact && existingContact.clientId === client.id) {
+          portalContactResult = await tx.clientPortalContact.update({
+            where: { id: existingContact.id },
+            data: {
+              firstName: portalContact.firstName,
+              lastName: portalContact.lastName,
+              designation: portalContact.designation || null,
+              ...(portalContact.password && { portalPasswordHash: await hashPassword(portalContact.password) }),
+            }
+          });
+        } else {
+          const passwordHash = await hashPassword(portalContact.password);
+          portalContactResult = await tx.clientPortalContact.create({
+            data: {
+              firmId,
+              clientId: client.id,
+              firstName: portalContact.firstName,
+              lastName: portalContact.lastName,
+              email: portalContact.email,
+              designation: portalContact.designation || null,
+              portalPasswordHash: passwordHash,
+              portalAccessEnabled: true,
+              isPrimaryContact: true,
+            }
+          });
+        }
       }
 
-      if (existingContact && existingContact.clientId === client.id) {
-        portalContactResult = await prisma.clientPortalContact.update({
-          where: { id: existingContact.id },
-          data: {
-            firstName: portalContact.firstName,
-            lastName: portalContact.lastName,
-            designation: portalContact.designation || null,
-            ...(portalContact.password && { portalPasswordHash: await hashPassword(portalContact.password) }),
-          }
-        });
-      } else {
-        const passwordHash = await hashPassword(portalContact.password);
-        portalContactResult = await prisma.clientPortalContact.create({
-          data: {
-            firmId: req.user!.firmId,
-            clientId: client.id,
-            firstName: portalContact.firstName,
-            lastName: portalContact.lastName,
-            email: portalContact.email,
-            designation: portalContact.designation || null,
-            portalPasswordHash: passwordHash,
-            portalAccessEnabled: true,
-            isPrimaryContact: true,
-          }
-        });
-      }
+      return { error: false, client, portalContactResult };
+    });
+
+    if ('error' in txResult && txResult.error === true) {
+      return res.status((txResult as any).status).json((txResult as any).body);
     }
+
+    const { client, portalContactResult } = txResult as { error: false; client: any; portalContactResult: any };
 
     await logAuditTrail(
       req.user!.id,
@@ -489,11 +515,14 @@ router.patch("/:id", requireAuth, requireMinRole("SENIOR"), async (req: Authenti
 
 router.post("/:id/screening", requireAuth, requireMinRole("SENIOR"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const existing = await prisma.client.findUnique({
-      where: { id: req.params.id },
-    });
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    if (!existing || existing.firmId !== req.user!.firmId) {
+    const existing = await withTenantContext(firmId, (tx) =>
+      tx.client.findUnique({ where: { id: req.params.id } })
+    );
+
+    if (!existing || existing.firmId !== firmId) {
       return res.status(404).json({ error: "Client not found" });
     }
 
@@ -511,15 +540,17 @@ router.post("/:id/screening", requireAuth, requireMinRole("SENIOR"), async (req:
 
     const riskAssessment = calculateRiskScore({ ...existing, ...updateData });
 
-    const client = await prisma.client.update({
-      where: { id: req.params.id },
-      data: {
-        ...updateData,
-        riskScore: riskAssessment.score,
-        riskCategory: riskAssessment.category,
-        riskFactors: riskAssessment.factors,
-      },
-    });
+    const client = await withTenantContext(firmId, (tx) =>
+      tx.client.update({
+        where: { id: req.params.id },
+        data: {
+          ...updateData,
+          riskScore: riskAssessment.score,
+          riskCategory: riskAssessment.category,
+          riskFactors: riskAssessment.factors,
+        },
+      })
+    );
 
     await logAuditTrail(
       req.user!.id,
@@ -546,11 +577,14 @@ router.post("/:id/screening", requireAuth, requireMinRole("SENIOR"), async (req:
 
 router.post("/:id/approve", requireAuth, requireRoles("PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const existing = await prisma.client.findUnique({
-      where: { id: req.params.id },
-    });
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    if (!existing || existing.firmId !== req.user!.firmId) {
+    const existing = await withTenantContext(firmId, (tx) =>
+      tx.client.findUnique({ where: { id: req.params.id } })
+    );
+
+    if (!existing || existing.firmId !== firmId) {
       return res.status(404).json({ error: "Client not found" });
     }
 
@@ -568,15 +602,17 @@ router.post("/:id/approve", requireAuth, requireRoles("PARTNER"), async (req: Au
 
     const acceptanceMemo = generateAcceptanceMemo(existing, req.user!);
 
-    const client = await prisma.client.update({
-      where: { id: req.params.id },
-      data: {
-        acceptanceStatus: "APPROVED",
-        acceptanceDate: new Date(),
-        acceptanceApprovedById: req.user!.id,
-        acceptanceMemo,
-      },
-    });
+    const client = await withTenantContext(firmId, (tx) =>
+      tx.client.update({
+        where: { id: req.params.id },
+        data: {
+          acceptanceStatus: "APPROVED",
+          acceptanceDate: new Date(),
+          acceptanceApprovedById: req.user!.id,
+          acceptanceMemo,
+        },
+      })
+    );
 
     await logAuditTrail(
       req.user!.id,
@@ -600,11 +636,14 @@ router.post("/:id/approve", requireAuth, requireRoles("PARTNER"), async (req: Au
 
 router.post("/:id/reject", requireAuth, requireRoles("PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const existing = await prisma.client.findUnique({
-      where: { id: req.params.id },
-    });
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    if (!existing || existing.firmId !== req.user!.firmId) {
+    const existing = await withTenantContext(firmId, (tx) =>
+      tx.client.findUnique({ where: { id: req.params.id } })
+    );
+
+    if (!existing || existing.firmId !== firmId) {
       return res.status(404).json({ error: "Client not found" });
     }
 
@@ -614,16 +653,18 @@ router.post("/:id/reject", requireAuth, requireRoles("PARTNER"), async (req: Aut
 
     const { reason } = z.object({ reason: z.string().min(1) }).parse(req.body);
 
-    const client = await prisma.client.update({
-      where: { id: req.params.id },
-      data: {
-        acceptanceStatus: "REJECTED",
-        acceptanceDate: new Date(),
-        acceptanceApprovedById: req.user!.id,
-        acceptanceMemo: `REJECTED: ${reason}`,
-        isActive: false,
-      },
-    });
+    const client = await withTenantContext(firmId, (tx) =>
+      tx.client.update({
+        where: { id: req.params.id },
+        data: {
+          acceptanceStatus: "REJECTED",
+          acceptanceDate: new Date(),
+          acceptanceApprovedById: req.user!.id,
+          acceptanceMemo: `REJECTED: ${reason}`,
+          isActive: false,
+        },
+      })
+    );
 
     await logAuditTrail(
       req.user!.id,
@@ -650,15 +691,20 @@ router.post("/:id/reject", requireAuth, requireRoles("PARTNER"), async (req: Aut
 
 router.get("/:id/acceptance-memo", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const client = await prisma.client.findUnique({
-      where: { id: req.params.id },
-      include: {
-        acceptanceApprovedBy: { select: { fullName: true, role: true } },
-        firm: true,
-      },
-    });
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    if (!client || client.firmId !== req.user!.firmId) {
+    const client = await withTenantContext(firmId, (tx) =>
+      tx.client.findUnique({
+        where: { id: req.params.id },
+        include: {
+          acceptanceApprovedBy: { select: { fullName: true, role: true } },
+          firm: true,
+        },
+      })
+    );
+
+    if (!client || client.firmId !== firmId) {
       return res.status(404).json({ error: "Client not found" });
     }
 
