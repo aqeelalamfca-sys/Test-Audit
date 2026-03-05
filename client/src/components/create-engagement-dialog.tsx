@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,9 +78,18 @@ const generateEngagementCode = () => {
   return `ENG-${year}-${randomNum}`;
 };
 
+const ENGAGEMENT_TYPES = [
+  { value: "statutory_audit", label: "Statutory Audit" },
+  { value: "tax_audit", label: "Tax Audit" },
+  { value: "internal_audit", label: "Internal Audit" },
+  { value: "special_purpose", label: "Special Purpose Audit" },
+  { value: "review_engagement", label: "Review Engagement" },
+];
+
 const initialFormState = {
   engagementCode: "",
   clientId: "",
+  engagementType: "statutory_audit",
   shareCapital: "",
   numberOfEmployees: "",
   lastYearRevenue: "",
@@ -88,7 +98,7 @@ const initialFormState = {
   periodEnd: "",
   partnerId: "",
   managerId: "",
-  teamLeadId: "",
+  seniorId: "",
   previousAuditorName: "",
   previousAuditorEmail: "",
   previousAuditorPhone: "",
@@ -111,6 +121,7 @@ export function EngagementDialog({
   const [formData, setFormData] = useState(initialFormState);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
 
   const isEditMode = mode === "edit";
 
@@ -122,9 +133,9 @@ export function EngagementDialog({
     queryKey: ["/api/users"],
   });
 
-  const partners = users?.filter(u => u.role === "PARTNER" || u.role === "ADMIN" || u.role === "MANAGING_PARTNER") || [];
-  const managers = users?.filter(u => ["MANAGER", "PARTNER", "ADMIN", "MANAGING_PARTNER"].includes(u.role)) || [];
-  const seniors = users?.filter(u => ["SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER"].includes(u.role)) || [];
+  const partners = users?.filter(u => u.role === "PARTNER" || u.role === "EQCR") || [];
+  const managers = users?.filter(u => ["MANAGER", "PARTNER"].includes(u.role)) || [];
+  const seniors = users?.filter(u => ["SENIOR", "MANAGER", "PARTNER"].includes(u.role)) || [];
 
   useEffect(() => {
     if (dialogOpen) {
@@ -152,6 +163,7 @@ export function EngagementDialog({
         setFormData({
           engagementCode: engagement.engagementCode || "",
           clientId: engagement.clientId || "",
+          engagementType: "statutory_audit",
           shareCapital: engagement.shareCapital?.toString() || "",
           numberOfEmployees: engagement.numberOfEmployees?.toString() || "",
           lastYearRevenue: engagement.lastYearRevenue?.toString() || "",
@@ -160,7 +172,7 @@ export function EngagementDialog({
           periodEnd: engagement.periodEnd?.split("T")[0] || engagement.fiscalYearEnd?.split("T")[0] || "",
           partnerId: engagement.engagementPartnerId || "",
           managerId: engagement.engagementManagerId || "",
-          teamLeadId: engagement.teamLeadId || "",
+          seniorId: engagement.teamLeadId || "",
           previousAuditorName: engagement.priorAuditor || "",
           previousAuditorEmail: engagement.priorAuditorEmail || "",
           previousAuditorPhone: engagement.priorAuditorPhone || "",
@@ -183,7 +195,7 @@ export function EngagementDialog({
 
   const isFormValid = formData.clientId && formData.periodStart && formData.periodEnd && formData.partnerId;
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (shouldStartAudit = false) => {
     if (!isFormValid) {
       toast({ 
         title: "Validation Error", 
@@ -207,7 +219,7 @@ export function EngagementDialog({
       const payload = {
         engagementCode: formData.engagementCode,
         clientId: formData.clientId,
-        engagementType: "statutory_audit",
+        engagementType: formData.engagementType || "statutory_audit",
         reportingFramework: "IFRS",
         fiscalYearEnd: formData.periodEnd,
         periodStart: formData.periodStart,
@@ -225,7 +237,7 @@ export function EngagementDialog({
         eqcrRequired: formData.eqcrRequired,
         engagementPartnerId: formData.partnerId || undefined,
         engagementManagerId: formData.managerId || undefined,
-        teamLeadId: formData.teamLeadId || undefined,
+        teamLeadId: formData.seniorId || undefined,
       };
 
       const url = isEditMode ? `/api/engagements/${engagementId}` : "/api/engagements";
@@ -233,24 +245,39 @@ export function EngagementDialog({
       
       const response = await fetchWithAuth(url, {
         method,
-        headers: { 
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (response.ok) {
         const result = await response.json();
-        toast({ 
-          title: "Success", 
-          description: isEditMode ? "Engagement updated successfully" : "Engagement created successfully" 
-        });
-        setDialogOpen(false);
-        setFormData(initialFormState);
         queryClient.invalidateQueries({ queryKey: ["/api/engagements"] });
         queryClient.invalidateQueries({ queryKey: ["/api/engagements", engagementId] });
         queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
-        onSuccess?.(result);
+
+        if (shouldStartAudit && !isEditMode) {
+          toast({ title: "Engagement created", description: "Starting audit workspace..." });
+          setDialogOpen(false);
+          setFormData(initialFormState);
+          const startRes = await fetchWithAuth(`/api/engagements/${result.id}/start`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+          if (startRes.ok) {
+            const startData = await startRes.json();
+            navigate(startData.resumeRoute || `/workspace/${result.id}/pre-planning`);
+          } else {
+            navigate(`/engagements`);
+          }
+        } else {
+          toast({ 
+            title: "Success", 
+            description: isEditMode ? "Engagement updated successfully" : "Engagement created successfully",
+          });
+          setDialogOpen(false);
+          setFormData(initialFormState);
+          onSuccess?.(result);
+        }
       } else {
         const error = await response.json();
         toast({ 
@@ -335,6 +362,23 @@ export function EngagementDialog({
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="engagementType" className="text-xs">Engagement Type</Label>
+                <Select
+                  value={formData.engagementType}
+                  onValueChange={(v) => setFormData({ ...formData, engagementType: v })}
+                >
+                  <SelectTrigger id="engagementType" data-testid="select-engagement-type" className="h-8 text-sm">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ENGAGEMENT_TYPES.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {selectedClient && (
@@ -461,12 +505,12 @@ export function EngagementDialog({
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="teamLeadId" className="text-xs">Team Lead</Label>
+                    <Label htmlFor="seniorId" className="text-xs">Senior</Label>
                     <Select 
-                      value={formData.teamLeadId} 
-                      onValueChange={(v) => setFormData({ ...formData, teamLeadId: v })}
+                      value={formData.seniorId} 
+                      onValueChange={(v) => setFormData({ ...formData, seniorId: v })}
                     >
-                      <SelectTrigger id="teamLeadId" data-testid="select-team-lead" className="h-8 text-sm">
+                      <SelectTrigger id="seniorId" data-testid="select-senior" className="h-8 text-sm">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
@@ -576,13 +620,25 @@ export function EngagementDialog({
               </Button>
               <Button 
                 size="sm"
-                onClick={handleSubmit} 
+                variant="outline"
+                onClick={() => handleSubmit(false)} 
                 disabled={loading || !isFormValid}
                 data-testid={isEditMode ? "button-update-engagement" : "button-create-engagement"}
               >
                 {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {isEditMode ? "Update Engagement" : "Create Engagement"}
+                {isEditMode ? "Update Engagement" : "Save"}
               </Button>
+              {!isEditMode && (
+                <Button 
+                  size="sm"
+                  onClick={() => handleSubmit(true)} 
+                  disabled={loading || !isFormValid}
+                  data-testid="button-save-start-audit"
+                >
+                  {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Save & Start Audit
+                </Button>
+              )}
             </DialogFooter>
           </>
         )}
