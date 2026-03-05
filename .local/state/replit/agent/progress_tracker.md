@@ -131,3 +131,14 @@
     - Health endpoints: /__healthz and /health verified working
     - .gitignore: Updated to exclude .env.production, added node_modules/ and dist/
     - Graceful shutdown: SIGTERM/SIGINT handlers with 15s drain timeout verified
+[x] 48. Production Deployment Audit v2:
+    - PORT binding: Confirmed process.env.PORT || 5000 on 0.0.0.0 (line 457-460 of server/index.ts)
+    - esbuild/tsx compatibility: esbuild 0.25.12 + tsx 4.21.0 verified compatible (tsx uses esbuild internally)
+    - package.json start: Set to "NODE_ENV=production node dist/index.cjs" (TypeScript project compiles to dist/index.cjs via esbuild)
+    - @types/* moved to devDependencies: bcryptjs, compression, cookie-parser, jsonwebtoken, multer, nodemailer, qrcode (6 packages)
+    - Dev-only scripts removed: test:e2e, test:smoke, check, lint, typecheck, healthcheck (kept dev, build, start, db:push)
+    - Build output: npm run build produces dist/index.cjs (server) + dist/public/ (frontend via Vite)
+    - PM2 compatibility: ecosystem.config.cjs references dist/index.cjs, sets NODE_ENV=production and PORT=5000
+    - Nginx compatibility: trust proxy enabled, deploy/nginx/ configs have upstream to 127.0.0.1:5000, rate limiting, WebSocket upgrade, security headers
+    - Replit independence: No Replit-specific code in server; Replit Vite plugins gated behind isReplit && isDev check
+    - App verified running on port 5000 after all changes
