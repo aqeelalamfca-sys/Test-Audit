@@ -3,6 +3,7 @@ import { prisma } from "./db";
 import { requireAuth, requireMinRole, requireRoles, logAuditTrail, type AuthenticatedRequest, hashPassword } from "./auth";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
+import { withTenantContext } from "./middleware/tenantDbContext";
 
 const router = Router();
 
@@ -141,14 +142,16 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response) =>
       return res.status(400).json({ error: "User not associated with a firm" });
     }
 
-    const clients = await prisma.client.findMany({
-      where: { firmId },
-      include: {
-        acceptanceApprovedBy: { select: { id: true, fullName: true } },
-        _count: { select: { engagements: true } },
-      },
-      orderBy: { name: "asc" },
-    });
+    const clients = await withTenantContext(firmId, (tx) =>
+      tx.client.findMany({
+        where: { firmId },
+        include: {
+          acceptanceApprovedBy: { select: { id: true, fullName: true } },
+          _count: { select: { engagements: true } },
+        },
+        orderBy: { name: "asc" },
+      })
+    );
 
     res.json(clients);
   } catch (error) {
@@ -171,19 +174,21 @@ router.get("/check-duplicate", requireAuth, async (req: AuthenticatedRequest, re
     if (secpNo) orConditions.push({ secpNo: secpNo as string });
     if (ntn) orConditions.push({ ntn: ntn as string });
 
-    const duplicates = await prisma.client.findMany({
-      where: {
-        firmId,
-        ...(orConditions.length > 0 ? { OR: orConditions } : {}),
-      },
-      select: {
-        id: true,
-        name: true,
-        secpNo: true,
-        ntn: true,
-        acceptanceStatus: true,
-      },
-    });
+    const duplicates = await withTenantContext(firmId, (tx) =>
+      tx.client.findMany({
+        where: {
+          firmId,
+          ...(orConditions.length > 0 ? { OR: orConditions } : {}),
+        },
+        select: {
+          id: true,
+          name: true,
+          secpNo: true,
+          ntn: true,
+          acceptanceStatus: true,
+        },
+      })
+    );
 
     res.json({
       hasDuplicates: duplicates.length > 0,
@@ -200,17 +205,19 @@ router.get("/authorized", requireAuth, async (req: AuthenticatedRequest, res: Re
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const clients = await prisma.client.findMany({
-      where: {
-        firmId,
-        engagements: {
-          some: {
-            team: { some: { userId: req.user!.id } }
+    const clients = await withTenantContext(firmId, (tx) =>
+      tx.client.findMany({
+        where: {
+          firmId,
+          engagements: {
+            some: {
+              team: { some: { userId: req.user!.id } }
+            }
           }
-        }
-      },
-      select: { id: true, name: true, tradingName: true, ntn: true }
-    });
+        },
+        select: { id: true, name: true, tradingName: true, ntn: true }
+      })
+    );
 
     res.json(clients);
   } catch (error) {
@@ -221,25 +228,32 @@ router.get("/authorized", requireAuth, async (req: AuthenticatedRequest, res: Re
 
 router.get("/:id", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const client = await prisma.client.findUnique({
-      where: { id: req.params.id },
-      include: {
-        acceptanceApprovedBy: { select: { id: true, fullName: true, role: true } },
-        engagements: {
-          include: {
-            phases: true,
-            _count: { select: { reviewNotes: { where: { status: "OPEN" } } } },
+    const firmId = req.user!.firmId;
+    if (!firmId) {
+      return res.status(400).json({ error: "User not associated with a firm" });
+    }
+
+    const client = await withTenantContext(firmId, (tx) =>
+      tx.client.findUnique({
+        where: { id: req.params.id },
+        include: {
+          acceptanceApprovedBy: { select: { id: true, fullName: true, role: true } },
+          engagements: {
+            include: {
+              phases: true,
+              _count: { select: { reviewNotes: { where: { status: "OPEN" } } } },
+            },
+            orderBy: { createdAt: "desc" },
           },
-          orderBy: { createdAt: "desc" },
         },
-      },
-    });
+      })
+    );
 
     if (!client) {
       return res.status(404).json({ error: "Client not found" });
     }
 
-    if (client.firmId !== req.user!.firmId) {
+    if (client.firmId !== firmId) {
       return res.status(403).json({ error: "Access denied" });
     }
 
@@ -260,65 +274,66 @@ router.post("/", requireAuth, requireMinRole("MANAGER"), async (req: Authenticat
     const data = createClientSchema.parse(req.body);
     const { portalContact, ...clientData } = data;
 
-    const existingDuplicates = await prisma.client.findMany({
-      where: {
-        firmId,
-        OR: [
-          data.secpNo ? { secpNo: data.secpNo } : {},
-          data.ntn ? { ntn: data.ntn } : {},
-        ].filter(o => Object.keys(o).length > 0),
-      },
-    });
-
-    if (existingDuplicates.length > 0) {
-      return res.status(400).json({
-        error: "Potential duplicate client detected",
-        duplicates: existingDuplicates.map(d => ({ id: d.id, name: d.name })),
-      });
-    }
-
-    const riskAssessment = calculateRiskScore(clientData);
-
-    const client = await prisma.client.create({
-      data: {
-        firmId,
-        ...clientData,
-        dateOfIncorporation: clientData.dateOfIncorporation ? new Date(clientData.dateOfIncorporation) : null,
-        email: clientData.email || null,
-        subsidiaries: clientData.subsidiaries || [],
-        riskScore: riskAssessment.score,
-        riskCategory: riskAssessment.category,
-        riskFactors: riskAssessment.factors,
-      },
-    });
-
-    let portalContactCreated = null;
-    if (portalContact) {
-      const existingContact = await prisma.clientPortalContact.findFirst({
-        where: { email: portalContact.email, firmId }
+    const result = await withTenantContext(firmId, async (tx) => {
+      const existingDuplicates = await tx.client.findMany({
+        where: {
+          firmId,
+          OR: [
+            data.secpNo ? { secpNo: data.secpNo } : {},
+            data.ntn ? { ntn: data.ntn } : {},
+          ].filter(o => Object.keys(o).length > 0),
+        },
       });
 
-      if (existingContact) {
-        await prisma.client.delete({ where: { id: client.id } });
-        return res.status(400).json({ 
-          error: `A portal contact with email ${portalContact.email} already exists`
-        });
+      if (existingDuplicates.length > 0) {
+        return { error: true, status: 400, body: {
+          error: "Potential duplicate client detected",
+          duplicates: existingDuplicates.map(d => ({ id: d.id, name: d.name })),
+        }};
       }
 
-      const passwordHash = await hashPassword(portalContact.password);
-      portalContactCreated = await prisma.clientPortalContact.create({
+      const riskAssessment = calculateRiskScore(clientData);
+
+      const client = await tx.client.create({
         data: {
           firmId,
-          clientId: client.id,
-          firstName: portalContact.firstName,
-          lastName: portalContact.lastName,
-          email: portalContact.email,
-          designation: portalContact.designation || null,
-          portalPasswordHash: passwordHash,
-          portalAccessEnabled: true,
-          isPrimaryContact: true,
-        }
+          ...clientData,
+          dateOfIncorporation: clientData.dateOfIncorporation ? new Date(clientData.dateOfIncorporation) : null,
+          email: clientData.email || null,
+          subsidiaries: clientData.subsidiaries || [],
+          riskScore: riskAssessment.score,
+          riskCategory: riskAssessment.category,
+          riskFactors: riskAssessment.factors,
+        },
       });
+
+      let portalContactCreated = null;
+      if (portalContact) {
+        const existingContact = await tx.clientPortalContact.findFirst({
+          where: { email: portalContact.email, firmId }
+        });
+
+        if (existingContact) {
+          await tx.client.delete({ where: { id: client.id } });
+          return { error: true, status: 400, body: { 
+            error: `A portal contact with email ${portalContact.email} already exists`
+          }};
+        }
+
+        const passwordHash = await hashPassword(portalContact.password);
+        portalContactCreated = await tx.clientPortalContact.create({
+          data: {
+            firmId,
+            clientId: client.id,
+            firstName: portalContact.firstName,
+            lastName: portalContact.lastName,
+            email: portalContact.email,
+            designation: portalContact.designation || null,
+            portalPasswordHash: passwordHash,
+            portalAccessEnabled: true,
+            isPrimaryContact: true,
+          }
+        });
 
       await logAuditTrail(
         req.user!.id,
