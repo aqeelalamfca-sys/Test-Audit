@@ -431,7 +431,24 @@ router.get("/subscription", async (req: AuthenticatedRequest, res: Response) => 
     const subscription = await prisma.subscription.findFirst({
       where: { firmId },
       orderBy: { createdAt: "desc" },
-      include: { plan: true },
+      include: {
+        plan: true,
+        invoices: {
+          orderBy: { createdAt: "desc" },
+          take: 10,
+          select: {
+            id: true,
+            invoiceNo: true,
+            amount: true,
+            currency: true,
+            status: true,
+            issuedAt: true,
+            dueAt: true,
+            paidAt: true,
+            createdAt: true,
+          },
+        },
+      },
     });
 
     const firm = await prisma.firm.findUnique({
