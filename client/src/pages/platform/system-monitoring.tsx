@@ -1,87 +1,71 @@
-import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  Server, Cpu, HardDrive, MemoryStick, GitBranch, GitCommit,
+  Server, Cpu, HardDrive, MemoryStick, GitBranch,
   Activity, Shield, Globe, RefreshCw, Clock, CheckCircle2,
-  XCircle, AlertTriangle, Wifi, WifiOff, Terminal, Database,
-  Lock, ArrowUpRight, Zap, MonitorCheck, Container, Layers,
-  Timer, BarChart3, CircleDot, Radio, ArrowDown,
+  XCircle, AlertTriangle, Wifi, WifiOff, Terminal,
+  Lock, Zap, MonitorCheck, Container, Layers,
+  Timer, CircleDot, Radio, Rocket, Play,
+  ChevronDown, ChevronUp, FileText, ArrowRight,
+  Package, Database, RotateCcw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface SystemHealthData {
   connected: boolean;
   error?: string;
   timestamp: string;
-  server?: {
-    hostname: string;
-    ip: string;
-    os: string;
-    kernel: string;
-    uptime: string;
-    loadAverage: string;
-    users: string;
-  };
+  server?: { hostname: string; ip: string; os: string; kernel: string; uptime: string; loadAverage: string; users: string };
   resources?: {
     cpu: { usagePercent: number; cores: number };
     memory: { total: string; used: string; free: string; usagePercent: number };
     disk: { total: string; used: string; avail: string; usagePercent: number; mountPoint: string };
   };
-  git?: {
-    remote: string;
-    commit: string;
-    commitFull: string;
-    message: string;
-    author: string;
-    date: string;
-    branch: string;
-    status: string;
-    isDirty: boolean;
-  };
+  git?: { remote: string; commit: string; commitFull: string; message: string; author: string; date: string; branch: string; status: string; isDirty: boolean };
   application?: {
-    pm2Processes: Array<{
-      name: string;
-      id: number;
-      status: string;
-      cpu: string;
-      memory: string;
-      uptime: string;
-      restarts: number;
-      pid: number;
-      mode: string;
-    }>;
-    nodeVersion: string;
-    npmVersion: string;
+    pm2Processes: Array<{ name: string; id: number; status: string; cpu: string; memory: string; uptime: string; restarts: number; pid: number; mode: string }>;
+    nodeVersion: string; npmVersion: string;
   };
-  services?: {
-    nginx: string;
-    postgresql: string;
-  };
-  security?: {
-    firewall: string[];
-    openPorts: Array<{ protocol: string; address: string; state: string }>;
-    ssl: string;
-  };
+  services?: { nginx: string; postgresql: string };
+  security?: { firewall: string[]; openPorts: Array<{ protocol: string; address: string; state: string }>; ssl: string };
   deployment?: {
-    cronJobs: string;
-    lastFetch: string;
-    pullLog: string;
+    cronJobs: string; lastFetch: string; pullLog: string;
+    status: DeploymentStatus;
   };
 }
 
-interface PingData {
-  reachable: boolean;
-  httpStatus?: number;
-  responseTime?: number;
-  url?: string;
-  error?: string;
+interface DeploymentStatus {
+  status: "idle" | "running" | "success" | "failed";
+  step: number;
+  totalSteps: number;
+  currentStep: string;
+  log: string[];
+  startedAt: string | null;
+  completedAt: string | null;
+  triggeredBy: string | null;
 }
 
-function StatusDot({ status }: { status: "green" | "orange" | "red" | "blue" | "grey" }) {
+interface PingData { reachable: boolean; httpStatus?: number; responseTime?: number; url?: string; error?: string }
+
+const PIPELINE_STEPS = [
+  { id: "pull", label: "Repository Pull", icon: GitBranch, desc: "git pull origin main" },
+  { id: "deps", label: "Install Dependencies", icon: Package, desc: "npm ci" },
+  { id: "build", label: "Build Application", icon: Rocket, desc: "npm run build" },
+  { id: "migrate", label: "Database Migration", icon: Database, desc: "prisma db push" },
+  { id: "restart", label: "Restart PM2", icon: RotateCcw, desc: "pm2 restart" },
+];
+
+function StatusDot({ status, size = "sm" }: { status: "green" | "orange" | "red" | "blue" | "grey"; size?: "sm" | "md" }) {
   const colors = {
     green: "bg-emerald-500 shadow-emerald-500/50",
     orange: "bg-amber-500 shadow-amber-500/50",
@@ -89,12 +73,11 @@ function StatusDot({ status }: { status: "green" | "orange" | "red" | "blue" | "
     blue: "bg-blue-500 shadow-blue-500/50",
     grey: "bg-gray-400 shadow-gray-400/50",
   };
-  return (
-    <span className={`inline-block w-2.5 h-2.5 rounded-full shadow-lg ${colors[status]} animate-pulse`} />
-  );
+  const sizeClass = size === "md" ? "w-3 h-3" : "w-2.5 h-2.5";
+  return <span className={`inline-block ${sizeClass} rounded-full shadow-lg ${colors[status]} animate-pulse`} />;
 }
 
-function ProgressBar({ value, max = 100, color = "emerald" }: { value: number; max?: number; color?: string }) {
+function ProgressBar({ value, max = 100, color = "emerald", animated = false }: { value: number; max?: number; color?: string; animated?: boolean }) {
   const percent = Math.min((value / max) * 100, 100);
   const colorMap: Record<string, string> = {
     emerald: "from-emerald-500 to-emerald-400",
@@ -102,12 +85,13 @@ function ProgressBar({ value, max = 100, color = "emerald" }: { value: number; m
     red: "from-red-500 to-red-400",
     blue: "from-blue-500 to-blue-400",
     purple: "from-purple-500 to-purple-400",
+    cyan: "from-cyan-500 to-cyan-400",
   };
   const barColor = percent > 90 ? "from-red-500 to-red-400" : percent > 70 ? "from-amber-500 to-amber-400" : (colorMap[color] || colorMap.emerald);
   return (
     <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
       <div
-        className={`h-full bg-gradient-to-r ${barColor} rounded-full transition-all duration-1000 ease-out`}
+        className={`h-full bg-gradient-to-r ${barColor} rounded-full transition-all duration-1000 ease-out ${animated ? "animate-pulse" : ""}`}
         style={{ width: `${percent}%` }}
       />
     </div>
@@ -120,13 +104,7 @@ function getHealthStatus(value: number): "green" | "orange" | "red" {
   return "green";
 }
 
-function MetricGauge({ label, value, unit, icon: Icon, detail }: {
-  label: string;
-  value: number;
-  unit: string;
-  icon: any;
-  detail?: string;
-}) {
+function MetricGauge({ label, value, unit, icon: Icon, detail }: { label: string; value: number; unit: string; icon: any; detail?: string }) {
   const status = getHealthStatus(value);
   return (
     <div className="space-y-2">
@@ -151,11 +129,7 @@ function ServiceBadge({ name, status }: { name: string; status: string }) {
   return (
     <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/50">
       <span className="text-sm font-medium">{name}</span>
-      <Badge
-        variant={isActive ? "default" : "destructive"}
-        className={isActive ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/10" : ""}
-        data-testid={`status-badge-${name.toLowerCase()}`}
-      >
+      <Badge variant={isActive ? "default" : "destructive"} className={isActive ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/10" : ""} data-testid={`status-badge-${name.toLowerCase().replace(/\s+/g, "-")}`}>
         <StatusDot status={isActive ? "green" : "red"} />
         <span className="ml-1.5">{status}</span>
       </Badge>
@@ -164,9 +138,15 @@ function ServiceBadge({ name, status }: { name: string; status: string }) {
 }
 
 export default function SystemMonitoring() {
+  const { toast } = useToast();
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
   const [refreshCountdown, setRefreshCountdown] = useState(20);
+  const [deployLogExpanded, setDeployLogExpanded] = useState(false);
+  const [liveDeployStatus, setLiveDeployStatus] = useState<DeploymentStatus | null>(null);
+  const [sseStepUpdates, setSseStepUpdates] = useState<Record<number, { status: string; output?: string }>>({});
+  const isDeployingRef = useRef(false);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   const { data, isLoading, isRefetching, refetch } = useQuery<SystemHealthData>({
     queryKey: ["/api/platform/system-health"],
@@ -180,6 +160,68 @@ export default function SystemMonitoring() {
     staleTime: 10000,
   });
 
+  const { data: deployLogData, refetch: refetchLogs } = useQuery<{ logs: string }>({
+    queryKey: ["/api/platform/system-health/deploy/logs"],
+    staleTime: 30000,
+  });
+
+  const { data: deployStatusData } = useQuery<{ deployment: DeploymentStatus }>({
+    queryKey: ["/api/platform/system-health/deploy/status"],
+    refetchInterval: isDeployingRef.current ? 3000 : false,
+    staleTime: 2000,
+  });
+
+  const deployMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/platform/system-health/deploy");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Deployment Started", description: "Pipeline is now running. Watch the progress below." });
+      isDeployingRef.current = true;
+      queryClient.invalidateQueries({ queryKey: ["/api/platform/system-health"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/platform/system-health/deploy/status"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Deployment Failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  useEffect(() => {
+    const protocol = window.location.protocol === "https:" ? "https:" : "http:";
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const url = `/api/platform/system-health/events`;
+
+    const es = new EventSource(url);
+    eventSourceRef.current = es;
+
+    es.addEventListener("deploy-start", (e) => {
+      const d = JSON.parse(e.data);
+      setLiveDeployStatus(d);
+      setSseStepUpdates({});
+    });
+
+    es.addEventListener("deploy-progress", (e) => {
+      const d = JSON.parse(e.data);
+      setSseStepUpdates(prev => ({ ...prev, [d.step]: { status: d.status, output: d.output } }));
+      setLiveDeployStatus(prev => prev ? { ...prev, step: d.step, currentStep: d.label } : prev);
+    });
+
+    es.addEventListener("deploy-complete", (e) => {
+      const d = JSON.parse(e.data);
+      setLiveDeployStatus(prev => prev ? { ...prev, status: d.status, completedAt: d.completedAt } : prev);
+      queryClient.invalidateQueries({ queryKey: ["/api/platform/system-health"] });
+      refetchLogs();
+      if (d.status === "success") {
+        toast({ title: "Deployment Successful", description: "All pipeline steps completed." });
+      } else {
+        toast({ title: "Deployment Failed", description: "Check deployment logs for details.", variant: "destructive" });
+      }
+    });
+
+    return () => { es.close(); };
+  }, []);
+
   useEffect(() => {
     if (data?.timestamp) setLastRefreshTime(new Date(data.timestamp));
   }, [data?.timestamp]);
@@ -187,12 +229,13 @@ export default function SystemMonitoring() {
   useEffect(() => {
     if (!autoRefresh) return;
     setRefreshCountdown(20);
-    const interval = setInterval(() => {
-      setRefreshCountdown(prev => (prev <= 1 ? 20 : prev - 1));
-    }, 1000);
+    const interval = setInterval(() => setRefreshCountdown(prev => (prev <= 1 ? 20 : prev - 1)), 1000);
     return () => clearInterval(interval);
   }, [autoRefresh, data?.timestamp]);
 
+  const deployStatus = deployStatusData?.deployment || liveDeployStatus || data?.deployment?.status || { status: "idle", step: 0, totalSteps: 5, currentStep: "", log: [], startedAt: null, completedAt: null, triggeredBy: null };
+  const isDeploying = deployStatus.status === "running";
+  isDeployingRef.current = isDeploying;
   const isConnected = data?.connected ?? false;
   const hasAlerts = !isConnected ||
     (data?.resources?.cpu?.usagePercent ?? 0) > 90 ||
@@ -205,7 +248,11 @@ export default function SystemMonitoring() {
     return (
       <div className="flex items-center justify-center h-full" data-testid="loading-system-monitor">
         <div className="text-center space-y-4">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <div className="relative mx-auto w-16 h-16">
+            <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
+            <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+            <MonitorCheck className="absolute inset-0 m-auto h-6 w-6 text-primary" />
+          </div>
           <p className="text-muted-foreground">Connecting to VPS infrastructure...</p>
         </div>
       </div>
@@ -215,10 +262,12 @@ export default function SystemMonitoring() {
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto" data-testid="system-monitoring-page">
       {hasAlerts && isConnected && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 flex items-center gap-3 animate-pulse" data-testid="alert-banner">
-          <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0" />
+        <div className="bg-gradient-to-r from-red-500/10 via-red-500/5 to-transparent border border-red-500/30 rounded-lg px-4 py-3 flex items-center gap-3" data-testid="alert-banner">
+          <div className="h-8 w-8 rounded-full bg-red-500/20 flex items-center justify-center animate-pulse">
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+          </div>
           <span className="text-sm font-medium text-red-600 dark:text-red-400">
-            System alert detected — one or more health checks require attention
+            System alert — one or more health checks require attention
           </span>
         </div>
       )}
@@ -226,74 +275,56 @@ export default function SystemMonitoring() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-              <MonitorCheck className="h-5 w-5 text-white" />
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary via-primary/80 to-primary/50 flex items-center justify-center shadow-lg shadow-primary/20">
+              <MonitorCheck className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="page-title">AuditWise Deployment Monitor</h1>
-              <p className="text-sm text-muted-foreground">Enterprise-Grade System Health Dashboard</p>
+              <h1 className="text-2xl font-bold tracking-tight" data-testid="page-title">Enterprise-Grade Checklist</h1>
+              <p className="text-sm text-muted-foreground">AuditWise Deployment Monitor — Operational Control Center</p>
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Badge variant="outline" className="gap-1.5 py-1" data-testid="badge-environment">
-            <CircleDot className="h-3 w-3 text-emerald-500" />
-            Production
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline" className="gap-1.5 py-1 bg-gradient-to-r from-emerald-500/5 to-transparent border-emerald-500/30" data-testid="badge-environment">
+            <CircleDot className="h-3 w-3 text-emerald-500" /> Production
           </Badge>
           <Badge variant="outline" className="gap-1.5 py-1" data-testid="badge-provider">
-            <Server className="h-3 w-3" />
-            Hostinger VPS
+            <Server className="h-3 w-3" /> Hostinger VPS
           </Badge>
           {data?.server?.ip && (
             <Badge variant="outline" className="gap-1.5 py-1 font-mono text-xs" data-testid="badge-ip">
-              <Globe className="h-3 w-3" />
-              {data.server.ip}
+              <Globe className="h-3 w-3" /> {data.server.ip}
             </Badge>
           )}
           {data?.git?.branch && (
             <Badge variant="outline" className="gap-1.5 py-1" data-testid="badge-branch">
-              <GitBranch className="h-3 w-3" />
-              {data.git.branch}
+              <GitBranch className="h-3 w-3" /> {data.git.branch}
+            </Badge>
+          )}
+          {data?.git?.commit && data.git.commit !== "N/A" && (
+            <Badge variant="outline" className="gap-1.5 py-1 font-mono text-xs" data-testid="badge-commit">
+              {data.git.commit}
             </Badge>
           )}
           <div className="flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => refetch()}
-                  disabled={isRefetching}
-                  data-testid="btn-refresh"
-                >
-                  <RefreshCw className={`h-4 w-4 mr-1.5 ${isRefetching ? "animate-spin" : ""}`} />
-                  {isRefetching ? "Refreshing..." : "Refresh"}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Refresh all health checks</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={autoRefresh ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setAutoRefresh(!autoRefresh)}
-                  data-testid="btn-auto-refresh"
-                >
-                  <Radio className={`h-4 w-4 mr-1.5 ${autoRefresh ? "animate-pulse" : ""}`} />
-                  {autoRefresh ? `Auto (${refreshCountdown}s)` : "Auto Off"}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{autoRefresh ? "Auto-refresh every 20s (click to disable)" : "Click to enable auto-refresh"}</TooltipContent>
-            </Tooltip>
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isRefetching} data-testid="btn-refresh">
+              <RefreshCw className={`h-4 w-4 mr-1.5 ${isRefetching ? "animate-spin" : ""}`} />
+              {isRefetching ? "Refreshing..." : "Refresh"}
+            </Button>
+            <Button variant={autoRefresh ? "default" : "outline"} size="sm" onClick={() => setAutoRefresh(!autoRefresh)} data-testid="btn-auto-refresh">
+              <Radio className={`h-4 w-4 mr-1.5 ${autoRefresh ? "animate-pulse" : ""}`} />
+              {autoRefresh ? `Auto (${refreshCountdown}s)` : "Auto Off"}
+            </Button>
           </div>
         </div>
       </div>
 
       {!isConnected && (
-        <Card className="border-amber-500/30 bg-amber-500/5" data-testid="card-not-connected">
+        <Card className="border-amber-500/30 bg-gradient-to-r from-amber-500/5 via-amber-500/3 to-transparent" data-testid="card-not-connected">
           <CardContent className="flex items-center gap-4 py-6">
-            <WifiOff className="h-8 w-8 text-amber-500" />
+            <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
+              <WifiOff className="h-6 w-6 text-amber-500" />
+            </div>
             <div>
               <p className="font-semibold text-amber-600 dark:text-amber-400">VPS Connection Unavailable</p>
               <p className="text-sm text-muted-foreground mt-1">
@@ -304,51 +335,148 @@ export default function SystemMonitoring() {
         </Card>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        <StatCard
-          label="Server Status"
-          value={isConnected ? "Online" : "Offline"}
-          icon={Wifi}
-          status={isConnected ? "green" : "red"}
-        />
-        <StatCard
-          label="Server Uptime"
-          value={data?.server?.uptime || "N/A"}
-          icon={Timer}
-          status={isConnected ? "green" : "grey"}
-        />
-        <StatCard
-          label="CPU Usage"
-          value={`${data?.resources?.cpu?.usagePercent || 0}%`}
-          icon={Cpu}
-          status={getHealthStatus(data?.resources?.cpu?.usagePercent || 0)}
-        />
-        <StatCard
-          label="RAM Usage"
-          value={`${data?.resources?.memory?.usagePercent || 0}%`}
-          icon={MemoryStick}
-          status={getHealthStatus(data?.resources?.memory?.usagePercent || 0)}
-        />
-        <StatCard
-          label="Disk Usage"
-          value={`${data?.resources?.disk?.usagePercent || 0}%`}
-          icon={HardDrive}
-          status={getHealthStatus(data?.resources?.disk?.usagePercent || 0)}
-        />
-        <StatCard
-          label="App Health"
-          value={pingData?.reachable ? `${pingData.responseTime}ms` : "Down"}
-          icon={Activity}
-          status={pingData?.reachable ? "green" : "red"}
-        />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <GradientStatCard label="Server Status" value={isConnected ? "Online" : "Offline"} icon={Wifi} status={isConnected ? "green" : "red"} gradient="from-emerald-500/10 to-transparent" />
+        <GradientStatCard label="Server Uptime" value={data?.server?.uptime || "N/A"} icon={Timer} status={isConnected ? "green" : "grey"} gradient="from-blue-500/10 to-transparent" />
+        <GradientStatCard label="CPU Usage" value={`${data?.resources?.cpu?.usagePercent || 0}%`} icon={Cpu} status={getHealthStatus(data?.resources?.cpu?.usagePercent || 0)} gradient="from-purple-500/10 to-transparent" />
+        <GradientStatCard label="RAM Usage" value={`${data?.resources?.memory?.usagePercent || 0}%`} icon={MemoryStick} status={getHealthStatus(data?.resources?.memory?.usagePercent || 0)} gradient="from-cyan-500/10 to-transparent" />
+        <GradientStatCard label="Disk Usage" value={`${data?.resources?.disk?.usagePercent || 0}%`} icon={HardDrive} status={getHealthStatus(data?.resources?.disk?.usagePercent || 0)} gradient="from-amber-500/10 to-transparent" />
+        <GradientStatCard label="App Health" value={pingData?.reachable ? `${pingData.responseTime}ms` : "Down"} icon={Activity} status={pingData?.reachable ? "green" : "red"} gradient="from-red-500/10 to-transparent" />
       </div>
 
+      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-transparent to-transparent" data-testid="card-deployment-pipeline">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                <Rocket className="h-4 w-4 text-white" />
+              </div>
+              Deployment Pipeline
+              {isDeploying && <RefreshCw className="h-3.5 w-3.5 ml-2 animate-spin text-primary" />}
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              {deployStatus.triggeredBy && deployStatus.startedAt && (
+                <span className="text-xs text-muted-foreground">
+                  {deployStatus.triggeredBy} — {new Date(deployStatus.startedAt).toLocaleString()}
+                </span>
+              )}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" disabled={isDeploying || !isConnected} className="gap-1.5 bg-gradient-to-r from-primary to-primary/80" data-testid="btn-deploy">
+                    {isDeploying ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+                    {isDeploying ? "Deploying..." : "Deploy Now"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Trigger Production Deployment?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will pull the latest code from GitHub, install dependencies, build the app, run database migrations, and restart PM2 services on the production VPS. This action may cause brief downtime.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel data-testid="btn-deploy-cancel">Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => deployMutation.mutate()} data-testid="btn-deploy-confirm">
+                      <Rocket className="h-4 w-4 mr-2" /> Deploy
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-1">
+            {isDeploying && (
+              <div className="mb-4">
+                <ProgressBar value={(deployStatus.step / deployStatus.totalSteps) * 100} color="blue" animated />
+                <p className="text-xs text-muted-foreground mt-1 text-center">
+                  Step {deployStatus.step} of {deployStatus.totalSteps} — {deployStatus.currentStep}
+                </p>
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+              {PIPELINE_STEPS.map((step, i) => {
+                const stepNum = i + 1;
+                const sseUpdate = sseStepUpdates[stepNum];
+                let stepState: "pending" | "running" | "success" | "failed" = "pending";
+
+                if (isDeploying) {
+                  if (stepNum < deployStatus.step) stepState = "success";
+                  else if (stepNum === deployStatus.step) stepState = sseUpdate?.status === "success" ? "success" : sseUpdate?.status === "failed" ? "failed" : "running";
+                } else if (deployStatus.status === "success") {
+                  stepState = "success";
+                } else if (deployStatus.status === "failed") {
+                  stepState = stepNum <= deployStatus.step ? (stepNum === deployStatus.step ? "failed" : "success") : "pending";
+                }
+                if (sseUpdate?.status === "success") stepState = "success";
+                if (sseUpdate?.status === "failed") stepState = "failed";
+
+                const StepIcon = step.icon;
+                const borderColor = stepState === "success" ? "border-emerald-500/50" : stepState === "running" ? "border-blue-500/50" : stepState === "failed" ? "border-red-500/50" : "border-border";
+                const bgColor = stepState === "success" ? "bg-emerald-500/5" : stepState === "running" ? "bg-blue-500/5" : stepState === "failed" ? "bg-red-500/5" : "bg-card";
+
+                return (
+                  <div key={step.id} className={`rounded-lg border ${borderColor} ${bgColor} p-3 text-center space-y-2 transition-all duration-500`} data-testid={`pipeline-step-${step.id}`}>
+                    <div className="flex items-center justify-center">
+                      {stepState === "running" ? (
+                        <div className="relative h-8 w-8">
+                          <div className="absolute inset-0 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
+                          <StepIcon className="absolute inset-0 m-auto h-4 w-4 text-blue-500" />
+                        </div>
+                      ) : stepState === "success" ? (
+                        <div className="h-8 w-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        </div>
+                      ) : stepState === "failed" ? (
+                        <div className="h-8 w-8 rounded-full bg-red-500/20 flex items-center justify-center">
+                          <XCircle className="h-4 w-4 text-red-500" />
+                        </div>
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                          <StepIcon className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium leading-tight">{step.label}</p>
+                      <p className="text-[10px] text-muted-foreground font-mono">{step.desc}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {(deployStatus.log.length > 0 || (deployLogData?.logs && deployLogData.logs.length > 0)) && (
+              <div className="mt-4">
+                <button
+                  onClick={() => { setDeployLogExpanded(!deployLogExpanded); if (!deployLogExpanded) refetchLogs(); }}
+                  className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="btn-toggle-deploy-logs"
+                >
+                  <Terminal className="h-3.5 w-3.5" />
+                  Deployment Logs
+                  {deployLogExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </button>
+                {deployLogExpanded && (
+                  <div className="mt-2 bg-gray-950 rounded-lg p-3 max-h-60 overflow-y-auto border border-gray-800">
+                    <pre className="text-[11px] font-mono text-emerald-400 whitespace-pre-wrap leading-relaxed">
+                      {deployStatus.log.length > 0 ? deployStatus.log.join("\n") : ""}
+                      {deployLogData?.logs ? "\n" + deployLogData.logs : ""}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1" data-testid="card-repository">
+        <Card className="lg:col-span-1 bg-gradient-to-br from-purple-500/5 via-transparent to-transparent" data-testid="card-repository">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <div className="h-8 w-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                <GitBranch className="h-4 w-4 text-purple-500" />
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-sm">
+                <GitBranch className="h-4 w-4 text-white" />
               </div>
               Source Repository
             </CardTitle>
@@ -358,26 +486,24 @@ export default function SystemMonitoring() {
               <>
                 <InfoRow label="Remote" value={data.git.remote} mono />
                 <InfoRow label="Branch" value={data.git.branch} badge />
-                <InfoRow label="Latest Commit" value={data.git.commit} mono />
+                <InfoRow label="Commit" value={data.git.commit} mono />
                 <InfoRow label="Message" value={data.git.message} />
                 <InfoRow label="Author" value={data.git.author} />
                 <InfoRow label="Date" value={data.git.date ? new Date(data.git.date).toLocaleString() : "N/A"} />
                 <div className="flex items-center gap-2 pt-1">
                   <StatusDot status={data.git.isDirty ? "orange" : "green"} />
-                  <span className="text-xs">{data.git.isDirty ? "Uncommitted changes detected" : "Working tree clean"}</span>
+                  <span className="text-xs">{data.git.isDirty ? "Uncommitted changes" : "Working tree clean"}</span>
                 </div>
               </>
-            ) : (
-              <EmptyState text="Repository data unavailable" />
-            )}
+            ) : <EmptyState text="Repository data unavailable" />}
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-1" data-testid="card-server-health">
+        <Card className="lg:col-span-1 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent" data-testid="card-server-health">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                <Server className="h-4 w-4 text-blue-500" />
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
+                <Server className="h-4 w-4 text-white" />
               </div>
               Server Infrastructure
             </CardTitle>
@@ -385,27 +511,9 @@ export default function SystemMonitoring() {
           <CardContent className="space-y-4">
             {data?.resources ? (
               <>
-                <MetricGauge
-                  label="CPU"
-                  value={data.resources.cpu.usagePercent}
-                  unit="%"
-                  icon={Cpu}
-                  detail={`${data.resources.cpu.cores} core(s) — Load: ${data.server?.loadAverage || "N/A"}`}
-                />
-                <MetricGauge
-                  label="Memory"
-                  value={data.resources.memory.usagePercent}
-                  unit="%"
-                  icon={MemoryStick}
-                  detail={`${data.resources.memory.used} used / ${data.resources.memory.total} total`}
-                />
-                <MetricGauge
-                  label="Disk"
-                  value={data.resources.disk.usagePercent}
-                  unit="%"
-                  icon={HardDrive}
-                  detail={`${data.resources.disk.used} used / ${data.resources.disk.total} total (${data.resources.disk.mountPoint})`}
-                />
+                <MetricGauge label="CPU" value={data.resources.cpu.usagePercent} unit="%" icon={Cpu} detail={`${data.resources.cpu.cores} core(s) — Load: ${data.server?.loadAverage || "N/A"}`} />
+                <MetricGauge label="Memory" value={data.resources.memory.usagePercent} unit="%" icon={MemoryStick} detail={`${data.resources.memory.used} / ${data.resources.memory.total}`} />
+                <MetricGauge label="Disk" value={data.resources.disk.usagePercent} unit="%" icon={HardDrive} detail={`${data.resources.disk.used} / ${data.resources.disk.total} (${data.resources.disk.mountPoint})`} />
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t">
                   <InfoRow label="OS" value={data.server?.os || "N/A"} compact />
                   <InfoRow label="Kernel" value={data.server?.kernel || "N/A"} compact />
@@ -413,17 +521,15 @@ export default function SystemMonitoring() {
                   <InfoRow label="Users" value={data.server?.users || "0"} compact />
                 </div>
               </>
-            ) : (
-              <EmptyState text="Server metrics unavailable" />
-            )}
+            ) : <EmptyState text="Server metrics unavailable" />}
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-1" data-testid="card-application">
+        <Card className="lg:col-span-1 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent" data-testid="card-application">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                <Container className="h-4 w-4 text-emerald-500" />
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-sm">
+                <Container className="h-4 w-4 text-white" />
               </div>
               Application Runtime
             </CardTitle>
@@ -438,35 +544,15 @@ export default function SystemMonitoring() {
                         <StatusDot status={proc.status === "online" ? "green" : proc.status === "stopped" ? "red" : "orange"} />
                         <span className="font-medium text-sm">{proc.name}</span>
                       </div>
-                      <Badge variant="outline" className="text-xs">
-                        PID: {proc.pid}
-                      </Badge>
+                      <Badge variant="outline" className="text-xs">PID: {proc.pid}</Badge>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Status</span>
-                        <span className={proc.status === "online" ? "text-emerald-600" : "text-red-600"}>{proc.status}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">CPU</span>
-                        <span>{proc.cpu}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Memory</span>
-                        <span>{proc.memory}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Uptime</span>
-                        <span>{proc.uptime}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Restarts</span>
-                        <span className={proc.restarts > 5 ? "text-amber-600 font-medium" : ""}>{proc.restarts}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Mode</span>
-                        <span>{proc.mode}</span>
-                      </div>
+                    <div className="grid grid-cols-2 gap-1 text-xs">
+                      <div className="flex justify-between"><span className="text-muted-foreground">Status</span><span className={proc.status === "online" ? "text-emerald-600" : "text-red-600"}>{proc.status}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">CPU</span><span>{proc.cpu}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Memory</span><span>{proc.memory}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Uptime</span><span>{proc.uptime}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Restarts</span><span className={proc.restarts > 5 ? "text-amber-600 font-medium" : ""}>{proc.restarts}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Mode</span><span>{proc.mode}</span></div>
                     </div>
                   </div>
                 ))}
@@ -475,19 +561,17 @@ export default function SystemMonitoring() {
                   <InfoRow label="NPM" value={data.application.npmVersion} compact />
                 </div>
               </>
-            ) : (
-              <EmptyState text="No PM2 processes detected" />
-            )}
+            ) : <EmptyState text="No PM2 processes detected" />}
           </CardContent>
         </Card>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <Card data-testid="card-services">
+        <Card className="bg-gradient-to-br from-cyan-500/5 via-transparent to-transparent" data-testid="card-services">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <div className="h-8 w-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-                <Layers className="h-4 w-4 text-cyan-500" />
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-sm">
+                <Layers className="h-4 w-4 text-white" />
               </div>
               Core Services
             </CardTitle>
@@ -501,11 +585,11 @@ export default function SystemMonitoring() {
           </CardContent>
         </Card>
 
-        <Card data-testid="card-security">
+        <Card className="bg-gradient-to-br from-red-500/5 via-transparent to-transparent" data-testid="card-security">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <div className="h-8 w-8 rounded-lg bg-red-500/10 flex items-center justify-center">
-                <Shield className="h-4 w-4 text-red-500" />
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-sm">
+                <Shield className="h-4 w-4 text-white" />
               </div>
               Security & Connectivity
             </CardTitle>
@@ -514,24 +598,20 @@ export default function SystemMonitoring() {
             <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/50">
               <span className="text-sm font-medium">SSH Connection</span>
               <Badge variant="outline" className={isConnected ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"}>
-                <StatusDot status={isConnected ? "green" : "red"} />
-                <span className="ml-1.5">{isConnected ? "Connected" : "Disconnected"}</span>
+                <StatusDot status={isConnected ? "green" : "red"} /><span className="ml-1.5">{isConnected ? "Connected" : "Disconnected"}</span>
               </Badge>
             </div>
             <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/50">
               <span className="text-sm font-medium">SSL Certificate</span>
               <Badge variant="outline" className={data?.security?.ssl?.includes("Active") ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-amber-500/10 text-amber-600 border-amber-500/20"}>
-                <Lock className="h-3 w-3 mr-1" />
-                {data?.security?.ssl || "Unknown"}
+                <Lock className="h-3 w-3 mr-1" />{data?.security?.ssl || "Unknown"}
               </Badge>
             </div>
             {data?.security?.firewall && data.security.firewall.length > 0 && (
               <div className="space-y-1">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Firewall Rules</p>
                 <div className="bg-muted/30 rounded-lg p-2 max-h-32 overflow-y-auto">
-                  <pre className="text-[10px] font-mono text-muted-foreground whitespace-pre-wrap">
-                    {data.security.firewall.join("\n")}
-                  </pre>
+                  <pre className="text-[10px] font-mono text-muted-foreground whitespace-pre-wrap">{data.security.firewall.join("\n")}</pre>
                 </div>
               </div>
             )}
@@ -540,9 +620,7 @@ export default function SystemMonitoring() {
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Open Ports</p>
                 <div className="flex flex-wrap gap-1">
                   {data.security.openPorts.slice(0, 12).map((port, i) => (
-                    <Badge key={i} variant="outline" className="text-[10px] font-mono">
-                      {port.address}
-                    </Badge>
+                    <Badge key={i} variant="outline" className="text-[10px] font-mono">{port.address}</Badge>
                   ))}
                 </div>
               </div>
@@ -550,11 +628,11 @@ export default function SystemMonitoring() {
           </CardContent>
         </Card>
 
-        <Card data-testid="card-deployment">
+        <Card className="bg-gradient-to-br from-amber-500/5 via-transparent to-transparent" data-testid="card-deployment">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                <Zap className="h-4 w-4 text-amber-500" />
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-sm">
+                <Zap className="h-4 w-4 text-white" />
               </div>
               Continuous Deployment
             </CardTitle>
@@ -566,61 +644,37 @@ export default function SystemMonitoring() {
                 <div className="space-y-1">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Cron Schedule</p>
                   <div className="bg-muted/30 rounded-lg p-2">
-                    <pre className="text-[10px] font-mono text-muted-foreground whitespace-pre-wrap">
-                      {data.deployment.cronJobs || "No cron jobs configured"}
-                    </pre>
+                    <pre className="text-[10px] font-mono text-muted-foreground whitespace-pre-wrap">{data.deployment.cronJobs || "No cron jobs"}</pre>
                   </div>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Recent Pull Log</p>
                   <div className="bg-muted/30 rounded-lg p-2 max-h-40 overflow-y-auto">
-                    <pre className="text-[10px] font-mono text-muted-foreground whitespace-pre-wrap">
-                      {data.deployment.pullLog || "No pull log available"}
-                    </pre>
+                    <pre className="text-[10px] font-mono text-muted-foreground whitespace-pre-wrap">{data.deployment.pullLog || "No pull log"}</pre>
                   </div>
                 </div>
               </>
-            ) : (
-              <EmptyState text="Deployment data unavailable" />
-            )}
+            ) : <EmptyState text="Deployment data unavailable" />}
           </CardContent>
         </Card>
       </div>
 
-      <Card data-testid="card-live-health">
+      <Card className="bg-gradient-to-r from-primary/5 via-transparent to-transparent" data-testid="card-live-health">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-sm">
               <Activity className="h-4 w-4 text-white" />
             </div>
             Live Application Health
-            {isRefetching && (
-              <RefreshCw className="h-3.5 w-3.5 ml-2 animate-spin text-muted-foreground" />
-            )}
+            {isRefetching && <RefreshCw className="h-3.5 w-3.5 ml-2 animate-spin text-muted-foreground" />}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <HealthCheckItem
-              label="HTTP Response"
-              status={pingData?.reachable ? "pass" : "fail"}
-              detail={pingData?.reachable ? `Status ${pingData.httpStatus}` : (pingData?.error || "Unreachable")}
-            />
-            <HealthCheckItem
-              label="API Ping"
-              status={pingData?.reachable ? "pass" : "fail"}
-              detail={pingData?.reachable ? `${pingData.responseTime}ms response` : "Timeout"}
-            />
-            <HealthCheckItem
-              label="Database"
-              status={data?.services?.postgresql === "active" ? "pass" : "fail"}
-              detail={data?.services?.postgresql === "active" ? "PostgreSQL active" : "PostgreSQL " + (data?.services?.postgresql || "unknown")}
-            />
-            <HealthCheckItem
-              label="Web Server"
-              status={data?.services?.nginx === "active" ? "pass" : "fail"}
-              detail={data?.services?.nginx === "active" ? "Nginx running" : "Nginx " + (data?.services?.nginx || "unknown")}
-            />
+            <HealthCheckItem label="HTTP Response" status={pingData?.reachable ? "pass" : "fail"} detail={pingData?.reachable ? `Status ${pingData.httpStatus}` : (pingData?.error || "Unreachable")} />
+            <HealthCheckItem label="API Ping" status={pingData?.reachable ? "pass" : "fail"} detail={pingData?.reachable ? `${pingData.responseTime}ms response` : "Timeout"} />
+            <HealthCheckItem label="Database" status={data?.services?.postgresql === "active" ? "pass" : "fail"} detail={data?.services?.postgresql === "active" ? "PostgreSQL active" : "PostgreSQL " + (data?.services?.postgresql || "unknown")} />
+            <HealthCheckItem label="Web Server" status={data?.services?.nginx === "active" ? "pass" : "fail"} detail={data?.services?.nginx === "active" ? "Nginx running" : "Nginx " + (data?.services?.nginx || "unknown")} />
           </div>
         </CardContent>
       </Card>
@@ -642,15 +696,10 @@ export default function SystemMonitoring() {
   );
 }
 
-function StatCard({ label, value, icon: Icon, status }: { label: string; value: string; icon: any; status: "green" | "orange" | "red" | "grey" }) {
-  const borderColors = {
-    green: "border-emerald-500/30",
-    orange: "border-amber-500/30",
-    red: "border-red-500/30",
-    grey: "border-gray-300/30 dark:border-gray-700/30",
-  };
+function GradientStatCard({ label, value, icon: Icon, status, gradient }: { label: string; value: string; icon: any; status: "green" | "orange" | "red" | "grey"; gradient: string }) {
+  const borderColors = { green: "border-emerald-500/30", orange: "border-amber-500/30", red: "border-red-500/30", grey: "border-gray-300/30 dark:border-gray-700/30" };
   return (
-    <div className={`rounded-xl border ${borderColors[status]} bg-card p-3 flex flex-col items-center justify-center text-center space-y-1.5 transition-all hover:shadow-md`} data-testid={`stat-${label.toLowerCase().replace(/\s+/g, "-")}`}>
+    <div className={`rounded-xl border ${borderColors[status]} bg-gradient-to-br ${gradient} p-3 flex flex-col items-center justify-center text-center space-y-1.5 transition-all hover:shadow-lg hover:scale-[1.02] duration-200`} data-testid={`stat-${label.toLowerCase().replace(/\s+/g, "-")}`}>
       <div className="flex items-center gap-1.5">
         <StatusDot status={status} />
         <Icon className="h-4 w-4 text-muted-foreground" />
@@ -683,7 +732,7 @@ function HealthCheckItem({ label, status, detail }: { label: string; status: "pa
   const config = configs[status];
   const Icon = config.icon;
   return (
-    <div className={`rounded-lg border ${config.bg} p-4 flex items-center gap-3`} data-testid={`health-check-${label.toLowerCase().replace(/\s+/g, "-")}`}>
+    <div className={`rounded-lg border ${config.bg} p-4 flex items-center gap-3 transition-all hover:shadow-md`} data-testid={`health-check-${label.toLowerCase().replace(/\s+/g, "-")}`}>
       <Icon className={`h-6 w-6 flex-shrink-0 ${config.color}`} />
       <div>
         <p className="text-sm font-medium">{label}</p>
