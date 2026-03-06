@@ -145,7 +145,7 @@ export default function SystemMonitoring() {
   const [deployLogExpanded, setDeployLogExpanded] = useState(false);
   const [liveDeployStatus, setLiveDeployStatus] = useState<DeploymentStatus | null>(null);
   const [sseStepUpdates, setSseStepUpdates] = useState<Record<number, { status: string; output?: string }>>({});
-  const isDeployingRef = useRef(false);
+  const [isPollingDeploy, setIsPollingDeploy] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   const { data, isLoading, isRefetching, refetch } = useQuery<SystemHealthData>({
@@ -167,7 +167,7 @@ export default function SystemMonitoring() {
 
   const { data: deployStatusData } = useQuery<{ deployment: DeploymentStatus }>({
     queryKey: ["/api/platform/system-health/deploy/status"],
-    refetchInterval: isDeployingRef.current ? 3000 : false,
+    refetchInterval: isPollingDeploy ? 3000 : false,
     staleTime: 2000,
   });
 
@@ -178,7 +178,7 @@ export default function SystemMonitoring() {
     },
     onSuccess: () => {
       toast({ title: "Deployment Started", description: "Pipeline is now running. Watch the progress below." });
-      isDeployingRef.current = true;
+      setIsPollingDeploy(true);
       queryClient.invalidateQueries({ queryKey: ["/api/platform/system-health"] });
       queryClient.invalidateQueries({ queryKey: ["/api/platform/system-health/deploy/status"] });
     },
@@ -199,6 +199,7 @@ export default function SystemMonitoring() {
       const d = JSON.parse(e.data);
       setLiveDeployStatus(d);
       setSseStepUpdates({});
+      setIsPollingDeploy(true);
     });
 
     es.addEventListener("deploy-progress", (e) => {
@@ -210,7 +211,9 @@ export default function SystemMonitoring() {
     es.addEventListener("deploy-complete", (e) => {
       const d = JSON.parse(e.data);
       setLiveDeployStatus(prev => prev ? { ...prev, status: d.status, completedAt: d.completedAt } : prev);
+      setIsPollingDeploy(false);
       queryClient.invalidateQueries({ queryKey: ["/api/platform/system-health"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/platform/system-health/deploy/status"] });
       refetchLogs();
       if (d.status === "success") {
         toast({ title: "Deployment Successful", description: "All pipeline steps completed." });
@@ -233,9 +236,19 @@ export default function SystemMonitoring() {
     return () => clearInterval(interval);
   }, [autoRefresh, data?.timestamp]);
 
-  const deployStatus = deployStatusData?.deployment || liveDeployStatus || data?.deployment?.status || { status: "idle", step: 0, totalSteps: 5, currentStep: "", log: [], startedAt: null, completedAt: null, triggeredBy: null };
+  const polledDeploy = deployStatusData?.deployment;
+  const deployStatus = (isPollingDeploy && polledDeploy) ? polledDeploy : liveDeployStatus || polledDeploy || data?.deployment?.status || { status: "idle", step: 0, totalSteps: 5, currentStep: "", log: [], startedAt: null, completedAt: null, triggeredBy: null };
   const isDeploying = deployStatus.status === "running";
-  isDeployingRef.current = isDeploying;
+
+  useEffect(() => {
+    if (isPollingDeploy && polledDeploy && polledDeploy.status !== "running") {
+      setIsPollingDeploy(false);
+      if (polledDeploy.status === "success") {
+        queryClient.invalidateQueries({ queryKey: ["/api/platform/system-health"] });
+        refetchLogs();
+      }
+    }
+  }, [polledDeploy?.status, isPollingDeploy]);
   const isConnected = data?.connected ?? false;
   const hasAlerts = !isConnected ||
     (data?.resources?.cpu?.usagePercent ?? 0) > 90 ||
