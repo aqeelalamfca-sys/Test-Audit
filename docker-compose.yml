@@ -2,12 +2,14 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
     image: ghcr.io/aqeelalamfca-sys/auditwise:latest
     container_name: auditwise-app
     restart: unless-stopped
+    expose:
+      - "5000"
     ports:
-      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-5000}:5000"
+      - "${APP_BIND:-127.0.0.1}:${BACKEND_PORT:-5000}:5000"
     env_file:
       - path: .env
         required: false
@@ -29,6 +31,7 @@ services:
       SUPER_ADMIN_ALLOWED_IPS: ${SUPER_ADMIN_ALLOWED_IPS:-}
       ADMIN_RESET: ${ADMIN_RESET:-false}
       NODE_HEAP_SIZE: ${NODE_HEAP_SIZE:-2560}
+      APP_VERSION: ${APP_VERSION:-latest}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-}
@@ -37,11 +40,12 @@ services:
       SMTP_FROM: ${SMTP_FROM:-}
     volumes:
       - uploads:/app/uploads
+      - logs:/app/logs
     depends_on:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:5000/health').then(r=>{if(!r.ok)throw 1}).catch(()=>process.exit(1))\""]
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/api/health || exit 1"]
       interval: 30s
       timeout: 10s
       start_period: 120s
@@ -52,12 +56,36 @@ services:
         max-size: "50m"
         max-file: "5"
 
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: auditwise-nginx
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_BIND:-0.0.0.0}:${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
   db:
     image: postgres:16-alpine
     container_name: auditwise-db
     restart: unless-stopped
     expose:
       - "5432"
+    ports:
+      - "${DB_BIND:-127.0.0.1}:${DB_PORT:-5432}:5432"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-auditwise}
       POSTGRES_USER: ${POSTGRES_USER:-auditwise}
@@ -100,4 +128,6 @@ volumes:
   pgdata:
     driver: local
   uploads:
+    driver: local
+  logs:
     driver: local

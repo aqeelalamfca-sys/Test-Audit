@@ -199,7 +199,23 @@ app.get("/__healthz", (_req: Request, res: Response) => {
   res.status(200).send("OK");
 });
 
-// Health check endpoint - accessible even if app has errors (NO AUTH, NO DB)
+app.get("/api/health", (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: "ok",
+    service: "auditwise-api",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || "development",
+    version: process.env.APP_VERSION || "1.0.0",
+    memory: {
+      rss: Math.round(process.memoryUsage().rss / 1024 / 1024),
+      heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+    },
+    node: process.version,
+  });
+});
+
 app.get("/health", (_req: Request, res: Response) => {
   res.status(200).json({
     status: "ok",
