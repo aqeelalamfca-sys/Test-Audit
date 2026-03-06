@@ -22,9 +22,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, Pencil } from "lucide-react";
+import { Loader2, Plus, Pencil, Building2 } from "lucide-react";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { useToast } from "@/hooks/use-toast";
+
+const PAKISTAN_CITIES = [
+  "Karachi", "Lahore", "Islamabad", "Rawalpindi", "Faisalabad", "Multan",
+  "Peshawar", "Quetta", "Sialkot", "Gujranwala", "Hyderabad", "Abbottabad",
+  "Bahawalpur", "Sargodha", "Sukkur", "Larkana", "Sheikhupura", "Jhang",
+  "Rahim Yar Khan", "Gujrat", "Mardan", "Kasur", "Dera Ghazi Khan",
+  "Sahiwal", "Nawabshah", "Mirpur Khas", "Chiniot", "Kamoke", "Other",
+];
+
+const newClientInitial = {
+  clientLegalName: "",
+  tradeName: "",
+  ntn: "",
+  secpNo: "",
+  dateOfIncorporation: "",
+  city: "",
+  registeredAddress: "",
+  contactEmail: "",
+  contactPhone: "",
+  country: "Pakistan",
+};
 
 interface Client {
   id: string;
@@ -119,6 +140,9 @@ export function EngagementDialog({
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(false);
   const [formData, setFormData] = useState(initialFormState);
+  const [newClientOpen, setNewClientOpen] = useState(false);
+  const [newClientForm, setNewClientForm] = useState({ ...newClientInitial });
+  const [newClientLoading, setNewClientLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
@@ -190,6 +214,49 @@ export function EngagementDialog({
       setDialogOpen(false);
     } finally {
       setFetchingData(false);
+    }
+  };
+
+  const handleNewClientSubmit = async () => {
+    if (!newClientForm.clientLegalName.trim()) {
+      toast({ title: "Validation Error", description: "Legal Name is required", variant: "destructive" });
+      return;
+    }
+    setNewClientLoading(true);
+    try {
+      const payload = {
+        name: newClientForm.clientLegalName.trim(),
+        tradingName: newClientForm.tradeName || "",
+        ntn: newClientForm.ntn || "",
+        secpNo: newClientForm.secpNo || "",
+        dateOfIncorporation: newClientForm.dateOfIncorporation || undefined,
+        address: newClientForm.registeredAddress || "",
+        city: newClientForm.city || "",
+        country: newClientForm.country || "Pakistan",
+        email: newClientForm.contactEmail || "",
+        phone: newClientForm.contactPhone || "",
+        entityType: "private_limited",
+        industry: "general",
+      };
+      const response = await fetchWithAuth("/api/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: "Failed to create client" }));
+        throw new Error(err.error || "Failed to create client");
+      }
+      const created = await response.json();
+      await queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      setFormData({ ...formData, clientId: created.id });
+      setNewClientOpen(false);
+      setNewClientForm({ ...newClientInitial });
+      toast({ title: "Client Created", description: `${created.name} has been added successfully` });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setNewClientLoading(false);
     }
   };
 
@@ -345,22 +412,40 @@ export function EngagementDialog({
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="clientId" className="text-xs">Client Name *</Label>
-                  <Select 
-                    value={formData.clientId} 
-                    onValueChange={(v) => setFormData({ ...formData, clientId: v })}
-                    disabled={!!preselectedClientId || isEditMode}
-                  >
-                    <SelectTrigger id="clientId" data-testid="select-client" className="h-8 text-sm">
-                      <SelectValue placeholder="Select client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients?.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.name} {client.city ? `(${client.city})` : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-1.5">
+                    <Select 
+                      value={formData.clientId} 
+                      onValueChange={(v) => setFormData({ ...formData, clientId: v })}
+                      disabled={!!preselectedClientId || isEditMode}
+                    >
+                      <SelectTrigger id="clientId" data-testid="select-client" className="h-8 text-sm flex-1">
+                        <SelectValue placeholder="Select client" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clients?.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            {client.name} {client.city ? `(${client.city})` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {!isEditMode && !preselectedClientId && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-2 shrink-0"
+                        data-testid="button-new-client"
+                        onClick={() => {
+                          setNewClientForm({ ...newClientInitial });
+                          setNewClientOpen(true);
+                        }}
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        <span className="text-xs">New</span>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -643,6 +728,151 @@ export function EngagementDialog({
           </>
         )}
       </DialogContent>
+
+      <Dialog open={newClientOpen} onOpenChange={setNewClientOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" data-testid="dialog-new-client">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Building2 className="h-4 w-4" />
+              Add New Client
+            </DialogTitle>
+            <DialogDescription className="text-xs">Master Data | Quick Add</DialogDescription>
+          </DialogHeader>
+
+          <fieldset className="border rounded-lg p-4 space-y-3">
+            <legend className="text-xs font-medium text-muted-foreground px-1">Client Identification</legend>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="space-y-1 col-span-2">
+                <Label htmlFor="nc-legal-name" className="text-xs">Legal Name <span className="text-destructive">*</span></Label>
+                <Input
+                  id="nc-legal-name"
+                  data-testid="input-nc-legal-name"
+                  placeholder="e.g., ABC Private Limited"
+                  value={newClientForm.clientLegalName}
+                  onChange={(e) => setNewClientForm({ ...newClientForm, clientLegalName: e.target.value })}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1 col-span-2">
+                <Label htmlFor="nc-trade-name" className="text-xs">Trade Name</Label>
+                <Input
+                  id="nc-trade-name"
+                  data-testid="input-nc-trade-name"
+                  value={newClientForm.tradeName}
+                  onChange={(e) => setNewClientForm({ ...newClientForm, tradeName: e.target.value })}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="nc-ntn" className="text-xs">NTN</Label>
+                <Input
+                  id="nc-ntn"
+                  data-testid="input-nc-ntn"
+                  placeholder="7 digits"
+                  value={newClientForm.ntn}
+                  onChange={(e) => setNewClientForm({ ...newClientForm, ntn: e.target.value })}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="nc-secp" className="text-xs">SECP No.</Label>
+                <Input
+                  id="nc-secp"
+                  data-testid="input-nc-secp"
+                  value={newClientForm.secpNo}
+                  onChange={(e) => setNewClientForm({ ...newClientForm, secpNo: e.target.value })}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="nc-incorp-date" className="text-xs">Incorporation Date</Label>
+                <Input
+                  id="nc-incorp-date"
+                  data-testid="input-nc-incorp-date"
+                  type="date"
+                  value={newClientForm.dateOfIncorporation}
+                  onChange={(e) => setNewClientForm({ ...newClientForm, dateOfIncorporation: e.target.value })}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="nc-city" className="text-xs">City</Label>
+                <Select value={newClientForm.city} onValueChange={(v) => setNewClientForm({ ...newClientForm, city: v })}>
+                  <SelectTrigger id="nc-city" data-testid="select-nc-city" className="h-8 text-sm">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAKISTAN_CITIES.map((city) => (
+                      <SelectItem key={city} value={city}>{city}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1 col-span-2 md:col-span-4">
+                <Label htmlFor="nc-address" className="text-xs">Registered Address</Label>
+                <Textarea
+                  id="nc-address"
+                  data-testid="input-nc-address"
+                  value={newClientForm.registeredAddress}
+                  onChange={(e) => setNewClientForm({ ...newClientForm, registeredAddress: e.target.value })}
+                  rows={2}
+                  className="text-sm resize-none"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="nc-email" className="text-xs">Email</Label>
+                <Input
+                  id="nc-email"
+                  data-testid="input-nc-email"
+                  type="email"
+                  value={newClientForm.contactEmail}
+                  onChange={(e) => setNewClientForm({ ...newClientForm, contactEmail: e.target.value })}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="nc-phone" className="text-xs">Phone</Label>
+                <Input
+                  id="nc-phone"
+                  data-testid="input-nc-phone"
+                  value={newClientForm.contactPhone}
+                  onChange={(e) => setNewClientForm({ ...newClientForm, contactPhone: e.target.value })}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="nc-country" className="text-xs">Country</Label>
+                <Select value={newClientForm.country} onValueChange={(v) => setNewClientForm({ ...newClientForm, country: v })}>
+                  <SelectTrigger id="nc-country" data-testid="select-nc-country" className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Pakistan">Pakistan</SelectItem>
+                    <SelectItem value="UAE">UAE</SelectItem>
+                    <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </fieldset>
+
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setNewClientOpen(false)} data-testid="button-cancel-new-client">
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleNewClientSubmit}
+              disabled={newClientLoading || !newClientForm.clientLegalName.trim()}
+              data-testid="button-save-new-client"
+            >
+              {newClientLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Add Client
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
