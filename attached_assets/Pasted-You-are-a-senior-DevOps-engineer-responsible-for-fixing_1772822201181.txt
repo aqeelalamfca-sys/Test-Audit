@@ -1,0 +1,128 @@
+You are a senior DevOps engineer responsible for fixing and deploying a production SaaS system named "AuditWise".
+
+Current infrastructure:
+
+Development IDE: Replit
+Source Control: GitHub
+CI/CD: GitHub Actions
+Production Server: Hostinger VPS (Ubuntu 24.04)
+Containerization: Docker + Docker Compose
+Reverse Proxy: Nginx
+Database: PostgreSQL
+ORM: Prisma
+Frontend: Vite + React
+Backend: Node.js + Express
+
+The system architecture must follow this structure:
+
+Replit → GitHub → GitHub Actions → Hostinger VPS → Docker → Nginx → SSL → AuditWise SaaS
+
+Current problems that must be automatically fixed:
+
+1. Backend container becomes unhealthy after deployment.
+2. Frontend container fails to start.
+3. Prisma migration not executed before backend startup.
+4. Docker images from GHCR are denied or inaccessible.
+5. Containers start in wrong order (backend before database).
+6. Docker compose configuration lacks health checks.
+7. Environment variables are not consistently loaded.
+8. Deployment sometimes leaves orphan containers.
+9. Nginx configuration not correctly routing to frontend/backend.
+10. Production builds take too long due to cache misconfiguration.
+
+Your task is to automatically refactor and generate a **fully production-grade system** that solves all these issues.
+
+Required outputs:
+
+1. Rewrite docker-compose.yml with:
+
+   * PostgreSQL service
+   * Backend service
+   * Frontend service
+   * Nginx reverse proxy
+   * proper depends_on with healthchecks
+   * named volumes
+   * restart policies
+   * container networking
+
+2. Ensure backend waits for database readiness.
+
+3. Automatically run:
+   npx prisma migrate deploy
+   npx prisma generate
+
+4. Create a backend healthcheck endpoint:
+   /api/health
+
+5. Create Nginx configuration:
+
+   * frontend served on port 80
+   * backend proxied to /api
+   * gzip enabled
+   * caching headers
+
+6. Optimize Dockerfiles:
+
+   * multi-stage builds
+   * Node 20 Alpine
+   * production dependencies only
+   * build caching
+
+7. Ensure environment variables exist:
+
+POSTGRES_DB=auditwise
+POSTGRES_USER=auditwise
+POSTGRES_PASSWORD=Aqeel@123$
+DATABASE_URL=postgresql://auditwise:Aqeel@123$@postgres:5432/auditwise
+
+SUPERADMIN_EMAIL=[aqeelalam2010@gmail.com](mailto:aqeelalam2010@gmail.com)
+SUPERADMIN_PASSWORD=Aqeel@123$
+
+NODE_ENV=production
+
+8. Create GitHub Actions pipeline (.github/workflows/deploy.yml):
+
+Pipeline stages:
+
+• Install dependencies
+• Build backend
+• Build frontend
+• Build Docker images
+• Push images to GHCR
+• SSH deploy to Hostinger VPS
+• Pull images
+• Run docker compose up -d
+
+9. Add automatic database migration step during deployment.
+
+10. Add container health monitoring.
+
+11. Optimize build time by enabling Docker layer caching.
+
+12. Ensure the application is accessible via:
+
+http://187.77.130.117
+https://auditwise.tech
+
+13. Generate a **deployment script deploy.sh** that runs:
+
+docker compose down
+docker compose pull
+docker compose build
+docker compose up -d
+docker compose ps
+
+14. Ensure system automatically recovers if containers fail.
+
+Final requirement:
+
+Return the following files fully implemented:
+
+docker-compose.yml
+backend/Dockerfile
+frontend/Dockerfile
+nginx/default.conf
+.github/workflows/deploy.yml
+deploy.sh
+
+The system must deploy successfully to Hostinger VPS without container errors.
