@@ -5,9 +5,9 @@ import {
   Activity, Shield, Globe, RefreshCw, Clock, CheckCircle2,
   XCircle, AlertTriangle, WifiOff, Terminal,
   Lock, Zap, MonitorCheck, Container, Layers,
-  Timer, CircleDot, Radio, Rocket, Play,
+  Timer, CircleDot, Radio, Rocket,
   ChevronDown, ChevronUp, Eye,
-  Package, Database, RotateCcw, Power,
+  Package, Database, RotateCcw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -566,8 +566,11 @@ export default function SystemMonitoring() {
             {(deployStatus.log.length > 0 || (deployLogData?.logs && deployLogData.logs.length > 0)) && (
               <div className="mt-2">
                 <button
+                  type="button"
                   onClick={() => { setDeployLogExpanded(!deployLogExpanded); if (!deployLogExpanded) refetchLogs(); }}
                   className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded-lg hover:bg-muted/50"
+                  aria-expanded={deployLogExpanded}
+                  aria-controls="deploy-log-panel"
                   data-testid="btn-toggle-deploy-logs"
                 >
                   <Terminal className="h-3.5 w-3.5" />
@@ -575,7 +578,7 @@ export default function SystemMonitoring() {
                   {deployLogExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                 </button>
                 {deployLogExpanded && (
-                  <div className="mt-2 bg-gray-950 rounded-xl p-4 max-h-60 overflow-y-auto border border-gray-800">
+                  <div id="deploy-log-panel" className="mt-2 bg-gray-950 rounded-xl p-4 max-h-60 overflow-y-auto border border-gray-800">
                     <pre className="text-[11px] font-mono text-emerald-400 whitespace-pre-wrap leading-relaxed">
                       {deployStatus.log.length > 0 ? deployStatus.log.join("\n") : ""}
                       {deployLogData?.logs ? "\n" + deployLogData.logs : ""}
