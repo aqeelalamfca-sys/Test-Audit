@@ -2348,12 +2348,13 @@ router.post("/ai-suggest-mapping", requireAuth, async (req: AuthenticatedRequest
       return `${m.accountCode} → ${head?.name || 'Unknown'}${line ? ' / ' + line.name : ''}`;
     });
 
-    if (!process.env.AI_INTEGRATIONS_OPENAI_API_KEY) {
+    const aiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+    if (!aiKey) {
       return res.status(503).json({ error: "AI service not configured" });
     }
 
     const openai = new OpenAI({
-      apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+      apiKey: aiKey,
       baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
     });
 
@@ -2458,12 +2459,13 @@ router.post("/ai-suggest-batch", requireAuth, async (req: AuthenticatedRequest, 
       lines: h.fsLines.map((l: any) => ({ id: l.id, code: l.code, name: l.name })),
     }));
 
-    if (!process.env.AI_INTEGRATIONS_OPENAI_API_KEY) {
+    const aiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+    if (!aiKey) {
       return res.status(503).json({ error: "AI service not configured" });
     }
 
     const openai = new OpenAI({
-      apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+      apiKey: aiKey,
       baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
     });
 

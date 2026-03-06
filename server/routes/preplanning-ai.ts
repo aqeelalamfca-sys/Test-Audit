@@ -267,7 +267,7 @@ router.post("/generate", requireAuth, async (req: AuthenticatedRequest, res: Res
     });
 
     const aiEnabled = settings?.aiEnabled ?? true;
-    const hasApiKey = settings?.openaiApiKey || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+    const hasApiKey = settings?.openaiApiKey || process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
 
     if (!aiEnabled) {
       return res.status(403).json({ error: "AI is disabled. Please enable AI in Settings." });
@@ -352,7 +352,7 @@ Debt to Equity: ${totalEquity > 0 ? (totalLiabilities / totalEquity).toFixed(2) 
     const contextData = buildContextString(engagement, data.existingFieldValues || {}) + financialContext;
 
     const openai = new OpenAI({
-      apiKey: settings?.openaiApiKey || process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+      apiKey: settings?.openaiApiKey || process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
       baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
     });
 

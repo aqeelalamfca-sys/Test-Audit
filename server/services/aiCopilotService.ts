@@ -513,7 +513,7 @@ export async function generateAICopilotSuggestion(
     aiEnabled: settings?.aiEnabled ?? true,
     preferredProvider: settings?.preferredProvider ?? "openai",
     providerPriority: settings?.providerPriority ?? ["openai", "gemini", "deepseek"],
-    openaiApiKey: settings?.openaiApiKey || process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+    openaiApiKey: settings?.openaiApiKey || process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
     openaiEnabled: settings?.openaiEnabled ?? true,
     geminiApiKey: settings?.geminiApiKey,
     geminiEnabled: settings?.geminiEnabled ?? false,

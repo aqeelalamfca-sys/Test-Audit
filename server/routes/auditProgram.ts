@@ -4,11 +4,12 @@ import OpenAI from "openai";
 const router = Router();
 
 function getOpenAIClient(): OpenAI | null {
-  if (!process.env.AI_INTEGRATIONS_OPENAI_API_KEY) {
+  const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+  if (!apiKey) {
     return null;
   }
   return new OpenAI({
-    apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+    apiKey,
     baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
   });
 }

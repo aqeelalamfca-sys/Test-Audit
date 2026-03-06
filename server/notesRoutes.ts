@@ -129,7 +129,7 @@ router.post("/:engagementId/generate", requireAuth, async (req: AuthenticatedReq
       aiEnabled: aiConfig?.aiEnabled ?? true,
       preferredProvider: aiConfig?.preferredProvider || "openai",
       providerPriority: (aiConfig?.providerPriority as string[]) || ["openai", "gemini", "deepseek"],
-      openaiApiKey: aiConfig?.openaiApiKey || process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+      openaiApiKey: aiConfig?.openaiApiKey || process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
       openaiEnabled: aiConfig?.openaiEnabled ?? true,
       geminiApiKey: aiConfig?.geminiApiKey,
       geminiEnabled: aiConfig?.geminiEnabled ?? false,
