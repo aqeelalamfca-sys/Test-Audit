@@ -12,7 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -262,8 +262,9 @@ export default function SystemMonitoring() {
     (data?.resources?.cpu?.usagePercent ?? 0) > 90 ||
     (data?.resources?.memory?.usagePercent ?? 0) > 90 ||
     (data?.resources?.disk?.usagePercent ?? 0) > 90 ||
-    data?.services?.nginx !== "active" ||
-    data?.services?.postgresql !== "active";
+    (data?.services && data.services.nginx !== "active") ||
+    (data?.services && data.services.postgresql !== "active") ||
+    (pingData !== undefined && !pingData?.reachable);
 
   if (isLoading) {
     return (
@@ -330,9 +331,9 @@ export default function SystemMonitoring() {
     if ((data?.resources?.cpu?.usagePercent ?? 0) > 90) issuesList.push("CPU usage critical");
     if ((data?.resources?.memory?.usagePercent ?? 0) > 90) issuesList.push("Memory usage critical");
     if ((data?.resources?.disk?.usagePercent ?? 0) > 90) issuesList.push("Disk usage critical");
-    if (data?.services?.nginx !== "active") issuesList.push("Nginx not active");
-    if (data?.services?.postgresql !== "active") issuesList.push("PostgreSQL not active");
-    if (pingData && !pingData.reachable) issuesList.push("App health check failed");
+    if (data?.services && data.services.nginx !== "active") issuesList.push("Nginx not active");
+    if (data?.services && data.services.postgresql !== "active") issuesList.push("PostgreSQL not active");
+    if (pingData !== undefined && !pingData.reachable) issuesList.push("App health check failed");
   }
 
   return (
@@ -395,31 +396,22 @@ export default function SystemMonitoring() {
             )}
 
             {overallStatus === "issues" && issuesList.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex flex-wrap gap-2 mt-2" data-testid="hero-issues-list">
                 {issuesList.map((issue, i) => (
-                  <Badge key={i} variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs">
+                  <Badge key={i} variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs" data-testid={`badge-issue-${i}`}>
                     <AlertTriangle className="h-3 w-3 mr-1" /> {issue}
                   </Badge>
                 ))}
               </div>
             )}
 
-            {overallStatus === "live" && (
-              <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
-                {data?.server?.uptime && <span className="flex items-center gap-1"><Timer className="h-3.5 w-3.5" /> Uptime: {data.server.uptime}</span>}
-                {data?.resources?.cpu && <span className="flex items-center gap-1"><Cpu className="h-3.5 w-3.5" /> CPU: {data.resources.cpu.usagePercent}%</span>}
-                {data?.resources?.memory && <span className="flex items-center gap-1"><MemoryStick className="h-3.5 w-3.5" /> RAM: {data.resources.memory.usagePercent}%</span>}
-                {data?.resources?.disk && <span className="flex items-center gap-1"><HardDrive className="h-3.5 w-3.5" /> Disk: {data.resources.disk.usagePercent}%</span>}
-                {pingData?.reachable && <span className="flex items-center gap-1"><Activity className="h-3.5 w-3.5" /> Ping: {pingData.responseTime}ms</span>}
-              </div>
-            )}
-
-            {isConnected && overallStatus === "issues" && (
-              <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
-                {data?.server?.uptime && <span className="flex items-center gap-1"><Timer className="h-3.5 w-3.5" /> Uptime: {data.server.uptime}</span>}
-                {data?.resources?.cpu && <span className="flex items-center gap-1"><Cpu className="h-3.5 w-3.5" /> CPU: {data.resources.cpu.usagePercent}%</span>}
-                {data?.resources?.memory && <span className="flex items-center gap-1"><MemoryStick className="h-3.5 w-3.5" /> RAM: {data.resources.memory.usagePercent}%</span>}
-                {data?.resources?.disk && <span className="flex items-center gap-1"><HardDrive className="h-3.5 w-3.5" /> Disk: {data.resources.disk.usagePercent}%</span>}
+            {isConnected && (
+              <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground" data-testid="hero-metrics">
+                {data?.server?.uptime && <span className="flex items-center gap-1" data-testid="metric-uptime"><Timer className="h-3.5 w-3.5" /> Uptime: {data.server.uptime}</span>}
+                {data?.resources?.cpu && <span className="flex items-center gap-1" data-testid="metric-cpu"><Cpu className="h-3.5 w-3.5" /> CPU: {data.resources.cpu.usagePercent}%</span>}
+                {data?.resources?.memory && <span className="flex items-center gap-1" data-testid="metric-ram"><MemoryStick className="h-3.5 w-3.5" /> RAM: {data.resources.memory.usagePercent}%</span>}
+                {data?.resources?.disk && <span className="flex items-center gap-1" data-testid="metric-disk"><HardDrive className="h-3.5 w-3.5" /> Disk: {data.resources.disk.usagePercent}%</span>}
+                {pingData?.reachable && <span className="flex items-center gap-1" data-testid="metric-ping"><Activity className="h-3.5 w-3.5" /> Ping: {pingData.responseTime}ms</span>}
               </div>
             )}
           </div>
