@@ -103,23 +103,21 @@ const MAX_LOG_SIZE = 10000;
 const ROLE_HIERARCHY: Record<UserRole, number> = {
   STAFF: 1,
   SENIOR: 2,
-  TEAM_LEAD: 3,
-  MANAGER: 4,
-  MANAGING_PARTNER: 5,
-  PARTNER: 6,
-  EQCR: 0,
-  ADMIN: 99,
+  MANAGER: 3,
+  EQCR: 4,
+  PARTNER: 5,
+  FIRM_ADMIN: 6,
+  SUPER_ADMIN: 99,
 };
 
 const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
   STAFF: "Staff",
   SENIOR: "Senior",
-  TEAM_LEAD: "Team Lead",
   MANAGER: "Manager",
-  MANAGING_PARTNER: "Senior Manager",
+  EQCR: "EQCR Reviewer",
   PARTNER: "Partner",
-  EQCR: "Inspector",
-  ADMIN: "Administrator",
+  FIRM_ADMIN: "Firm Admin",
+  SUPER_ADMIN: "Super Admin",
 };
 
 const ACTION_REQUIRED_LEVELS: Record<FSHeadAction, number> = {
@@ -129,14 +127,14 @@ const ACTION_REQUIRED_LEVELS: Record<FSHeadAction, number> = {
   VIEW_DETAILS: 1,
   VIEW_SUMMARY: 1,
   VIEW_BLOCKERS: 1,
-  REVIEW: 4,
-  APPROVE_STAFF_WORK: 4,
+  REVIEW: 3,
+  APPROVE_STAFF_WORK: 3,
   REVIEW_MANAGER_WORK: 5,
   EDIT_DETAILS: 1,
-  SIGN_OFF: 6,
-  DELETE: 6,
-  LOCK: 6,
-  UNLOCK: 6,
+  SIGN_OFF: 5,
+  DELETE: 5,
+  LOCK: 5,
+  UNLOCK: 5,
 };
 
 const STAFF_ACTIONS: FSHeadAction[] = [
@@ -153,10 +151,6 @@ const MANAGER_ACTIONS: FSHeadAction[] = [
   ...STAFF_ACTIONS,
   "REVIEW",
   "APPROVE_STAFF_WORK",
-];
-
-const SENIOR_MANAGER_ACTIONS: FSHeadAction[] = [
-  ...MANAGER_ACTIONS,
   "REVIEW_MANAGER_WORK",
 ];
 
@@ -168,13 +162,13 @@ const PARTNER_ACTIONS: FSHeadAction[] = [
   "UNLOCK",
 ];
 
-const INSPECTOR_ACTIONS: FSHeadAction[] = [
+const EQCR_ACTIONS: FSHeadAction[] = [
   "VIEW_DETAILS",
   "VIEW_SUMMARY",
   "VIEW_BLOCKERS",
 ];
 
-const ADMIN_ACTIONS: FSHeadAction[] = [
+const FIRM_ADMIN_ACTIONS: FSHeadAction[] = [
   "PREPARE",
   "EDIT_PROCEDURE",
   "UPLOAD_EVIDENCE",
@@ -194,18 +188,17 @@ const ADMIN_ACTIONS: FSHeadAction[] = [
 const ROLE_PERMISSIONS: Record<UserRole, FSHeadAction[]> = {
   STAFF: STAFF_ACTIONS,
   SENIOR: STAFF_ACTIONS,
-  TEAM_LEAD: STAFF_ACTIONS,
   MANAGER: MANAGER_ACTIONS,
-  MANAGING_PARTNER: SENIOR_MANAGER_ACTIONS,
+  EQCR: EQCR_ACTIONS,
   PARTNER: PARTNER_ACTIONS,
-  EQCR: INSPECTOR_ACTIONS,
-  ADMIN: ADMIN_ACTIONS,
+  FIRM_ADMIN: FIRM_ADMIN_ACTIONS,
+  SUPER_ADMIN: [],
 };
 
 const SIGN_OFF_REQUIRED_ROLES: Record<SignOffType, UserRole[]> = {
-  PREPARED: ["STAFF", "SENIOR", "TEAM_LEAD"],
+  PREPARED: ["STAFF", "SENIOR"],
   REVIEWED: ["MANAGER"],
-  APPROVED: ["PARTNER", "MANAGING_PARTNER"],
+  APPROVED: ["PARTNER"],
 };
 
 function logPermission(entry: PermissionLogEntry): void {
@@ -235,7 +228,7 @@ export function isRoleAtLeast(userRole: UserRole, requiredRole: UserRole): boole
 }
 
 export function checkPermission(action: string, role: UserRole): boolean {
-  if (role === "ADMIN") {
+  if (role === "FIRM_ADMIN") {
     return true;
   }
   
@@ -250,7 +243,7 @@ export function checkPermissionWithDetails(
   const roleLevel = getRoleLevel(role);
   const requiredLevel = ACTION_REQUIRED_LEVELS[action] ?? 99;
   
-  if (role === "ADMIN") {
+  if (role === "FIRM_ADMIN") {
     return {
       allowed: true,
       roleLevel,
@@ -259,12 +252,12 @@ export function checkPermissionWithDetails(
   }
   
   if (role === "EQCR") {
-    const allowed = INSPECTOR_ACTIONS.includes(action);
+    const allowed = EQCR_ACTIONS.includes(action);
     return {
       allowed,
       roleLevel,
       requiredLevel,
-      reason: allowed ? undefined : "Inspector role has read-only access",
+      reason: allowed ? undefined : "EQCR role has read-only access",
     };
   }
   
@@ -282,11 +275,11 @@ export function checkPermissionWithDetails(
 }
 
 export function isPartnerReviewMode(role: UserRole): boolean {
-  return role === "PARTNER" || role === "MANAGING_PARTNER";
+  return role === "PARTNER";
 }
 
 export function canEditInPartnerMode(role: UserRole): boolean {
-  return role === "ADMIN";
+  return role === "FIRM_ADMIN";
 }
 
 export async function hasPermission(
@@ -354,7 +347,7 @@ export async function canSignOff(
     return false;
   }
   
-  if (user.role === "ADMIN") {
+  if (user.role === "FIRM_ADMIN") {
     logPermission({
       timestamp: new Date(),
       userId,

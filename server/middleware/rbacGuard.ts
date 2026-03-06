@@ -5,13 +5,10 @@ import type { UserRole } from "@prisma/client";
 const ROLE_HIERARCHY: Record<string, number> = {
   STAFF: 1,
   SENIOR: 2,
-  TEAM_LEAD: 3,
-  MANAGER: 4,
+  MANAGER: 3,
+  EQCR: 4,
   PARTNER: 5,
-  MANAGING_PARTNER: 5,
-  EQCR: 6,
-  ADMIN: 7,
-  FIRM_ADMIN: 8,
+  FIRM_ADMIN: 6,
   SUPER_ADMIN: 99,
 };
 
@@ -45,7 +42,7 @@ export function requirePlatformOrFirmAdmin(req: AuthenticatedRequest, res: Respo
   if (req.user.role === "SUPER_ADMIN") {
     return res.status(403).json({ error: "Platform administrators cannot access tenant resources" });
   }
-  const allowedRoles = ["FIRM_ADMIN", "ADMIN"];
+  const allowedRoles = ["FIRM_ADMIN"];
   if (!allowedRoles.includes(req.user.role)) {
     return res.status(403).json({ error: "Admin access required" });
   }

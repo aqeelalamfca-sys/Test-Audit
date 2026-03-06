@@ -128,14 +128,11 @@ export function requireMinRole(minRole: UserRole) {
   const roleHierarchy: Record<UserRole, number> = {
     STAFF: 1,
     SENIOR: 2,
-    TEAM_LEAD: 3,
-    MANAGER: 4,
+    MANAGER: 3,
+    EQCR: 4,
     PARTNER: 5,
-    MANAGING_PARTNER: 5,
-    EQCR: 6,
-    ADMIN: 99,
-    FIRM_ADMIN: 100,
-    SUPER_ADMIN: 999,
+    FIRM_ADMIN: 6,
+    SUPER_ADMIN: 99,
   };
 
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -143,7 +140,7 @@ export function requireMinRole(minRole: UserRole) {
       return res.status(401).json({ error: "Authentication required" });
     }
     
-    if (req.user.role === "ADMIN") {
+    if (req.user.role === "FIRM_ADMIN") {
       return next();
     }
 
