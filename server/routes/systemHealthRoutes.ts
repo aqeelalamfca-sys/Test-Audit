@@ -247,14 +247,19 @@ router.get("/system-health/events", (req: Request, res: Response) => {
 router.get("/system-health", async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { host } = getSSHConfig();
-    if (!host) {
+    const localMode = isLocalMode();
+
+    if (!host && !localMode) {
       return res.json({
         connected: false,
-        error: "VPS SSH credentials not configured. Set VPS_SSH_HOST, VPS_SSH_USER, and VPS_SSH_PASSWORD or VPS_SSH_PRIVATE_KEY in environment variables.",
+        mode: "none",
+        error: "VPS SSH credentials not configured. Set VPS_SSH_HOST, VPS_SSH_USER, and VPS_SSH_PASSWORD or VPS_SSH_PRIVATE_KEY in environment variables. Or set NODE_ENV=production to use local mode on the VPS.",
         timestamp: new Date().toISOString(),
         deployment: { status: activeDeployment },
       });
     }
+
+    const appDir = process.env.APP_DIR || "/opt/auditwise";
 
     const commands: Record<string, string> = {
       uptime: "uptime",
@@ -264,23 +269,24 @@ router.get("/system-health", async (req: AuthenticatedRequest, res: Response) =>
       cpuCores: "nproc",
       pm2List: "pm2 jlist 2>/dev/null || echo '[]'",
       pm2Status: "pm2 list 2>/dev/null || echo 'PM2 not running'",
-      gitRemote: "cd /opt/auditwise && git remote -v 2>/dev/null | head -2 || echo 'Not a git repo'",
-      gitLog: "cd /opt/auditwise && git log -1 --format='%H|%s|%an|%ai' 2>/dev/null || echo 'No git history'",
-      gitStatus: "cd /opt/auditwise && git status --short 2>/dev/null | head -20 || echo ''",
-      gitBranch: "cd /opt/auditwise && git branch --show-current 2>/dev/null || echo 'unknown'",
+      gitRemote: `cd ${appDir} && git remote -v 2>/dev/null | head -2 || echo 'Not a git repo'`,
+      gitLog: `cd ${appDir} && git log -1 --format='%H|%s|%an|%ai' 2>/dev/null || echo 'No git history'`,
+      gitStatus: `cd ${appDir} && git status --short 2>/dev/null | head -20 || echo ''`,
+      gitBranch: `cd ${appDir} && git branch --show-current 2>/dev/null || echo 'unknown'`,
       nodeVersion: "node --version 2>/dev/null || echo 'N/A'",
       npmVersion: "npm --version 2>/dev/null || echo 'N/A'",
       ufwStatus: "sudo ufw status 2>/dev/null || echo 'UFW not installed'",
       openPorts: "ss -tuln 2>/dev/null | grep LISTEN | head -20 || echo 'N/A'",
       sslCheck: "test -f /etc/letsencrypt/live/*/fullchain.pem && echo 'SSL Active' || echo 'No SSL'",
       cronJobs: "crontab -l 2>/dev/null || echo 'No crontab'",
-      fetchHead: "stat -c '%y' /opt/auditwise/.git/FETCH_HEAD 2>/dev/null || echo 'Never fetched'",
-      gitPullLog: "tail -20 /opt/auditwise/gitpull.log 2>/dev/null || echo 'No pull log'",
+      fetchHead: `stat -c '%y' ${appDir}/.git/FETCH_HEAD 2>/dev/null || echo 'Never fetched'`,
+      gitPullLog: `tail -20 ${appDir}/gitpull.log 2>/dev/null || echo 'No pull log'`,
       hostname: "hostname 2>/dev/null || echo 'unknown'",
       osRelease: "cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"' || echo 'Unknown OS'",
       kernelVersion: "uname -r 2>/dev/null || echo 'N/A'",
       nginxStatus: "systemctl is-active nginx 2>/dev/null || echo 'inactive'",
       postgresStatus: "systemctl is-active postgresql 2>/dev/null || echo 'inactive'",
+      dockerContainers: "docker ps --format '{{.Names}}|{{.Status}}|{{.Ports}}' 2>/dev/null || echo ''",
     };
 
     const results = await runMultipleCommands(commands);
@@ -328,6 +334,13 @@ router.get("/system-health", async (req: AuthenticatedRequest, res: Response) =>
       mode: p.pm2_env?.exec_mode || "N/A",
     }));
 
+    const dockerContainers = results.dockerContainers?.stdout
+      ? results.dockerContainers.stdout.split("\n").filter(Boolean).map(line => {
+          const [name, status, ports] = line.split("|");
+          return { name: name || "", status: status || "", ports: ports || "" };
+        })
+      : [];
+
     const ufwLines = results.ufwStatus.stdout.split("\n").filter(l => l.trim().length > 0);
     const openPortLines = results.openPorts.stdout.split("\n").filter(l => l.trim().length > 0);
     const openPorts = openPortLines.map(l => {
@@ -335,13 +348,16 @@ router.get("/system-health", async (req: AuthenticatedRequest, res: Response) =>
       return { protocol: parts[0], address: parts[4] || parts[3], state: parts[parts.length - 1] };
     });
 
+    const serverIp = localMode ? (os.networkInterfaces()?.eth0?.[0]?.address || os.hostname()) : host;
+
     res.json({
       connected: true,
+      mode: localMode ? "local" : "ssh",
       timestamp: new Date().toISOString(),
-      server: { hostname: results.hostname.stdout, ip: host, os: results.osRelease.stdout, kernel: results.kernelVersion.stdout, uptime: uptimeData.uptime, loadAverage: uptimeData.loadAvg, users: uptimeData.users },
+      server: { hostname: results.hostname.stdout, ip: serverIp, os: results.osRelease.stdout, kernel: results.kernelVersion.stdout, uptime: uptimeData.uptime, loadAverage: uptimeData.loadAvg, users: uptimeData.users },
       resources: { cpu: { usagePercent: cpuUsage, cores: parseInt(results.cpuCores.stdout) || 1 }, memory: memoryData, disk: diskData },
       git: gitInfo,
-      application: { pm2Processes: pm2Data.length > 0 ? pm2Data : pm2TableProcesses, nodeVersion: results.nodeVersion.stdout, npmVersion: results.npmVersion.stdout },
+      application: { pm2Processes: pm2Data.length > 0 ? pm2Data : pm2TableProcesses, nodeVersion: results.nodeVersion.stdout, npmVersion: results.npmVersion.stdout, dockerContainers },
       services: { nginx: results.nginxStatus.stdout.trim(), postgresql: results.postgresStatus.stdout.trim() },
       security: { firewall: ufwLines, openPorts, ssl: results.sslCheck.stdout.trim() },
       deployment: { cronJobs: results.cronJobs.stdout, lastFetch: results.fetchHead.stdout, pullLog: results.gitPullLog.stdout, status: activeDeployment },
@@ -354,16 +370,20 @@ router.get("/system-health", async (req: AuthenticatedRequest, res: Response) =>
 router.get("/system-health/ping", async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { host } = getSSHConfig();
-    if (!host) return res.json({ reachable: false, error: "VPS host not configured" });
+    const localMode = isLocalMode();
 
-    const appUrl = process.env.VPS_APP_URL || `https://${host}`;
+    if (!host && !localMode) return res.json({ reachable: false, error: "VPS host not configured" });
+
+    const appUrl = localMode
+      ? (process.env.VPS_APP_URL || `http://localhost:${process.env.PORT || 5000}`)
+      : (process.env.VPS_APP_URL || `https://${host}`);
     const startTime = Date.now();
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
-      const response = await fetch(`${appUrl}/api/auth/me`, { signal: controller.signal, headers: { "User-Agent": "AuditWise-HealthCheck/1.0" } });
+      const response = await fetch(`${appUrl}/api/health`, { signal: controller.signal, headers: { "User-Agent": "AuditWise-HealthCheck/1.0" } });
       clearTimeout(timeout);
-      return res.json({ reachable: true, httpStatus: response.status, responseTime: Date.now() - startTime, url: appUrl });
+      return res.json({ reachable: true, httpStatus: response.status, responseTime: Date.now() - startTime, url: appUrl, mode: localMode ? "local" : "ssh" });
     } catch (fetchErr: any) {
       return res.json({ reachable: false, error: fetchErr.message, responseTime: Date.now() - startTime, url: appUrl });
     }
@@ -372,56 +392,61 @@ router.get("/system-health/ping", async (req: AuthenticatedRequest, res: Respons
   }
 });
 
-const DEPLOY_STEPS = [
-  { id: "pull", label: "Repository Pull", cmd: "cd /opt/auditwise && git pull origin main 2>&1" },
-  { id: "deps", label: "Install Dependencies", cmd: "cd /opt/auditwise && npm ci --production=false 2>&1" },
-  { id: "build", label: "Build Application", cmd: "cd /opt/auditwise && npm run build 2>&1" },
-  { id: "migrate", label: "Database Migration", cmd: "cd /opt/auditwise && npx prisma db push --accept-data-loss 2>&1" },
-  { id: "restart", label: "Restart PM2 Services", cmd: "cd /opt/auditwise && pm2 restart ecosystem.config.cjs 2>&1 && pm2 save 2>&1" },
-];
+function getDeploySteps(): Array<{ id: string; label: string; cmd: string }> {
+  const appDir = process.env.APP_DIR || "/opt/auditwise";
+  return [
+    { id: "pull", label: "Repository Pull", cmd: `cd ${appDir} && git pull origin main 2>&1` },
+    { id: "deps", label: "Install Dependencies", cmd: `cd ${appDir} && npm ci --production=false 2>&1` },
+    { id: "build", label: "Build Application", cmd: `cd ${appDir} && npm run build 2>&1` },
+    { id: "migrate", label: "Database Migration", cmd: `cd ${appDir} && npx prisma db push --accept-data-loss 2>&1` },
+    { id: "restart", label: "Restart PM2 Services", cmd: `cd ${appDir} && pm2 restart ecosystem.config.cjs 2>&1 && pm2 save 2>&1` },
+  ];
+}
 
 router.post("/system-health/deploy", async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { host } = getSSHConfig();
-    if (!host) return res.status(400).json({ error: "VPS SSH credentials not configured" });
+    const localMode = isLocalMode();
+    if (!host && !localMode) return res.status(400).json({ error: "VPS SSH credentials not configured and not in local/production mode" });
 
     if (activeDeployment.status === "running") {
       return res.status(409).json({ error: "A deployment is already in progress" });
     }
 
     const userEmail = req.user?.email || "unknown";
+    const deploySteps = getDeploySteps();
     activeDeployment = {
       status: "running",
       step: 0,
-      totalSteps: DEPLOY_STEPS.length,
-      currentStep: DEPLOY_STEPS[0].label,
+      totalSteps: deploySteps.length,
+      currentStep: deploySteps[0].label,
       log: [],
       startedAt: new Date().toISOString(),
       completedAt: null,
       triggeredBy: userEmail,
     };
 
-    appendDeployLog(`DEPLOYMENT STARTED by ${userEmail}`);
+    appendDeployLog(`DEPLOYMENT STARTED by ${userEmail} (mode: ${localMode ? "local" : "ssh"})`);
     broadcastSSE("deploy-start", { ...activeDeployment });
 
     res.json({ message: "Deployment started", deployment: activeDeployment });
 
     (async () => {
-      for (let i = 0; i < DEPLOY_STEPS.length; i++) {
-        const step = DEPLOY_STEPS[i];
+      for (let i = 0; i < deploySteps.length; i++) {
+        const step = deploySteps[i];
         activeDeployment.step = i + 1;
         activeDeployment.currentStep = step.label;
-        activeDeployment.log.push(`[Step ${i + 1}/${DEPLOY_STEPS.length}] ${step.label}...`);
-        broadcastSSE("deploy-progress", { step: i + 1, total: DEPLOY_STEPS.length, label: step.label, status: "running" });
+        activeDeployment.log.push(`[Step ${i + 1}/${deploySteps.length}] ${step.label}...`);
+        broadcastSSE("deploy-progress", { step: i + 1, total: deploySteps.length, label: step.label, status: "running" });
         appendDeployLog(`  Step ${i + 1}: ${step.label} - STARTED`);
 
-        const result = await executeSSH(step.cmd, 120000);
+        const result = await executeCommand(step.cmd, 120000);
 
         if (result.code !== 0 && result.code !== -1) {
           activeDeployment.status = "failed";
           activeDeployment.completedAt = new Date().toISOString();
           activeDeployment.log.push(`  FAILED: ${result.stderr || result.stdout}`);
-          broadcastSSE("deploy-progress", { step: i + 1, total: DEPLOY_STEPS.length, label: step.label, status: "failed", output: result.stderr || result.stdout });
+          broadcastSSE("deploy-progress", { step: i + 1, total: deploySteps.length, label: step.label, status: "failed", output: result.stderr || result.stdout });
           appendDeployLog(`  Step ${i + 1}: ${step.label} - FAILED: ${result.stderr}`);
           appendDeployLog(`DEPLOYMENT FAILED at step ${i + 1}`);
           broadcastSSE("deploy-complete", { status: "failed", step: i + 1 });
@@ -430,7 +455,7 @@ router.post("/system-health/deploy", async (req: AuthenticatedRequest, res: Resp
 
         const output = result.stdout.split("\n").slice(-5).join("\n");
         activeDeployment.log.push(`  OK: ${output}`);
-        broadcastSSE("deploy-progress", { step: i + 1, total: DEPLOY_STEPS.length, label: step.label, status: "success", output });
+        broadcastSSE("deploy-progress", { step: i + 1, total: deploySteps.length, label: step.label, status: "success", output });
         appendDeployLog(`  Step ${i + 1}: ${step.label} - SUCCESS`);
       }
 

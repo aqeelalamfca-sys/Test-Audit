@@ -21,8 +21,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+interface DockerContainer {
+  name: string;
+  status: string;
+  ports: string;
+}
+
 interface SystemHealthData {
   connected: boolean;
+  mode?: "local" | "ssh" | "none";
   error?: string;
   timestamp: string;
   server?: { hostname: string; ip: string; os: string; kernel: string; uptime: string; loadAverage: string; users: string };
@@ -35,6 +42,7 @@ interface SystemHealthData {
   application?: {
     pm2Processes: Array<{ name: string; id: number; status: string; cpu: string; memory: string; uptime: string; restarts: number; pid: number; mode: string }>;
     nodeVersion: string; npmVersion: string;
+    dockerContainers?: DockerContainer[];
   };
   services?: { nginx: string; postgresql: string };
   security?: { firewall: string[]; openPorts: Array<{ protocol: string; address: string; state: string }>; ssl: string };
@@ -304,6 +312,12 @@ export default function SystemMonitoring() {
           <Badge variant="outline" className="gap-1.5 py-1" data-testid="badge-provider">
             <Server className="h-3 w-3" /> Hostinger VPS
           </Badge>
+          {data?.mode && (
+            <Badge variant="outline" className={`gap-1.5 py-1 ${data.mode === "local" ? "bg-blue-500/5 border-blue-500/30 text-blue-600" : data.mode === "ssh" ? "bg-purple-500/5 border-purple-500/30 text-purple-600" : ""}`} data-testid="badge-mode">
+              {data.mode === "local" ? <MonitorCheck className="h-3 w-3" /> : <Terminal className="h-3 w-3" />}
+              {data.mode === "local" ? "Local Mode" : data.mode === "ssh" ? "SSH Mode" : ""}
+            </Badge>
+          )}
           {data?.server?.ip && (
             <Badge variant="outline" className="gap-1.5 py-1 font-mono text-xs" data-testid="badge-ip">
               <Globe className="h-3 w-3" /> {data.server.ip}
@@ -341,7 +355,7 @@ export default function SystemMonitoring() {
             <div>
               <p className="font-semibold text-amber-600 dark:text-amber-400">VPS Connection Unavailable</p>
               <p className="text-sm text-muted-foreground mt-1">
-                {data?.error || "SSH credentials not configured. Set VPS_SSH_HOST, VPS_SSH_USER, and VPS_SSH_PASSWORD in environment variables."}
+                {data?.error || "Not connected. In production (NODE_ENV=production), metrics are read locally. Otherwise, set VPS_SSH_HOST to connect via SSH."}
               </p>
             </div>
           </CardContent>
@@ -609,9 +623,9 @@ export default function SystemMonitoring() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/50">
-              <span className="text-sm font-medium">SSH Connection</span>
+              <span className="text-sm font-medium">Connection</span>
               <Badge variant="outline" className={isConnected ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"}>
-                <StatusDot status={isConnected ? "green" : "red"} /><span className="ml-1.5">{isConnected ? "Connected" : "Disconnected"}</span>
+                <StatusDot status={isConnected ? "green" : "red"} /><span className="ml-1.5">{isConnected ? (data?.mode === "local" ? "Local" : "SSH") : "Disconnected"}</span>
               </Badge>
             </div>
             <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/50">
