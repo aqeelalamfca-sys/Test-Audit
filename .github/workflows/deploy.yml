@@ -163,7 +163,7 @@ jobs:
             echo "  Code updated to $(git log --oneline -1)"
 
             echo "[3/8] Logging into GHCR..."
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin 2>/dev/null || true
+            echo "${{ secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin 2>/dev/null || true
 
             echo "[4/8] Pulling latest Docker images..."
             docker compose pull backend frontend
