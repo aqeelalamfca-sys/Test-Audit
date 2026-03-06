@@ -1,12 +1,12 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Server, Cpu, HardDrive, MemoryStick, GitBranch,
   Activity, Shield, Globe, RefreshCw, Clock, CheckCircle2,
-  XCircle, AlertTriangle, Wifi, WifiOff, Terminal,
+  XCircle, AlertTriangle, WifiOff, Terminal,
   Lock, Zap, MonitorCheck, Container, Layers,
   Timer, CircleDot, Radio, Rocket, Play,
-  ChevronDown, ChevronUp, FileText, ArrowRight,
+  ChevronDown, ChevronUp,
   Package, Database, RotateCcw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -280,19 +280,63 @@ export default function SystemMonitoring() {
     );
   }
 
+  const overallStatus: "live" | "issues" | "offline" = !isConnected
+    ? "offline"
+    : hasAlerts
+      ? "issues"
+      : "live";
+
+  const statusConfig = {
+    live: {
+      label: "All Systems Operational",
+      sublabel: "Live",
+      icon: CheckCircle2,
+      gradient: "from-emerald-500 to-emerald-600",
+      glow: "shadow-emerald-500/30",
+      border: "border-emerald-500/40",
+      bg: "bg-gradient-to-r from-emerald-500/8 via-emerald-500/3 to-transparent",
+      dotColor: "bg-emerald-400",
+      textColor: "text-emerald-600 dark:text-emerald-400",
+    },
+    issues: {
+      label: "Attention Required",
+      sublabel: "Issues Detected",
+      icon: AlertTriangle,
+      gradient: "from-amber-500 to-orange-500",
+      glow: "shadow-amber-500/30",
+      border: "border-amber-500/40",
+      bg: "bg-gradient-to-r from-amber-500/8 via-amber-500/3 to-transparent",
+      dotColor: "bg-amber-400",
+      textColor: "text-amber-600 dark:text-amber-400",
+    },
+    offline: {
+      label: "System Offline",
+      sublabel: "Disconnected",
+      icon: WifiOff,
+      gradient: "from-red-500 to-red-600",
+      glow: "shadow-red-500/30",
+      border: "border-red-500/40",
+      bg: "bg-gradient-to-r from-red-500/8 via-red-500/3 to-transparent",
+      dotColor: "bg-red-400",
+      textColor: "text-red-600 dark:text-red-400",
+    },
+  };
+
+  const sc = statusConfig[overallStatus];
+  const StatusIcon = sc.icon;
+
+  const issuesList: string[] = [];
+  if (isConnected) {
+    if ((data?.resources?.cpu?.usagePercent ?? 0) > 90) issuesList.push("CPU usage critical");
+    if ((data?.resources?.memory?.usagePercent ?? 0) > 90) issuesList.push("Memory usage critical");
+    if ((data?.resources?.disk?.usagePercent ?? 0) > 90) issuesList.push("Disk usage critical");
+    if (data?.services?.nginx !== "active") issuesList.push("Nginx not active");
+    if (data?.services?.postgresql !== "active") issuesList.push("PostgreSQL not active");
+    if (pingData && !pingData.reachable) issuesList.push("App health check failed");
+  }
+
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto" data-testid="system-monitoring-page">
-      {hasAlerts && isConnected && (
-        <div className="bg-gradient-to-r from-red-500/10 via-red-500/5 to-transparent border border-red-500/30 rounded-lg px-4 py-3 flex items-center gap-3" data-testid="alert-banner">
-          <div className="h-8 w-8 rounded-full bg-red-500/20 flex items-center justify-center animate-pulse">
-            <AlertTriangle className="h-4 w-4 text-red-500" />
-          </div>
-          <span className="text-sm font-medium text-red-600 dark:text-red-400">
-            System alert — one or more health checks require attention
-          </span>
-        </div>
-      )}
-
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
@@ -312,25 +356,10 @@ export default function SystemMonitoring() {
           <Badge variant="outline" className="gap-1.5 py-1" data-testid="badge-provider">
             <Server className="h-3 w-3" /> Hostinger VPS
           </Badge>
-          {data?.mode && (
-            <Badge variant="outline" className={`gap-1.5 py-1 ${data.mode === "local" ? "bg-blue-500/5 border-blue-500/30 text-blue-600" : data.mode === "ssh" ? "bg-purple-500/5 border-purple-500/30 text-purple-600" : ""}`} data-testid="badge-mode">
+          {data?.mode && data.mode !== "none" && (
+            <Badge variant="outline" className={`gap-1.5 py-1 ${data.mode === "local" ? "bg-blue-500/5 border-blue-500/30 text-blue-600" : "bg-purple-500/5 border-purple-500/30 text-purple-600"}`} data-testid="badge-mode">
               {data.mode === "local" ? <MonitorCheck className="h-3 w-3" /> : <Terminal className="h-3 w-3" />}
-              {data.mode === "local" ? "Local Mode" : data.mode === "ssh" ? "SSH Mode" : ""}
-            </Badge>
-          )}
-          {data?.server?.ip && (
-            <Badge variant="outline" className="gap-1.5 py-1 font-mono text-xs" data-testid="badge-ip">
-              <Globe className="h-3 w-3" /> {data.server.ip}
-            </Badge>
-          )}
-          {data?.git?.branch && (
-            <Badge variant="outline" className="gap-1.5 py-1" data-testid="badge-branch">
-              <GitBranch className="h-3 w-3" /> {data.git.branch}
-            </Badge>
-          )}
-          {data?.git?.commit && data.git.commit !== "N/A" && (
-            <Badge variant="outline" className="gap-1.5 py-1 font-mono text-xs" data-testid="badge-commit">
-              {data.git.commit}
+              {data.mode === "local" ? "Local" : "SSH"}
             </Badge>
           )}
           <div className="flex items-center gap-2">
@@ -346,29 +375,74 @@ export default function SystemMonitoring() {
         </div>
       </div>
 
-      {!isConnected && (
-        <Card className="border-amber-500/30 bg-gradient-to-r from-amber-500/5 via-amber-500/3 to-transparent" data-testid="card-not-connected">
-          <CardContent className="flex items-center gap-4 py-6">
-            <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
-              <WifiOff className="h-6 w-6 text-amber-500" />
+      <div className={`rounded-2xl border-2 ${sc.border} ${sc.bg} p-6 transition-all duration-500`} data-testid="system-status-hero">
+        <div className="flex flex-col md:flex-row items-center gap-6">
+          <div className={`relative flex-shrink-0 h-24 w-24 rounded-2xl bg-gradient-to-br ${sc.gradient} flex items-center justify-center shadow-xl ${sc.glow}`}>
+            <StatusIcon className="h-12 w-12 text-white" />
+            <span className={`absolute -top-1 -right-1 h-5 w-5 rounded-full ${sc.dotColor} border-2 border-background animate-pulse`} />
+          </div>
+
+          <div className="flex-1 text-center md:text-left">
+            <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1">
+              <h2 className={`text-2xl font-bold ${sc.textColor}`} data-testid="text-overall-status">{sc.sublabel}</h2>
+              <span className="text-lg text-muted-foreground font-medium">— {sc.label}</span>
             </div>
-            <div>
-              <p className="font-semibold text-amber-600 dark:text-amber-400">VPS Connection Unavailable</p>
+
+            {overallStatus === "offline" && (
               <p className="text-sm text-muted-foreground mt-1">
                 {data?.error || "Not connected. In production (NODE_ENV=production), metrics are read locally. Otherwise, set VPS_SSH_HOST to connect via SSH."}
               </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <GradientStatCard label="Server Status" value={isConnected ? "Online" : "Offline"} icon={Wifi} status={isConnected ? "green" : "red"} gradient="from-emerald-500/10 to-transparent" />
-        <GradientStatCard label="Server Uptime" value={data?.server?.uptime || "N/A"} icon={Timer} status={isConnected ? "green" : "grey"} gradient="from-blue-500/10 to-transparent" />
-        <GradientStatCard label="CPU Usage" value={`${data?.resources?.cpu?.usagePercent || 0}%`} icon={Cpu} status={getHealthStatus(data?.resources?.cpu?.usagePercent || 0)} gradient="from-purple-500/10 to-transparent" />
-        <GradientStatCard label="RAM Usage" value={`${data?.resources?.memory?.usagePercent || 0}%`} icon={MemoryStick} status={getHealthStatus(data?.resources?.memory?.usagePercent || 0)} gradient="from-cyan-500/10 to-transparent" />
-        <GradientStatCard label="Disk Usage" value={`${data?.resources?.disk?.usagePercent || 0}%`} icon={HardDrive} status={getHealthStatus(data?.resources?.disk?.usagePercent || 0)} gradient="from-amber-500/10 to-transparent" />
-        <GradientStatCard label="App Health" value={pingData?.reachable ? `${pingData.responseTime}ms` : "Down"} icon={Activity} status={pingData?.reachable ? "green" : "red"} gradient="from-red-500/10 to-transparent" />
+            {overallStatus === "issues" && issuesList.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {issuesList.map((issue, i) => (
+                  <Badge key={i} variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs">
+                    <AlertTriangle className="h-3 w-3 mr-1" /> {issue}
+                  </Badge>
+                ))}
+              </div>
+            )}
+
+            {overallStatus === "live" && (
+              <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
+                {data?.server?.uptime && <span className="flex items-center gap-1"><Timer className="h-3.5 w-3.5" /> Uptime: {data.server.uptime}</span>}
+                {data?.resources?.cpu && <span className="flex items-center gap-1"><Cpu className="h-3.5 w-3.5" /> CPU: {data.resources.cpu.usagePercent}%</span>}
+                {data?.resources?.memory && <span className="flex items-center gap-1"><MemoryStick className="h-3.5 w-3.5" /> RAM: {data.resources.memory.usagePercent}%</span>}
+                {data?.resources?.disk && <span className="flex items-center gap-1"><HardDrive className="h-3.5 w-3.5" /> Disk: {data.resources.disk.usagePercent}%</span>}
+                {pingData?.reachable && <span className="flex items-center gap-1"><Activity className="h-3.5 w-3.5" /> Ping: {pingData.responseTime}ms</span>}
+              </div>
+            )}
+
+            {isConnected && overallStatus === "issues" && (
+              <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
+                {data?.server?.uptime && <span className="flex items-center gap-1"><Timer className="h-3.5 w-3.5" /> Uptime: {data.server.uptime}</span>}
+                {data?.resources?.cpu && <span className="flex items-center gap-1"><Cpu className="h-3.5 w-3.5" /> CPU: {data.resources.cpu.usagePercent}%</span>}
+                {data?.resources?.memory && <span className="flex items-center gap-1"><MemoryStick className="h-3.5 w-3.5" /> RAM: {data.resources.memory.usagePercent}%</span>}
+                {data?.resources?.disk && <span className="flex items-center gap-1"><HardDrive className="h-3.5 w-3.5" /> Disk: {data.resources.disk.usagePercent}%</span>}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col items-center gap-2 flex-shrink-0">
+            {data?.server?.ip && (
+              <Badge variant="outline" className="font-mono text-xs gap-1.5" data-testid="badge-ip">
+                <Globe className="h-3 w-3" /> {data.server.ip}
+              </Badge>
+            )}
+            {data?.git?.branch && data.git.branch !== "unknown" && (
+              <Badge variant="outline" className="gap-1.5 text-xs" data-testid="badge-branch">
+                <GitBranch className="h-3 w-3" /> {data.git.branch}
+                {data.git.commit && data.git.commit !== "N/A" && <span className="font-mono ml-1 opacity-60">({data.git.commit})</span>}
+              </Badge>
+            )}
+            {data?.server?.hostname && (
+              <Badge variant="outline" className="text-xs gap-1.5" data-testid="badge-hostname">
+                <Server className="h-3 w-3" /> {data.server.hostname}
+              </Badge>
+            )}
+          </div>
+        </div>
       </div>
 
       <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-transparent to-transparent" data-testid="card-deployment-pipeline">
@@ -752,19 +826,6 @@ export default function SystemMonitoring() {
   );
 }
 
-function GradientStatCard({ label, value, icon: Icon, status, gradient }: { label: string; value: string; icon: any; status: "green" | "orange" | "red" | "grey"; gradient: string }) {
-  const borderColors = { green: "border-emerald-500/30", orange: "border-amber-500/30", red: "border-red-500/30", grey: "border-gray-300/30 dark:border-gray-700/30" };
-  return (
-    <div className={`rounded-xl border ${borderColors[status]} bg-gradient-to-br ${gradient} p-3 flex flex-col items-center justify-center text-center space-y-1.5 transition-all hover:shadow-lg hover:scale-[1.02] duration-200`} data-testid={`stat-${label.toLowerCase().replace(/\s+/g, "-")}`}>
-      <div className="flex items-center gap-1.5">
-        <StatusDot status={status} />
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </div>
-      <p className="text-lg font-bold tabular-nums leading-none">{value}</p>
-      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
-    </div>
-  );
-}
 
 function InfoRow({ label, value, mono, badge, compact }: { label: string; value: string; mono?: boolean; badge?: boolean; compact?: boolean }) {
   return (
