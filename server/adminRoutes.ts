@@ -18,7 +18,7 @@ const firmLogoUpload = multer({
 
 const router = Router();
 
-router.get("/stats", requireAuth, requireRoles("ADMIN", "PARTNER", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/stats", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
     
@@ -49,7 +49,7 @@ router.get("/stats", requireAuth, requireRoles("ADMIN", "PARTNER", "MANAGING_PAR
   }
 });
 
-router.post("/initialize-data", requireAuth, requireRoles("ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/initialize-data", requireAuth, requireRoles("FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
     if (!firmId) {
@@ -206,7 +206,7 @@ router.post("/initialize-data", requireAuth, requireRoles("ADMIN"), async (req: 
   }
 });
 
-router.get("/audit-logs", requireAuth, requireRoles("ADMIN", "PARTNER", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/audit-logs", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 50;
@@ -260,7 +260,7 @@ router.get("/audit-logs", requireAuth, requireRoles("ADMIN", "PARTNER", "MANAGIN
   }
 });
 
-router.get("/users-summary", requireAuth, requireRoles("ADMIN", "PARTNER", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/users-summary", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
     
@@ -295,7 +295,7 @@ router.get("/users-summary", requireAuth, requireRoles("ADMIN", "PARTNER", "MANA
 // FIRM SETTINGS (Administration Module)
 // ============================================
 
-router.get("/firm-settings", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/firm-settings", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
     if (!firmId) {
@@ -309,7 +309,7 @@ router.get("/firm-settings", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNE
   }
 });
 
-router.put("/firm-settings", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.put("/firm-settings", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = req.user!;
     if (!user.firmId) {
@@ -355,7 +355,7 @@ router.get("/firm-profile", requireAuth, async (req: AuthenticatedRequest, res: 
   }
 });
 
-router.put("/firm-profile", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.put("/firm-profile", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
@@ -411,7 +411,7 @@ router.put("/firm-profile", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER
   }
 });
 
-router.post("/firm-logo", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), firmLogoUpload.single("logo"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/firm-logo", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), firmLogoUpload.single("logo"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
@@ -446,7 +446,7 @@ router.post("/firm-logo", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER")
   }
 });
 
-router.post("/firm-logo/delete", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/firm-logo/delete", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
@@ -478,7 +478,7 @@ router.post("/firm-logo/delete", requireAuth, requireRoles("ADMIN", "MANAGING_PA
   }
 });
 
-router.get("/firm-settings/history", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/firm-settings/history", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
     if (!firmId) {
@@ -511,7 +511,7 @@ router.get("/role-configurations", requireAuth, async (req: AuthenticatedRequest
   }
 });
 
-router.put("/role-configurations/:role", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.put("/role-configurations/:role", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = req.user!;
     if (!user.firmId) {
@@ -552,7 +552,7 @@ router.get("/governance-policies", requireAuth, async (req: AuthenticatedRequest
   }
 });
 
-router.post("/governance-policies", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/governance-policies", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = req.user!;
     if (!user.firmId) {
@@ -574,7 +574,7 @@ router.post("/governance-policies", requireAuth, requireRoles("ADMIN", "MANAGING
   }
 });
 
-router.put("/governance-policies/:policyCode", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.put("/governance-policies/:policyCode", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = req.user!;
     if (!user.firmId) {
@@ -616,7 +616,7 @@ router.get("/document-templates", requireAuth, async (req: AuthenticatedRequest,
   }
 });
 
-router.post("/document-templates", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/document-templates", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = req.user!;
     if (!user.firmId) {
@@ -638,7 +638,7 @@ router.post("/document-templates", requireAuth, requireRoles("ADMIN", "MANAGING_
   }
 });
 
-router.put("/document-templates/:templateCode", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.put("/document-templates/:templateCode", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = req.user!;
     if (!user.firmId) {
@@ -679,7 +679,7 @@ router.get("/engagement-flags", requireAuth, async (req: AuthenticatedRequest, r
   }
 });
 
-router.post("/engagement-flags", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/engagement-flags", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = req.user!;
     if (!user.firmId) {
@@ -701,7 +701,7 @@ router.post("/engagement-flags", requireAuth, requireRoles("ADMIN", "MANAGING_PA
   }
 });
 
-router.put("/engagement-flags/:flagCode", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.put("/engagement-flags/:flagCode", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = req.user!;
     if (!user.firmId) {
@@ -743,7 +743,7 @@ router.post("/engagement-flags/evaluate", requireAuth, async (req: Authenticated
 // USER ROLE MANAGEMENT
 // ============================================
 
-router.put("/users/:userId/role", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.put("/users/:userId/role", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = req.user!;
     if (!user.firmId) {
@@ -768,7 +768,7 @@ router.put("/users/:userId/role", requireAuth, requireRoles("ADMIN", "MANAGING_P
   }
 });
 
-router.get("/users/:userId/permission-overrides", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/users/:userId/permission-overrides", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const overrides = await administrationService.getPermissionOverridesForUser(req.params.userId);
     res.json(overrides);
@@ -778,7 +778,7 @@ router.get("/users/:userId/permission-overrides", requireAuth, requireRoles("ADM
   }
 });
 
-router.post("/users/:userId/permission-overrides", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/users/:userId/permission-overrides", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = req.user!;
     if (!user.firmId) {
@@ -809,7 +809,7 @@ router.post("/users/:userId/permission-overrides", requireAuth, requireRoles("AD
 // ADMINISTRATION AUDIT LOG
 // ============================================
 
-router.get("/admin-audit-log", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/admin-audit-log", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
     if (!firmId) {
@@ -892,7 +892,7 @@ router.get("/role-permissions/:role", requireAuth, async (req: AuthenticatedRequ
   }
 });
 
-router.put("/role-permissions", requireAuth, requireRoles("ADMIN", "MANAGING_PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.put("/role-permissions", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = req.user!;
     if (!user.firmId) {
@@ -948,7 +948,7 @@ router.put("/role-permissions", requireAuth, requireRoles("ADMIN", "MANAGING_PAR
   }
 });
 
-router.get("/backup/download", requireAuth, requireRoles("ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/backup/download", requireAuth, requireRoles("FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
@@ -997,7 +997,7 @@ router.get("/backup/download", requireAuth, requireRoles("ADMIN"), async (req: A
   }
 });
 
-router.post("/backup/restore", requireAuth, requireRoles("ADMIN"), backupUpload.single("backup"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/backup/restore", requireAuth, requireRoles("FIRM_ADMIN"), backupUpload.single("backup"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });

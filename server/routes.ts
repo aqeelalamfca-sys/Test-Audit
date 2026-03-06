@@ -132,7 +132,7 @@ export async function registerRoutes(
       if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
       // Only return engagements for which the user is assigned to the team (or is an admin/partner)
-      const isPrivileged = ["PARTNER", "MANAGING_PARTNER", "ADMIN"].includes(req.user!.role);
+      const isPrivileged = ["PARTNER", "FIRM_ADMIN"].includes(req.user!.role);
 
       const engagements = await prisma.engagement.findMany({
         where: {
@@ -753,7 +753,7 @@ export async function registerRoutes(
       }
 
       // Check if user has access (is on the team or is admin/partner)
-      const isPrivileged = ["ADMIN", "PARTNER", "MANAGING_PARTNER"].includes(req.user!.role);
+      const isPrivileged = ["PARTNER", "FIRM_ADMIN"].includes(req.user!.role);
       const isTeamMember = engagement.team.some(t => t.userId === userId);
       if (!isPrivileged && !isTeamMember) {
         return res.status(403).json({ error: "You are not assigned to this engagement" });
@@ -861,7 +861,7 @@ export async function registerRoutes(
       }
 
       // Check if user has access
-      const isPrivileged = ["ADMIN", "PARTNER", "MANAGING_PARTNER"].includes(req.user!.role);
+      const isPrivileged = ["PARTNER", "FIRM_ADMIN"].includes(req.user!.role);
       const isTeamMember = engagement.team.some(t => t.userId === userId);
       if (!isPrivileged && !isTeamMember) {
         return res.status(403).json({ error: "You are not assigned to this engagement" });
@@ -957,7 +957,7 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/engagements/:id/team", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+  app.put("/api/engagements/:id/team", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
     try {
       const engagement = await prisma.engagement.findUnique({
         where: { id: req.params.id },
@@ -1316,7 +1316,7 @@ export async function registerRoutes(
       }
 
       // Clearing notes requires at least MANAGER role
-      if (req.body.status === "CLEARED" && !["MANAGER", "SENIOR_MANAGER", "PARTNER", "MANAGING_PARTNER", "ADMIN"].includes(req.user!.role)) {
+      if (req.body.status === "CLEARED" && !["MANAGER", "MANAGER", "PARTNER", "PARTNER", "ADMIN"].includes(req.user!.role)) {
         return res.status(403).json({ error: "Only managers or above can clear review notes" });
       }
 
@@ -1446,7 +1446,7 @@ export async function registerRoutes(
         lastActivityAt: lastActivity?.createdAt || null,
         lastActivityBy: lastActivity?.user || null,
         lastRoute: userProgress?.lastRoute || engagement.lastRoute,
-        canEdit: ["ADMIN", "PARTNER", "MANAGER"].includes(req.user!.role),
+        canEdit: ["FIRM_ADMIN", "PARTNER", "MANAGER"].includes(req.user!.role),
       });
     } catch (error) {
       console.error("Get engagement control error:", error);
@@ -2091,7 +2091,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/firm/users", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+  app.get("/api/firm/users", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
     try {
       const firmId = req.user!.firmId;
       if (!firmId) {
@@ -2175,7 +2175,7 @@ export async function registerRoutes(
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
     const role = req.user!.role;
-    if (!["ADMIN", "PARTNER", "MANAGING_PARTNER"].includes(role)) {
+    if (!["PARTNER", "FIRM_ADMIN"].includes(role)) {
       return res.status(403).json({ message: "Only Admin/Partner can update issue status" });
     }
     const { status } = req.body;
@@ -2204,7 +2204,7 @@ export async function registerRoutes(
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
     const role = req.user!.role;
-    if (!["ADMIN", "PARTNER", "MANAGING_PARTNER"].includes(role)) {
+    if (!["PARTNER", "FIRM_ADMIN"].includes(role)) {
       return res.status(403).json({ message: "Insufficient permissions" });
     }
     try {

@@ -10,6 +10,7 @@ export const UserRole = {
   FIRM_ADMIN: "FIRM_ADMIN",
   SUPER_ADMIN: "SUPER_ADMIN",
 } as const;
+
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
 export const EngagementStatus = {
