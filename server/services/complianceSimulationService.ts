@@ -410,7 +410,7 @@ async function runSecuritySimulation(engagementId: string): Promise<SimulationSe
 
     const escalatedSignOffs = secSignOffs.filter((s) => {
       if (s.partnerApprovedById && s.partnerApprovedBy) {
-        return !["PARTNER", "MANAGING_PARTNER", "ADMIN"].includes(s.partnerApprovedBy.role);
+        return !["PARTNER", "FIRM_ADMIN"].includes(s.partnerApprovedBy.role);
       }
       return false;
     });

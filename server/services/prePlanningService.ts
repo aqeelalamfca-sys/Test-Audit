@@ -35,7 +35,7 @@ const GATE_DEFINITIONS: GateDefinition[] = [
     isaReference: "ISA 220, ISQM 1",
     isRequired: true,
     isBlocking: true,
-    requiredRoleForSignOff: ["PARTNER", "MANAGING_PARTNER", "ADMIN"]
+    requiredRoleForSignOff: ["PARTNER", "FIRM_ADMIN"]
   },
   {
     gateType: "CLIENT_CONTINUANCE",
@@ -43,7 +43,7 @@ const GATE_DEFINITIONS: GateDefinition[] = [
     isaReference: "ISA 220, ISQM 1",
     isRequired: false,
     isBlocking: true,
-    requiredRoleForSignOff: ["PARTNER", "MANAGING_PARTNER", "ADMIN"]
+    requiredRoleForSignOff: ["PARTNER", "FIRM_ADMIN"]
   },
   {
     gateType: "INDEPENDENCE_CONFIRMATION",
@@ -51,7 +51,7 @@ const GATE_DEFINITIONS: GateDefinition[] = [
     isaReference: "ISA 200, IESBA Code",
     isRequired: true,
     isBlocking: true,
-    requiredRoleForSignOff: ["MANAGER", "PARTNER", "MANAGING_PARTNER", "ADMIN"]
+    requiredRoleForSignOff: ["MANAGER", "PARTNER", "FIRM_ADMIN"]
   },
   {
     gateType: "ETHICS_COMPLIANCE",
@@ -59,7 +59,7 @@ const GATE_DEFINITIONS: GateDefinition[] = [
     isaReference: "ISA 200, IESBA Code",
     isRequired: true,
     isBlocking: true,
-    requiredRoleForSignOff: ["MANAGER", "PARTNER", "MANAGING_PARTNER", "ADMIN"]
+    requiredRoleForSignOff: ["MANAGER", "PARTNER", "FIRM_ADMIN"]
   },
   {
     gateType: "ENGAGEMENT_LETTER",
@@ -67,7 +67,7 @@ const GATE_DEFINITIONS: GateDefinition[] = [
     isaReference: "ISA 210",
     isRequired: true,
     isBlocking: true,
-    requiredRoleForSignOff: ["PARTNER", "MANAGING_PARTNER", "ADMIN"]
+    requiredRoleForSignOff: ["PARTNER", "FIRM_ADMIN"]
   },
   {
     gateType: "TEAM_ALLOCATION",
@@ -75,7 +75,7 @@ const GATE_DEFINITIONS: GateDefinition[] = [
     isaReference: "ISA 220, ISA 300",
     isRequired: true,
     isBlocking: true,
-    requiredRoleForSignOff: ["MANAGER", "PARTNER", "MANAGING_PARTNER", "ADMIN"]
+    requiredRoleForSignOff: ["MANAGER", "PARTNER", "FIRM_ADMIN"]
   },
   {
     gateType: "MANAGER_REVIEW",
@@ -83,7 +83,7 @@ const GATE_DEFINITIONS: GateDefinition[] = [
     isaReference: "ISA 220, ISA 230",
     isRequired: true,
     isBlocking: true,
-    requiredRoleForSignOff: ["MANAGER", "PARTNER", "MANAGING_PARTNER", "ADMIN"]
+    requiredRoleForSignOff: ["MANAGER", "PARTNER", "FIRM_ADMIN"]
   },
   {
     gateType: "PARTNER_SIGNOFF",
@@ -91,7 +91,7 @@ const GATE_DEFINITIONS: GateDefinition[] = [
     isaReference: "ISA 220, ISA 230",
     isRequired: true,
     isBlocking: true,
-    requiredRoleForSignOff: ["PARTNER", "MANAGING_PARTNER", "ADMIN"]
+    requiredRoleForSignOff: ["PARTNER", "FIRM_ADMIN"]
   }
 ];
 
@@ -493,7 +493,7 @@ class PrePlanningService {
       throw new Error("Gate not found");
     }
 
-    const allowedRoles: UserRole[] = ["SENIOR", "MANAGER", "PARTNER", "MANAGING_PARTNER", "ADMIN"];
+    const allowedRoles: UserRole[] = ["SENIOR", "MANAGER", "PARTNER", "FIRM_ADMIN"];
     if (!allowedRoles.includes(userRole)) {
       throw new Error("User not authorized to review");
     }
@@ -616,7 +616,7 @@ class PrePlanningService {
       userAgent?: string;
     } = {}
   ): Promise<{ success: boolean; message: string }> {
-    const allowedRoles: UserRole[] = ["PARTNER", "MANAGING_PARTNER", "ADMIN"];
+    const allowedRoles: UserRole[] = ["PARTNER", "FIRM_ADMIN"];
     if (!allowedRoles.includes(userRole)) {
       throw new Error("Only Partner or above can finalize pre-planning");
     }

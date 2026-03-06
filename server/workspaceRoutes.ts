@@ -4,7 +4,7 @@ import { requireAuth, type AuthenticatedRequest } from "./auth";
 
 const router = Router();
 
-const PRIVILEGED_ROLES = ["ADMIN", "PARTNER", "MANAGING_PARTNER", "MANAGER", "EQCR"];
+const PRIVILEGED_ROLES = ["FIRM_ADMIN", "PARTNER", "MANAGER", "EQCR"];
 
 router.get("/engagements", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {

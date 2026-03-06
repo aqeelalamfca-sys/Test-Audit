@@ -10,7 +10,7 @@ export interface SignOffAuthorityResult {
 }
 
 const SIGN_OFF_AUTHORITY_MATRIX: Record<SignOffLevel, UserRole[]> = {
-  PREPARED: ["STAFF", "SENIOR", "TEAM_LEAD"],
+  PREPARED: ["STAFF", "SENIOR"],
   REVIEWED: ["MANAGER"],
   APPROVED: ["PARTNER"],
 };
@@ -37,7 +37,7 @@ export function canMarkSignOff(
   signOffLevel: SignOffLevel
 ): SignOffAuthorityResult {
   const allowedRoles = SIGN_OFF_AUTHORITY_MATRIX[signOffLevel];
-  const allowed = allowedRoles.includes(userRole) || userRole === "ADMIN";
+  const allowed = allowedRoles.includes(userRole) || userRole === "FIRM_ADMIN";
 
   return {
     allowed,
@@ -71,7 +71,7 @@ export function getRoleDisplayName(role: UserRole): string {
 }
 
 export function canUnlockSignOff(userRole: UserRole): boolean {
-  return userRole === "PARTNER" || userRole === "MANAGING_PARTNER" || userRole === "ADMIN";
+  return userRole === "PARTNER" || userRole === "PARTNER" || userRole === "FIRM_ADMIN";
 }
 
 export function isFieldLockedAfterReview(reviewedAt: Date | null): boolean {

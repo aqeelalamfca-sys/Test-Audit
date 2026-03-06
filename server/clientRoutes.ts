@@ -413,7 +413,7 @@ router.patch("/:id", requireAuth, requireMinRole("SENIOR"), async (req: Authenti
       const updateKeys = Object.keys(req.body);
       const hasRestrictedFields = updateKeys.some(k => !allowedFields.includes(k));
       
-      if (hasRestrictedFields && req.user!.role !== "PARTNER" && req.user!.role !== "ADMIN") {
+      if (hasRestrictedFields && req.user!.role !== "PARTNER" && req.user!.role !== "FIRM_ADMIN") {
         return res.status(403).json({ error: "Cannot modify approved client without Partner approval" });
       }
     }

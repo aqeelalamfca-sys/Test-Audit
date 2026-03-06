@@ -5,12 +5,12 @@ import type { AuditPhase, UserRole } from "@prisma/client";
 
 const router = Router();
 
-const PREPARE_ROLES: UserRole[] = ["STAFF", "SENIOR", "TEAM_LEAD"];
+const PREPARE_ROLES: UserRole[] = ["STAFF", "SENIOR"];
 const REVIEW_ROLES: UserRole[] = ["MANAGER"];
-const APPROVE_ROLES: UserRole[] = ["PARTNER", "MANAGING_PARTNER"];
+const APPROVE_ROLES: UserRole[] = ["PARTNER"];
 
 function hasRole(userRole: string, allowedRoles: UserRole[]): boolean {
-  return allowedRoles.includes(userRole as UserRole) || userRole === "ADMIN";
+  return allowedRoles.includes(userRole as UserRole) || userRole === "FIRM_ADMIN";
 }
 
 const VALID_PHASES: string[] = [
@@ -625,7 +625,7 @@ router.post("/:engagementId/:phase/:section/complete", requireAuth, async (req: 
 router.post("/:engagementId/:phase/:section/unlock", requireAuth, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    if (user.role !== "ADMIN") {
+    if (user.role !== "FIRM_ADMIN") {
       return res.status(403).json({ error: "Only Admin can override unlock" });
     }
 

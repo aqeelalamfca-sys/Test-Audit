@@ -679,7 +679,7 @@ router.patch("/me/context", requireAuth, async (req: AuthenticatedRequest, res: 
       }
 
       // Ensure user is assigned to at least one engagement for this client or is privileged
-      const isPrivileged = ["PARTNER", "MANAGING_PARTNER", "ADMIN"].includes(req.user!.role as string);
+      const isPrivileged = ["PARTNER", "FIRM_ADMIN"].includes(req.user!.role as string);
       if (!isPrivileged) {
         const hasAssignment = await prisma.engagementTeam.findFirst({
           where: { userId: req.user!.id, engagement: { clientId: data.activeClientId } },
@@ -697,7 +697,7 @@ router.patch("/me/context", requireAuth, async (req: AuthenticatedRequest, res: 
         return res.status(403).json({ error: "Unauthorized period selection" });
       }
 
-      const isPrivileged = ["PARTNER", "MANAGING_PARTNER", "ADMIN"].includes(req.user!.role as string);
+      const isPrivileged = ["PARTNER", "FIRM_ADMIN"].includes(req.user!.role as string);
       if (!isPrivileged) {
         const teamMember = await prisma.engagementTeam.findFirst({ where: { userId: req.user!.id, engagementId: data.activePeriodId } });
         if (!teamMember) {

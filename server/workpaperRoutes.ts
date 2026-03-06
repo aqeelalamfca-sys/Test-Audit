@@ -179,7 +179,7 @@ router.patch("/workpapers/:id", requireAuth, async (req: Request, res: Response)
   }
 });
 
-router.post("/workpapers/:id/review", requireAuth, requireRoles("SENIOR", "MANAGER", "PARTNER", "ADMIN"), async (req: Request, res: Response) => {
+router.post("/workpapers/:id/review", requireAuth, requireRoles("SENIOR", "MANAGER", "PARTNER", "FIRM_ADMIN"), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user?.id;
@@ -211,7 +211,7 @@ router.post("/workpapers/:id/review", requireAuth, requireRoles("SENIOR", "MANAG
   }
 });
 
-router.post("/workpapers/:id/approve", requireAuth, requireRoles("PARTNER", "ADMIN"), async (req: Request, res: Response) => {
+router.post("/workpapers/:id/approve", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user?.id;
@@ -387,7 +387,7 @@ router.post("/engagements/:engagementId/tab-attachments", requireAuth, async (re
   }
 });
 
-router.post("/tab-attachments/:id/review", requireAuth, requireRoles("SENIOR", "MANAGER", "PARTNER", "ADMIN"), async (req: Request, res: Response) => {
+router.post("/tab-attachments/:id/review", requireAuth, requireRoles("SENIOR", "MANAGER", "PARTNER", "FIRM_ADMIN"), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user?.id;

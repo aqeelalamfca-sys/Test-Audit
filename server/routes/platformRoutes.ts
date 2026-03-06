@@ -1277,7 +1277,7 @@ router.get("/ai-usage", async (req: AuthenticatedRequest, res: Response) => {
 const inviteAdminSchema = z.object({
   email: z.string().email(),
   fullName: z.string().min(2).optional(),
-  role: z.enum(["FIRM_ADMIN", "ADMIN", "PARTNER", "MANAGING_PARTNER"]).optional(),
+  role: z.enum(["FIRM_ADMIN", "PARTNER"]).optional(),
 });
 
 router.post("/firms/:id/invite-admin", async (req: AuthenticatedRequest, res: Response) => {

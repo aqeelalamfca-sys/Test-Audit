@@ -267,7 +267,7 @@ router.post("/batch/:batchId/submit-for-review", requireAuth, async (req: AuthRe
 router.post(
   "/batch/:batchId/review",
   requireAuth,
-  requireRole("SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER"),
+  requireRole("SENIOR", "MANAGER", "PARTNER"),
   async (req: AuthRequest, res: Response) => {
     try {
       const { approved, comments } = req.body;
@@ -317,7 +317,7 @@ router.post("/batch/:batchId/submit-for-approval", requireAuth, async (req: Auth
 router.post(
   "/batch/:batchId/approve",
   requireAuth,
-  requireRole("PARTNER", "MANAGING_PARTNER"),
+  requireRole("PARTNER"),
   async (req: AuthRequest, res: Response) => {
     try {
       const { partnerPin, comments } = req.body;

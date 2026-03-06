@@ -230,7 +230,7 @@ router.get("/settings", requireAuth, authHandler(async (req, res) => {
   }
 }));
 
-router.post("/settings", requireAuth, requireMinRole("ADMIN"), authHandler(async (req, res) => {
+router.post("/settings", requireAuth, requireMinRole("FIRM_ADMIN"), authHandler(async (req, res) => {
   try {
     const firmId = req.user?.firmId;
     if (!firmId) {
@@ -285,7 +285,7 @@ router.post("/settings", requireAuth, requireMinRole("ADMIN"), authHandler(async
   }
 }));
 
-router.post("/test-connection", requireAuth, requireMinRole("ADMIN"), authHandler(async (req, res) => {
+router.post("/test-connection", requireAuth, requireMinRole("FIRM_ADMIN"), authHandler(async (req, res) => {
   try {
     const firmId = req.user?.firmId;
     if (!firmId) {

@@ -893,7 +893,7 @@ router.patch("/:engagementId/procedures-matrix/:id/status", requireAuth, async (
       updateData.reviewedById = userId;
       updateData.reviewedAt = new Date();
     } else if (status === "APPROVED") {
-      if (!["MANAGER", "PARTNER", "MANAGING_PARTNER", "ADMIN"].includes(req.user!.role)) {
+      if (!["MANAGER", "PARTNER", "FIRM_ADMIN"].includes(req.user!.role)) {
         return res.status(403).json({ error: "Only managers and above can approve procedures" });
       }
       updateData.approvedById = userId;

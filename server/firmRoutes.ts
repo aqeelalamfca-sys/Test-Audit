@@ -15,7 +15,7 @@ const createFirmSchema = z.object({
 
 const updateFirmSchema = createFirmSchema.partial();
 
-router.get("/", requireAuth, requireRoles("ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/", requireAuth, requireRoles("FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firms = await prisma.firm.findMany({
       include: {
@@ -68,7 +68,7 @@ router.get("/current", requireAuth, async (req: AuthenticatedRequest, res: Respo
   }
 });
 
-router.get("/:id", requireAuth, requireRoles("ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/:id", requireAuth, requireRoles("FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firm = await prisma.firm.findUnique({
       where: { id: req.params.id },
@@ -105,7 +105,7 @@ router.get("/:id", requireAuth, requireRoles("ADMIN"), async (req: Authenticated
   }
 });
 
-router.post("/", requireAuth, requireRoles("ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/", requireAuth, requireRoles("FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const data = createFirmSchema.parse(req.body);
 
@@ -138,7 +138,7 @@ router.post("/", requireAuth, requireRoles("ADMIN"), async (req: AuthenticatedRe
 
 router.patch("/:id", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const isAdmin = req.user!.role === "ADMIN";
+    const isAdmin = req.user!.role === "FIRM_ADMIN";
     const isOwnFirm = req.user!.firmId === req.params.id;
     const isPartner = req.user!.role === "PARTNER";
 
@@ -184,7 +184,7 @@ router.patch("/:id", requireAuth, async (req: AuthenticatedRequest, res: Respons
   }
 });
 
-router.delete("/:id", requireAuth, requireRoles("ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.delete("/:id", requireAuth, requireRoles("FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firm = await prisma.firm.findUnique({
       where: { id: req.params.id },
@@ -229,7 +229,7 @@ router.delete("/:id", requireAuth, requireRoles("ADMIN"), async (req: Authentica
 
 router.get("/:id/stats", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const isAdmin = req.user!.role === "ADMIN";
+    const isAdmin = req.user!.role === "FIRM_ADMIN";
     const isOwnFirm = req.user!.firmId === req.params.id;
 
     if (!isAdmin && !isOwnFirm) {

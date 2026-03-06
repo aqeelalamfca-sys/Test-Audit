@@ -25,7 +25,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     sourceSheet: "TB_UPLOAD",
     computeRule: "SUM(closingBalance WHERE accountClass='ASSET')",
     isaTag: "ISA 315.A72",
-    visibilityRoles: ["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -38,7 +38,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     sourceSheet: "TB_UPLOAD",
     computeRule: "SUM(closingBalance WHERE accountClass='LIABILITY')",
     isaTag: "ISA 315.A72",
-    visibilityRoles: ["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -51,7 +51,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     sourceSheet: "TB_UPLOAD",
     computeRule: "SUM(closingBalance WHERE accountClass='EQUITY')",
     isaTag: "ISA 315.A72",
-    visibilityRoles: ["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -64,7 +64,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     sourceSheet: "TB_UPLOAD",
     computeRule: "SUM(closingBalance WHERE accountClass='INCOME')",
     isaTag: "ISA 315.A72",
-    visibilityRoles: ["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -77,7 +77,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     sourceSheet: "TB_UPLOAD",
     computeRule: "SUM(closingBalance WHERE accountClass='INCOME') - SUM(closingBalance WHERE accountClass='EXPENSE')",
     isaTag: "ISA 315.A72",
-    visibilityRoles: ["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -89,7 +89,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     dataType: "date",
     sourceSheet: "TB_UPLOAD",
     computeRule: "MAX(periodEndDate)",
-    visibilityRoles: ["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -101,7 +101,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     dataType: "text",
     sourceSheet: "TB_UPLOAD",
     computeRule: "FIRST(currency)",
-    visibilityRoles: ["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -113,7 +113,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     dataType: "number",
     sourceSheet: "TB_UPLOAD",
     computeRule: "COUNT(accounts)",
-    visibilityRoles: ["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -127,7 +127,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     sourceSheet: "GL_UPLOAD",
     computeRule: "COUNT(DISTINCT voucherNo)",
     isaTag: "ISA 240.33",
-    visibilityRoles: ["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -139,7 +139,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     dataType: "number",
     sourceSheet: "GL_UPLOAD",
     computeRule: "COUNT(voucherNo)",
-    visibilityRoles: ["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -151,7 +151,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     dataType: "date",
     sourceSheet: "GL_UPLOAD",
     computeRule: "MIN(transactionDate)",
-    visibilityRoles: ["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -163,7 +163,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     dataType: "date",
     sourceSheet: "GL_UPLOAD",
     computeRule: "MAX(transactionDate)",
-    visibilityRoles: ["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -177,7 +177,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     sourceSheet: "MATERIALITY",
     computeRule: "FETCH(materialityCalculation.overallMateriality)",
     isaTag: "ISA 320.10",
-    visibilityRoles: ["SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -190,7 +190,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     sourceSheet: "MATERIALITY",
     computeRule: "FETCH(materialityCalculation.performanceMateriality)",
     isaTag: "ISA 320.11",
-    visibilityRoles: ["SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -203,7 +203,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     sourceSheet: "MATERIALITY",
     computeRule: "FETCH(materialityCalculation.trivialThreshold)",
     isaTag: "ISA 450.5",
-    visibilityRoles: ["SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -217,7 +217,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     sourceSheet: "RISK_ASSESSMENT",
     computeRule: "COUNT(WHERE inherentRisk='HIGH')",
     isaTag: "ISA 315.26",
-    visibilityRoles: ["SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -230,7 +230,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     sourceSheet: "RISK_ASSESSMENT",
     computeRule: "COUNT(WHERE inherentRisk='MEDIUM')",
     isaTag: "ISA 315.26",
-    visibilityRoles: ["SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   },
@@ -243,7 +243,7 @@ const DEFAULT_FIELD_REGISTRY: FieldRegistryEntry[] = [
     sourceSheet: "RISK_ASSESSMENT",
     computeRule: "COUNT(WHERE inherentRisk='LOW')",
     isaTag: "ISA 315.26",
-    visibilityRoles: ["SENIOR", "TEAM_LEAD", "MANAGER", "PARTNER", "EQCR", "ADMIN"],
+    visibilityRoles: ["SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"],
     isEditable: false,
     auditTrailOn: true
   }

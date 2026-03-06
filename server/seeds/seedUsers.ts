@@ -3,11 +3,9 @@ import bcrypt from "bcryptjs";
 import type { UserRole } from "@prisma/client";
 
 const FIRM_USERS: { email: string; role: UserRole; fullName: string; username: string }[] = [
-  { email: "admin@auditwise.pk", role: "ADMIN", fullName: "Firm Admin", username: "admin" },
+  { email: "admin@auditwise.pk", role: "FIRM_ADMIN", fullName: "Firm Admin", username: "admin" },
   { email: "partner@auditwise.pk", role: "PARTNER", fullName: "Audit Partner", username: "partner" },
-  { email: "mpartner@auditwise.pk", role: "MANAGING_PARTNER", fullName: "Managing Partner", username: "mpartner" },
   { email: "manager@auditwise.pk", role: "MANAGER", fullName: "Audit Manager", username: "manager" },
-  { email: "teamlead@auditwise.pk", role: "TEAM_LEAD", fullName: "Team Lead", username: "teamlead" },
   { email: "senior@auditwise.pk", role: "SENIOR", fullName: "Senior Auditor", username: "senior" },
   { email: "staff@auditwise.pk", role: "STAFF", fullName: "Staff Auditor", username: "staff" },
   { email: "eqcr@auditwise.pk", role: "EQCR", fullName: "EQCR Reviewer", username: "eqcr" },

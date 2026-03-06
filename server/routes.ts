@@ -1316,7 +1316,7 @@ export async function registerRoutes(
       }
 
       // Clearing notes requires at least MANAGER role
-      if (req.body.status === "CLEARED" && !["MANAGER", "MANAGER", "PARTNER", "PARTNER", "ADMIN"].includes(req.user!.role)) {
+      if (req.body.status === "CLEARED" && !["MANAGER", "PARTNER", "FIRM_ADMIN"].includes(req.user!.role)) {
         return res.status(403).json({ error: "Only managers or above can clear review notes" });
       }
 

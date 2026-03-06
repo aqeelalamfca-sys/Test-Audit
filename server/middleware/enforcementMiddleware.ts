@@ -174,7 +174,7 @@ export function enforceInspectionMode() {
       const status = await enforcementEngine.getEngagementStatus(engagementId);
 
       if (status.isInspectionMode && req.method !== "GET") {
-        if (req.user?.role !== "ADMIN") {
+        if (req.user?.role !== "FIRM_ADMIN") {
           return res.status(403).json({
             error: "Engagement is in read-only inspection mode",
             code: "INSPECTION_MODE_LOCKED",

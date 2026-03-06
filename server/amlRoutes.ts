@@ -183,7 +183,7 @@ router.post("/clients/:clientId/screenings", requireAuth, requireRoles("SENIOR",
     const client = await prisma.client.findFirst({
       where: { 
         id: clientId,
-        firmId: req.user!.role === "ADMIN" ? undefined : req.user!.firmId!
+        firmId: req.user!.role === "FIRM_ADMIN" ? undefined : req.user!.firmId!
       }
     });
 
@@ -391,7 +391,7 @@ router.post("/clients/:clientId/kyc-documents", requireAuth, async (req: Authent
     const client = await prisma.client.findFirst({
       where: { 
         id: clientId,
-        firmId: req.user!.role === "ADMIN" ? undefined : req.user!.firmId!
+        firmId: req.user!.role === "FIRM_ADMIN" ? undefined : req.user!.firmId!
       }
     });
 
@@ -527,7 +527,7 @@ router.get("/clients/:clientId/compliance-summary", requireAuth, async (req: Aut
     const client = await prisma.client.findFirst({
       where: { 
         id: clientId,
-        firmId: req.user!.role === "ADMIN" ? undefined : req.user!.firmId!
+        firmId: req.user!.role === "FIRM_ADMIN" ? undefined : req.user!.firmId!
       }
     });
 

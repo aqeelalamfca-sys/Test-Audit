@@ -5,7 +5,7 @@ import { requireAuth, type AuthenticatedRequest } from "../auth";
 
 const router = Router();
 
-const PRIVILEGED_ROLES = ["ADMIN", "PARTNER", "MANAGING_PARTNER", "MANAGER", "EQCR", "FIRM_ADMIN"];
+const PRIVILEGED_ROLES = ["FIRM_ADMIN", "PARTNER", "MANAGER", "EQCR", "FIRM_ADMIN"];
 
 const noteInclude = {
   author: { select: { id: true, fullName: true, role: true, username: true } },

@@ -558,7 +558,7 @@ router.post("/:id/submit", async (req: Request, res: Response) => {
       select: { role: true }
     });
 
-    if (userDetails?.role !== "PARTNER" && userDetails?.role !== "ADMIN") {
+    if (userDetails?.role !== "PARTNER" && userDetails?.role !== "FIRM_ADMIN") {
       return res.status(403).json({ error: "Only Partners or Admins can approve client acceptance" });
     }
 
@@ -658,7 +658,7 @@ router.post("/:clientId/engagements", async (req: Request, res: Response) => {
     });
 
     if (existingEngagement && overrideReason) {
-      if (userDetails?.role !== "PARTNER" && userDetails?.role !== "ADMIN") {
+      if (userDetails?.role !== "PARTNER" && userDetails?.role !== "FIRM_ADMIN") {
         return res.status(403).json({ error: "Only Partners can override duplicate engagement creation" });
       }
     }
@@ -826,7 +826,7 @@ router.post("/:id/unlock", async (req: Request, res: Response) => {
       select: { role: true }
     });
 
-    if (userDetails?.role !== "PARTNER" && userDetails?.role !== "ADMIN") {
+    if (userDetails?.role !== "PARTNER" && userDetails?.role !== "FIRM_ADMIN") {
       return res.status(403).json({ error: "Only Partners or Admins can unlock client onboarding" });
     }
 

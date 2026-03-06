@@ -43,13 +43,13 @@ function validateSECPNo(secpNo: string): { valid: boolean; message: string } {
 }
 
 // Entity Verification endpoint
-router.post("/clients/:clientId/verify-entity", requireAuth, requireRoles("MANAGER", "PARTNER", "ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/clients/:clientId/verify-entity", requireAuth, requireRoles("MANAGER", "PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { clientId } = req.params;
     const client = await prisma.client.findFirst({
       where: { 
         id: clientId,
-        firmId: req.user!.role === "ADMIN" ? undefined : req.user!.firmId!
+        firmId: req.user!.role === "FIRM_ADMIN" ? undefined : req.user!.firmId!
       }
     });
 
@@ -199,7 +199,7 @@ router.get("/clients/:clientId/conflict-checks", requireAuth, async (req: Authen
     const conflicts = await prisma.conflictOfInterest.findMany({
       where: { 
         clientId,
-        firmId: req.user!.role === "ADMIN" ? undefined : req.user!.firmId!
+        firmId: req.user!.role === "FIRM_ADMIN" ? undefined : req.user!.firmId!
       },
       include: {
         identifiedBy: { select: { id: true, fullName: true, email: true } },
@@ -226,7 +226,7 @@ router.patch("/conflicts/:conflictId/resolve", requireAuth, requireRoles("MANAGE
     const existing = await prisma.conflictOfInterest.findFirst({
       where: { 
         id: conflictId,
-        firmId: req.user!.role === "ADMIN" ? undefined : req.user!.firmId!
+        firmId: req.user!.role === "FIRM_ADMIN" ? undefined : req.user!.firmId!
       }
     });
 
@@ -556,7 +556,7 @@ router.post("/engagements/:engagementId/independence-declarations", requireAuth,
       }
     });
 
-    if (!teamMember && req.user!.role !== "ADMIN" && req.user!.role !== "PARTNER") {
+    if (!teamMember && req.user!.role !== "FIRM_ADMIN" && req.user!.role !== "PARTNER") {
       return res.status(403).json({ error: "You must be on the engagement team to submit a declaration" });
     }
 
@@ -958,7 +958,7 @@ router.get("/clients/:clientId/non-audit-services", requireAuth, async (req: Aut
     const services = await prisma.nonAuditService.findMany({
       where: { 
         clientId,
-        firmId: req.user!.role === "ADMIN" ? undefined : req.user!.firmId!
+        firmId: req.user!.role === "FIRM_ADMIN" ? undefined : req.user!.firmId!
       },
       include: {
         approvedBy: { select: { id: true, fullName: true } }

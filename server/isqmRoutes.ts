@@ -27,7 +27,7 @@ router.get("/governance/structure", requireAuth, async (req: AuthenticatedReques
   }
 });
 
-router.post("/governance/structure", requireAuth, requireRoles("PARTNER", "ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/governance/structure", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
@@ -623,7 +623,7 @@ router.get("/monitoring/plans", requireAuth, requireMinRole("MANAGER"), async (r
   }
 });
 
-router.post("/monitoring/plans", requireAuth, requireRoles("PARTNER", "ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/monitoring/plans", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
@@ -767,7 +767,7 @@ router.get("/quality-objectives", requireAuth, async (req: AuthenticatedRequest,
   }
 });
 
-router.post("/quality-objectives", requireAuth, requireRoles("PARTNER", "ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/quality-objectives", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
@@ -848,7 +848,7 @@ router.get("/policies", requireAuth, async (req: AuthenticatedRequest, res: Resp
   }
 });
 
-router.post("/policies", requireAuth, requireRoles("PARTNER", "ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/policies", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
@@ -1225,7 +1225,7 @@ router.put("/training/:id", requireAuth, async (req: AuthenticatedRequest, res: 
 });
 
 // Update Monitoring Plan
-router.put("/monitoring/plans/:id", requireAuth, requireRoles("PARTNER", "ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.put("/monitoring/plans/:id", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const firmId = req.user!.firmId;
@@ -1295,7 +1295,7 @@ router.put("/deficiencies/:id", requireAuth, requireMinRole("MANAGER"), async (r
 });
 
 // Update Quality Objective
-router.put("/quality-objectives/:id", requireAuth, requireRoles("PARTNER", "ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.put("/quality-objectives/:id", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const firmId = req.user!.firmId;
@@ -1329,7 +1329,7 @@ router.put("/quality-objectives/:id", requireAuth, requireRoles("PARTNER", "ADMI
 });
 
 // Update Policy
-router.put("/policies/:id", requireAuth, requireRoles("PARTNER", "ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.put("/policies/:id", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const firmId = req.user!.firmId;

@@ -21,7 +21,7 @@ function requireAuth(req: AuthenticatedRequest, res: Response, next: Function) {
 }
 
 function requireMinRole(minRole: string) {
-  const roleHierarchy = ["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "ADMIN"];
+  const roleHierarchy = ["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"];
   return (req: AuthenticatedRequest, res: Response, next: Function) => {
     const userRoleIndex = roleHierarchy.indexOf(req.user?.role || "");
     const minRoleIndex = roleHierarchy.indexOf(minRole);

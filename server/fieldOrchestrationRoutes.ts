@@ -22,7 +22,7 @@ const PushRouterSchema = z.object({
   targets: z.array(z.string()),
 });
 
-router.post("/seed-blueprints", requireAuth, requireMinRole("ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/seed-blueprints", requireAuth, requireMinRole("FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const created = await seedFieldBlueprints();
     res.json({
@@ -198,7 +198,7 @@ router.patch("/instance/:instanceId", requireAuth, async (req: AuthenticatedRequ
     }
 
     if (instance.blueprint.minRoleToEdit) {
-      const roleHierarchy = ["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "EQCR", "PARTNER", "MANAGING_PARTNER", "ADMIN"];
+      const roleHierarchy = ["STAFF", "SENIOR", "MANAGER", "EQCR", "PARTNER", "FIRM_ADMIN"];
       const userRoleIndex = roleHierarchy.indexOf(req.user!.role);
       const requiredRoleIndex = roleHierarchy.indexOf(instance.blueprint.minRoleToEdit);
       if (userRoleIndex < requiredRoleIndex) {

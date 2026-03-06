@@ -11,7 +11,7 @@ const generatePDFSchema = z.object({
   partnerPIN: z.string().optional(),
 });
 
-router.get("/history/:engagementId", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/history/:engagementId", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { engagementId } = req.params;
 
@@ -35,7 +35,7 @@ router.get("/history/:engagementId", requireAuth, requireRoles("ADMIN", "PARTNER
   }
 });
 
-router.post("/generate", requireAuth, requireRoles("ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/generate", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const validation = generatePDFSchema.safeParse(req.body);
     if (!validation.success) {

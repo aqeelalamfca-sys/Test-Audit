@@ -64,9 +64,9 @@ export interface EngagementCompletionResult {
 }
 
 const SIGN_OFF_ROLE_MATRIX: Record<"PREPARED" | "REVIEWED" | "APPROVED", UserRole[]> = {
-  PREPARED: ["STAFF", "SENIOR", "TEAM_LEAD"],
+  PREPARED: ["STAFF", "SENIOR"],
   REVIEWED: ["MANAGER"],
-  APPROVED: ["PARTNER", "MANAGING_PARTNER"],
+  APPROVED: ["PARTNER"],
 };
 
 const MIN_CONCLUSION_LENGTH = 50;
@@ -90,7 +90,7 @@ async function validateSignOffRole(
   if (!role) {
     return { valid: false, allowedRoles: SIGN_OFF_ROLE_MATRIX[level] };
   }
-  const isValid = SIGN_OFF_ROLE_MATRIX[level].includes(role) || role === "ADMIN";
+  const isValid = SIGN_OFF_ROLE_MATRIX[level].includes(role) || role === "FIRM_ADMIN";
   return { valid: isValid, role, allowedRoles: SIGN_OFF_ROLE_MATRIX[level] };
 }
 

@@ -19,11 +19,11 @@ const createUserSchema = z.object({
 const updateUserSchema = z.object({
   email: z.string().email().optional(),
   fullName: z.string().min(2).optional(),
-  role: z.enum(["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "ADMIN"]).optional(),
+  role: z.enum(["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"]).optional(),
   isActive: z.boolean().optional(),
 });
 
-router.get("/", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
     
@@ -63,7 +63,7 @@ router.get("/", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER"), asy
   }
 });
 
-router.get("/:id", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/:id", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.params.id },
@@ -123,7 +123,7 @@ router.get("/:id", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER"), 
   }
 });
 
-router.post("/", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const data = createUserSchema.parse(req.body);
 
@@ -150,7 +150,7 @@ router.post("/", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER"), as
       return res.status(400).json({ error: "Firm ID is required" });
     }
 
-    if (req.user!.role === "FIRM_ADMIN" && (data.role === "ADMIN" || data.role === "FIRM_ADMIN")) {
+    if (req.user!.role === "FIRM_ADMIN" && (data.role === "FIRM_ADMIN" || data.role === "FIRM_ADMIN")) {
       return res.status(403).json({ error: "Firm Admin cannot create Admin or Firm Admin users. Only Super Admin can assign these roles." });
     }
 
@@ -216,7 +216,7 @@ router.post("/", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER"), as
   }
 });
 
-router.patch("/:id", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.patch("/:id", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const existing = await prisma.user.findUnique({
       where: { id: req.params.id },
@@ -249,7 +249,7 @@ router.patch("/:id", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER")
     }
 
     if (data.role) {
-      if (req.user!.role === "FIRM_ADMIN" && (data.role === "ADMIN" || data.role === "FIRM_ADMIN")) {
+      if (req.user!.role === "FIRM_ADMIN" && (data.role === "FIRM_ADMIN" || data.role === "FIRM_ADMIN")) {
         return res.status(403).json({ error: "Firm Admin cannot assign Admin or Firm Admin roles" });
       }
       const targetLevel = roleHierarchy[data.role as string] || 0;
@@ -295,7 +295,7 @@ router.patch("/:id", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER")
   }
 });
 
-router.post("/:id/reset-password", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/:id/reset-password", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const existing = await prisma.user.findUnique({
       where: { id: req.params.id },
@@ -350,7 +350,7 @@ router.post("/:id/reset-password", requireAuth, requireRoles("ADMIN", "FIRM_ADMI
   }
 });
 
-router.post("/:id/toggle-status", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/:id/toggle-status", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const existing = await prisma.user.findUnique({
       where: { id: req.params.id },
@@ -404,7 +404,7 @@ router.post("/:id/toggle-status", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN
   }
 });
 
-router.get("/:id/activity", requireAuth, requireRoles("ADMIN", "FIRM_ADMIN", "PARTNER", "MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/:id/activity", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER", "MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.params.id },

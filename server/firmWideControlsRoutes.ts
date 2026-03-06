@@ -90,7 +90,7 @@ router.get("/quality-objectives", requireAuth, async (req: AuthenticatedRequest,
   }
 });
 
-router.post("/quality-objectives", requireAuth, requireRoles("PARTNER", "ADMIN", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/quality-objectives", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   const firmId = requireFirmScope(req, res);
   if (!firmId) return;
   try {
@@ -113,7 +113,7 @@ router.post("/quality-objectives", requireAuth, requireRoles("PARTNER", "ADMIN",
   }
 });
 
-router.put("/quality-objectives/:id", requireAuth, requireRoles("PARTNER", "ADMIN", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.put("/quality-objectives/:id", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   const firmId = requireFirmScope(req, res);
   if (!firmId) return;
   try {
@@ -281,7 +281,7 @@ router.get("/monitoring-reviews", requireAuth, async (req: AuthenticatedRequest,
   }
 });
 
-router.post("/monitoring-reviews", requireAuth, requireRoles("PARTNER", "ADMIN", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/monitoring-reviews", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   const firmId = requireFirmScope(req, res);
   if (!firmId) return;
   try {
@@ -469,7 +469,7 @@ router.get("/eqcr-policy", requireAuth, async (req: AuthenticatedRequest, res: R
   }
 });
 
-router.post("/eqcr-policy", requireAuth, requireRoles("PARTNER", "ADMIN", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/eqcr-policy", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   const firmId = requireFirmScope(req, res);
   if (!firmId) return;
   try {
@@ -511,7 +511,7 @@ router.get("/eqcr-assignments", requireAuth, async (req: AuthenticatedRequest, r
   }
 });
 
-router.post("/eqcr-assignments", requireAuth, requireRoles("PARTNER", "ADMIN", "FIRM_ADMIN", "MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/eqcr-assignments", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN", "MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
   const firmId = requireFirmScope(req, res);
   if (!firmId) return;
   try {
@@ -531,7 +531,7 @@ router.post("/eqcr-assignments", requireAuth, requireRoles("PARTNER", "ADMIN", "
   }
 });
 
-router.put("/eqcr-assignments/:id", requireAuth, requireRoles("PARTNER", "ADMIN", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.put("/eqcr-assignments/:id", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   const firmId = requireFirmScope(req, res);
   if (!firmId) return;
   try {
@@ -564,7 +564,7 @@ router.get("/ethics-program", requireAuth, async (req: AuthenticatedRequest, res
   }
 });
 
-router.post("/ethics-program", requireAuth, requireRoles("PARTNER", "ADMIN", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/ethics-program", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   const firmId = requireFirmScope(req, res);
   if (!firmId) return;
   try {
@@ -610,7 +610,7 @@ router.get("/policy-documents", requireAuth, async (req: AuthenticatedRequest, r
   }
 });
 
-router.post("/policy-documents", requireAuth, requireRoles("PARTNER", "ADMIN", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/policy-documents", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   const firmId = requireFirmScope(req, res);
   if (!firmId) return;
   try {
@@ -647,7 +647,7 @@ router.get("/isqm-versions", requireAuth, async (req: AuthenticatedRequest, res:
   }
 });
 
-router.post("/isqm-versions", requireAuth, requireRoles("PARTNER", "ADMIN", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/isqm-versions", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   const firmId = requireFirmScope(req, res);
   if (!firmId) return;
   try {

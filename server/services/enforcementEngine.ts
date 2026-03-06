@@ -88,13 +88,13 @@ const ROLE_HIERARCHY: Record<UserRole, number> = {
 };
 
 const SIGN_OFF_REQUIRED_ROLES: Record<SignOffCategory, UserRole[]> = {
-  FINANCIAL_STATEMENTS: ["PARTNER", "MANAGING_PARTNER", "ADMIN"],
-  RISK_ASSESSMENT: ["PARTNER", "MANAGING_PARTNER", "ADMIN"],
-  PROCEDURE_COMPLETION: ["SENIOR", "MANAGER", "PARTNER", "MANAGING_PARTNER", "ADMIN"],
-  ADJUSTMENTS_POSTING: ["PARTNER", "MANAGING_PARTNER", "ADMIN"],
-  CONCLUSIONS_OPINION: ["PARTNER", "MANAGING_PARTNER", "ADMIN"],
-  DELIVERABLES: ["PARTNER", "MANAGING_PARTNER", "ADMIN"],
-  QR_EQCR: ["EQCR", "ADMIN"],
+  FINANCIAL_STATEMENTS: ["PARTNER", "FIRM_ADMIN"],
+  RISK_ASSESSMENT: ["PARTNER", "FIRM_ADMIN"],
+  PROCEDURE_COMPLETION: ["SENIOR", "MANAGER", "PARTNER", "FIRM_ADMIN"],
+  ADJUSTMENTS_POSTING: ["PARTNER", "FIRM_ADMIN"],
+  CONCLUSIONS_OPINION: ["PARTNER", "FIRM_ADMIN"],
+  DELIVERABLES: ["PARTNER", "FIRM_ADMIN"],
+  QR_EQCR: ["EQCR", "FIRM_ADMIN"],
 };
 
 export interface EnforcementStatus {
@@ -597,7 +597,7 @@ class AuditEnforcementEngine {
       if (workflow.preparerId === userId || workflow.reviewerId === userId) {
         return { allowed: false, reason: "Maker-checker violation: Preparer/Reviewer cannot approve (ISA 220)" };
       }
-      if (!["PARTNER", "MANAGING_PARTNER", "ADMIN"].includes(userRole)) {
+      if (!["PARTNER", "FIRM_ADMIN"].includes(userRole)) {
         return { allowed: false, reason: "Approval requires Partner role" };
       }
       return { allowed: true };
@@ -1239,7 +1239,7 @@ class AuditEnforcementEngine {
       missing.push(`${unreviewed.length} section(s) prepared but not reviewed`);
     }
 
-    if (!["PARTNER", "MANAGING_PARTNER", "ADMIN"].includes(userRole)) {
+    if (!["PARTNER", "FIRM_ADMIN"].includes(userRole)) {
       missing.push("Partner role required for phase approval");
     }
 

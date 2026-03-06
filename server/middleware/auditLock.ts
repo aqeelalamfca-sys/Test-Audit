@@ -140,7 +140,7 @@ export function requirePreviousPhasesCompleted(phase: AuditPhase) {
 
 export function requirePartnerApproval(entityType: string) {
   return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const partnerRoles = ["PARTNER", "MANAGING_PARTNER", "EQCR"];
+    const partnerRoles = ["PARTNER", "EQCR"];
     
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });

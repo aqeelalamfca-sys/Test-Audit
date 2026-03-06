@@ -68,7 +68,7 @@ router.post("/users", requirePlatformOrFirmAdmin, async (req: AuthenticatedReque
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(403).json({ error: "No firm context" });
 
-    if (req.user!.role === "FIRM_ADMIN" && (data.role === "ADMIN" || data.role === "FIRM_ADMIN")) {
+    if (req.user!.role === "FIRM_ADMIN" && (data.role === "FIRM_ADMIN" || data.role === "FIRM_ADMIN")) {
       return res.status(403).json({ error: "Firm Admin cannot create Admin or Firm Admin users" });
     }
 
@@ -145,7 +145,7 @@ router.patch("/users/:id", requirePlatformOrFirmAdmin, async (req: Authenticated
     });
     const data = updateSchema.parse(req.body);
 
-    if (req.user!.role === "FIRM_ADMIN" && data.role && (data.role === "ADMIN" || data.role === "FIRM_ADMIN")) {
+    if (req.user!.role === "FIRM_ADMIN" && data.role && (data.role === "FIRM_ADMIN" || data.role === "FIRM_ADMIN")) {
       return res.status(403).json({ error: "Firm Admin cannot assign Admin or Firm Admin roles" });
     }
 

@@ -474,7 +474,7 @@ class DataHubService {
     userRole: UserRole,
     options: DataHubApprovalOptions = {}
   ) {
-    const allowedRoles: UserRole[] = ["SENIOR", "MANAGER", "PARTNER", "MANAGING_PARTNER", "EQCR", "ADMIN"];
+    const allowedRoles: UserRole[] = ["SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"];
     if (!allowedRoles.includes(userRole)) {
       throw new Error("User role not authorized to review");
     }
@@ -552,7 +552,7 @@ class DataHubService {
     userRole: UserRole,
     options: DataHubApprovalOptions = {}
   ) {
-    const allowedRoles: UserRole[] = ["PARTNER", "MANAGING_PARTNER", "ADMIN"];
+    const allowedRoles: UserRole[] = ["PARTNER", "FIRM_ADMIN"];
     if (!allowedRoles.includes(userRole)) {
       throw new Error("User role not authorized to approve (Partner+ required)");
     }

@@ -133,9 +133,9 @@ router.post("/:engagementId/generate-board", requireAuth, async (req: Authentica
     if (!engagement) return res.status(404).json({ error: "Engagement not found" });
     const engagementId = engagement.id;
 
-    const isAssociate = ["STAFF", "SENIOR", "TEAM_LEAD"].includes(userRole);
+    const isAssociate = ["STAFF", "SENIOR"].includes(userRole);
     const isManager = userRole === "MANAGER";
-    const isPartner = ["PARTNER", "MANAGING_PARTNER", "ADMIN"].includes(userRole);
+    const isPartner = ["PARTNER", "FIRM_ADMIN"].includes(userRole);
 
     const reviewNoteUserFilter = isAssociate ? { authorId: user.id } : {};
 
@@ -297,7 +297,7 @@ router.get("/:engagementId/board", requireAuth, async (req: AuthenticatedRequest
     if (!engagement) return res.status(404).json({ error: "Engagement not found" });
     const engagementId = engagement.id;
 
-    const isAssociate = ["STAFF", "SENIOR", "TEAM_LEAD"].includes(user.role);
+    const isAssociate = ["STAFF", "SENIOR"].includes(user.role);
 
     const board = await prisma.finalizationBoard.findFirst({
       where: {

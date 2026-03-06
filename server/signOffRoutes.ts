@@ -192,7 +192,7 @@ router.get("/engagements/:engagementId/sign-offs/dashboard", requireAuth, async 
   }
 });
 
-router.post("/engagements/:engagementId/sign-offs/initialize", requireAuth, requireRoles("PARTNER", "ADMIN"), async (req: Request, res: Response) => {
+router.post("/engagements/:engagementId/sign-offs/initialize", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: Request, res: Response) => {
   try {
     const { engagementId } = req.params;
     const engagement = await prisma.engagement.findUnique({
@@ -487,7 +487,7 @@ router.patch("/sign-offs/:id/unlock", requireAuth, async (req: Request, res: Res
     if (!canUnlockSignOff(user.role)) {
       return res.status(403).json({
         error: "Only Partner can unlock sign-offs",
-        requiredRoles: ["PARTNER", "MANAGING_PARTNER", "ADMIN"],
+        requiredRoles: ["PARTNER", "FIRM_ADMIN"],
         yourRole: user.role,
       });
     }
@@ -656,7 +656,7 @@ router.patch("/engagements/:engagementId/acceptance", requireAuth, async (req: R
   }
 });
 
-router.patch("/engagements/:engagementId/acceptance/manager-review", requireAuth, requireRoles("MANAGER", "PARTNER", "ADMIN"), async (req: Request, res: Response) => {
+router.patch("/engagements/:engagementId/acceptance/manager-review", requireAuth, requireRoles("MANAGER", "PARTNER", "FIRM_ADMIN"), async (req: Request, res: Response) => {
   try {
     const { engagementId } = req.params;
     const { comments } = req.body;
@@ -689,7 +689,7 @@ router.patch("/engagements/:engagementId/acceptance/manager-review", requireAuth
   }
 });
 
-router.patch("/engagements/:engagementId/acceptance/partner-approve", requireAuth, requireRoles("PARTNER", "ADMIN"), async (req: Request, res: Response) => {
+router.patch("/engagements/:engagementId/acceptance/partner-approve", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: Request, res: Response) => {
   try {
     const { engagementId } = req.params;
     const { comments, decision, partnerPin } = req.body;

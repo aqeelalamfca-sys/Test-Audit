@@ -197,7 +197,7 @@ router.post("/workflow/submit-for-review", requireAuth, async (req: Authenticate
   }
 });
 
-router.post("/workflow/review", requireAuth, requireRoles("SENIOR", "MANAGER", "PARTNER", "MANAGING_PARTNER", "EQCR", "ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/workflow/review", requireAuth, requireRoles("SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = req.user!;
     const { engagementId, entityType, entityCode, approved, comments, partnerPinUsed, digitalSignature } = req.body;
@@ -225,7 +225,7 @@ router.post("/workflow/review", requireAuth, requireRoles("SENIOR", "MANAGER", "
   }
 });
 
-router.post("/workflow/approve", requireAuth, requireRoles("PARTNER", "MANAGING_PARTNER", "ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/workflow/approve", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = req.user!;
     const { engagementId, entityType, entityCode, approved, comments, partnerPinUsed, digitalSignature } = req.body;
@@ -253,7 +253,7 @@ router.post("/workflow/approve", requireAuth, requireRoles("PARTNER", "MANAGING_
   }
 });
 
-router.post("/permissions/grant-draft", requireAuth, requireRoles("MANAGER", "PARTNER", "MANAGING_PARTNER", "ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/permissions/grant-draft", requireAuth, requireRoles("MANAGER", "PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const grantedBy = req.user!;
     const { engagementId, userId, entityType, entityId, expiresAt, reason } = req.body;
@@ -275,7 +275,7 @@ router.post("/permissions/grant-draft", requireAuth, requireRoles("MANAGER", "PA
   }
 });
 
-router.post("/permissions/revoke-draft", requireAuth, requireRoles("MANAGER", "PARTNER", "MANAGING_PARTNER", "ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/permissions/revoke-draft", requireAuth, requireRoles("MANAGER", "PARTNER", "FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const revokedBy = req.user!;
     const { permissionId, reason } = req.body;

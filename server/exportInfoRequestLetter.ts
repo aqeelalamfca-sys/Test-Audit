@@ -31,7 +31,7 @@ export async function generateInformationRequestLetter(options: ExportOptions): 
     throw new Error("Engagement or firm not found");
   }
 
-  const teamLead = teamMembers.find(tm => tm.role === "TEAM_LEAD" || tm.role === "SENIOR");
+  const teamLead = teamMembers.find(tm => tm.role === "SENIOR" || tm.role === "SENIOR");
   const partner = teamMembers.find(tm => tm.role === "PARTNER");
   const manager = teamMembers.find(tm => tm.role === "MANAGER");
 

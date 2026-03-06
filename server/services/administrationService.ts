@@ -95,7 +95,7 @@ class AdministrationService {
         module: "ADMINISTRATION",
         screen: "Settings",
         userId,
-        userRole: "ADMIN"
+        userRole: "FIRM_ADMIN"
       });
     }
 
@@ -232,7 +232,7 @@ class AdministrationService {
       },
       {
         firmId,
-        role: "TEAM_LEAD",
+        role: "SENIOR",
         displayName: "Team Lead",
         description: "Team leader coordinating fieldwork and first-level review",
         hierarchyLevel: 3,
@@ -275,7 +275,7 @@ class AdministrationService {
       },
       {
         firmId,
-        role: "MANAGING_PARTNER",
+        role: "PARTNER",
         displayName: "Managing Partner",
         description: "Senior partner with firm-wide oversight authority",
         hierarchyLevel: 5,
@@ -304,7 +304,7 @@ class AdministrationService {
       },
       {
         firmId,
-        role: "ADMIN",
+        role: "FIRM_ADMIN",
         displayName: "Firm Administrator",
         description: "Firm administrator with full configuration access",
         hierarchyLevel: 99,

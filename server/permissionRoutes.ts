@@ -113,7 +113,7 @@ router.get("/permissions/user/:userId", requireAuth, requireMinRole("MANAGER"), 
   }
 });
 
-router.post("/permissions/user/:userId/override", requireAuth, requireMinRole("ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/permissions/user/:userId/override", requireAuth, requireMinRole("FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { userId } = req.params;
     const firmId = req.user!.firmId;
@@ -167,7 +167,7 @@ router.post("/permissions/user/:userId/override", requireAuth, requireMinRole("A
   }
 });
 
-router.delete("/permissions/user/:userId/override/:permissionCode", requireAuth, requireMinRole("ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.delete("/permissions/user/:userId/override/:permissionCode", requireAuth, requireMinRole("FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { userId, permissionCode } = req.params;
     const firmId = req.user!.firmId;
@@ -207,7 +207,7 @@ router.get("/permissions/my", requireAuth, async (req: AuthenticatedRequest, res
   }
 });
 
-router.post("/permissions/seed", requireAuth, requireMinRole("ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+router.post("/permissions/seed", requireAuth, requireMinRole("FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     await seedPermissions();
     res.json({ success: true, message: "Permissions seeded successfully" });

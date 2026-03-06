@@ -238,7 +238,7 @@ const ISA_PHASE_MATRIX: ISAPhaseMatrixEntry[] = [
   { isaId: "ISA_706", isaName: "ISA 706", phase: "finalization", isStageGate: false, signoffRole: "ENGAGEMENT_PARTNER", riskLinkRequired: false, noReportBlocker: false, weight: 0.8 },
   { isaId: "ISA_710", isaName: "ISA 710", phase: "finalization", isStageGate: false, signoffRole: "ENGAGEMENT_PARTNER", riskLinkRequired: false, noReportBlocker: false, weight: 0.8 },
   { isaId: "ISA_720", isaName: "ISA 720", phase: "finalization", isStageGate: false, signoffRole: "ENGAGEMENT_PARTNER", riskLinkRequired: false, noReportBlocker: false, weight: 0.8 },
-  { isaId: "ISQM_1", isaName: "ISQM 1", phase: "eqcr", isStageGate: true, signoffRole: "MANAGING_PARTNER", riskLinkRequired: false, noReportBlocker: false, weight: 1.5 },
+  { isaId: "ISQM_1", isaName: "ISQM 1", phase: "eqcr", isStageGate: true, signoffRole: "PARTNER", riskLinkRequired: false, noReportBlocker: false, weight: 1.5 },
   { isaId: "IESBA", isaName: "IESBA Code", phase: "pre-planning", isStageGate: false, signoffRole: "ENGAGEMENT_PARTNER", riskLinkRequired: false, noReportBlocker: false, weight: 1.0 },
 ];
 

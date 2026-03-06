@@ -65,7 +65,7 @@ router.get("/fee-dependency/:engagementId", requireAuth, requireMinRole("MANAGER
       return res.status(404).json({ error: "Engagement not found" });
     }
 
-    if (engagement.firmId !== req.user!.firmId && req.user!.role !== "ADMIN") {
+    if (engagement.firmId !== req.user!.firmId && req.user!.role !== "FIRM_ADMIN") {
       return res.status(403).json({ error: "Access denied" });
     }
 
@@ -123,9 +123,9 @@ router.get("/fee-dependency/:engagementId", requireAuth, requireMinRole("MANAGER
   }
 });
 
-router.get("/partner-rotation", requireAuth, requireRoles("ADMIN", "PARTNER", "EQCR"), async (req: AuthenticatedRequest, res: Response) => {
+router.get("/partner-rotation", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER", "EQCR"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const firmId = req.user!.role === "ADMIN" ? (req.query.firmId as string | undefined) : req.user!.firmId;
+    const firmId = req.user!.role === "FIRM_ADMIN" ? (req.query.firmId as string | undefined) : req.user!.firmId;
     
     if (!firmId) {
       return res.status(400).json({ error: "Firm ID required" });
@@ -276,7 +276,7 @@ router.get("/independence-summary/:engagementId", requireAuth, async (req: Authe
       return res.status(404).json({ error: "Engagement not found" });
     }
 
-    if (engagement.firmId !== req.user!.firmId && req.user!.role !== "ADMIN") {
+    if (engagement.firmId !== req.user!.firmId && req.user!.role !== "FIRM_ADMIN") {
       return res.status(403).json({ error: "Access denied" });
     }
 
