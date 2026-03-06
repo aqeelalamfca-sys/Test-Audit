@@ -87,11 +87,13 @@ NEW_COMMIT=$(git rev-parse HEAD)
 
 echo "-- Step 5/10: Environment secrets --"
 if [ ! -f .env ]; then
-  DB_PASSWORD="$(openssl rand -hex 24)"
+  DB_PASSWORD="${POSTGRES_PASSWORD:-Aqeel@123\$}"
   JWT_SECRET="$(openssl rand -hex 32)"
   SESSION_SECRET="$(openssl rand -hex 32)"
   ENCRYPTION_KEY="$(openssl rand -hex 32)"
-  SA_PASSWORD="${INITIAL_SUPER_ADMIN_PASSWORD:-$(openssl rand -base64 18 | tr -d '/+=' | head -c 16)Aa1!}"
+  SA_EMAIL="${INITIAL_SUPER_ADMIN_EMAIL:-aqeelalam2010@gmail.com}"
+  SA_PASSWORD="${INITIAL_SUPER_ADMIN_PASSWORD:-Aqeel@123\$}"
+  ENCODED_DB_PASS=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${DB_PASSWORD}', safe=''))" 2>/dev/null || echo "${DB_PASSWORD}")
 
   cat > .env <<EOF
 NODE_ENV=production
@@ -103,13 +105,13 @@ POSTGRES_DB=auditwise
 POSTGRES_HOST=db
 POSTGRES_PORT=5432
 
-DATABASE_URL=postgresql://auditwise:${DB_PASSWORD}@db:5432/auditwise?schema=public
+DATABASE_URL=postgresql://auditwise:${ENCODED_DB_PASS}@db:5432/auditwise?schema=public
 
 JWT_SECRET=${JWT_SECRET}
 SESSION_SECRET=${SESSION_SECRET}
 ENCRYPTION_MASTER_KEY=${ENCRYPTION_KEY}
 
-INITIAL_SUPER_ADMIN_EMAIL=${EMAIL}
+INITIAL_SUPER_ADMIN_EMAIL=${SA_EMAIL}
 INITIAL_SUPER_ADMIN_PASSWORD=${SA_PASSWORD}
 
 SUPER_ADMIN_ALLOWED_IPS=
@@ -135,7 +137,7 @@ EOF
   echo "  |  JWT_SECRET:      ${JWT_SECRET:0:16}..."
   echo "  |  SESSION_SECRET:  ${SESSION_SECRET:0:16}..."
   echo "  |  ENCRYPTION_KEY:  ${ENCRYPTION_KEY:0:16}..."
-  echo "  |  SuperAdmin:      ${EMAIL}"
+  echo "  |  SuperAdmin:      ${SA_EMAIL}"
   echo "  |  SuperAdmin Pass: (see .env file)"
   echo "  +-------------------------------------------+"
   echo ""
@@ -289,6 +291,12 @@ else
     mkdir -p "${APP_DIR}/nginx/ssl"
     cp "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" "${APP_DIR}/nginx/ssl/fullchain.pem"
     cp "/etc/letsencrypt/live/${DOMAIN}/privkey.pem" "${APP_DIR}/nginx/ssl/privkey.pem"
+
+    if [ -f "${APP_DIR}/nginx/nginx-ssl.conf" ]; then
+      cp "${APP_DIR}/nginx/nginx-ssl.conf" "${APP_DIR}/nginx/default.conf"
+      docker compose restart nginx 2>/dev/null || true
+      log "Switched Docker Nginx to SSL config"
+    fi
   else
     warn "SSL setup failed -- site works on HTTP. Run manually:"
     echo "  certbot --nginx -d ${DOMAIN} -d www.${DOMAIN} --non-interactive --agree-tos -m ${EMAIL} --redirect"
