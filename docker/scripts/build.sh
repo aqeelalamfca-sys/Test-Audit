@@ -6,20 +6,28 @@ PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 cd "$PROJECT_ROOT"
 
-IMAGE_NAME="${DOCKER_IMAGE:-ghcr.io/aqeelalamfca-sys/auditwise}"
+BACKEND_IMAGE="${DOCKER_BACKEND_IMAGE:-ghcr.io/aqeelalamfca-sys/auditwise-backend}"
+FRONTEND_IMAGE="${DOCKER_FRONTEND_IMAGE:-ghcr.io/aqeelalamfca-sys/auditwise-frontend}"
 TAG="${DOCKER_TAG:-latest}"
 
-echo "Building AuditWise Docker image..."
-echo "  Image: ${IMAGE_NAME}:${TAG}"
-echo "  Context: $PROJECT_ROOT"
+echo "=== AuditWise Docker Build ==="
+echo "Context: $PROJECT_ROOT"
 echo ""
 
+echo "[1/2] Building backend image..."
 docker build \
-  -f docker/Dockerfile \
-  -t "${IMAGE_NAME}:${TAG}" \
-  --build-arg APP_VERSION="${TAG}" \
+  -f docker/backend.Dockerfile \
+  -t "${BACKEND_IMAGE}:${TAG}" \
   .
+echo "  Backend: ${BACKEND_IMAGE}:${TAG}"
+
+echo "[2/2] Building frontend image..."
+docker build \
+  -f docker/frontend.Dockerfile \
+  -t "${FRONTEND_IMAGE}:${TAG}" \
+  .
+echo "  Frontend: ${FRONTEND_IMAGE}:${TAG}"
 
 echo ""
-echo "Build complete: ${IMAGE_NAME}:${TAG}"
-echo "Image size: $(docker image inspect "${IMAGE_NAME}:${TAG}" --format='{{.Size}}' | numfmt --to=iec 2>/dev/null || echo 'unknown')"
+echo "=== Build Complete ==="
+echo "Run: docker compose up -d"

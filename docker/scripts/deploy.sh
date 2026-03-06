@@ -14,50 +14,56 @@ echo "Started at: $(date -Is)"
 echo ""
 
 if [ ! -f .env ]; then
-  echo "WARNING: No .env file found. Copy .env.example to .env and configure it."
+  echo "ERROR: No .env file found."
   echo "  cp .env.example .env"
+  echo "  # Edit .env with your production values"
   exit 1
 fi
 
-echo "[1/5] Pulling latest images..."
-docker compose -f "$COMPOSE_FILE" pull
+echo "[1/6] Pulling latest images..."
+docker compose -f "$COMPOSE_FILE" pull db
 
-echo "[2/5] Building application..."
-docker compose -f "$COMPOSE_FILE" build --no-cache app
+echo "[2/6] Building backend and frontend..."
+docker compose -f "$COMPOSE_FILE" build backend frontend
 
-echo "[3/5] Starting database..."
+echo "[3/6] Starting database..."
 docker compose -f "$COMPOSE_FILE" up -d db
 echo "  Waiting for database health check..."
+sleep 5
 docker compose -f "$COMPOSE_FILE" exec -T db pg_isready -U auditwise -d auditwise -h localhost 2>/dev/null || sleep 10
 
-echo "[4/5] Starting application..."
-docker compose -f "$COMPOSE_FILE" up -d app
-echo "  Waiting for app health check (up to 2 minutes)..."
+echo "[4/6] Starting backend..."
+docker compose -f "$COMPOSE_FILE" up -d backend
+echo "  Waiting for backend health check (up to 2 minutes)..."
 TIMEOUT=120
 ELAPSED=0
 while [ $ELAPSED -lt $TIMEOUT ]; do
-  if docker compose -f "$COMPOSE_FILE" exec -T app curl -sf http://localhost:5000/api/health > /dev/null 2>&1; then
-    echo "  App is healthy after ${ELAPSED}s"
+  if docker compose -f "$COMPOSE_FILE" exec -T backend curl -sf http://localhost:5000/api/health > /dev/null 2>&1; then
+    echo "  Backend healthy after ${ELAPSED}s"
     break
   fi
   sleep 5
   ELAPSED=$((ELAPSED + 5))
 done
 if [ $ELAPSED -ge $TIMEOUT ]; then
-  echo "  WARNING: App health check timed out after ${TIMEOUT}s"
-  echo "  Check logs: docker compose logs app"
+  echo "  WARNING: Backend health check timed out after ${TIMEOUT}s"
+  echo "  Check logs: docker compose -f $COMPOSE_FILE logs backend"
 fi
 
-echo "[5/5] Starting nginx..."
+echo "[5/6] Starting frontend..."
+docker compose -f "$COMPOSE_FILE" up -d frontend
+
+echo "[6/6] Starting nginx reverse proxy..."
 docker compose -f "$COMPOSE_FILE" up -d nginx
 
 echo ""
 echo "=== Deployment Complete ==="
-echo "  Backend:  http://localhost:${BACKEND_PORT:-5000}"
-echo "  Frontend: http://localhost:${FRONTEND_PORT:-3000}"
-echo "  Health:   http://localhost:${FRONTEND_PORT:-3000}/api/health"
+echo "  Backend:  http://localhost:5000/api/health"
+echo "  Frontend: http://localhost:3000"
+echo "  Nginx:    http://localhost:80"
 echo ""
 echo "Commands:"
-echo "  Logs:     docker compose logs -f"
-echo "  Status:   docker compose ps"
-echo "  Stop:     docker compose down"
+echo "  Logs:     docker compose -f $COMPOSE_FILE logs -f"
+echo "  Status:   docker compose -f $COMPOSE_FILE ps"
+echo "  Stop:     docker compose -f $COMPOSE_FILE down"
+echo "  Restart:  docker compose -f $COMPOSE_FILE restart"
