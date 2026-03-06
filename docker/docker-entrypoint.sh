@@ -9,7 +9,7 @@ echo ""
 
 HEAP_SIZE="${NODE_HEAP_SIZE:-2560}"
 
-echo "[1/4] Validating environment..."
+echo "[1/5] Validating environment..."
 ERRORS=0
 
 if [ -z "$DB_PASSWORD" ] && [ -n "$POSTGRES_PASSWORD" ]; then
@@ -65,7 +65,7 @@ if [ "$ERRORS" -eq 1 ]; then
 fi
 echo "  Environment validated."
 
-echo "[2/4] Waiting for database to be ready..."
+echo "[2/5] Waiting for database to be ready..."
 MAX_WAIT=90
 ATTEMPT=0
 DELAY=1
@@ -98,20 +98,35 @@ while [ "$ATTEMPT" -lt "$MAX_WAIT" ]; do
   fi
 done
 
-echo "[3/4] Running database schema sync (prisma db push)..."
-NODE_OPTIONS="--max-old-space-size=$HEAP_SIZE" npx prisma db push --skip-generate 2>&1 || {
-  echo ""
-  echo "FATAL: Database schema sync failed."
-  echo "Possible causes:"
-  echo "  - Authentication failure (check DATABASE_URL credentials)"
-  echo "  - Schema has destructive changes (run manually with --accept-data-loss after backup)"
-  echo "  - Database version incompatibility"
-  echo ""
-  echo "To debug, connect to the database container:"
-  echo "  docker exec -it auditwise-db psql -U auditwise -d auditwise"
-  exit 1
+echo "[3/5] Generating Prisma client..."
+NODE_OPTIONS="--max-old-space-size=$HEAP_SIZE" npx prisma generate 2>&1 || {
+  echo "  WARN: Prisma generate failed (may already be generated)."
 }
+echo "  Prisma client ready."
+
+echo "[4/5] Running database migrations..."
+if [ -d "prisma/migrations" ] && [ "$(ls -A prisma/migrations 2>/dev/null)" ]; then
+  echo "  Found prisma/migrations — running prisma migrate deploy..."
+  NODE_OPTIONS="--max-old-space-size=$HEAP_SIZE" npx prisma migrate deploy 2>&1 || {
+    echo "  WARN: prisma migrate deploy failed. Falling back to prisma db push..."
+    NODE_OPTIONS="--max-old-space-size=$HEAP_SIZE" npx prisma db push --skip-generate 2>&1 || {
+      echo "FATAL: Database schema sync failed."
+      exit 1
+    }
+  }
+else
+  echo "  No migrations directory — running prisma db push..."
+  NODE_OPTIONS="--max-old-space-size=$HEAP_SIZE" npx prisma db push --skip-generate 2>&1 || {
+    echo ""
+    echo "FATAL: Database schema sync failed."
+    echo "Possible causes:"
+    echo "  - Authentication failure (check DATABASE_URL credentials)"
+    echo "  - Schema has destructive changes (run manually with --accept-data-loss after backup)"
+    echo "  - Database version incompatibility"
+    exit 1
+  }
+fi
 echo "  Database schema synced successfully."
 
-echo "[4/4] Starting AuditWise on port ${PORT:-5000}..."
+echo "[5/5] Starting AuditWise on port ${PORT:-5000}..."
 exec node --max-old-space-size=$HEAP_SIZE dist/index.cjs

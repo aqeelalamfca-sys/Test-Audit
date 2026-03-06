@@ -1,9 +1,3 @@
-# =============================================================
-# AuditWise — CI/CD Deploy Pipeline
-# Workflow: Replit → GitHub → Hostinger VPS
-# Trigger: Push to main branch
-# =============================================================
-
 name: Deploy to Production
 
 on:
@@ -18,7 +12,6 @@ env:
   NODE_VERSION: "20"
 
 jobs:
-  # ── Step 1: Lint and type check ───────────────────────────
   lint:
     name: Lint & Type Check
     runs-on: ubuntu-latest
@@ -42,7 +35,6 @@ jobs:
         run: npx tsc --noEmit --project server/tsconfig.json
         continue-on-error: true
 
-  # ── Step 2: Build and verify ──────────────────────────────
   build:
     name: Build Application
     runs-on: ubuntu-latest
@@ -59,6 +51,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
 
       - name: Build application
         run: npm run build
@@ -81,7 +76,6 @@ jobs:
           path: dist/
           retention-days: 7
 
-  # ── Step 3: Build and push Docker images ──────────────────
   docker:
     name: Build & Push Docker Images
     runs-on: ubuntu-latest
@@ -114,6 +108,8 @@ jobs:
             ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v5
@@ -126,8 +122,9 @@ jobs:
             ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
 
-  # ── Step 4: Deploy to Hostinger VPS ───────────────────────
   deploy:
     name: Deploy to VPS
     runs-on: ubuntu-latest
@@ -141,49 +138,70 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          timeout: 300s
+          timeout: 600s
+          command_timeout: 10m
           script: |
             set -e
             echo "=== AuditWise Deployment ==="
-            echo "Started at: $(date)"
+            echo "Commit: ${{ github.sha }}"
+            echo "Started at: $(date -Is)"
 
-            cd /opt/auditwise
+            APP_DIR="/opt/auditwise"
+            cd "$APP_DIR"
 
-            echo "[1/6] Pulling latest repository code..."
-            git pull origin main
+            echo "[1/8] Pre-deploy database backup..."
+            if docker ps --format '{{.Names}}' | grep -q "auditwise-db"; then
+              mkdir -p backups
+              BACKUP="backups/pre-deploy_$(date +%Y%m%d_%H%M%S).sql.gz"
+              docker exec auditwise-db pg_dump -U auditwise -d auditwise --no-owner --no-privileges 2>/dev/null | gzip > "$BACKUP" || echo "  Backup skipped (non-fatal)"
+              echo "  Backup: $BACKUP"
+            fi
 
-            echo "[2/6] Pulling latest Docker images..."
+            echo "[2/8] Pulling latest code..."
+            git fetch --all -q
+            git reset --hard origin/main -q
+            echo "  Code updated to $(git log --oneline -1)"
+
+            echo "[3/8] Logging into GHCR..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin 2>/dev/null || true
+
+            echo "[4/8] Pulling latest Docker images..."
             docker compose pull backend frontend
 
-            echo "[3/6] Rebuilding Docker containers..."
-            docker compose up -d --build --force-recreate backend frontend
+            echo "[5/8] Stopping old containers (removing orphans)..."
+            docker compose down --remove-orphans 2>/dev/null || true
 
-            echo "[4/6] Waiting for backend health check..."
-            TIMEOUT=120
+            echo "[6/8] Starting all services..."
+            docker compose up -d
+
+            echo "[7/8] Waiting for backend health (up to 5 min)..."
+            TIMEOUT=300
             ELAPSED=0
             while [ $ELAPSED -lt $TIMEOUT ]; do
-              if docker compose exec -T backend curl -sf http://localhost:5000/api/health > /dev/null 2>&1; then
+              HTTP_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/api/health 2>/dev/null || echo "000")
+              if [ "$HTTP_CODE" = "200" ]; then
                 echo "  Backend healthy after ${ELAPSED}s"
                 break
               fi
               sleep 5
               ELAPSED=$((ELAPSED + 5))
+              if [ $((ELAPSED % 30)) -eq 0 ]; then
+                echo "  Still waiting... (${ELAPSED}s, last HTTP: $HTTP_CODE)"
+              fi
             done
             if [ $ELAPSED -ge $TIMEOUT ]; then
               echo "FATAL: Backend health check failed after ${TIMEOUT}s"
-              docker compose logs --tail=50 backend
+              docker compose logs --tail=80 backend
               exit 1
             fi
 
-            echo "[5/6] Restarting Nginx..."
-            docker compose up -d --force-recreate nginx
-
-            echo "[6/6] Cleaning up unused Docker images..."
-            docker image prune -f
+            echo "[8/8] Cleanup & verification..."
+            docker image prune -f 2>/dev/null || true
 
             echo ""
+            echo "=== Container Status ==="
+            docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+            echo ""
             echo "=== Deployment Complete ==="
-            echo "Finished at: $(date)"
-            echo "Backend:  http://localhost:5000/api/health"
-            echo "Frontend: http://localhost:3000"
-            echo "Domain:   https://auditwise.tech"
+            echo "Finished at: $(date -Is)"
+            echo "Domain: https://auditwise.tech"

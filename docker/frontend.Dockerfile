@@ -1,11 +1,5 @@
-# =============================================================
-# AuditWise Frontend — Multi-Stage Production Build
-# Builds the React app with Vite and serves static assets
-# via Nginx on port 3000
-# =============================================================
-
-# ── Stage 1: Install dependencies and build React app ────────
-FROM node:20-slim AS build
+FROM node:20-alpine AS build
+RUN apk add --no-cache python3 make g++
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
@@ -24,7 +18,6 @@ RUN NODE_OPTIONS="--max-old-space-size=2048" npx vite build --outDir /app/dist/p
 RUN cp -rn public/* /app/dist/public/ 2>/dev/null || true
 RUN ls -la /app/dist/public/index.html
 
-# ── Stage 2: Serve with Nginx ───────────────────────────────
 FROM nginx:1.27-alpine AS production
 
 RUN rm -rf /etc/nginx/conf.d/*
@@ -37,7 +30,7 @@ RUN chown -R nginx:nginx /usr/share/nginx/html && \
 
 EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD wget -qO- http://localhost:3000/ || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]

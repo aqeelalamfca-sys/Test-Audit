@@ -1,17 +1,7 @@
-# =============================================================
-# AuditWise Backend — Multi-Stage Production Build
-# Produces a minimal Node.js image running the Express API
-# on port 5000
-# =============================================================
-
-# ── Stage 1: Base image with system dependencies ────────────
-FROM node:20-slim AS base
-RUN apt-get update && \
-    apt-get install -y openssl ca-certificates curl && \
-    rm -rf /var/lib/apt/lists/*
+FROM node:20-alpine AS base
+RUN apk add --no-cache openssl curl bash ca-certificates
 WORKDIR /app
 
-# ── Stage 2: Install ALL dependencies (needed for build) ────
 FROM base AS deps
 COPY package.json package-lock.json* ./
 RUN if [ -f package-lock.json ]; then \
@@ -22,7 +12,6 @@ RUN if [ -f package-lock.json ]; then \
 COPY prisma ./prisma/
 RUN NODE_OPTIONS="--max-old-space-size=2048" npx prisma generate
 
-# ── Stage 3: Build backend + frontend ───────────────────────
 FROM deps AS build
 COPY . .
 ENV NODE_ENV=production
@@ -30,7 +19,6 @@ RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
 RUN cp -rn public/* dist/public/ 2>/dev/null || true
 RUN ls -la dist/index.cjs dist/public/index.html
 
-# ── Stage 4: Production-only dependencies ────────────────────
 FROM base AS proddeps
 COPY package.json package-lock.json* ./
 RUN if [ -f package-lock.json ]; then \
@@ -41,12 +29,10 @@ RUN if [ -f package-lock.json ]; then \
 COPY prisma ./prisma/
 RUN NODE_OPTIONS="--max-old-space-size=2048" npx prisma generate
 
-# ── Stage 5: Final production image ─────────────────────────
 FROM base AS production
 ENV NODE_ENV=production
 
-RUN addgroup --system appgroup && \
-    adduser --system --ingroup appgroup appuser
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY --from=proddeps /app/node_modules ./node_modules
 COPY --from=proddeps /app/prisma ./prisma
@@ -62,7 +48,7 @@ USER appuser
 
 EXPOSE 5000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
-  CMD curl -f http://localhost:5000/api/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=5 \
+  CMD curl -sf http://localhost:5000/api/health || exit 1
 
 ENTRYPOINT ["./docker-entrypoint.sh"]

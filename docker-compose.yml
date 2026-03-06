@@ -1,18 +1,57 @@
-# =============================================================
-# AuditWise — Docker Compose (Development / Local)
-# Usage: docker compose up -d
-# Backend: http://localhost:5000
-# Frontend: http://localhost:3000
-# Nginx proxy: http://localhost:80
-# =============================================================
-
 services:
-  # ── Backend (Express API on port 5000) ────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: auditwise-db
+    restart: unless-stopped
+    expose:
+      - "5432"
+    ports:
+      - "${DB_BIND:-127.0.0.1}:${DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-auditwise}
+      POSTGRES_USER: ${POSTGRES_USER:-auditwise}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    shm_size: 256m
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "effective_cache_size=512MB"
+      - "-c"
+      - "work_mem=8MB"
+      - "-c"
+      - "maintenance_work_mem=128MB"
+      - "-c"
+      - "max_connections=100"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "log_min_duration_statement=1000"
+      - "-c"
+      - "idle_in_transaction_session_timeout=60000"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-auditwise} -d ${POSTGRES_DB:-auditwise} -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - auditwise
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
   backend:
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
-    image: ghcr.io/aqeelalamfca-sys/auditwise-backend:latest
+    image: ghcr.io/aqeelalamfca-sys/auditwise-backend:${APP_VERSION:-latest}
     container_name: auditwise-backend
     restart: unless-stopped
     expose:
@@ -54,47 +93,56 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5000/api/health || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:5000/api/health || exit 1"]
       interval: 30s
       timeout: 10s
-      start_period: 120s
-      retries: 3
+      start_period: 180s
+      retries: 5
+    networks:
+      - auditwise
     logging:
       driver: "json-file"
       options:
         max-size: "50m"
         max-file: "5"
 
-  # ── Frontend (React served by Nginx on port 3000) ─────────
   frontend:
     build:
       context: .
       dockerfile: docker/frontend.Dockerfile
-    image: ghcr.io/aqeelalamfca-sys/auditwise-frontend:latest
+    image: ghcr.io/aqeelalamfca-sys/auditwise-frontend:${APP_VERSION:-latest}
     container_name: auditwise-frontend
     restart: unless-stopped
     expose:
       - "3000"
+    depends_on:
+      backend:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
       interval: 30s
       timeout: 5s
+      start_period: 30s
       retries: 3
+    networks:
+      - auditwise
     logging:
       driver: "json-file"
       options:
         max-size: "20m"
         max-file: "3"
 
-  # ── Nginx Reverse Proxy (serves domain auditwise.tech) ────
   nginx:
     image: nginx:1.27-alpine
     container_name: auditwise-nginx
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/default.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - certbot-webroot:/var/www/certbot:ro
     depends_on:
       backend:
         condition: service_healthy
@@ -104,59 +152,19 @@ services:
       test: ["CMD-SHELL", "wget -qO- http://localhost:80/api/health || exit 1"]
       interval: 30s
       timeout: 5s
+      start_period: 15s
       retries: 3
+    networks:
+      - auditwise
     logging:
       driver: "json-file"
       options:
         max-size: "20m"
         max-file: "3"
 
-  # ── PostgreSQL Database ───────────────────────────────────
-  db:
-    image: postgres:16-alpine
-    container_name: auditwise-db
-    restart: unless-stopped
-    expose:
-      - "5432"
-    ports:
-      - "${DB_BIND:-127.0.0.1}:${DB_PORT:-5432}:5432"
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-auditwise}
-      POSTGRES_USER: ${POSTGRES_USER:-auditwise}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    shm_size: 256m
-    command:
-      - "postgres"
-      - "-c"
-      - "shared_buffers=256MB"
-      - "-c"
-      - "effective_cache_size=512MB"
-      - "-c"
-      - "work_mem=8MB"
-      - "-c"
-      - "maintenance_work_mem=128MB"
-      - "-c"
-      - "max_connections=100"
-      - "-c"
-      - "random_page_cost=1.1"
-      - "-c"
-      - "log_min_duration_statement=1000"
-      - "-c"
-      - "idle_in_transaction_session_timeout=60000"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-auditwise} -d ${POSTGRES_DB:-auditwise} -h localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "20m"
-        max-file: "3"
+networks:
+  auditwise:
+    driver: bridge
 
 volumes:
   pgdata:
@@ -164,4 +172,6 @@ volumes:
   uploads:
     driver: local
   logs:
+    driver: local
+  certbot-webroot:
     driver: local
