@@ -38,6 +38,7 @@ import {
   Rocket,
   MessageSquare,
   Banknote,
+  MonitorCheck,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth";
@@ -294,6 +295,19 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       <Link href="/platform/feedback">
                         <MessageSquare className={`h-4 w-4 ${iconClasses}`} />
                         <span>Firm Feedback</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/platform/system-monitoring"}
+                      data-testid="nav-system-monitoring"
+                      className={activeClasses}
+                    >
+                      <Link href="/platform/system-monitoring">
+                        <MonitorCheck className={`h-4 w-4 ${iconClasses}`} />
+                        <span>System Monitoring</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
