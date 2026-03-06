@@ -10,11 +10,12 @@ let openaiClient: OpenAI | null = null;
 
 function getOpenAI(): OpenAI {
   if (!openaiClient) {
-    if (!process.env.AI_INTEGRATIONS_OPENAI_API_KEY) {
+    const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+    if (!apiKey) {
       throw new Error("OpenAI API key not configured");
     }
     openaiClient = new OpenAI({
-      apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+      apiKey,
       baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
     });
   }
