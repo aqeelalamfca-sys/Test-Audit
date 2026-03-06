@@ -37,7 +37,7 @@ export async function seedInitialAdmin() {
     update: {
       passwordHash,
       fullName: "Firm Administrator",
-      role: "ADMIN",
+      role: "FIRM_ADMIN",
       firmId: firm.id,
       isActive: true,
     },
@@ -46,7 +46,7 @@ export async function seedInitialAdmin() {
       username: email.split("@")[0],
       passwordHash,
       fullName: "Firm Administrator",
-      role: "ADMIN",
+      role: "FIRM_ADMIN",
       firmId: firm.id,
       isActive: true,
     },

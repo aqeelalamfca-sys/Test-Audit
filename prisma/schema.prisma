@@ -11,12 +11,9 @@ datasource db {
 enum UserRole {
   STAFF
   SENIOR
-  TEAM_LEAD
   MANAGER
-  MANAGING_PARTNER
-  PARTNER
   EQCR
-  ADMIN
+  PARTNER
   FIRM_ADMIN
   SUPER_ADMIN
 }

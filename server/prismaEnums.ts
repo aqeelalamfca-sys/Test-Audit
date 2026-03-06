@@ -4,12 +4,11 @@
 export const UserRole = {
   STAFF: "STAFF",
   SENIOR: "SENIOR",
-  TEAM_LEAD: "TEAM_LEAD",
   MANAGER: "MANAGER",
-  MANAGING_PARTNER: "MANAGING_PARTNER",
-  PARTNER: "PARTNER",
   EQCR: "EQCR",
-  ADMIN: "ADMIN",
+  PARTNER: "PARTNER",
+  FIRM_ADMIN: "FIRM_ADMIN",
+  SUPER_ADMIN: "SUPER_ADMIN",
 } as const;
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
