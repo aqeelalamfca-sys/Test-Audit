@@ -7,7 +7,7 @@ import {
   Building2, Users, BarChart3, Shield, Bot, Bell, FileText,
   AlertTriangle, Clock, ChevronRight, Moon,
   Server, Cpu, GitBranch, Activity, Globe, RefreshCw, CheckCircle2,
-  XCircle, Terminal, Lock, Zap, MonitorCheck, Container, Layers,
+  XCircle, Terminal, Lock, Container, Layers,
   Radio, Rocket, ChevronDown, ChevronUp, Package, Database, RotateCcw,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
@@ -270,7 +270,7 @@ export default function PlatformDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
         {stats.map((stat) => (
           <Card key={stat.label} className="cursor-pointer hover:shadow-md transition-all hover:scale-[1.02] group"
             onClick={() => setLocation(stat.href)} data-testid={`card-stat-${stat.label.toLowerCase().replace(/\s/g, '-')}`}>
@@ -287,7 +287,7 @@ export default function PlatformDashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
         {navItems.map((item) => (
           <Link key={item.href} href={item.href}>
             <Card className="cursor-pointer hover:border-primary/40 hover:shadow-md transition-all group h-full" data-testid={`link-${item.label.toLowerCase().replace(/\s/g, '-')}`}>
@@ -304,9 +304,9 @@ export default function PlatformDashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-12 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-3">
 
-        <Card className="col-span-4" data-testid="resource-gauges">
+        <Card className="md:col-span-1 xl:col-span-4" data-testid="resource-gauges">
           <CardHeader className="pb-2 pt-3 px-4">
             <CardTitle className="text-sm flex items-center gap-2">
               <Cpu className="h-4 w-4 text-blue-500" /> Server Resources
@@ -328,7 +328,7 @@ export default function PlatformDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-4" data-testid="health-checks-grid">
+        <Card className="md:col-span-1 xl:col-span-4" data-testid="health-checks-grid">
           <CardHeader className="pb-2 pt-3 px-4">
             <CardTitle className="text-sm flex items-center gap-2">
               <Activity className="h-4 w-4 text-emerald-500" /> Health Probes
@@ -344,7 +344,7 @@ export default function PlatformDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-4" data-testid="card-services">
+        <Card className="md:col-span-2 xl:col-span-4" data-testid="card-services">
           <CardHeader className="pb-2 pt-3 px-4">
             <CardTitle className="text-sm flex items-center gap-2">
               <Layers className="h-4 w-4 text-violet-500" /> Services
@@ -381,7 +381,7 @@ export default function PlatformDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-8" data-testid="card-deployment-pipeline">
+        <Card className="md:col-span-2 xl:col-span-8" data-testid="card-deployment-pipeline">
           <CardHeader className="pb-2 pt-3 px-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -482,7 +482,7 @@ export default function PlatformDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-4" data-testid="card-repository">
+        <Card className="md:col-span-2 xl:col-span-4" data-testid="card-repository">
           <CardHeader className="pb-2 pt-3 px-4">
             <CardTitle className="text-sm flex items-center gap-2">
               <GitBranch className="h-4 w-4 text-purple-500" /> Source Repository
@@ -527,7 +527,7 @@ export default function PlatformDashboard() {
         {showDetails && (
           <>
             {healthData?.application?.pm2Processes && healthData.application.pm2Processes.length > 0 && (
-              <Card className="col-span-6" data-testid="card-application">
+              <Card className="md:col-span-1 xl:col-span-6" data-testid="card-application">
                 <CardHeader className="pb-2 pt-3 px-4">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Container className="h-4 w-4 text-teal-500" /> Application Runtime
@@ -557,7 +557,7 @@ export default function PlatformDashboard() {
               </Card>
             )}
             {healthData?.security && (
-              <Card className={`${healthData?.application?.pm2Processes?.length ? "col-span-6" : "col-span-12"}`} data-testid="card-security">
+              <Card className={`${healthData?.application?.pm2Processes?.length ? "md:col-span-1 xl:col-span-6" : "md:col-span-2 xl:col-span-12"}`} data-testid="card-security">
                 <CardHeader className="pb-2 pt-3 px-4">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Shield className="h-4 w-4 text-red-500" /> Security
