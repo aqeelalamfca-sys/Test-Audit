@@ -16,20 +16,19 @@ const SIGN_OFF_AUTHORITY_MATRIX: Record<SignOffLevel, UserRole[]> = {
 };
 
 const SIGN_OFF_LABELS: Record<SignOffLevel, string> = {
-  PREPARED: "Prepared (Associate / Senior / Team Lead)",
+  PREPARED: "Prepared (Staff / Senior)",
   REVIEWED: "Reviewed (Manager only)",
   APPROVED: "Approved (Partner only)",
 };
 
 const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
-  STAFF: "Associate",
+  STAFF: "Staff",
   SENIOR: "Senior",
-  TEAM_LEAD: "Team Lead",
   MANAGER: "Manager",
-  PARTNER: "Partner",
-  MANAGING_PARTNER: "Managing Partner",
   EQCR: "EQCR Reviewer",
-  ADMIN: "Administrator",
+  PARTNER: "Partner",
+  FIRM_ADMIN: "Firm Admin",
+  SUPER_ADMIN: "Super Admin",
 };
 
 export function canMarkSignOff(

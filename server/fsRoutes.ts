@@ -205,7 +205,7 @@ router.post('/structures/:structureId/mappings/submit-for-review', requireAuth, 
   }
 });
 
-router.post('/structures/:structureId/mappings/review', requireRole('SENIOR', 'MANAGER', 'PARTNER', 'ADMIN'), async (req: AuthenticatedRequest, res: Response) => {
+router.post('/structures/:structureId/mappings/review', requireRole('SENIOR', 'MANAGER', 'PARTNER', 'FIRM_ADMIN'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { structureId } = req.params;
     const { mappingIds, approved, comments } = req.body;
@@ -229,7 +229,7 @@ router.post('/structures/:structureId/mappings/review', requireRole('SENIOR', 'M
   }
 });
 
-router.post('/structures/:structureId/mappings/approve', requireRole('PARTNER', 'ADMIN'), async (req: AuthenticatedRequest, res: Response) => {
+router.post('/structures/:structureId/mappings/approve', requireRole('PARTNER', 'FIRM_ADMIN'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { structureId } = req.params;
     const { mappingIds, comments } = req.body;

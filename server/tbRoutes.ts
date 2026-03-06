@@ -15,12 +15,11 @@ interface AuthRequest extends Request {
 const ROLE_HIERARCHY: Record<UserRole, number> = {
   STAFF: 1,
   SENIOR: 2,
-  TEAM_LEAD: 3,
-  MANAGER: 4,
+  MANAGER: 3,
+  EQCR: 4,
   PARTNER: 5,
-  MANAGING_PARTNER: 6,
-  EQCR: 5,
-  ADMIN: 7
+  FIRM_ADMIN: 6,
+  SUPER_ADMIN: 99,
 };
 
 function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {

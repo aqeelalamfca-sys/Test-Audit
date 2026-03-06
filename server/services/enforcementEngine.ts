@@ -79,12 +79,11 @@ const EXECUTION_SUB_PHASES = ["ADJUSTMENTS", "ADJUSTED_FS"];
 const ROLE_HIERARCHY: Record<UserRole, number> = {
   STAFF: 1,
   SENIOR: 2,
-  TEAM_LEAD: 3,
-  MANAGER: 4,
+  MANAGER: 3,
+  EQCR: 4,
   PARTNER: 5,
-  MANAGING_PARTNER: 5,
-  EQCR: 6,
-  ADMIN: 99,
+  FIRM_ADMIN: 6,
+  SUPER_ADMIN: 99,
 };
 
 const SIGN_OFF_REQUIRED_ROLES: Record<SignOffCategory, UserRole[]> = {

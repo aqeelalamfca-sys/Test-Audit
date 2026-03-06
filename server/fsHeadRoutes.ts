@@ -1003,7 +1003,7 @@ router.post("/api/engagements/:engagementId/fs-heads/:fsHeadKey/signoff", async 
     let updateData: any = {};
     
     if (action === 'prepare') {
-      if (!['STAFF', 'SENIOR', 'TEAM_LEAD'].includes(userRole)) {
+      if (!['STAFF', 'SENIOR'].includes(userRole)) {
         return res.status(403).json({ error: "Only Associate/Senior can mark as prepared" });
       }
       if (workingPaper.status !== 'DRAFT') {

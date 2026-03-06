@@ -150,20 +150,17 @@ router.post("/", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (req:
       return res.status(400).json({ error: "Firm ID is required" });
     }
 
-    if (req.user!.role === "FIRM_ADMIN" && (data.role === "FIRM_ADMIN" || data.role === "FIRM_ADMIN")) {
+    if (req.user!.role === "FIRM_ADMIN" && (data.role === "FIRM_ADMIN")) {
       return res.status(403).json({ error: "Firm Admin cannot create Admin or Firm Admin users. Only Super Admin can assign these roles." });
     }
 
     const roleHierarchy: Record<string, number> = {
       STAFF: 1,
       SENIOR: 2,
-      TEAM_LEAD: 3,
-      MANAGER: 4,
-      MANAGING_PARTNER: 5,
-      PARTNER: 6,
-      EQCR: 7,
-      ADMIN: 8,
-      FIRM_ADMIN: 9,
+      MANAGER: 3,
+      EQCR: 4,
+      PARTNER: 5,
+      FIRM_ADMIN: 6,
     };
     const creatorLevel = roleHierarchy[req.user!.role] || 0;
     const targetLevel = roleHierarchy[data.role as string] || 0;
@@ -231,8 +228,8 @@ router.patch("/:id", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (
     }
 
     const roleHierarchy: Record<string, number> = {
-      STAFF: 1, SENIOR: 2, TEAM_LEAD: 3, MANAGER: 4, MANAGING_PARTNER: 5,
-      PARTNER: 6, EQCR: 7, ADMIN: 8, FIRM_ADMIN: 9,
+      STAFF: 1, SENIOR: 2, MANAGER: 3, EQCR: 4,
+      PARTNER: 5, FIRM_ADMIN: 6,
     };
     const creatorLevel = roleHierarchy[req.user!.role] || 0;
     if (roleHierarchy[existing.role] >= creatorLevel) {
@@ -249,7 +246,7 @@ router.patch("/:id", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), async (
     }
 
     if (data.role) {
-      if (req.user!.role === "FIRM_ADMIN" && (data.role === "FIRM_ADMIN" || data.role === "FIRM_ADMIN")) {
+      if (req.user!.role === "FIRM_ADMIN" && (data.role === "FIRM_ADMIN")) {
         return res.status(403).json({ error: "Firm Admin cannot assign Admin or Firm Admin roles" });
       }
       const targetLevel = roleHierarchy[data.role as string] || 0;

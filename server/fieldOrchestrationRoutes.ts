@@ -272,12 +272,10 @@ router.post("/sign-off/:instanceId", requireAuth, async (req: AuthenticatedReque
     const roleToLevel: Record<string, string[]> = {
       STAFF: ["PREPARED"],
       SENIOR: ["PREPARED"],
-      TEAM_LEAD: ["PREPARED"],
       MANAGER: ["PREPARED", "REVIEWED"],
       EQCR: ["PREPARED", "REVIEWED"],
       PARTNER: ["PREPARED", "REVIEWED", "APPROVED"],
-      MANAGING_PARTNER: ["PREPARED", "REVIEWED", "APPROVED"],
-      ADMIN: ["PREPARED", "REVIEWED", "APPROVED"],
+      FIRM_ADMIN: ["PREPARED", "REVIEWED", "APPROVED"],
     };
 
     const allowedLevels = roleToLevel[userRole] || [];

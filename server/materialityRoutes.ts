@@ -31,8 +31,8 @@ const requireRole = (...roles: string[]) => {
   };
 };
 
-const requireSeniorOrAbove = requireRole('SENIOR', 'MANAGER', 'PARTNER', 'MANAGING_PARTNER', 'ADMIN');
-const requirePartner = requireRole('PARTNER', 'MANAGING_PARTNER', 'ADMIN');
+const requireSeniorOrAbove = requireRole('SENIOR', 'MANAGER', 'PARTNER', 'FIRM_ADMIN');
+const requirePartner = requireRole('PARTNER', 'FIRM_ADMIN');
 
 router.get('/benchmarks/:firmId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {

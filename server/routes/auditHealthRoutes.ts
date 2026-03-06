@@ -243,7 +243,7 @@ router.post("/engagements/:engagementId/lock-for-reporting", requireAuth, async 
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
-    if (req.user!.role !== 'PARTNER' && req.user!.role !== 'ADMIN') {
+    if (req.user!.role !== 'PARTNER' && req.user!.role !== 'FIRM_ADMIN') {
       return res.status(403).json({ error: 'Only Partners can lock audit files' });
     }
 
@@ -271,7 +271,7 @@ router.post("/engagements/:engagementId/partner-override", requireAuth, async (r
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
-    if (req.user!.role !== 'PARTNER' && req.user!.role !== 'ADMIN') {
+    if (req.user!.role !== 'PARTNER' && req.user!.role !== 'FIRM_ADMIN') {
       return res.status(403).json({ error: 'Only Partners can apply overrides' });
     }
 
@@ -310,7 +310,7 @@ router.post("/engagements/:engagementId/request-eqcr", requireAuth, async (req: 
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
-    if (req.user!.role !== 'PARTNER' && req.user!.role !== 'ADMIN' && req.user!.role !== 'MANAGER') {
+    if (req.user!.role !== 'PARTNER' && req.user!.role !== 'FIRM_ADMIN' && req.user!.role !== 'MANAGER') {
       return res.status(403).json({ error: 'Only Partners/Managers can request EQCR' });
     }
 
@@ -342,7 +342,7 @@ router.post("/engagements/:engagementId/approve-report-issuance", requireAuth, a
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
-    if (req.user!.role !== 'PARTNER' && req.user!.role !== 'ADMIN') {
+    if (req.user!.role !== 'PARTNER' && req.user!.role !== 'FIRM_ADMIN') {
       return res.status(403).json({ error: 'Only Partners can approve report issuance' });
     }
 
@@ -384,7 +384,7 @@ router.post("/engagements/:engagementId/ai-recommendation", requireAuth, async (
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
-    if (req.user!.role !== 'PARTNER' && req.user!.role !== 'ADMIN' && req.user!.role !== 'MANAGER') {
+    if (req.user!.role !== 'PARTNER' && req.user!.role !== 'FIRM_ADMIN' && req.user!.role !== 'MANAGER') {
       return res.status(403).json({ error: 'Only Partners/Managers can review AI recommendations' });
     }
 
@@ -425,7 +425,7 @@ router.post("/engagements/:engagementId/gap/:gapId/mark-fixed", requireAuth, asy
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
-    if (req.user!.role !== 'PARTNER' && req.user!.role !== 'ADMIN' && req.user!.role !== 'MANAGER') {
+    if (req.user!.role !== 'PARTNER' && req.user!.role !== 'FIRM_ADMIN' && req.user!.role !== 'MANAGER') {
       return res.status(403).json({ error: 'Only Partners/Managers can mark gaps as fixed' });
     }
 
@@ -457,7 +457,7 @@ router.post("/engagements/:engagementId/gap/:gapId/assign", requireAuth, async (
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
-    if (req.user!.role !== 'PARTNER' && req.user!.role !== 'ADMIN' && req.user!.role !== 'MANAGER') {
+    if (req.user!.role !== 'PARTNER' && req.user!.role !== 'FIRM_ADMIN' && req.user!.role !== 'MANAGER') {
       return res.status(403).json({ error: 'Only Partners/Managers can assign staff to gaps' });
     }
 

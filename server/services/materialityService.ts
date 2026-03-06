@@ -195,7 +195,7 @@ class MaterialityService {
 
   private async getSystemUserId(firmId: string): Promise<string> {
     const adminUser = await prisma.user.findFirst({
-      where: { firmId, role: 'ADMIN', isActive: true },
+      where: { firmId, role: 'FIRM_ADMIN', isActive: true },
       select: { id: true }
     });
     if (adminUser) return adminUser.id;
@@ -484,7 +484,7 @@ class MaterialityService {
       throw new Error('Reviewer cannot approve the same calculation (ISA 220)');
     }
 
-    if (!['PARTNER', 'MANAGING_PARTNER', 'ADMIN'].includes(partnerRole)) {
+    if (!['PARTNER', 'FIRM_ADMIN'].includes(partnerRole)) {
       throw new Error('Only Partners can approve materiality calculations');
     }
 
@@ -554,7 +554,7 @@ class MaterialityService {
       select: { id: true, role: true, partnerPin: true }
     });
 
-    if (!partner || !['PARTNER', 'MANAGING_PARTNER', 'ADMIN'].includes(partner.role)) {
+    if (!partner || !['PARTNER', 'FIRM_ADMIN'].includes(partner.role)) {
       throw new Error('Only Partners can approve materiality overrides');
     }
 
@@ -645,7 +645,7 @@ class MaterialityService {
       throw new Error('Only APPROVED calculations can be published');
     }
 
-    if (!['PARTNER', 'MANAGING_PARTNER', 'ADMIN'].includes(publisherRole)) {
+    if (!['PARTNER', 'FIRM_ADMIN'].includes(publisherRole)) {
       throw new Error('Only Partners can publish materiality thresholds');
     }
 
