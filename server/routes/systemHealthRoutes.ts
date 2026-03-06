@@ -163,7 +163,7 @@ router.get("/system-health", async (req: AuthenticatedRequest, res: Response) =>
       uptime: "uptime",
       memory: "free -h",
       disk: "df -h /",
-      cpu: "mpstat 1 1 2>/dev/null || top -bn1 | grep 'Cpu(s)' | awk '{print $2}' | head -1",
+      cpu: "mpstat 1 1 2>/dev/null || (top -bn1 | grep '%Cpu' | awk '{idle=$8} END {printf \"%.0f\", 100-idle}') || echo '0'",
       cpuCores: "nproc",
       pm2List: "pm2 jlist 2>/dev/null || echo '[]'",
       pm2Status: "pm2 list 2>/dev/null || echo 'PM2 not running'",
