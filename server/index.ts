@@ -485,23 +485,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     }, 10000);
 
     try {
-      const migrated = await prisma.$executeRawUnsafe(`
-        UPDATE "User" SET role = 'SENIOR' WHERE role = 'TEAM_LEAD'
-      `);
-      const migrated2 = await prisma.$executeRawUnsafe(`
-        UPDATE "User" SET role = 'MANAGER' WHERE role = 'MANAGING_PARTNER'
-      `);
-      const migrated3 = await prisma.$executeRawUnsafe(`
-        UPDATE "User" SET role = 'FIRM_ADMIN' WHERE role = 'ADMIN'
-      `);
-      if (migrated > 0 || migrated2 > 0 || migrated3 > 0) {
-        console.log(`[Role Migration] Migrated roles: ${migrated} TEAM_LEAD→SENIOR, ${migrated2} MANAGING_PARTNER→MANAGER, ${migrated3} ADMIN→FIRM_ADMIN`);
-      }
-    } catch (err) {
-      console.error("Role migration (non-critical):", err);
-    }
-
-    try {
       await seedPermissions();
       console.log("Permissions seeded successfully");
     } catch (err) {
