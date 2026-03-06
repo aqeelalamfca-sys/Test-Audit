@@ -500,10 +500,9 @@ export default function Login() {
                       </div>
                       <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
                         {[
-                          { role: "Admin", email: "admin" },
                           { role: "Partner", email: "partner" },
+                          { role: "EQCR", email: "eqcr" },
                           { role: "Manager", email: "manager" },
-                          { role: "Team Lead", email: "teamlead" },
                           { role: "Senior", email: "senior" },
                           { role: "Staff", email: "staff" },
                         ].map((cred) => (

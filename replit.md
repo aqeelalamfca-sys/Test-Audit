@@ -10,7 +10,7 @@ Not specified.
 AuditWise utilizes a modern full-stack architecture with React 18, Vite, TailwindCSS, Radix UI, and React Query for the frontend, and Express.js in TypeScript with PostgreSQL and Prisma ORM for the backend. Session-based authentication is handled via Passport.js.
 
 Key architectural patterns and features include:
-- **Multi-Tenant SaaS Architecture**: Strict tenant isolation with Row-Level Security (RLS) in PostgreSQL, `withTenantContext` helper, and `blockSuperAdmin` middleware. Features invite-based onboarding, a defined role hierarchy, subscription plans with overage pricing, and comprehensive subscription/firm status guards.
+- **Multi-Tenant SaaS Architecture**: Strict tenant isolation with Row-Level Security (RLS) in PostgreSQL, `withTenantContext` helper, and `blockSuperAdmin` middleware. Features invite-based onboarding, a 5-level role hierarchy (STAFF→SENIOR→MANAGER→EQCR→PARTNER) plus FIRM_ADMIN and SUPER_ADMIN, subscription plans with overage pricing, and comprehensive subscription/firm status guards. Role display names: Audit Team, Senior, Manager, Engagement Quality Reviewer, Engagement Partner.
 - **Audit Enforcement Engine**: A global backend service ensuring compliance (ISA 230/ISQM-1) through phase sequencing, gate checks, and immutable audit logging.
 - **Integrated Audit Workspace**: Features a Global EngagementContext, auto-save, AI Assistance, phase gates, Evidence Vault, and cross-phase data linking.
 - **AI Audit Utilities Module**: Integrates AI services for evidence sufficiency analysis, risk-response gap detection, documentation completeness checks, draft memo generation, and AI output persistence with rate limiting.

@@ -64,11 +64,23 @@ npm run build 2>&1 | tail -5
 cp -rn public/* dist/public/ 2>/dev/null || true
 log "Build complete"
 
-echo "[6/7] Syncing database schema..."
+echo "[6/8] Migrating role data (pre-schema)..."
+if [ -f deploy/migrate-roles.sql ]; then
+  DB_PASSWORD="$(get_env POSTGRES_PASSWORD)"
+  DB_NAME="$(echo "$DATABASE_URL" | sed -n 's|.*\/\([^?]*\).*|\1|p')"
+  DB_USER="$(echo "$DATABASE_URL" | sed -n 's|.*\/\/\([^:]*\):.*|\1|p')"
+  if PGPASSWORD="$DB_PASSWORD" psql -h localhost -U "$DB_USER" "$DB_NAME" -f deploy/migrate-roles.sql 2>/dev/null; then
+    log "Role migration complete"
+  else
+    warn "Role migration skipped (may already be done)"
+  fi
+fi
+
+echo "[7/8] Syncing database schema..."
 npx prisma db push --skip-generate 2>&1 | tail -3
 log "Database schema synced"
 
-echo "[7/7] Restarting PM2..."
+echo "[8/8] Restarting PM2..."
 pm2 restart auditwise || pm2 start ecosystem.config.cjs
 pm2 save
 
