@@ -2,6 +2,8 @@ import { Router, type Response, type Request } from "express";
 import { requireAuth, type AuthenticatedRequest } from "../auth";
 import { requireSuperAdmin } from "../middleware/rbacGuard";
 import { Client } from "ssh2";
+import { exec } from "child_process";
+import os from "os";
 import fs from "fs";
 import path from "path";
 
@@ -10,7 +12,7 @@ const router = Router();
 router.use(requireAuth);
 router.use(requireSuperAdmin);
 
-interface SSHCommandResult {
+interface CommandResult {
   stdout: string;
   stderr: string;
   code: number;
@@ -74,7 +76,31 @@ function getSSHConfig() {
   return { host, username, password, privateKey, port };
 }
 
-function executeSSH(command: string, timeoutMs = 15000): Promise<SSHCommandResult> {
+function isLocalMode(): boolean {
+  const { host } = getSSHConfig();
+  if (host) return false;
+  const env = process.env.NODE_ENV || "";
+  return env === "production" || process.env.VPS_LOCAL_MODE === "true";
+}
+
+function executeLocal(command: string, timeoutMs = 15000): Promise<CommandResult> {
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      resolve({ stdout: "", stderr: "Command timeout", code: -2 });
+    }, timeoutMs);
+
+    exec(command, { timeout: timeoutMs, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+      clearTimeout(timeout);
+      resolve({
+        stdout: (stdout || "").trim(),
+        stderr: (stderr || "").trim(),
+        code: error ? (error.code || 1) : 0,
+      });
+    });
+  });
+}
+
+function executeSSH(command: string, timeoutMs = 15000): Promise<CommandResult> {
   return new Promise((resolve) => {
     const { host, username, password, privateKey, port } = getSSHConfig();
 
@@ -123,10 +149,26 @@ function executeSSH(command: string, timeoutMs = 15000): Promise<SSHCommandResul
   });
 }
 
-async function runMultipleCommands(commands: Record<string, string>): Promise<Record<string, SSHCommandResult>> {
-  const results: Record<string, SSHCommandResult> = {};
-  for (const [key, cmd] of Object.entries(commands)) {
-    results[key] = await executeSSH(cmd);
+function executeCommand(command: string, timeoutMs = 15000): Promise<CommandResult> {
+  if (isLocalMode()) {
+    return executeLocal(command, timeoutMs);
+  }
+  return executeSSH(command, timeoutMs);
+}
+
+async function runMultipleCommands(commands: Record<string, string>): Promise<Record<string, CommandResult>> {
+  const results: Record<string, CommandResult> = {};
+  const useLocal = isLocalMode();
+  if (useLocal) {
+    const entries = Object.entries(commands);
+    const promises = entries.map(async ([key, cmd]) => {
+      results[key] = await executeLocal(cmd);
+    });
+    await Promise.all(promises);
+  } else {
+    for (const [key, cmd] of Object.entries(commands)) {
+      results[key] = await executeSSH(cmd);
+    }
   }
   return results;
 }
