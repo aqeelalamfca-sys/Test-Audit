@@ -147,7 +147,7 @@ export default function ClientDetail() {
   const [newDoc, setNewDoc] = useState({ documentType: "", documentName: "", documentNumber: "" });
   const [saving, setSaving] = useState(false);
 
-  const isManager = ["ADMIN", "PARTNER", "MANAGER"].includes(user?.role || "");
+  const isManager = ["FIRM_ADMIN", "PARTNER", "MANAGER"].includes(user?.role || "");
 
   const { data: client, isLoading, error } = useQuery<Client>({
     queryKey: [`/api/clients/${clientId}`],

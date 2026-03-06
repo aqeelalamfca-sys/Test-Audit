@@ -78,7 +78,7 @@ export default function PDFDocumentation() {
   const [pendingAction, setPendingAction] = useState<"print" | "print_with_attachments" | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const isAuthorized = user?.role === "ADMIN" || user?.role === "PARTNER";
+  const isAuthorized = user?.role === "FIRM_ADMIN" || user?.role === "PARTNER";
 
   const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
@@ -166,7 +166,7 @@ export default function PDFDocumentation() {
     if (user?.role === "PARTNER") {
       setPendingAction(withAttachments ? "print_with_attachments" : "print");
       setIsPINDialogOpen(true);
-    } else if (user?.role === "ADMIN") {
+    } else if (user?.role === "FIRM_ADMIN") {
       generatePDFMutation.mutate({ 
         engagementId: selectedEngagementId, 
         withAttachments,

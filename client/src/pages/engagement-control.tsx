@@ -155,7 +155,7 @@ export default function EngagementControl() {
   const [starting, setStarting] = useState(false);
   const [resuming, setResuming] = useState(false);
 
-  const canEditClient = ["ADMIN", "PARTNER", "MANAGER"].includes(user?.role || "");
+  const canEditClient = ["FIRM_ADMIN", "PARTNER", "MANAGER"].includes(user?.role || "");
 
   const { data: engagement, isLoading, error } = useQuery<EngagementControl>({
     queryKey: [`/api/engagements/${engagementId}/control`],

@@ -298,10 +298,10 @@ export default function PrintView() {
     e.target.value = "";
   };
 
-  const canReview = currentUser && ["MANAGER", "PARTNER", "ADMIN"].includes(currentUser.role);
-  const canApprove = currentUser && ["PARTNER", "ADMIN"].includes(currentUser.role);
-  const canIssue = currentUser && ["PARTNER", "ADMIN"].includes(currentUser.role);
-  const canCreate = currentUser && ["SENIOR", "MANAGER", "PARTNER", "ADMIN"].includes(currentUser.role);
+  const canReview = currentUser && ["MANAGER", "PARTNER", "FIRM_ADMIN"].includes(currentUser.role);
+  const canApprove = currentUser && ["PARTNER", "FIRM_ADMIN"].includes(currentUser.role);
+  const canIssue = currentUser && ["PARTNER", "FIRM_ADMIN"].includes(currentUser.role);
+  const canCreate = currentUser && ["SENIOR", "MANAGER", "PARTNER", "FIRM_ADMIN"].includes(currentUser.role);
 
   const handleExportPDF = async (deliverable: Deliverable) => {
     const clientName = engagement?.client?.name || "Client";

@@ -87,7 +87,7 @@ export default function FirmWideControls() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const isAdmin = user?.role === "ADMIN" || user?.role === "PARTNER";
+  const isAdmin = user?.role === "FIRM_ADMIN" || user?.role === "PARTNER";
   const isManager = user?.role === "MANAGER" || isAdmin;
 
   // Initialize activeTab from localStorage to preserve state during page refresh
