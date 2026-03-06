@@ -1,22 +1,23 @@
-FROM node:20-alpine AS build
-RUN apk add --no-cache python3 make g++
+FROM node:20-alpine AS base
+RUN apk add --no-cache openssl bash
 WORKDIR /app
 
+FROM base AS deps
 COPY package.json package-lock.json* ./
 RUN if [ -f package-lock.json ]; then \
       npm ci --maxsockets 5; \
     else \
       npm install --maxsockets 5; \
     fi
-
 COPY prisma ./prisma/
 RUN NODE_OPTIONS="--max-old-space-size=2048" npx prisma generate
 
+FROM deps AS build
 COPY . .
 ENV NODE_ENV=production
-RUN NODE_OPTIONS="--max-old-space-size=2048" npx vite build --outDir /app/dist/public
-RUN cp -rn public/* /app/dist/public/ 2>/dev/null || true
-RUN ls -la /app/dist/public/index.html
+RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
+RUN cp -rn public/* dist/public/ 2>/dev/null || true
+RUN ls -la dist/public/index.html
 
 FROM nginx:1.27-alpine AS production
 
@@ -30,7 +31,7 @@ RUN chown -R nginx:nginx /usr/share/nginx/html && \
 
 EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:3000/ || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
