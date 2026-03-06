@@ -1,14 +1,17 @@
 # =============================================================
-# AuditWise — Combined Dockerfile (Legacy / Single-Container)
-# For the 4-service architecture, use:
-#   docker/backend.Dockerfile  — Express API (port 5000)
-#   docker/frontend.Dockerfile — React app (port 3000)
+# AuditWise Backend — Multi-Stage Production Build
+# Produces a minimal Node.js image running the Express API
+# on port 5000
 # =============================================================
 
+# ── Stage 1: Base image with system dependencies ────────────
 FROM node:20-slim AS base
-RUN apt-get update && apt-get install -y openssl ca-certificates curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y openssl ca-certificates curl && \
+    rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
+# ── Stage 2: Install ALL dependencies (needed for build) ────
 FROM base AS deps
 COPY package.json package-lock.json* ./
 RUN if [ -f package-lock.json ]; then \
@@ -19,6 +22,7 @@ RUN if [ -f package-lock.json ]; then \
 COPY prisma ./prisma/
 RUN NODE_OPTIONS="--max-old-space-size=2048" npx prisma generate
 
+# ── Stage 3: Build backend + frontend ───────────────────────
 FROM deps AS build
 COPY . .
 ENV NODE_ENV=production
@@ -26,6 +30,7 @@ RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
 RUN cp -rn public/* dist/public/ 2>/dev/null || true
 RUN ls -la dist/index.cjs dist/public/index.html
 
+# ── Stage 4: Production-only dependencies ────────────────────
 FROM base AS proddeps
 COPY package.json package-lock.json* ./
 RUN if [ -f package-lock.json ]; then \
@@ -36,9 +41,12 @@ RUN if [ -f package-lock.json ]; then \
 COPY prisma ./prisma/
 RUN NODE_OPTIONS="--max-old-space-size=2048" npx prisma generate
 
+# ── Stage 5: Final production image ─────────────────────────
 FROM base AS production
 ENV NODE_ENV=production
-RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+
+RUN addgroup --system appgroup && \
+    adduser --system --ingroup appgroup appuser
 
 COPY --from=proddeps /app/node_modules ./node_modules
 COPY --from=proddeps /app/prisma ./prisma
