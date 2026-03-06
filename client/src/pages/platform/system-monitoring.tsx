@@ -230,8 +230,8 @@ export default function SystemMonitoring() {
   return (
     <div className="h-full flex flex-col bg-gray-950 text-gray-200 font-mono overflow-hidden" data-testid="system-monitoring-page">
 
-      <div className={`flex-shrink-0 border-b ${statusBorder} bg-gradient-to-r ${statusBg} to-transparent px-4 py-2`}>
-        <div className="flex items-center justify-between">
+      <div className={`flex-shrink-0 border-b ${statusBorder} bg-gradient-to-r ${statusBg} to-transparent px-3 md:px-4 py-2`}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className={`h-8 w-8 rounded-lg border ${statusBorder} bg-gray-900 flex items-center justify-center`}>
@@ -261,8 +261,8 @@ export default function SystemMonitoring() {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-gray-500 tabular-nums mr-2">{timeStr}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] text-gray-500 tabular-nums mr-2 hidden sm:inline">{timeStr}</span>
 
             {data?.server?.ip && (
               <Badge className="bg-gray-800 text-gray-400 border-gray-700 text-[9px] font-mono hover:bg-gray-700" data-testid="badge-ip">
@@ -335,9 +335,9 @@ export default function SystemMonitoring() {
 
       <div className="flex-1 overflow-auto p-3 space-y-3">
 
-        <div className="grid grid-cols-12 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
 
-          <div className="col-span-3" data-testid="resource-gauges">
+          <div className="col-span-1 md:col-span-3" data-testid="resource-gauges">
             <Panel title="SYSTEM RESOURCES" icon={Cpu} accent="cyan">
               {data?.resources ? (
                 <div className="flex items-center justify-around py-2">
@@ -357,7 +357,7 @@ export default function SystemMonitoring() {
             </Panel>
           </div>
 
-          <div className="col-span-5" data-testid="card-deployment-pipeline">
+          <div className="col-span-1 md:col-span-5" data-testid="card-deployment-pipeline">
             <Panel title="DEPLOYMENT PIPELINE" icon={Rocket} accent="blue">
               {isDeploying && (
                 <div className="px-2 mb-2">
@@ -428,7 +428,7 @@ export default function SystemMonitoring() {
             </Panel>
           </div>
 
-          <div className="col-span-4" data-testid="health-checks-grid">
+          <div className="col-span-1 md:col-span-4" data-testid="health-checks-grid">
             <Panel title="HEALTH PROBES" icon={Activity} accent="emerald">
               <div className="grid grid-cols-2 gap-2 px-1">
                 <ProbeCard label="HTTP" ok={!!pingData?.reachable} detail={pingData?.reachable ? `${pingData.httpStatus}` : (pingData?.error?.substring(0, 20) || "N/A")} icon={Globe} />
@@ -441,9 +441,9 @@ export default function SystemMonitoring() {
         </div>
 
         {showIntel && (
-          <div className="grid grid-cols-12 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3">
 
-            <div className="col-span-3" data-testid="card-services">
+            <div className="col-span-1 md:col-span-3" data-testid="card-services">
               <Panel title="SERVICES" icon={Layers} accent="violet">
                 <div className="space-y-0.5 px-1">
                   <SvcRow name="Nginx" active={data?.services?.nginx === "active"} />
@@ -458,7 +458,7 @@ export default function SystemMonitoring() {
               </Panel>
             </div>
 
-            <div className="col-span-3" data-testid="card-repository">
+            <div className="col-span-1 md:col-span-3" data-testid="card-repository">
               <Panel title="SOURCE INTEL" icon={GitBranch} accent="purple">
                 {data?.git ? (
                   <div className="space-y-0.5 px-1">
@@ -479,7 +479,7 @@ export default function SystemMonitoring() {
               </Panel>
             </div>
 
-            <div className="col-span-3" data-testid="card-application">
+            <div className="col-span-1 md:col-span-3" data-testid="card-application">
               <Panel title="RUNTIME" icon={Container} accent="teal">
                 {data?.application?.pm2Processes && data.application.pm2Processes.length > 0 ? (
                   <div className="space-y-1.5 px-1">
@@ -526,7 +526,7 @@ export default function SystemMonitoring() {
               </Panel>
             </div>
 
-            <div className="col-span-3" data-testid="card-security">
+            <div className="col-span-1 md:col-span-3" data-testid="card-security">
               <Panel title="SECURITY" icon={Shield} accent="red">
                 <div className="space-y-1.5 px-1">
                   <div className="flex items-center justify-between">
@@ -566,8 +566,8 @@ export default function SystemMonitoring() {
         )}
 
         {showIntel && data?.deployment && (
-          <div className="grid grid-cols-12 gap-3" data-testid="card-deployment">
-            <div className="col-span-12">
+          <div className="grid grid-cols-1 gap-3" data-testid="card-deployment">
+            <div className="col-span-1">
               <Panel title="DEPLOYMENT INTEL" icon={Zap} accent="amber">
                 <div className="grid grid-cols-3 gap-4 px-1">
                   <div>
