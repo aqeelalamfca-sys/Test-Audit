@@ -292,14 +292,11 @@ export function getRoleDisplayLabel(role: string | undefined | null): string {
   const labels: Record<string, string> = {
     super_admin: "Super Admin",
     firm_admin: "Firm Admin",
-    admin: "Firm Admin",
-    partner: "Partner",
-    managing_partner: "Managing Partner",
-    eqcr: "EQCR",
+    partner: "Engagement Partner",
+    eqcr: "Engagement Quality Reviewer",
     manager: "Manager",
-    team_lead: "Team Lead",
     senior: "Senior",
-    staff: "Staff",
+    staff: "Audit Team",
     read_only: "Read Only",
     client: "Client",
   };

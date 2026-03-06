@@ -54,7 +54,7 @@ function mapRoleToTeamRole(role: string): "associate" | "senior" | "manager" | "
   const r = (role || "").toLowerCase();
   if (r.includes("partner")) return "partner";
   if (r.includes("manager")) return "manager";
-  if (r.includes("senior") || r.includes("teamlead") || r.includes("team_lead")) return "senior";
+  if (r.includes("senior")) return "senior";
   if (r.includes("eqcr")) return "eqcr";
   if (r.includes("staff") || r.includes("associate") || r.includes("junior")) return "associate";
   return "";

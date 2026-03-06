@@ -108,15 +108,12 @@ interface RoleBadgeProps {
 
 const roleConfig: Record<string, { label: string; className: string }> = {
   super_admin: { label: "Super Admin", className: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400" },
-  firm_admin: { label: "Firm Admin", className: "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400" },
-  admin: { label: "Admin", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
-  partner: { label: "Partner", className: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
-  managing_partner: { label: "Managing Partner", className: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
-  eqcr: { label: "EQCR", className: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
+  firm_admin: { label: "Firm Admin", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
+  partner: { label: "Engagement Partner", className: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
+  eqcr: { label: "Engagement Quality Reviewer", className: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" },
   manager: { label: "Manager", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
-  team_lead: { label: "Team Lead", className: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400" },
   senior: { label: "Senior", className: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400" },
-  staff: { label: "Staff", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+  staff: { label: "Audit Team", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
   read_only: { label: "Read Only", className: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400" },
   client: { label: "Client", className: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400" },
 };
