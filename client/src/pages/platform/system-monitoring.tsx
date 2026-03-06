@@ -588,7 +588,33 @@ export default function SystemMonitoring() {
                   <InfoRow label="NPM" value={data.application.npmVersion} compact />
                 </div>
               </>
-            ) : <EmptyState text="No PM2 processes detected" />}
+            ) : data?.application?.dockerContainers && data.application.dockerContainers.length > 0 ? (
+              <>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Docker Containers</p>
+                {data.application.dockerContainers.map((c, i) => {
+                  const isUp = c.status.toLowerCase().includes("up");
+                  return (
+                    <div key={i} className="rounded-lg border p-3 space-y-1" data-testid={`docker-container-${c.name}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <StatusDot status={isUp ? "green" : "red"} />
+                          <span className="font-medium text-sm">{c.name}</span>
+                        </div>
+                        <Badge variant={isUp ? "default" : "destructive"} className={isUp ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/10" : ""}>
+                          {isUp ? "Running" : "Stopped"}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground">{c.status}</div>
+                      {c.ports && <div className="text-[10px] font-mono text-muted-foreground truncate" title={c.ports}>{c.ports}</div>}
+                    </div>
+                  );
+                })}
+                <div className="border-t pt-2 grid grid-cols-2 gap-2">
+                  <InfoRow label="Node.js" value={data.application.nodeVersion} compact />
+                  <InfoRow label="NPM" value={data.application.npmVersion} compact />
+                </div>
+              </>
+            ) : <EmptyState text="No PM2 processes or Docker containers detected" />}
           </CardContent>
         </Card>
       </div>
@@ -608,6 +634,9 @@ export default function SystemMonitoring() {
             <ServiceBadge name="PostgreSQL" status={data?.services?.postgresql || "unknown"} />
             {data?.application?.pm2Processes?.map((proc, i) => (
               <ServiceBadge key={i} name={`PM2: ${proc.name}`} status={proc.status} />
+            ))}
+            {data?.application?.dockerContainers?.map((c, i) => (
+              <ServiceBadge key={`docker-${i}`} name={`Docker: ${c.name}`} status={c.status.toLowerCase().includes("up") ? "active" : "stopped"} />
             ))}
           </CardContent>
         </Card>
