@@ -82,9 +82,9 @@ export default function EngagementAllocation() {
     queryKey: ["/api/users"],
   });
 
-  const partners = users?.filter(u => u.role === "PARTNER" || u.role === "MANAGING_PARTNER") || [];
-  const managers = users?.filter(u => u.role === "MANAGER" || u.role === "TEAM_LEAD") || [];
-  const seniors = users?.filter(u => u.role === "SENIOR" || u.role === "TEAM_LEAD") || [];
+  const partners = users?.filter(u => u.role === "PARTNER") || [];
+  const managers = users?.filter(u => u.role === "MANAGER") || [];
+  const seniors = users?.filter(u => u.role === "SENIOR") || [];
   const staff = users?.filter(u => u.role === "STAFF" || u.role === "SENIOR") || [];
   const eqcrs = users?.filter(u => u.role === "EQCR") || [];
 

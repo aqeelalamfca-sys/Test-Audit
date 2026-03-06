@@ -62,14 +62,12 @@ export default function FirmUsers() {
   });
 
   const roleColor: Record<string, string> = {
-    ADMIN: "bg-red-100 text-red-800",
+    FIRM_ADMIN: "bg-red-100 text-red-800",
     PARTNER: "bg-purple-100 text-purple-800",
-    MANAGING_PARTNER: "bg-purple-100 text-purple-800",
+    EQCR: "bg-amber-100 text-amber-800",
     MANAGER: "bg-blue-100 text-blue-800",
-    TEAM_LEAD: "bg-cyan-100 text-cyan-800",
     SENIOR: "bg-green-100 text-green-800",
     STAFF: "bg-gray-100 text-gray-800",
-    EQCR: "bg-amber-100 text-amber-800",
   };
 
   const statusColor: Record<string, string> = {

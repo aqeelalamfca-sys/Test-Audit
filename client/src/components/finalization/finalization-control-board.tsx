@@ -95,9 +95,9 @@ export function FinalizationControlBoard() {
 
   const board = boardResponse?.board;
   const userRole = user?.role || "STAFF";
-  const isAssociate = ["STAFF", "SENIOR", "TEAM_LEAD"].includes(userRole);
+  const isAssociate = ["STAFF", "SENIOR"].includes(userRole);
   const isManager = userRole === "MANAGER";
-  const isPartner = ["PARTNER", "MANAGING_PARTNER", "ADMIN"].includes(userRole);
+  const isPartner = ["PARTNER", "FIRM_ADMIN"].includes(userRole);
 
   const scopeLabel = isAssociate ? "Your Items" : isManager ? "Team View" : "Engagement Summary";
 

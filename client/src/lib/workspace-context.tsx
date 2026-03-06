@@ -168,8 +168,8 @@ export const WORKSPACE_PHASES: WorkspacePhase[] = [
 ];
 
 export const RESTRICTED_PHASE_ROLES: Record<string, string[]> = {
-  "eqcr": ["ADMIN", "PARTNER", "MANAGING_PARTNER", "MANAGER", "EQCR"],
-  "inspection": ["ADMIN", "PARTNER", "MANAGING_PARTNER", "MANAGER", "EQCR"],
+  "eqcr": ["FIRM_ADMIN", "PARTNER", "MANAGER", "EQCR"],
+  "inspection": ["FIRM_ADMIN", "PARTNER", "MANAGER", "EQCR"],
 };
 
 export function isPhaseVisible(phaseKey: string, userRole: string): boolean {

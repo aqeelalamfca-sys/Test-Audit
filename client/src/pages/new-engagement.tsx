@@ -186,9 +186,9 @@ export default function NewEngagement() {
     },
   });
 
-  const partners = firmUsers.filter(u => ["PARTNER", "MANAGING_PARTNER", "EQCR"].includes(u.role));
-  const managers = firmUsers.filter(u => ["MANAGER", "TEAM_LEAD", "PARTNER", "MANAGING_PARTNER"].includes(u.role));
-  const eqcrPartners = firmUsers.filter(u => ["EQCR", "PARTNER", "MANAGING_PARTNER"].includes(u.role));
+  const partners = firmUsers.filter(u => ["PARTNER", "EQCR"].includes(u.role));
+  const managers = firmUsers.filter(u => ["MANAGER", "PARTNER"].includes(u.role));
+  const eqcrPartners = firmUsers.filter(u => ["EQCR", "PARTNER"].includes(u.role));
 
   const form = useForm<EngagementFormData>({
     resolver: zodResolver(engagementFormSchema),

@@ -120,7 +120,7 @@ const noteTypeConfig: Record<string, { label: string; color: string }> = {
   TODO: { label: "To-Do", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300" },
 };
 
-const MANAGER_ROLES = ["ADMIN", "PARTNER", "MANAGING_PARTNER", "MANAGER", "EQCR", "FIRM_ADMIN", "SENIOR_MANAGER"];
+const MANAGER_ROLES = ["PARTNER", "MANAGER", "EQCR", "FIRM_ADMIN"];
 
 function getInitials(name: string) {
   return name

@@ -1358,7 +1358,7 @@ export const STANDARDS_MAP: StandardConfig[] = [
       "WP-ISQM1: Quality Management System Compliance Review",
       "WP-ISQM1A: Engagement Quality Review Checklist"
     ],
-    roleApprovals: { preparer: "AUDIT_MANAGER", reviewer: "ENGAGEMENT_PARTNER", approver: "MANAGING_PARTNER" },
+    roleApprovals: { preparer: "AUDIT_MANAGER", reviewer: "ENGAGEMENT_PARTNER", approver: "PARTNER" },
     isStageGate: true,
     noReportBlocker: false,
     category: "Quality Management",
@@ -1393,7 +1393,7 @@ export const STANDARDS_MAP: StandardConfig[] = [
       "WP-IESBA-A: Independence Declaration Schedule",
       "WP-IESBA-B: Threats & Safeguards Analysis"
     ],
-    roleApprovals: { preparer: "AUDIT_MANAGER", reviewer: "ENGAGEMENT_PARTNER", approver: "MANAGING_PARTNER" },
+    roleApprovals: { preparer: "AUDIT_MANAGER", reviewer: "ENGAGEMENT_PARTNER", approver: "PARTNER" },
     isStageGate: true,
     noReportBlocker: false,
     category: "Quality Management",

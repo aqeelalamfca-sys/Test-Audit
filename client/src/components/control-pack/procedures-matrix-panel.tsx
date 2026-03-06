@@ -168,12 +168,10 @@ const STATUS_WORKFLOW: ProcedureStatus[] = ["PLANNED", "IN_PROGRESS", "COMPLETED
 const ROLE_HIERARCHY: Record<string, number> = {
   STAFF: 1,
   SENIOR: 2,
-  TEAM_LEAD: 3,
-  MANAGER: 4,
-  MANAGING_PARTNER: 5,
-  PARTNER: 6,
-  EQCR: 7,
-  ADMIN: 8,
+  MANAGER: 3,
+  EQCR: 4,
+  PARTNER: 5,
+  FIRM_ADMIN: 6,
 };
 
 function hasMinRole(userRole: string, minRole: string): boolean {

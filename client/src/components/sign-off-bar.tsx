@@ -107,10 +107,10 @@ const STATUS_CONFIG: Record<SignOffStatus, {
   },
 };
 
-const ROLE_CAN_PREPARE = ["STAFF", "SENIOR", "TEAM_LEAD", "ADMIN"];
-const ROLE_CAN_REVIEW = ["MANAGER", "ADMIN"];
-const ROLE_CAN_APPROVE = ["PARTNER", "MANAGING_PARTNER", "ADMIN"];
-const ROLE_CAN_UNLOCK = ["ADMIN"];
+const ROLE_CAN_PREPARE = ["STAFF", "SENIOR", "FIRM_ADMIN"];
+const ROLE_CAN_REVIEW = ["MANAGER", "FIRM_ADMIN"];
+const ROLE_CAN_APPROVE = ["PARTNER", "FIRM_ADMIN"];
+const ROLE_CAN_UNLOCK = ["FIRM_ADMIN"];
 
 function formatTimestampPKT(dateStr: string | null | undefined): string {
   if (!dateStr) return "";

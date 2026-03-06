@@ -243,16 +243,12 @@ export default function UserManagement() {
 
   const getRoleBadgeColor = (role: string) => {
     switch (role?.toUpperCase()) {
-      case "ADMIN":
+      case "FIRM_ADMIN":
         return "bg-red-100 text-red-700 border-0";
       case "PARTNER":
         return "bg-purple-100 text-purple-700 border-0";
-      case "MANAGING_PARTNER":
-        return "bg-indigo-100 text-indigo-700 border-0";
       case "MANAGER":
         return "bg-blue-100 text-blue-700 border-0";
-      case "TEAM_LEAD":
-        return "bg-teal-100 text-teal-700 border-0";
       case "SENIOR":
         return "bg-green-100 text-green-700 border-0";
       case "EQCR":

@@ -96,7 +96,7 @@ const signOffLevelConfig: Record<string, { label: string; variant: "default" | "
   APPROVED: { label: "Approved", variant: "default" },
 };
 
-const roleHierarchy = ["STAFF", "SENIOR", "TEAM_LEAD", "MANAGER", "EQCR", "PARTNER", "MANAGING_PARTNER", "ADMIN"];
+const roleHierarchy = ["STAFF", "SENIOR", "MANAGER", "EQCR", "PARTNER", "FIRM_ADMIN"];
 
 function canUserEdit(userRole: string, minRoleToEdit?: string | null): boolean {
   if (!minRoleToEdit) return true;
@@ -109,12 +109,10 @@ function canUserSignOff(userRole: string, level: string): boolean {
   const roleToLevels: Record<string, string[]> = {
     STAFF: ["PREPARED"],
     SENIOR: ["PREPARED"],
-    TEAM_LEAD: ["PREPARED"],
     MANAGER: ["PREPARED", "REVIEWED"],
     EQCR: ["PREPARED", "REVIEWED"],
     PARTNER: ["PREPARED", "REVIEWED", "APPROVED"],
-    MANAGING_PARTNER: ["PREPARED", "REVIEWED", "APPROVED"],
-    ADMIN: ["PREPARED", "REVIEWED", "APPROVED"],
+    FIRM_ADMIN: ["PREPARED", "REVIEWED", "APPROVED"],
   };
   return (roleToLevels[userRole] || []).includes(level);
 }

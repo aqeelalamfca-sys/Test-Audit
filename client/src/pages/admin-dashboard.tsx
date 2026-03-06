@@ -55,14 +55,11 @@ interface UserSummary {
 }
 
 const roleHierarchy = [
-  { role: "ADMIN", label: "Administrator", description: "Full system access and configuration", permissions: ["All permissions"] },
-  { role: "PARTNER", label: "Partner", description: "Engagement oversight and final approvals", permissions: ["Approve engagements", "Lock phases", "View all data"] },
-  { role: "MANAGING_PARTNER", label: "Managing Partner", description: "Firm-wide management", permissions: ["Manage firm settings", "Approve engagements", "View reports"] },
-  { role: "EQCR", label: "EQCR Reviewer", description: "Engagement Quality Control Review", permissions: ["EQCR reviews", "Approve phase locks", "Quality oversight"] },
-  { role: "MANAGER", label: "Manager", description: "Team and engagement management", permissions: ["Manage teams", "Review work", "Approve checklists"] },
-  { role: "TEAM_LEAD", label: "Team Lead", description: "Lead audit teams", permissions: ["Assign tasks", "Review team work", "Manage workpapers"] },
-  { role: "SENIOR", label: "Senior Auditor", description: "Lead field work and supervise staff", permissions: ["Execute procedures", "Prepare workpapers", "Train staff"] },
-  { role: "STAFF", label: "Staff Auditor", description: "Entry-level audit work", permissions: ["Execute assigned tasks", "Prepare documentation", "Upload evidence"] },
+  { role: "PARTNER", label: "Engagement Partner", description: "Final review, approval, sign-off, overall engagement responsibility", permissions: ["Approve engagements", "Lock phases", "View all data", "Final sign-off"] },
+  { role: "EQCR", label: "Engagement Quality Reviewer", description: "Independent review access, challenge/comment, no edit rights", permissions: ["EQCR reviews", "Quality oversight", "Challenge conclusions"] },
+  { role: "MANAGER", label: "Manager", description: "Planning, supervision, review rights, budget/timeline management", permissions: ["Manage teams", "Review work", "Approve checklists", "Planning approval"] },
+  { role: "SENIOR", label: "Senior", description: "Workpaper preparation, initial review, team support", permissions: ["Execute procedures", "Prepare workpapers", "Initial review"] },
+  { role: "STAFF", label: "Audit Team", description: "Workpaper completion, task execution", permissions: ["Execute assigned tasks", "Prepare documentation", "Upload evidence"] },
 ];
 
 export default function AdminDashboard() {
@@ -74,17 +71,17 @@ export default function AdminDashboard() {
 
   const { data: adminStats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
-    enabled: !!token && user?.role === "ADMIN",
+    enabled: !!token && user?.role === "FIRM_ADMIN",
   });
 
   const { data: userSummary, isLoading: usersLoading } = useQuery<UserSummary>({
     queryKey: ["/api/admin/users-summary"],
-    enabled: !!token && user?.role === "ADMIN",
+    enabled: !!token && user?.role === "FIRM_ADMIN",
   });
 
   const { data: auditLogs } = useQuery<{ logs: AuditLog[]; pagination: any }>({
     queryKey: ["/api/admin/audit-logs"],
-    enabled: !!token && user?.role === "ADMIN",
+    enabled: !!token && user?.role === "FIRM_ADMIN",
   });
 
   const initializeData = useMutation({
@@ -122,7 +119,7 @@ export default function AdminDashboard() {
 
   const stats = adminStats?.stats || { totalUsers: 0, totalClients: 0, totalEngagements: 0, activeSessions: 0 };
 
-  if (user?.role !== "ADMIN") {
+  if (user?.role !== "FIRM_ADMIN") {
     return (
       <div className="px-4 py-3">
         <Card className="border-red-200 bg-red-50">

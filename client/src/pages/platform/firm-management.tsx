@@ -610,9 +610,7 @@ export default function FirmManagement() {
                   <SelectTrigger data-testid="select-invite-role"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="FIRM_ADMIN">Firm Admin</SelectItem>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                    <SelectItem value="PARTNER">Partner</SelectItem>
-                    <SelectItem value="MANAGING_PARTNER">Managing Partner</SelectItem>
+                    <SelectItem value="PARTNER">Engagement Partner</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

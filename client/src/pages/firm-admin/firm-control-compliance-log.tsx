@@ -276,15 +276,12 @@ function LogsTab() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Roles</SelectItem>
-            <SelectItem value="PARTNER">Partner</SelectItem>
-            <SelectItem value="MANAGING_PARTNER">Managing Partner</SelectItem>
+            <SelectItem value="PARTNER">Engagement Partner</SelectItem>
+            <SelectItem value="EQCR">Engagement Quality Reviewer</SelectItem>
             <SelectItem value="MANAGER">Manager</SelectItem>
-            <SelectItem value="TEAM_LEAD">Team Lead</SelectItem>
             <SelectItem value="SENIOR">Senior</SelectItem>
-            <SelectItem value="STAFF">Staff</SelectItem>
-            <SelectItem value="ADMIN">Admin</SelectItem>
+            <SelectItem value="STAFF">Audit Team</SelectItem>
             <SelectItem value="FIRM_ADMIN">Firm Admin</SelectItem>
-            <SelectItem value="EQCR">EQCR</SelectItem>
           </SelectContent>
         </Select>
         <Select value={domainFilter} onValueChange={(v) => { setDomainFilter(v); setPage(1); }}>
