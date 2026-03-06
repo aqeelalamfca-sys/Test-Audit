@@ -265,7 +265,7 @@ export async function generateGuidance(
   
   const template = HEAD_OF_ACCOUNTS_TEMPLATES[request.headOfAccounts] || HEAD_OF_ACCOUNTS_TEMPLATES.OTHER;
   
-  if (!process.env.OPENAI_API_KEY) {
+  if (!(process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY)) {
     if (engagementId) {
       await prisma.aIAssistanceLog.create({
         data: {
@@ -368,7 +368,7 @@ export async function checkCompleteness(
   
   const baseScore = calculateBaseCompletenessScore(request);
   
-  if (!process.env.OPENAI_API_KEY) {
+  if (!(process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY)) {
     if (requestId) {
       await prisma.aIAssistanceLog.create({
         data: {

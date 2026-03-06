@@ -115,7 +115,7 @@ async function generateAISuggestions(
   phase: string,
   section: string
 ): Promise<Record<string, FieldSuggestion>> {
-  const openaiKey = process.env.OPENAI_API_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
   if (!openaiKey) {
     const fallback: Record<string, FieldSuggestion> = {};
     for (const key of fieldKeys) {
