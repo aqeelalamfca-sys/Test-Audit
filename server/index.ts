@@ -58,6 +58,7 @@ import { seedSuperAdmin } from "./seeds/seedSuperAdmin";
 import { seedPlans } from "./seeds/seedPlans";
 import { enableRLS } from "./scripts/enable-rls";
 import platformRoutes from "./routes/platformRoutes";
+import systemHealthRoutes from "./routes/systemHealthRoutes";
 import tenantRoutes from "./routes/tenantRoutes";
 import { globalRateLimit } from "./middleware/rateLimiter";
 import { superAdminIpGuard } from "./middleware/superAdminIpAllowlist";
@@ -410,6 +411,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
   // Multi-tenant platform & tenant routes
   app.use("/api/platform", platformRoutes);
+  app.use("/api/platform", systemHealthRoutes);
   app.use("/api/tenant", tenantRoutes);
   
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
