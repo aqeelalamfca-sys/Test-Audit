@@ -196,7 +196,7 @@ export default function SystemMonitoring() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full bg-[#0a0e1a]" data-testid="loading-system-monitor">
+      <div className="flex items-center justify-center h-full min-h-screen bg-[#0a0e1a]" data-testid="loading-system-monitor">
         <div className="text-center space-y-3">
           <div className="relative mx-auto w-14 h-14">
             <div className="absolute inset-0 rounded-full border-2 border-cyan-500/30" />
@@ -227,7 +227,7 @@ export default function SystemMonitoring() {
   const timeStr = now.toLocaleTimeString("en-US", { hour12: false });
 
   return (
-    <div className="h-full flex flex-col bg-[#0a0e1a] text-gray-200 font-mono overflow-hidden" data-testid="system-monitoring-page">
+    <div className="h-full min-h-screen flex flex-col bg-[#0a0e1a] text-gray-200 font-mono overflow-hidden" data-testid="system-monitoring-page">
 
       <div className={`flex-shrink-0 border-b ${statusBorder} bg-gradient-to-r ${statusBg} to-transparent px-3 py-1.5`}>
         <div className="flex flex-wrap items-center justify-between gap-1">
