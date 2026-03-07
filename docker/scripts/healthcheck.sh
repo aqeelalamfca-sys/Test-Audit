@@ -2,7 +2,7 @@
 set -euo pipefail
 
 BACKEND_URL="${1:-http://localhost:5000}"
-FRONTEND_URL="${2:-http://localhost:3000}"
+FRONTEND_URL="${2:-http://localhost:80}"
 NGINX_URL="${3:-http://localhost:80}"
 
 echo "=== AuditWise Health Check ==="

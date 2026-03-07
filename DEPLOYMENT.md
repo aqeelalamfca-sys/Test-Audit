@@ -16,7 +16,7 @@ Replit (Dev) → GitHub (Source) → GitHub Actions (CI/CD) → GHCR (Docker Ima
                        ▼           ▼
               ┌──────────┐  ┌──────────┐
               │ Backend  │  │ Frontend │
-              │ :5000    │  │ :3000    │
+              │ :5000    │  │ :80      │
               │ Node 20  │  │ Nginx    │
               └────┬─────┘  └──────────┘
                    │
@@ -115,8 +115,8 @@ Required variables:
 |---------|-----------|------|-------|-------------|
 | PostgreSQL 16 | auditwise-db | 5432 | `postgres:16-alpine` | Database with persistent volume |
 | Backend | auditwise-backend | 5000 | `ghcr.io/.../auditwise-backend` | Node.js + Express + Prisma |
-| Frontend | auditwise-frontend | 3000 | `ghcr.io/.../auditwise-frontend` | React SPA via Nginx Alpine |
-| Nginx Proxy | auditwise-nginx | 80/443 | `nginx:1.27-alpine` | Reverse proxy + SSL termination |
+| Frontend | auditwise-frontend | 80 | `ghcr.io/.../auditwise-frontend` | React SPA via Nginx Alpine |
+| Nginx Proxy | auditwise-nginx | 443 | `nginx:1.27-alpine` | SSL termination + HTTPS proxy |
 
 ## What deploy.sh Does (10 Steps, Idempotent)
 
@@ -228,7 +228,7 @@ Set in GitHub repo → Settings → Secrets → Actions:
 │   ├── backend.Dockerfile       # Multi-stage: Node 20 Alpine
 │   ├── frontend.Dockerfile      # Multi-stage: Node 20 Alpine → Nginx Alpine
 │   ├── docker-entrypoint.sh     # Runtime: env validate → DB wait → migrate → start
-│   ├── frontend-nginx.conf      # Frontend static file server (port 3000)
+│   ├── frontend-nginx.conf      # Frontend static file server (port 80)
 │   └── scripts/
 │       ├── build.sh
 │       ├── deploy.sh
