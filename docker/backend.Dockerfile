@@ -48,7 +48,7 @@ USER appuser
 
 EXPOSE 5000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=5 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
   CMD curl -sf http://localhost:5000/api/health || exit 1
 
 ENTRYPOINT ["./docker-entrypoint.sh"]

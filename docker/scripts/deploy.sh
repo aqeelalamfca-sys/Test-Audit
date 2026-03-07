@@ -59,7 +59,7 @@ docker compose -f "$COMPOSE_FILE" up -d nginx
 echo ""
 echo "=== Deployment Complete ==="
 echo "  Backend:  http://localhost:5000/api/health"
-echo "  Frontend: http://localhost:80"
+echo "  Frontend: http://localhost:3000"
 echo "  Nginx:    http://localhost:80"
 echo ""
 echo "Commands:"
