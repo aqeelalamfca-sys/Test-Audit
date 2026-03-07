@@ -1,0 +1,247 @@
+AuditWise SaaS architecture
+
+Replit → GitHub → GitHub Actions → Hostinger VPS → Docker → Nginx → SSL → Domain
+
+and the containers already visible in your screenshot, the core system is correct, but for a production-grade SaaS (like real enterprise SaaS platforms) you should run additional supporting containers besides the basic three.
+
+Currently you have:
+
+Container	Purpose	Status
+auditwise-frontend	React / Next.js UI	Running
+auditwise-backend	API server	Running
+auditwise-db	PostgreSQL database	Running
+
+These are minimum containers, but an enterprise SaaS deployment normally requires more services.
+
+Recommended Full Docker Container Architecture for AuditWise
+1️⃣ Application Layer
+Frontend Container
+
+Name
+
+auditwise-frontend
+
+Purpose
+
+React / Next.js interface
+
+User dashboard
+
+Audit working papers UI
+
+Super admin portal
+
+Port
+
+3000
+Backend API Container
+
+Name
+
+auditwise-backend
+
+Purpose
+
+REST API
+
+Authentication
+
+Business logic
+
+Audit engine
+
+AI integrations
+
+Port
+
+5000
+2️⃣ Data Layer
+PostgreSQL Database
+
+Name
+
+auditwise-db
+
+Purpose
+
+store firms
+
+clients
+
+audit files
+
+users
+
+working papers
+
+audit logs
+
+Port
+
+5432
+Redis (Highly Recommended)
+
+Name
+
+auditwise-redis
+
+Purpose
+
+caching
+
+session storage
+
+background jobs
+
+queue processing
+
+faster performance
+
+Port
+
+6379
+
+Almost all SaaS systems use Redis.
+
+3️⃣ Reverse Proxy Layer
+Nginx Container
+
+Name
+
+auditwise-nginx
+
+Purpose
+
+reverse proxy
+
+domain routing
+
+HTTPS termination
+
+load balancing
+
+security headers
+
+Ports
+
+80
+443
+
+Flow:
+
+auditwise.tech
+      ↓
+   Nginx
+   ↓   ↓
+Frontend Backend
+4️⃣ DevOps / Monitoring Layer
+Watchtower (Auto container updates)
+
+Name
+
+auditwise-watchtower
+
+Purpose
+
+auto update containers
+
+restart failed containers
+
+Portainer (Optional but excellent)
+
+Name
+
+auditwise-portainer
+
+Purpose
+
+Docker UI dashboard
+
+container management
+
+logs
+
+restart control
+
+Port:
+
+9000
+Full Enterprise Container List
+
+Your final SaaS container stack should be
+
+Container	Required	Purpose
+auditwise-frontend	Yes	UI
+auditwise-backend	Yes	API
+auditwise-db	Yes	PostgreSQL
+auditwise-redis	Recommended	cache + queue
+auditwise-nginx	Yes	reverse proxy
+auditwise-watchtower	Recommended	auto update
+auditwise-portainer	Optional	Docker dashboard
+Architecture Diagram
+                Internet
+                   │
+             auditwise.tech
+                   │
+                Nginx
+           ┌───────┴────────┐
+           │                │
+     Frontend            Backend
+     (React)             (API)
+           │                │
+           └───────┬────────┘
+                   │
+               PostgreSQL
+                   │
+                 Redis
+What you currently have
+
+From your screenshot:
+
+✔ frontend
+✔ backend
+✔ postgres
+
+Missing:
+
+❌ redis
+❌ nginx container
+❌ monitoring
+
+Minimum Containers for Production SaaS
+
+At least run these 5 containers
+
+auditwise-frontend
+auditwise-backend
+auditwise-db
+auditwise-redis
+auditwise-nginx
+If you want, I can also give you
+🔥 AuditWise Enterprise Docker Compose
+
+Single file used by SaaS companies
+
+docker-compose.yml
+
+It will automatically deploy
+
+frontend
+
+backend
+
+postgres
+
+redis
+
+nginx
+
+SSL ready
+
+auto restart
+
+health checks
+
+in one command
+
+docker compose up -d
