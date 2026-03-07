@@ -79,9 +79,8 @@ grep -q 'vm.swappiness' /etc/sysctl.conf || echo 'vm.swappiness=10' >> /etc/sysc
 ufw allow OpenSSH > /dev/null 2>&1 || true
 ufw allow 80/tcp  > /dev/null 2>&1 || true
 ufw allow 443/tcp > /dev/null 2>&1 || true
-ufw allow 5000/tcp > /dev/null 2>&1 || true
 ufw --force enable > /dev/null 2>&1 || true
-log "Firewall configured (SSH + HTTP + HTTPS + 5000)"
+log "Firewall configured (SSH + HTTP + HTTPS)"
 
 echo "== Step 4/10: Fetch latest code ================================"
 PREV_COMMIT=""
