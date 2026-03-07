@@ -50,17 +50,14 @@ if [ $ELAPSED -ge $TIMEOUT ]; then
   echo "  Check logs: docker compose -f $COMPOSE_FILE logs backend"
 fi
 
-echo "[5/6] Starting frontend..."
+echo "[5/5] Starting frontend..."
 docker compose -f "$COMPOSE_FILE" up -d frontend
-
-echo "[6/6] Starting nginx reverse proxy..."
-docker compose -f "$COMPOSE_FILE" up -d nginx
 
 echo ""
 echo "=== Deployment Complete ==="
 echo "  Backend:  http://localhost:5000/api/health"
 echo "  Frontend: http://localhost:3000"
-echo "  Nginx:    http://localhost:80"
+echo "  Nginx:    Host nginx routes :80 -> backend:5000 + frontend:3000"
 echo ""
 echo "Commands:"
 echo "  Logs:     docker compose -f $COMPOSE_FILE logs -f"

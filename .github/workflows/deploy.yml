@@ -171,8 +171,8 @@ jobs:
             echo "[5/8] Stopping old containers (removing orphans)..."
             docker compose down --remove-orphans 2>/dev/null || true
 
-            echo "[6/8] Starting all services..."
-            docker compose up -d
+            echo "[6/8] Starting services (db + backend + frontend)..."
+            docker compose up -d db backend frontend
 
             echo "[7/8] Waiting for backend health (up to 5 min)..."
             TIMEOUT=300
