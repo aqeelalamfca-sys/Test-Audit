@@ -216,8 +216,19 @@ docker stop auditwise-db auditwise-redis auditwise-backend auditwise-frontend au
 docker rm -f auditwise-db auditwise-redis auditwise-backend auditwise-frontend auditwise-nginx 2>/dev/null || true
 docker image prune -f > /dev/null 2>&1 || true
 
-info "Building images (5-10 min on first run)..."
-if ! docker compose up -d --build 2>&1; then
+if grep -q "NODE_HEAP_SIZE=2560" .env 2>/dev/null; then
+  sed -i 's/NODE_HEAP_SIZE=2560/NODE_HEAP_SIZE=1536/' .env
+  log "Reduced NODE_HEAP_SIZE to 1536MB (prevents OOM)"
+fi
+
+info "Building backend image (5-10 min on first run)..."
+docker compose build --no-cache backend 2>&1 || warn "Backend build had warnings"
+
+info "Building frontend image..."
+docker compose build --no-cache frontend 2>&1 || warn "Frontend build had warnings"
+
+info "Starting all 5 containers..."
+if ! docker compose up -d 2>&1; then
   if [ -n "$PREV_COMMIT" ]; then
     warn "Build failed -- rolling back to previous commit ${PREV_COMMIT:0:8}"
     git reset --hard "$PREV_COMMIT" -q
