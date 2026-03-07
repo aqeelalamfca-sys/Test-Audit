@@ -7,7 +7,15 @@ echo "Environment: ${NODE_ENV:-development}"
 echo "Started at: $(date -Is)"
 echo ""
 
-HEAP_SIZE="${NODE_HEAP_SIZE:-2560}"
+TOTAL_MEM_MB=$(free -m 2>/dev/null | awk '/^Mem:/{print $7}' || echo "2048")
+if [ "$TOTAL_MEM_MB" -lt 1024 ] 2>/dev/null; then
+  HEAP_SIZE="512"
+elif [ "$TOTAL_MEM_MB" -lt 2048 ] 2>/dev/null; then
+  HEAP_SIZE="1024"
+else
+  HEAP_SIZE="${NODE_HEAP_SIZE:-1536}"
+fi
+echo "  Memory available: ${TOTAL_MEM_MB}MB, Node heap: ${HEAP_SIZE}MB"
 
 echo "[1/5] Validating environment..."
 ERRORS=0

@@ -10,11 +10,11 @@ RUN if [ -f package-lock.json ]; then \
     fi
 
 COPY prisma ./prisma/
-RUN NODE_OPTIONS="--max-old-space-size=2048" npx prisma generate
+RUN NODE_OPTIONS="--max-old-space-size=1024" npx prisma generate
 
 COPY . .
 ENV NODE_ENV=production
-RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
+RUN NODE_OPTIONS="--max-old-space-size=1536" npm run build
 RUN cp -rn public/* dist/public/ 2>/dev/null || true
 RUN ls -la dist/public/index.html
 
