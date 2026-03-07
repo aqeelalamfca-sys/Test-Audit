@@ -35,30 +35,51 @@ fi
 
 echo "== Step 1/10: System dependencies =============================="
 export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+export NEEDRESTART_SUSPEND=1
+
+if [ -f /etc/needrestart/needrestart.conf ]; then
+  sed -i "s/#\$nrconf{restart} = 'i';/\$nrconf{restart} = 'a';/" /etc/needrestart/needrestart.conf 2>/dev/null || true
+fi
+
 apt-get update -y -qq
-apt-get upgrade -y -qq
+apt-get upgrade -y -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 apt-get install -y -qq \
-  ca-certificates curl git ufw certbot logrotate fail2ban > /dev/null 2>&1
+  ca-certificates curl git ufw certbot logrotate fail2ban \
+  dnsutils openssl python3 > /dev/null 2>&1
 log "System packages installed"
 
 systemctl stop nginx 2>/dev/null || true
 systemctl disable nginx 2>/dev/null || true
-apt-get remove -y nginx nginx-common 2>/dev/null || true
+apt-get remove -y nginx nginx-common nginx-core 2>/dev/null || true
 log "Host nginx removed (Nginx runs inside Docker)"
+
+fuser -k 80/tcp 2>/dev/null || true
+fuser -k 443/tcp 2>/dev/null || true
+log "Ports 80/443 cleared for Docker nginx"
 
 echo "== Step 2/10: Docker Engine ===================================="
 if ! command -v docker &>/dev/null; then
+  info "Installing Docker..."
   curl -fsSL https://get.docker.com | sh
   log "Docker installed"
 else
-  log "Docker already installed ($(docker --version | grep -oP '\d+\.\d+\.\d+'))"
+  DOCKER_VER=$(docker --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' || echo "unknown")
+  log "Docker already installed (${DOCKER_VER})"
 fi
-systemctl enable --now docker
+systemctl enable --now docker 2>/dev/null || true
 
 if ! docker compose version &>/dev/null; then
-  apt-get install -y -qq docker-compose-plugin > /dev/null 2>&1
+  info "Installing Docker Compose plugin..."
+  apt-get install -y -qq docker-compose-plugin > /dev/null 2>&1 || true
+  if ! docker compose version &>/dev/null; then
+    COMPOSE_VER="v2.27.0"
+    mkdir -p /usr/local/lib/docker/cli-plugins
+    curl -fsSL "https://github.com/docker/compose/releases/download/${COMPOSE_VER}/docker-compose-linux-$(uname -m)" -o /usr/local/lib/docker/cli-plugins/docker-compose
+    chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+  fi
 fi
-log "Docker Compose: $(docker compose version --short)"
+log "Docker Compose: $(docker compose version --short 2>/dev/null || echo 'installed')"
 
 echo "== Step 3/10: Swap & Firewall =================================="
 if [ ! -f /swapfile ]; then
@@ -190,6 +211,8 @@ fi
 
 echo "== Step 8/10: Docker build & start (all 5 containers) ========="
 docker compose down --remove-orphans 2>/dev/null || true
+docker stop auditwise-db auditwise-redis auditwise-backend auditwise-frontend auditwise-nginx 2>/dev/null || true
+docker rm -f auditwise-db auditwise-redis auditwise-backend auditwise-frontend auditwise-nginx 2>/dev/null || true
 docker image prune -f > /dev/null 2>&1 || true
 
 info "Building images (5-10 min on first run)..."
