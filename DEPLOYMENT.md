@@ -113,10 +113,10 @@ Required variables:
 
 | Service | Container | Port | Image | Description |
 |---------|-----------|------|-------|-------------|
-| PostgreSQL 16 | auditwise-db | 5432 | `postgres:16-alpine` | Database with persistent volume |
+| PostgreSQL 15 | auditwise-db | 5432 | `postgres:15` | Database with persistent volume |
 | Backend | auditwise-backend | 5000 | `ghcr.io/.../auditwise-backend` | Node.js + Express + Prisma |
-| Frontend | auditwise-frontend | 80 | `ghcr.io/.../auditwise-frontend` | React SPA via Nginx Alpine |
-| Nginx Proxy | auditwise-nginx | 443 | `nginx:1.27-alpine` | SSL termination + HTTPS proxy |
+| Frontend | auditwise-frontend | 3000→80 | `ghcr.io/.../auditwise-frontend` | React SPA via Nginx Alpine (container port 80) |
+| Nginx Proxy | auditwise-nginx | 80/443 | `nginx:alpine` | Reverse proxy + SSL termination |
 
 ## What deploy.sh Does (10 Steps, Idempotent)
 
