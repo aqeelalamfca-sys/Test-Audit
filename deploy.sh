@@ -104,6 +104,7 @@ ufw --force enable > /dev/null 2>&1 || true
 log "Firewall configured (SSH + HTTP + HTTPS)"
 
 echo "== Step 4/10: Fetch latest code ================================"
+cd /root
 PREV_COMMIT=""
 if [ -d "$APP_DIR/.git" ]; then
   cd "$APP_DIR"
