@@ -3,8 +3,8 @@ services:
     image: postgres:15
     container_name: auditwise-db
     restart: always
-    ports:
-      - "${DB_BIND:-127.0.0.1}:${DB_PORT:-5432}:5432"
+    expose:
+      - "5432"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-auditwise}
       POSTGRES_USER: ${POSTGRES_USER:-auditwise}
@@ -45,6 +45,29 @@ services:
         max-size: "20m"
         max-file: "3"
 
+  redis:
+    image: redis:7-alpine
+    container_name: auditwise-redis
+    restart: always
+    expose:
+      - "6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - auditwise
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   backend:
     build:
       context: .
@@ -52,8 +75,10 @@ services:
     image: ghcr.io/aqeelalamfca-sys/auditwise-backend:${APP_VERSION:-latest}
     container_name: auditwise-backend
     restart: always
+    expose:
+      - "5000"
     ports:
-      - "${APP_BIND:-127.0.0.1}:${BACKEND_PORT:-5000}:5000"
+      - "127.0.0.1:5000:5000"
     env_file:
       - path: .env
         required: false
@@ -67,6 +92,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-auditwise}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-Aqeel@123$}
       DATABASE_URL: ${DATABASE_URL:-postgresql://auditwise:Aqeel%40123%24@db:5432/auditwise?schema=public}
+      REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-}
       SESSION_SECRET: ${SESSION_SECRET:-}
       ENCRYPTION_MASTER_KEY: ${ENCRYPTION_MASTER_KEY:-}
@@ -87,6 +113,8 @@ services:
       - logs:/app/logs
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:5000/api/health || exit 1"]
@@ -109,8 +137,8 @@ services:
     image: ghcr.io/aqeelalamfca-sys/auditwise-frontend:${APP_VERSION:-latest}
     container_name: auditwise-frontend
     restart: always
-    ports:
-      - "3000:80"
+    expose:
+      - "80"
     depends_on:
       backend:
         condition: service_healthy
@@ -162,6 +190,8 @@ networks:
 
 volumes:
   pgdata:
+    driver: local
+  redisdata:
     driver: local
   uploads:
     driver: local
