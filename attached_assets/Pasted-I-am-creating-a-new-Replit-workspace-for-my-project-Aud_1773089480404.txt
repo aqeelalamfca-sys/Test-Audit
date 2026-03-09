@@ -1,0 +1,237 @@
+I am creating a new Replit workspace for my project AuditWise.
+
+The system infrastructure already exists and must remain unchanged.
+
+Existing setup:
+
+Repository
+https://github.com/aqeelalamfca-sys/Test-Audit
+
+VPS Server
+Hostinger VPS
+IP: 187.77.130.117
+
+Domain
+auditwise.tech
+
+Deployment architecture
+Docker containers running on VPS
+
+The current goal is to make Replit the central DevOps controller for the entire system.
+
+Replit should manage:
+
+Development
+Code synchronization
+GitHub integration
+VPS deployment
+Docker containers
+System monitoring
+
+The pipeline must operate as:
+
+Replit → GitHub → VPS → Docker → Live Website
+
+Step 1 — Import Existing Project
+
+Connect this new Replit workspace with the existing GitHub repository.
+
+Repository URL
+https://github.com/aqeelalamfca-sys/Test-Audit
+
+Tasks:
+
+Clone the repository into the Replit workspace.
+
+Configure Git identity.
+
+Ensure Replit can commit and push changes to GitHub.
+
+Fetch the entire repository codebase.
+
+Ensure the main branch is synced.
+
+Step 2 — Configure Secure Environment Variables
+
+Create the following environment variables inside Replit Secrets.
+
+GITHUB_TOKEN=
+VPS_HOST=187.77.130.117
+VPS_USER=root
+VPS_SSH_KEY=
+DOMAIN_NAME=auditwise.tech
+DOCKER_CONTAINER_NAME=auditwise
+
+These secrets will be used for GitHub authentication and VPS deployment.
+
+Step 3 — Configure Automatic GitHub Push
+
+Configure automatic Git commits and pushes so that:
+
+When developers modify code in Replit:
+
+Changes are automatically committed.
+
+Code is pushed to GitHub.
+
+The push interval should be every 2 minutes.
+
+Ensure the Git remote origin remains:
+
+https://github.com/aqeelalamfca-sys/Test-Audit
+
+Step 4 — VPS Deployment Automation
+
+The VPS server is reachable but currently has:
+
+Docker installed
+Docker Compose installed
+No active containers running
+No services listening on ports 80 or 443
+
+Replit must generate a deployment script that will:
+
+Connect to the VPS via SSH.
+
+Pull the latest code from GitHub.
+
+Build Docker containers.
+
+Start the containers.
+
+Ensure the application listens on the correct ports.
+
+Step 5 — Docker Deployment Requirements
+
+If containers do not exist, create them.
+
+If containers exist but are stopped, restart them.
+
+Ensure Docker runs:
+
+Application container
+Backend service
+Frontend service
+Database container (if required)
+
+Containers must restart automatically if they crash.
+
+Step 6 — Nginx Reverse Proxy Setup
+
+The VPS currently does not have Nginx running.
+
+Configure Nginx to:
+
+Listen on port 80
+Listen on port 443
+Forward requests to the application container
+
+Domain configuration:
+
+auditwise.tech → 187.77.130.117
+
+Ensure proper reverse proxy configuration.
+
+Step 7 — SSL Certificate
+
+Install SSL using Let's Encrypt.
+
+Automatically generate SSL certificates for:
+
+auditwise.tech
+www.auditwise.tech
+
+Ensure automatic renewal.
+
+Step 8 — Health Monitoring
+
+Create a system health command that verifies:
+
+GitHub connectivity
+VPS SSH connectivity
+Docker status
+Running containers
+Ports 80 and 443 listening
+HTTP response from the domain
+
+Step 9 — Replit Shell Commands
+
+Generate commands that allow Replit to:
+
+Push code to GitHub
+
+Example action:
+
+git add .
+git commit
+git push origin main
+
+Trigger VPS deployment
+
+Example action:
+
+SSH into VPS
+Pull latest GitHub code
+Restart Docker containers
+
+Step 10 — Automatic Self-Healing Deployment
+
+Ensure the deployment pipeline automatically:
+
+Pulls new code
+
+Rebuilds Docker images
+
+Restarts containers
+
+Fixes stopped containers
+
+Keeps the website live without manual intervention.
+
+Step 11 — System Output
+
+Generate the following:
+
+Deployment script for VPS
+Docker configuration if missing
+Nginx configuration
+SSL setup command
+Replit automation scripts
+GitHub integration commands
+System health check command
+
+Final Objective
+
+After configuration:
+
+Replit becomes the master DevOps control center.
+
+The infrastructure must operate automatically as:
+
+Developer edits code in Replit
+
+Replit pushes code to GitHub
+
+VPS pulls latest code
+
+Docker rebuilds containers
+
+Website automatically deploys
+
+auditwise.tech becomes live.
+
+No manual VPS commands should be required after the system is configured.
+
+Target Architecture
+
+Replit
+↓
+GitHub Repository
+↓
+Hostinger VPS (187.77.130.117)
+↓
+Docker Containers
+↓
+Nginx Reverse Proxy
+↓
+auditwise.tech (Live)
