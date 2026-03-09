@@ -43,8 +43,9 @@ export GIT_TERMINAL_PROMPT=0
 
 PUSH_URL=""
 if [ -n "$GITHUB_TOKEN" ]; then
-  REPO_URL=$(git remote get-url origin 2>/dev/null)
+  REPO_URL=$(git remote get-url origin 2>/dev/null | sed 's|https://[^@]*@github.com/|https://github.com/|')
   PUSH_URL=$(echo "$REPO_URL" | sed "s|https://github.com/|https://${GITHUB_TOKEN}@github.com/|")
+  git remote set-url origin "$REPO_URL" 2>/dev/null
   log "GitHub token found — authenticated push enabled."
 else
   log "WARN: No GITHUB_TOKEN set. Commits will be saved locally only."
