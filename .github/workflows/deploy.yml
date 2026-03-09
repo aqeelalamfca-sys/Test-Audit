@@ -53,16 +53,23 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          command_timeout: 15m
-          script: |
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          GITHUB_REPO: ${{ github.repository }}
+          DEPLOY_DOMAIN: auditwise.tech
+        run: |
+          mkdir -p ~/.ssh
+          echo "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${VPS_PORT:-22}" "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p "${VPS_PORT:-22}" "${VPS_USER}@${VPS_HOST}" bash -s -- "$GITHUB_REPO" "$DEPLOY_DOMAIN" << 'DEPLOY_SCRIPT'
             set -e
 
+            GITHUB_REPO="$1"
+            DOMAIN="$2"
             APP_DIR=/opt/auditwise
             TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
@@ -74,7 +81,7 @@ jobs:
             # ── First-time setup ──
             if [ ! -d "$APP_DIR/.git" ]; then
               echo "[INIT] First-time deployment — running full setup..."
-              git clone -b main https://github.com/${{ github.repository }}.git "$APP_DIR" || exit 1
+              git clone -b main "https://github.com/${GITHUB_REPO}.git" "$APP_DIR" || exit 1
               cd "$APP_DIR"
 
               if [ -f deploy/hostinger-deploy.sh ]; then
@@ -169,7 +176,7 @@ jobs:
 
             # ── [6/7] Update Nginx config ──
             echo "[6/7] Updating Nginx..."
-            if [ -f "/etc/letsencrypt/live/${{ env.DOMAIN }}/fullchain.pem" ]; then
+            if [ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
               sudo cp deploy/nginx/auditwise-ssl.conf /etc/nginx/sites-available/auditwise
             else
               sudo cp deploy/nginx/auditwise.conf /etc/nginx/sites-available/auditwise
@@ -188,21 +195,21 @@ jobs:
             echo "════════════════════════════════════════════════"
             echo "  DEPLOY COMPLETE"
             echo "  Commit: $(git log --oneline -1)"
-            echo "  URL:    https://${{ env.DOMAIN }}"
+            echo "  URL:    https://${DOMAIN}"
             echo ""
             docker compose ps --format "table {{.Name}}\t{{.Status}}" 2>/dev/null || docker compose ps
             echo "════════════════════════════════════════════════"
+          DEPLOY_SCRIPT
 
       - name: Post-deploy health check
         if: success()
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          command_timeout: 1m
-          script: |
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p "${VPS_PORT:-22}" "${VPS_USER}@${VPS_HOST}" << 'HEALTH_CHECK'
             HTTP_CODE=$(curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/api/health 2>/dev/null || echo "000")
             if [ "$HTTP_CODE" = "200" ]; then
               echo "Production health check: PASSED (HTTP $HTTP_CODE)"
@@ -210,3 +217,4 @@ jobs:
               echo "Production health check: FAILED (HTTP $HTTP_CODE)"
               exit 1
             fi
+          HEALTH_CHECK
