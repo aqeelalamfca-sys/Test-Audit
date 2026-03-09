@@ -26,3 +26,4 @@ Thumbs.db
 *.swp
 *.swo
 git-sync.log
+logs/git-sync.log
