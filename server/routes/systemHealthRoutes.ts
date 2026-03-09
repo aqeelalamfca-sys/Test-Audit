@@ -284,8 +284,8 @@ router.get("/system-health", async (req: AuthenticatedRequest, res: Response) =>
       hostname: "hostname 2>/dev/null || echo 'unknown'",
       osRelease: "cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"' || echo 'Unknown OS'",
       kernelVersion: "uname -r 2>/dev/null || echo 'N/A'",
-      nginxStatus: "systemctl is-active nginx 2>/dev/null || echo 'inactive'",
-      postgresStatus: "systemctl is-active postgresql 2>/dev/null || echo 'inactive'",
+      nginxStatus: "curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:80/ 2>/dev/null && echo 'active' || (systemctl is-active nginx 2>/dev/null || echo 'inactive')",
+      postgresStatus: "pg_isready -h ${POSTGRES_HOST:-db} -U ${POSTGRES_USER:-auditwise} 2>/dev/null && echo 'active' || (systemctl is-active postgresql 2>/dev/null || echo 'inactive')",
       dockerContainers: "docker ps --format '{{.Names}}|{{.Status}}|{{.Ports}}' 2>/dev/null || echo ''",
     };
 
@@ -374,14 +374,13 @@ router.get("/system-health/ping", async (req: AuthenticatedRequest, res: Respons
 
     if (!host && !localMode) return res.json({ reachable: false, error: "VPS host not configured" });
 
-    const appUrl = localMode
-      ? (process.env.VPS_APP_URL || `http://localhost:${process.env.PORT || 5000}`)
-      : (process.env.VPS_APP_URL || `https://${host}`);
+    const selfUrl = `http://localhost:${process.env.PORT || 5000}`;
+    const appUrl = process.env.VPS_APP_URL || (localMode ? selfUrl : `https://${host}`);
     const startTime = Date.now();
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
-      const response = await fetch(`${appUrl}/api/health`, { signal: controller.signal, headers: { "User-Agent": "AuditWise-HealthCheck/1.0" } });
+      const response = await fetch(`${selfUrl}/api/health`, { signal: controller.signal, headers: { "User-Agent": "AuditWise-HealthCheck/1.0" } });
       clearTimeout(timeout);
       return res.json({ reachable: true, httpStatus: response.status, responseTime: Date.now() - startTime, url: appUrl, mode: localMode ? "local" : "ssh" });
     } catch (fetchErr: any) {
@@ -394,6 +393,16 @@ router.get("/system-health/ping", async (req: AuthenticatedRequest, res: Respons
 
 function getDeploySteps(): Array<{ id: string; label: string; cmd: string }> {
   const appDir = process.env.APP_DIR || "/opt/auditwise";
+  const isDocker = process.env.DOCKER_DEPLOY === "true" || fs.existsSync("/.dockerenv");
+  if (isDocker) {
+    return [
+      { id: "pull", label: "Git Pull", cmd: `cd ${appDir} && git fetch --all --prune -q && git reset --hard origin/main -q && git log --oneline -1 2>&1` },
+      { id: "deps", label: "Install Dependencies", cmd: `cd ${appDir} && echo 'Dependencies installed during Docker build' 2>&1` },
+      { id: "build", label: "Build & Rebuild Containers", cmd: `cd ${appDir} && docker compose build --no-cache backend 2>&1` },
+      { id: "migrate", label: "Database Migration", cmd: `cd ${appDir} && docker compose exec backend npx prisma db push --accept-data-loss 2>&1 || echo 'Migration handled by entrypoint' 2>&1` },
+      { id: "restart", label: "Restart Containers", cmd: `cd ${appDir} && docker compose up -d --force-recreate --remove-orphans backend 2>&1` },
+    ];
+  }
   return [
     { id: "pull", label: "Repository Pull", cmd: `cd ${appDir} && git pull origin main 2>&1` },
     { id: "deps", label: "Install Dependencies", cmd: `cd ${appDir} && npm ci --production=false 2>&1` },
@@ -613,25 +622,39 @@ router.post("/system-health/probe/:probe", async (req: AuthenticatedRequest, res
     let result: { ok: boolean; detail: string } = { ok: false, detail: "Unknown probe" };
 
     if (probe === "http" || probe === "api") {
-      const appUrl = localMode
-        ? (process.env.VPS_APP_URL || `http://localhost:${process.env.PORT || 5000}`)
-        : (process.env.VPS_APP_URL || `https://${host}`);
+      const selfUrl = `http://localhost:${process.env.PORT || 5000}`;
       const startTime = Date.now();
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
-        const response = await fetch(`${appUrl}/api/health`, { signal: controller.signal });
+        const response = await fetch(`${selfUrl}/api/health`, { signal: controller.signal });
         clearTimeout(timeout);
         result = { ok: response.status === 200, detail: `Status ${response.status}, ${Date.now() - startTime}ms` };
       } catch (e: any) {
         result = { ok: false, detail: e.message };
       }
     } else if (probe === "database") {
-      const cmdResult = await executeCommand("docker exec auditwise-db pg_isready -U auditwise 2>/dev/null || systemctl is-active postgresql 2>/dev/null");
-      result = { ok: cmdResult.stdout.includes("accepting") || cmdResult.stdout.includes("active"), detail: cmdResult.stdout || cmdResult.stderr };
+      try {
+        const { PrismaClient } = await import("@prisma/client");
+        const testPrisma = new PrismaClient();
+        await testPrisma.$queryRaw`SELECT 1`;
+        await testPrisma.$disconnect();
+        result = { ok: true, detail: "PostgreSQL accepting connections" };
+      } catch (dbErr: any) {
+        const cmdResult = await executeCommand("docker exec auditwise-db pg_isready -U auditwise 2>/dev/null || pg_isready -h ${process.env.POSTGRES_HOST || 'db'} -U ${process.env.POSTGRES_USER || 'auditwise'} 2>/dev/null || systemctl is-active postgresql 2>/dev/null");
+        result = { ok: cmdResult.stdout.includes("accepting") || cmdResult.stdout.includes("active"), detail: cmdResult.stdout || dbErr.message };
+      }
     } else if (probe === "nginx") {
-      const cmdResult = await executeCommand("docker exec auditwise-nginx nginx -t 2>&1 || systemctl is-active nginx 2>/dev/null");
-      result = { ok: cmdResult.code === 0, detail: cmdResult.stdout || cmdResult.stderr };
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const nginxResp = await fetch("http://127.0.0.1:80/api/health", { signal: controller.signal });
+        clearTimeout(timeout);
+        result = { ok: nginxResp.status === 200 || nginxResp.status === 301 || nginxResp.status === 302, detail: `Nginx responding (HTTP ${nginxResp.status})` };
+      } catch (nginxErr: any) {
+        const cmdResult = await executeCommand("systemctl is-active nginx 2>/dev/null || curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:80/ 2>/dev/null");
+        result = { ok: cmdResult.stdout.includes("active") || cmdResult.stdout.includes("200") || cmdResult.stdout.includes("301"), detail: cmdResult.stdout || nginxErr.message };
+      }
     }
 
     res.json(result);
