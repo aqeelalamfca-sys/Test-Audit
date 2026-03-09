@@ -74,7 +74,7 @@ jobs:
             TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
             echo "════════════════════════════════════════════════"
-            echo "  AuditWise — Production Deploy"
+            echo "  AuditWise — Production Deploy (5-container)"
             echo "  $(date -Is)"
             echo "════════════════════════════════════════════════"
 
@@ -96,8 +96,8 @@ jobs:
 
             cd "$APP_DIR"
 
-            # ── [1/7] Backup database ──
-            echo "[1/7] Pre-deploy database backup..."
+            # ── [1/8] Backup database ──
+            echo "[1/8] Pre-deploy database backup..."
             mkdir -p backups
             if docker exec auditwise-db pg_isready -U auditwise -d auditwise -h localhost &>/dev/null; then
               docker exec auditwise-db pg_dump -U auditwise -d auditwise --no-owner --no-privileges 2>/dev/null \
@@ -108,13 +108,13 @@ jobs:
               echo "  Database not running — skipping backup"
             fi
 
-            # ── [2/7] Save rollback point ──
-            echo "[2/7] Recording rollback point..."
+            # ── [2/8] Save rollback point ──
+            echo "[2/8] Recording rollback point..."
             PREV_COMMIT=$(git rev-parse HEAD)
             echo "  Previous: ${PREV_COMMIT}"
 
-            # ── [3/7] Pull latest code ──
-            echo "[3/7] Pulling latest code..."
+            # ── [3/8] Pull latest code ──
+            echo "[3/8] Pulling latest code..."
             git fetch --all --prune -q
             git reset --hard origin/main -q
             NEW_COMMIT=$(git rev-parse HEAD)
@@ -124,19 +124,36 @@ jobs:
               echo "  No code changes — rebuilding containers anyway"
             fi
 
-            # ── [4/7] Rebuild and restart containers ──
-            echo "[4/7] Rebuilding containers..."
-            docker compose build --no-cache backend
-            docker compose up -d --force-recreate --remove-orphans db redis backend
-            echo "  Containers restarting"
+            # ── [4/8] Copy SSL certs into Docker volume ──
+            echo "[4/8] Syncing SSL certificates..."
+            CERT_VOLUME=$(docker volume inspect auditwise_certbot-etc --format '{{.Mountpoint}}' 2>/dev/null || echo "")
+            if [ -z "$CERT_VOLUME" ]; then
+              docker volume create auditwise_certbot-etc >/dev/null 2>&1 || true
+              CERT_VOLUME=$(docker volume inspect auditwise_certbot-etc --format '{{.Mountpoint}}' 2>/dev/null || echo "/var/lib/docker/volumes/auditwise_certbot-etc/_data")
+            fi
+            if [ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
+              sudo cp "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" "${CERT_VOLUME}/fullchain.pem"
+              sudo cp "/etc/letsencrypt/live/${DOMAIN}/privkey.pem" "${CERT_VOLUME}/privkey.pem"
+              sudo chmod 644 "${CERT_VOLUME}/fullchain.pem"
+              sudo chmod 600 "${CERT_VOLUME}/privkey.pem"
+              echo "  SSL certs copied to Docker volume"
+            else
+              echo "  No SSL certs found — nginx will serve HTTP only"
+            fi
 
-            # ── [5/7] Wait for health ──
-            echo "[5/7] Waiting for app to become healthy (max 4 min)..."
+            # ── [5/8] Rebuild and restart all containers ──
+            echo "[5/8] Rebuilding containers..."
+            docker compose build --no-cache backend frontend nginx
+            docker compose up -d --force-recreate --remove-orphans
+            echo "  All 5 containers restarting"
+
+            # ── [6/8] Wait for health ──
+            echo "[6/8] Waiting for app to become healthy (max 4 min)..."
             HEALTHY=false
             for i in $(seq 1 240); do
               HTTP_CODE=$(curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/api/health 2>/dev/null || echo "000")
               if [ "$HTTP_CODE" = "200" ]; then
-                echo "  App healthy after ${i}s (HTTP $HTTP_CODE)"
+                echo "  Backend healthy after ${i}s (HTTP $HTTP_CODE)"
                 HEALTHY=true
                 break
               fi
@@ -153,10 +170,10 @@ jobs:
               docker compose logs --tail 30 backend 2>/dev/null || true
               echo ""
               echo "  ROLLING BACK to ${PREV_COMMIT}..."
-              docker compose stop backend || true
+              docker compose stop backend frontend nginx || true
               git reset --hard "$PREV_COMMIT" -q
-              docker compose build --no-cache backend
-              docker compose up -d --force-recreate db redis backend
+              docker compose build --no-cache backend frontend nginx
+              docker compose up -d --force-recreate
               echo "  Rolled back. Waiting for recovery..."
               RECOVERED=false
               for i in $(seq 1 120); do
@@ -174,27 +191,43 @@ jobs:
               exit 1
             fi
 
-            # ── [6/7] Update Nginx config ──
-            echo "[6/7] Updating Nginx..."
-            if [ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
-              sudo cp deploy/nginx/auditwise-ssl.conf /etc/nginx/sites-available/auditwise
-            else
-              sudo cp deploy/nginx/auditwise.conf /etc/nginx/sites-available/auditwise
+            # Check nginx container health
+            echo "  Checking nginx proxy..."
+            NGINX_OK=false
+            for i in $(seq 1 30); do
+              NGINX_CODE=$(curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1/health 2>/dev/null || echo "000")
+              if [ "$NGINX_CODE" = "200" ]; then
+                echo "  Nginx proxy healthy (HTTP $NGINX_CODE)"
+                NGINX_OK=true
+                break
+              fi
+              sleep 1
+            done
+            if [ "$NGINX_OK" = "false" ]; then
+              echo "  WARNING: Nginx proxy not responding on port 80 — check container logs"
+              docker compose logs --tail 10 nginx 2>/dev/null || true
             fi
-            sudo ln -sf /etc/nginx/sites-available/auditwise /etc/nginx/sites-enabled/auditwise
-            sudo nginx -t 2>&1 && (sudo systemctl is-active nginx && sudo systemctl reload nginx || sudo systemctl start nginx)
-            sudo systemctl enable nginx 2>/dev/null || true
-            echo "  Nginx updated"
 
-            # ── [7/7] Cleanup ──
-            echo "[7/7] Cleanup..."
+            # ── [7/8] Disable host-level Nginx (replaced by container) ──
+            echo "[7/8] Managing host Nginx..."
+            if systemctl is-active nginx &>/dev/null; then
+              echo "  Stopping host-level Nginx (replaced by container)..."
+              sudo systemctl stop nginx 2>/dev/null || true
+              sudo systemctl disable nginx 2>/dev/null || true
+              echo "  Host Nginx disabled — container handles ports 80/443"
+            else
+              echo "  Host Nginx already stopped"
+            fi
+
+            # ── [8/8] Cleanup ──
+            echo "[8/8] Cleanup..."
             docker image prune -f >/dev/null 2>&1 || true
             find backups -name "*.sql.gz" -mtime +30 -delete 2>/dev/null || true
             echo "  Old images and backups cleaned"
 
             echo ""
             echo "════════════════════════════════════════════════"
-            echo "  DEPLOY COMPLETE"
+            echo "  DEPLOY COMPLETE (5-container stack)"
             echo "  Commit: $(git log --oneline -1)"
             echo "  URL:    https://${DOMAIN}"
             echo ""
@@ -211,11 +244,23 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_PORT }}
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p "${VPS_PORT:-22}" "${VPS_USER}@${VPS_HOST}" << 'HEALTH_CHECK'
+            echo "=== Container Status ==="
+            docker compose -f /opt/auditwise/docker-compose.yml ps --format "table {{.Name}}\t{{.Status}}"
+            echo ""
+            echo "=== Backend Health ==="
             HTTP_CODE=$(curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/api/health 2>/dev/null || echo "000")
             if [ "$HTTP_CODE" = "200" ]; then
-              echo "Production health check: PASSED (HTTP $HTTP_CODE)"
+              echo "Backend health check: PASSED (HTTP $HTTP_CODE)"
             else
-              echo "Production health check: FAILED (HTTP $HTTP_CODE)"
+              echo "Backend health check: FAILED (HTTP $HTTP_CODE)"
               exit 1
+            fi
+            echo ""
+            echo "=== Nginx Proxy Health ==="
+            NGINX_CODE=$(curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1/health 2>/dev/null || echo "000")
+            if [ "$NGINX_CODE" = "200" ]; then
+              echo "Nginx proxy health check: PASSED (HTTP $NGINX_CODE)"
+            else
+              echo "Nginx proxy health check: WARNING (HTTP $NGINX_CODE)"
             fi
           HEALTH_CHECK
