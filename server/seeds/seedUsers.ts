@@ -7,6 +7,7 @@ const FIRM_USERS: { email: string; role: UserRole; fullName: string; username: s
   { email: "partner@auditwise.pk", role: "PARTNER", fullName: "Audit Partner", username: "partner" },
   { email: "manager@auditwise.pk", role: "MANAGER", fullName: "Audit Manager", username: "manager" },
   { email: "senior@auditwise.pk", role: "SENIOR", fullName: "Senior Auditor", username: "senior" },
+  { email: "teamlead@auditwise.pk", role: "SENIOR", fullName: "Team Lead", username: "teamlead" },
   { email: "staff@auditwise.pk", role: "STAFF", fullName: "Staff Auditor", username: "staff" },
   { email: "eqcr@auditwise.pk", role: "EQCR", fullName: "EQCR Reviewer", username: "eqcr" },
 ];
