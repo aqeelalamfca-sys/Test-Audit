@@ -1,251 +1,380 @@
-# AuditWise — AWS Deployment Guide
+# AuditWise Deployment Guide
 
-Deploy AuditWise to production on AWS. The app runs on port 5000, builds to `dist/index.cjs`, and automatically creates your admin account on first start.
-
----
-
-## How It Works
+## Architecture
 
 ```
-Your Domain → Route 53 (DNS) → Load Balancer (HTTPS :443)
-                                       ↓
-                               AuditWise App (:5000)
-                                       ↓
-                               PostgreSQL Database (:5432)
-                                       ↓
-                             Secrets Manager (passwords & keys)
+Replit (development)
+  ↓ git push
+GitHub (source control)
+  ↓ GitHub Actions CI/CD
+Hostinger VPS (production)
+  ├── Host Nginx (SSL termination + reverse proxy, ports 80/443)
+  │     ↓ proxy_pass to 127.0.0.1:5000
+  └── Docker Containers
+        ├── auditwise-db (PostgreSQL 16, port 5432 internal)
+        ├── auditwise-redis (Redis 7, port 6379 internal)
+        └── auditwise-backend (Express API, port 5000 exposed to host)
+              ↓ serves both API + static frontend
+https://auditwise.tech
 ```
 
-Users visit your domain. AWS handles SSL, load balancing, and routing. AuditWise runs in a container that connects to a managed PostgreSQL database.
-
----
-
-## Monthly Cost
-
-| Service | What It Does | Cost |
-|---------|-------------|------|
-| ECS Fargate | Runs the AuditWise app | ~$40-60/mo (1 vCPU, 4GB) |
-| RDS PostgreSQL | Stores all audit data | ~$15-30/mo (db.t3.micro) |
-| ALB | Load balancer with HTTPS | ~$20/mo |
-| Extras | Logs, DNS, image storage | ~$5-10/mo |
-| **Total** | | **~$70-110/mo** |
+**Note:** Host-level Nginx handles SSL certificates (via Certbot/Let's Encrypt) and
+proxies all traffic to the backend container on port 5000. The backend serves both the
+API endpoints and the pre-built React frontend as static files. The Docker Compose file
+also includes `frontend` and `nginx` containers for fully containerized local testing,
+but they are NOT used in production deployment.
 
 ---
 
 ## Prerequisites
 
-- AWS CLI installed and configured (`aws configure`)
-- Docker Desktop installed
-- A registered domain (optional but recommended for SSL)
+| Item | Details |
+|------|---------|
+| Hostinger VPS | Ubuntu 22.04+, 4GB RAM minimum, 2 vCPU |
+| Domain | `auditwise.tech` pointed to VPS IP |
+| GitHub repo | `aqeelalamfca-sys/Test-Audit` |
+| SSH access | Root or sudo user on VPS |
 
 ---
 
-## Step 1: Create PostgreSQL Database (RDS)
+## Step 1: DNS Configuration
 
-1. Go to **AWS Console → RDS → Create database**
-2. Settings:
-   - Engine: **PostgreSQL 15+**
-   - Template: **Free tier** (or Production for live use)
-   - Instance: **db.t3.micro** (minimum) or **db.t3.small** (recommended)
-   - Storage: **20 GB** (General Purpose SSD)
-   - DB name: `auditwise`
-   - Master username: `auditwise_admin`
-   - Master password: (choose a strong password)
-3. Connectivity:
-   - VPC: Default VPC
-   - Public access: **No** (only accessible from within VPC)
-   - Security group: Create new, allow port **5432** from ECS security group
-4. After creation, note the **Endpoint URL** (e.g., `auditwise-db.xxxx.us-east-1.rds.amazonaws.com`)
-5. Your `DATABASE_URL` will be:
-   ```
-   postgresql://auditwise_admin:YOUR_PASSWORD@YOUR_ENDPOINT:5432/auditwise?schema=public
-   ```
+Point your domain to your Hostinger VPS IP address:
+
+| Record | Host | Value | TTL |
+|--------|------|-------|-----|
+| A | `@` | `YOUR_VPS_IP` | 3600 |
+| A | `www` | `YOUR_VPS_IP` | 3600 |
+
+Set this in your domain registrar's DNS management panel.
+Verify with: `dig auditwise.tech +short`
 
 ---
 
-## Step 2: Store Secrets in AWS Secrets Manager
+## Step 2: Generate SSH Key Pair
 
-Create secrets for sensitive configuration:
+On your local machine (not the VPS):
 
 ```bash
-# Database connection string
-aws secretsmanager create-secret \
-  --name auditwise/database-url \
-  --secret-string "postgresql://auditwise_admin:YOUR_PASSWORD@YOUR_RDS_ENDPOINT:5432/auditwise?schema=public"
-
-# Session encryption key (generate a random 64-char string)
-aws secretsmanager create-secret \
-  --name auditwise/session-secret \
-  --secret-string "$(openssl rand -hex 32)"
-
-# Initial admin password
-aws secretsmanager create-secret \
-  --name auditwise/admin-password \
-  --secret-string "YourSecureAdminPassword123!"
+ssh-keygen -t ed25519 -C "auditwise-deploy" -f ~/.ssh/auditwise_deploy
 ```
 
----
+This creates two files:
+- `~/.ssh/auditwise_deploy` (private key — for GitHub)
+- `~/.ssh/auditwise_deploy.pub` (public key — for VPS)
 
-## Step 3: Configure Environment Variables
-
-Edit `aws/task-definition.json` and replace placeholders:
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string (from Secrets Manager) |
-| `SESSION_SECRET` | Yes | Random string for session encryption (from Secrets Manager) |
-| `ADMIN_EMAIL` | Yes | Email for the initial admin account (e.g., `admin@yourfirm.com`) |
-| `ADMIN_PASSWORD` | Yes | Password for the initial admin account (from Secrets Manager) |
-| `FIRM_NAME` | Yes | Your audit firm's name (e.g., `Smith & Associates`) |
-| `CORS_ORIGINS` | Recommended | Comma-separated allowed origins (e.g., `https://yourdomain.com`) |
-| `OPENAI_API_KEY` | No | OpenAI API key for AI features (can also be set in Settings after login) |
-| `NODE_HEAP_SIZE` | No | Node.js max heap in MB (default: `2560`, fits in 4GB container) |
-| `NODE_ENV` | Auto | Set to `production` automatically |
-| `PORT` | Auto | Set to `5000` automatically |
-
-Replace in `aws/task-definition.json`:
-- `YOUR_ACCOUNT_ID` → Your 12-digit AWS account ID
-- `YOUR_REGION` → Your AWS region (e.g., `us-east-1`)
-
----
-
-## Step 4: Build and Push Docker Image
+Copy the public key to your VPS:
 
 ```bash
-# Set your AWS region and account
-export AWS_REGION=us-east-1
-export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-
-# Run the deployment script
-chmod +x aws/deploy.sh
-./aws/deploy.sh
+ssh-copy-id -i ~/.ssh/auditwise_deploy.pub root@YOUR_VPS_IP
 ```
 
 Or manually:
 
 ```bash
-# Login to ECR
-aws ecr get-login-password --region $AWS_REGION | \
-  docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-
-# Create repository
-aws ecr create-repository --repository-name auditwise --region $AWS_REGION 2>/dev/null || true
-
-# Build and push
-docker build --platform linux/amd64 -t auditwise .
-docker tag auditwise:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/auditwise:latest
-docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/auditwise:latest
+ssh root@YOUR_VPS_IP
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+echo "YOUR_PUBLIC_KEY_CONTENT" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
 ```
 
----
-
-## Step 5: Create ECS Cluster and Service
+Test the connection:
 
 ```bash
-# Create cluster
-aws ecs create-cluster --cluster-name auditwise-cluster --region $AWS_REGION
-
-# Register task definition
-aws ecs register-task-definition \
-  --cli-input-json file://aws/task-definition.json \
-  --region $AWS_REGION
-
-# Create service
-aws ecs create-service \
-  --cluster auditwise-cluster \
-  --service-name auditwise-service \
-  --task-definition auditwise \
-  --desired-count 1 \
-  --launch-type FARGATE \
-  --network-configuration "awsvpcConfiguration={subnets=[YOUR_SUBNET_ID],securityGroups=[YOUR_SG_ID],assignPublicIp=ENABLED}" \
-  --region $AWS_REGION
+ssh -i ~/.ssh/auditwise_deploy root@YOUR_VPS_IP "echo 'SSH works'"
 ```
 
 ---
 
-## Step 6: Set Up Load Balancer (Optional but Recommended)
+## Step 3: GitHub Repository Secrets
 
-1. Go to **EC2 → Load Balancers → Create**
-2. Type: **Application Load Balancer**
-3. Listeners: HTTPS (443) with your SSL certificate from ACM
-4. Target group: Port 5000, health check path `/health`
-5. Register ECS service as target
+Go to your GitHub repo → Settings → Secrets and variables → Actions → New repository secret.
 
----
+Add these **4 required secrets**:
 
-## Step 7: First Login
+| Secret Name | Value | Example |
+|-------------|-------|---------|
+| `VPS_HOST` | Your Hostinger VPS IP address | `154.38.xxx.xxx` |
+| `VPS_USER` | SSH username | `root` |
+| `VPS_SSH_KEY` | Contents of `~/.ssh/auditwise_deploy` (the PRIVATE key) | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
+| `VPS_PORT` | SSH port (usually 22) | `22` |
 
-After deployment (wait 2-3 minutes for the container to start):
-
-1. Open your domain or Load Balancer URL
-2. Login with your admin credentials:
-   - **Email**: The `ADMIN_EMAIL` you configured
-   - **Password**: The `ADMIN_PASSWORD` you configured
-3. **First steps after login:**
-   - Go to **Settings → AI Configuration** to enter your OpenAI API key (if not set via env var)
-   - Go to **User Management** to create additional users (Partner, Manager, Staff, etc.)
-   - Go to **Engagements** to create your first audit engagement
-
----
-
-## What Happens on First Start
-
-When the container starts for the first time:
-
-1. **Database schema** is automatically created via Prisma (`prisma db push`)
-2. **Permissions** are seeded (61 RBAC permissions for all roles)
-3. **Initial admin account** is created using your `ADMIN_EMAIL` and `ADMIN_PASSWORD`
-4. **No demo data** is created in production — you start with a clean slate
-
----
-
-## Updating the Application
-
-To deploy a new version:
+To get the private key content:
 
 ```bash
-./aws/deploy.sh
+cat ~/.ssh/auditwise_deploy
 ```
 
-This builds a new Docker image, pushes it to ECR, and triggers a rolling deployment. Your data is preserved in RDS.
+Copy the **entire** output including the `-----BEGIN` and `-----END` lines.
+
+---
+
+## Step 4: First-Time VPS Setup
+
+SSH into your VPS and run the one-command deploy:
+
+```bash
+ssh root@YOUR_VPS_IP
+```
+
+### Option A: Docker Deployment (Recommended)
+
+```bash
+apt-get update && apt-get install -y git
+git clone -b main https://github.com/aqeelalamfca-sys/Test-Audit.git /opt/auditwise
+cd /opt/auditwise
+sudo bash deploy/hostinger-deploy.sh
+```
+
+This script automatically:
+1. Installs Docker, Nginx, Certbot, UFW
+2. Configures firewall (SSH + HTTP + HTTPS only)
+3. Generates all production secrets (`.env`)
+4. Builds and starts all 5 Docker containers
+5. Configures Nginx reverse proxy
+6. Obtains SSL certificate from Let's Encrypt
+7. Sets up daily database backups (02:00 UTC)
+8. Verifies everything is running
+
+### Option B: Native PM2 Deployment (No Docker)
+
+```bash
+apt-get update && apt-get install -y git
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs postgresql
+npm install -g pm2
+
+git clone -b main https://github.com/aqeelalamfca-sys/Test-Audit.git /opt/auditwise
+cd /opt/auditwise
+sudo bash deploy/vps-native-deploy.sh
+```
+
+---
+
+## Step 5: Verify Deployment
+
+After the deploy script finishes:
+
+```bash
+cd /opt/auditwise
+
+# Check containers (Docker mode)
+docker compose ps
+
+# Check app health
+curl -s http://127.0.0.1:5000/health | jq .
+
+# Check Nginx
+curl -so /dev/null -w '%{http_code}' http://127.0.0.1:80/
+
+# Check SSL
+curl -so /dev/null -w '%{http_code}' https://auditwise.tech/
+
+# Check all endpoints
+curl -s https://auditwise.tech/api/health | jq .
+```
+
+Expected output for each: HTTP 200
+
+---
+
+## Step 6: Automatic Deployments via GitHub Actions
+
+After the first-time setup, every push to `main` automatically deploys:
+
+```
+git push origin main
+→ GitHub Actions builds and verifies the code
+→ SSHs into VPS
+→ Pulls latest code
+→ Rebuilds Docker containers
+→ Verifies health
+→ Reloads Nginx
+→ Cleans up old images
+```
+
+You can also trigger a manual deploy from GitHub → Actions → "Deploy to Hostinger VPS" → Run workflow.
+
+---
+
+## Production Credentials
+
+After first deploy, the script generates and displays these credentials:
+
+| Credential | Location |
+|------------|----------|
+| Super Admin email | `.env` → `INITIAL_SUPER_ADMIN_EMAIL` |
+| Super Admin password | `.env` → `INITIAL_SUPER_ADMIN_PASSWORD` |
+| Database password | `.env` → `POSTGRES_PASSWORD` |
+| JWT Secret | `.env` → `JWT_SECRET` |
+| Encryption Key | `.env` → `ENCRYPTION_MASTER_KEY` |
+
+**Change the Super Admin password after first login.**
+
+To view credentials:
+
+```bash
+cat /opt/auditwise/.env
+```
+
+---
+
+## Production Container Architecture (Docker Mode)
+
+In production, only 3 Docker containers run. Host-level Nginx handles SSL and routing.
+
+| Container | Image | Port | Purpose |
+|-----------|-------|------|---------|
+| `auditwise-db` | `postgres:16` | 5432 (internal) | PostgreSQL database |
+| `auditwise-redis` | `redis:7-alpine` | 6379 (internal) | Session cache |
+| `auditwise-backend` | Custom | 5000 (exposed to host) | Express API + static frontend |
+
+| Host Service | Port | Purpose |
+|--------------|------|---------|
+| Nginx | 80, 443 | SSL termination, reverse proxy to :5000 |
+| Certbot | - | Let's Encrypt certificate management |
+
+The `frontend` and `nginx` containers in `docker-compose.yml` are for local/development
+testing only and are not started in production.
+
+---
+
+## Management Commands
+
+### Docker Mode
+
+```bash
+cd /opt/auditwise
+
+# View logs
+docker compose logs -f backend        # backend logs
+docker compose logs -f db             # database logs
+docker compose logs -f redis          # redis logs
+sudo tail -f /var/log/nginx/error.log # host nginx logs
+
+# Container status
+docker compose ps
+
+# Restart backend
+docker compose restart backend
+
+# Rebuild and restart (production services only)
+docker compose build backend
+docker compose up -d db redis backend
+
+# Host Nginx status
+sudo systemctl status nginx
+sudo nginx -t
+
+# Database backup
+bash deploy/backup.sh
+
+# Update from GitHub
+bash deploy/vps-update.sh
+
+# Database shell
+docker exec -it auditwise-db psql -U auditwise -d auditwise
+```
+
+### PM2 Native Mode
+
+```bash
+cd /opt/auditwise
+
+# View logs
+pm2 logs auditwise
+
+# Process status
+pm2 status
+
+# Restart
+pm2 restart auditwise
+
+# Update from GitHub
+bash deploy/vps-native-update.sh
+
+# Database shell
+sudo -u postgres psql auditwise
+```
+
+---
+
+## SSL Certificate Renewal
+
+Let's Encrypt certificates auto-renew via certbot's systemd timer.
+
+To manually renew:
+
+```bash
+certbot renew --nginx
+systemctl reload nginx
+```
+
+To check renewal status:
+
+```bash
+certbot certificates
+systemctl list-timers | grep certbot
+```
 
 ---
 
 ## Troubleshooting
 
-### Check Container Logs
+### App won't start
+
 ```bash
-aws logs get-log-events \
-  --log-group-name /ecs/auditwise \
-  --log-stream-name "ecs/auditwise/TASK_ID" \
-  --region $AWS_REGION
+# Check Docker logs
+docker compose logs --tail 100 backend
+
+# Check if database is ready
+docker compose exec db pg_isready -U auditwise
+
+# Check .env configuration
+cat /opt/auditwise/.env
+
+# Rebuild from scratch
+docker compose down
+docker compose up -d --build
 ```
 
-### Container Won't Start
-- Verify `DATABASE_URL` is correct and accessible from the VPC
-- Check that the RDS security group allows port 5432 from the ECS security group
-- Ensure Secrets Manager secrets exist and IAM roles have access
+### SSL not working
 
-### Database Connection Issues
-- RDS must be in the same VPC as ECS
-- Security group must allow inbound on port 5432
-- Check the DATABASE_URL format: `postgresql://user:pass@host:5432/dbname?schema=public`
+```bash
+# Verify DNS points to VPS
+dig auditwise.tech +short
 
-### AI Features Not Working
-- Set `OPENAI_API_KEY` in environment or configure in Settings → AI Configuration
-- Test the connection from Settings → AI Configuration → Test Connection
-- Check that AI is enabled (master toggle in Settings)
+# Check Nginx config
+nginx -t
+
+# Re-request SSL
+certbot --nginx -d auditwise.tech -d www.auditwise.tech \
+  --non-interactive --agree-tos -m aqeelalam2010@gmail.com --redirect
+```
+
+### Database issues
+
+```bash
+# Check database container
+docker compose logs db
+
+# Connect to database
+docker exec -it auditwise-db psql -U auditwise -d auditwise
+
+# Restore from backup
+gunzip -c backups/LATEST_BACKUP.sql.gz \
+  | docker exec -i auditwise-db psql -U auditwise -d auditwise
+```
 
 ---
 
 ## Security Checklist
 
-- [ ] RDS is not publicly accessible
-- [ ] Strong passwords for database and admin account
-- [ ] SESSION_SECRET is a random 64-character string
-- [ ] HTTPS is enabled via ALB + ACM certificate
-- [ ] Security groups restrict access appropriately
-- [ ] API keys are stored in Secrets Manager (not in code)
-- [ ] `CORS_ORIGINS` is set to your domain (restricts cross-origin requests)
-- [ ] Container runs as non-root user (configured in Dockerfile)
-- [ ] Regular RDS backups are enabled (automated by default)
+- [ ] Change Super Admin password after first login
+- [ ] Set `SUPER_ADMIN_ALLOWED_IPS` in `.env` to your office IP
+- [ ] Generate strong secrets: `openssl rand -hex 32`
+- [ ] Keep `.env` file permissions at 600: `chmod 600 .env`
+- [ ] UFW firewall active with only SSH/HTTP/HTTPS open
+- [ ] SSL certificate installed and auto-renewing
+- [ ] Daily backups configured and verified
+- [ ] SSH key authentication (disable password auth in `/etc/ssh/sshd_config`)
