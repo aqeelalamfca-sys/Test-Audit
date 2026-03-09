@@ -55,6 +55,7 @@ fi
 log "=== Git Auto-Sync started (interval: ${INTERVAL}s) ==="
 log "Remote: $(git remote get-url origin 2>/dev/null)"
 log "Branch: $(git branch --show-current 2>/dev/null)"
+log "Push auth: $([ -n \"$PUSH_URL\" ] && echo 'token configured' || echo 'no token')"
 
 PUSH_FAILURES=0
 
