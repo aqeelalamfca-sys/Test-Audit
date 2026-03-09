@@ -25,6 +25,3 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
-git-sync.log
-logs/git-sync.log
-.replit
