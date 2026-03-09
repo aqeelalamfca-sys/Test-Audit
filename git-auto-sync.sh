@@ -36,6 +36,19 @@ cd /home/runner/workspace || exit 1
 git config user.name "Aqeel Alam" 2>/dev/null
 git config user.email "aqeelalamfca@gmail.com" 2>/dev/null
 
+export GIT_TERMINAL_PROMPT=0
+
+PUSH_URL=""
+if [ -n "$GITHUB_TOKEN" ]; then
+  REPO_URL=$(git remote get-url origin 2>/dev/null)
+  PUSH_URL=$(echo "$REPO_URL" | sed "s|https://github.com/|https://${GITHUB_TOKEN}@github.com/|")
+  log "GitHub token found — authenticated push enabled."
+else
+  log "WARN: No GITHUB_TOKEN set. Commits will be saved locally."
+  log "  Set GITHUB_TOKEN in Replit Secrets to enable auto-push."
+  log "  Generate at: https://github.com/settings/tokens (scope: repo)"
+fi
+
 log "=== Git Auto-Sync started (interval: ${INTERVAL}s) ==="
 log "Remote: $(git remote get-url origin 2>/dev/null)"
 log "Branch: $(git branch --show-current 2>/dev/null)"
@@ -66,23 +79,31 @@ while true; do
     if git commit -m "$COMMIT_MSG" >>"$LOGFILE" 2>&1; then
       log "Committed: ${COMMIT_MSG}"
 
-      PUSH_OUTPUT=$(git push origin main 2>&1)
-      PUSH_EXIT=$?
+      if [ -n "$PUSH_URL" ]; then
+        PUSH_OUTPUT=$(timeout 30 git push "$PUSH_URL" main 2>&1)
+        PUSH_EXIT=$?
 
-      if [ $PUSH_EXIT -eq 0 ]; then
-        log "Pushed to GitHub successfully."
-        PUSH_FAILURES=0
-      else
-        PUSH_FAILURES=$((PUSH_FAILURES + 1))
-        log "ERROR: Push failed (attempt #${PUSH_FAILURES}). Changes committed locally."
-        if [ $PUSH_FAILURES -eq 1 ]; then
-          log "  Push error: $(echo "$PUSH_OUTPUT" | grep -v "askpass" | tail -1)"
-          log "  Tip: Use Replit's Git panel to push manually, or push will auto-retry."
+        if [ $PUSH_EXIT -eq 0 ]; then
+          log "Pushed to GitHub successfully."
+          PUSH_FAILURES=0
+        else
+          PUSH_FAILURES=$((PUSH_FAILURES + 1))
+          CLEAN_OUTPUT=$(echo "$PUSH_OUTPUT" | grep -v "token\|password\|askpass" | tail -2)
+          log "ERROR: Push failed (attempt #${PUSH_FAILURES}): ${CLEAN_OUTPUT}"
         fi
+      else
+        BEHIND=$(git rev-list --count HEAD@{upstream}..HEAD 2>/dev/null || echo "?")
+        log "Committed locally (${BEHIND} commits ahead). Set GITHUB_TOKEN to enable push."
       fi
     else
       log "WARN: Commit failed (possibly no staged changes after filtering)."
     fi
+  fi
+
+  if [ -z "$PUSH_URL" ] && [ -n "$GITHUB_TOKEN" ]; then
+    REPO_URL=$(git remote get-url origin 2>/dev/null)
+    PUSH_URL=$(echo "$REPO_URL" | sed "s|https://github.com/|https://${GITHUB_TOKEN}@github.com/|")
+    log "GITHUB_TOKEN detected — enabling push for next cycle."
   fi
 
   trim_log
