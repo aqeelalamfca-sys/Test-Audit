@@ -27,3 +27,4 @@ Thumbs.db
 *.swo
 git-sync.log
 logs/git-sync.log
+.replit
