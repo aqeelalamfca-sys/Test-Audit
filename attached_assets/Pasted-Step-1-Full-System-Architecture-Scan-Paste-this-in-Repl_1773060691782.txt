@@ -1,0 +1,207 @@
+Step 1 — Full System Architecture Scan
+
+Paste this in Replit AI.
+
+Audit the entire AuditWise project for production readiness.
+
+Tasks:
+1. Scan the whole repository structure.
+2. Identify backend, frontend, database, and infrastructure components.
+3. Detect framework versions (Node, Next.js, Express, PostgreSQL, Redis).
+4. Verify Docker-related files:
+   - Dockerfile
+   - docker-compose.yml
+   - .dockerignore
+5. Validate environment variables usage.
+6. Ensure all services run in containers.
+
+Output required:
+• system architecture diagram
+• missing production dependencies
+• security risks
+• configuration issues
+Step 2 — Data Persistence & Database Stability
+Audit the data layer for production reliability.
+
+Tasks:
+1. Ensure PostgreSQL is used as the main database.
+2. Verify that database data is stored in a Docker volume.
+3. Ensure migrations run automatically on container startup.
+4. Confirm that backend connects through environment variables.
+5. Validate schema for:
+   - users
+   - firms
+   - clients
+   - engagements
+   - working papers
+   - audit modules
+6. Ensure no data loss occurs when containers restart.
+
+Goal:
+All AuditWise data must persist permanently inside the PostgreSQL container volume.
+Step 3 — Backend Production Hardening
+Audit and fix the backend service for production.
+
+Tasks:
+1. Ensure Express server runs on port 5000.
+2. Add proper error handling middleware.
+3. Ensure API routes exist for:
+   - authentication
+   - firm management
+   - client creation
+   - engagement creation
+   - working papers
+   - audit modules
+4. Add health check endpoint:
+   GET /health
+
+Response example:
+{ "status": "ok", "service": "backend" }
+
+5. Ensure logging service exists.
+
+Goal:
+Backend must be stable and restart automatically.
+Step 4 — Frontend Production Optimization
+Audit the frontend for production deployment.
+
+Tasks:
+1. Confirm the frontend framework (React or Next.js).
+2. Build optimized production bundle.
+3. Ensure API base URL points to backend container.
+4. Ensure all modules load correctly:
+   - dashboard
+   - firm setup
+   - client management
+   - engagement creation
+   - audit modules
+5. Ensure environment variables work.
+
+Goal:
+Frontend must build and run in a Docker container.
+Step 5 — Docker Container Architecture
+Create a production Docker architecture for AuditWise.
+
+Services required:
+1. auditwise-backend
+2. auditwise-frontend
+3. auditwise-db (PostgreSQL)
+4. auditwise-redis
+5. auditwise-nginx
+
+Tasks:
+• define container dependencies
+• add restart policies
+• create persistent volumes
+• expose required ports
+
+Ports:
+backend → 5000
+frontend → 3000
+nginx → 80 / 443
+postgres → 5432
+redis → 6379
+
+Goal:
+All services must start successfully with:
+
+docker compose up -d
+Step 6 — Nginx Reverse Proxy Setup
+Configure Nginx as reverse proxy.
+
+Tasks:
+1. Route traffic to containers:
+
+/api → backend
+/ → frontend
+
+2. Enable gzip compression
+3. Add security headers
+4. Enable HTTPS compatibility
+
+Goal:
+AuditWise must load via domain auditwise.tech.
+Step 7 — DevOps Deployment Pipeline
+Create a production deployment pipeline.
+
+Tasks:
+1. Connect Replit to GitHub repository.
+2. Create GitHub Actions workflow.
+
+Pipeline stages:
+1. build containers
+2. push images
+3. deploy to VPS
+
+Goal:
+Code pushed from Replit automatically deploys to VPS.
+Step 8 — Health Monitoring System
+Implement health monitoring for containers.
+
+Tasks:
+1. Add container health checks.
+2. Create system health endpoint.
+3. Display health status in logs.
+
+Health endpoints:
+/health
+/api/status
+
+Goal:
+System must automatically detect failures.
+Step 9 — Module Integrity Check (AuditWise Core)
+Validate all AuditWise modules.
+
+Modules required:
+• Firm management
+• Client management
+• Engagement management
+• Working paper management
+• Audit procedures
+• Reporting system
+
+Tasks:
+1. Ensure each module saves data in PostgreSQL.
+2. Ensure API endpoints exist.
+3. Ensure frontend pages load data correctly.
+
+Goal:
+All modules must function from Alpha → Beta stage.
+Step 10 — Production Readiness Validation
+Perform full production readiness validation.
+
+Tests required:
+1. container startup test
+2. API health test
+3. database persistence test
+4. frontend build test
+5. deployment pipeline test
+
+Output required:
+Production readiness report including:
+• errors
+• fixes applied
+• system architecture
+• deployment instructions
+Final Deployment Command (Run on VPS)
+
+Once Replit finishes all fixes, run this on Hostinger VPS.
+
+cd /opt/auditwise && git pull origin main && docker compose up -d --build
+Expected Final State
+
+Containers:
+
+auditwise-backend
+auditwise-frontend
+auditwise-nginx
+auditwise-db
+auditwise-redis
+
+System status:
+
+Running (Healthy)
+
+Website:
+
+https://auditwise.tech

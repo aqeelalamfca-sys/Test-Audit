@@ -169,3 +169,8 @@
     - Environment variables load from .env via env_file with required:false fallback
     - POSTGRES_PASSWORD uses ${:?} syntax to fail fast if not set
     - DATABASE_URL auto-constructed by docker-entrypoint.sh from component vars with URL-encoding
+    - Fixed review finding: nginx/default.conf restored to HTTP-only (no SSL cert dependency)
+    - nginx-ssl.conf remains the SSL variant with cert paths
+    - nginx-entrypoint.sh now auto-detects SSL certs and switches config at startup
+    - Both compose files mount nginx-ssl.conf alongside default.conf for runtime switching
+    - nginx -t validation runs before startup to catch config errors

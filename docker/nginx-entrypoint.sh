@@ -38,5 +38,22 @@ if [ "$elapsed" -ge "$MAX_WAIT" ]; then
   echo "[nginx-entrypoint] WARNING: Frontend not ready after ${MAX_WAIT}s, starting nginx anyway"
 fi
 
+if [ -f /etc/nginx/ssl/fullchain.pem ] && [ -f /etc/nginx/ssl/privkey.pem ]; then
+  echo "[nginx-entrypoint] SSL certificates found — enabling HTTPS"
+  if [ -f /etc/nginx/nginx-ssl.conf ]; then
+    cp /etc/nginx/nginx-ssl.conf /etc/nginx/nginx.conf
+    echo "[nginx-entrypoint] Switched to SSL config"
+  fi
+else
+  echo "[nginx-entrypoint] No SSL certificates found — serving HTTP only"
+  echo "[nginx-entrypoint] Mount certs to /etc/nginx/ssl/ and restart to enable HTTPS"
+fi
+
+echo "[nginx-entrypoint] Validating nginx config..."
+nginx -t 2>&1 || {
+  echo "[nginx-entrypoint] ERROR: nginx config test failed"
+  exit 1
+}
+
 echo "[nginx-entrypoint] Starting nginx..."
 exec nginx -g "daemon off;"
