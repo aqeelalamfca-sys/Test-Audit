@@ -49,6 +49,8 @@ Key architectural patterns and features include:
   - **Docker Entrypoint AWS Extensions**: Secrets Manager fetch at startup (`AWS_SECRET_ARN`, `AWS_DB_SECRET_ARN`), RDS CA cert auto-download, ECS metadata detection, graceful SIGTERM shutdown.
   - **Environment Reference**: `aws/.env.example` documents all AWS-specific variables.
 
+- **Deployment Folder** (`deployment/`): Self-contained production deployment package with `docker-compose.yml` (5-service stack: db, redis, backend, frontend, nginx), `nginx.conf` (production reverse proxy with gzip, caching, security headers, rate limiting), `.env.example` (all env var placeholders), `deploy.sh` (one-command deploy: git pull → stop → build → start → health check), `healthcheck.sh` (comprehensive service health checks). Usage: `cp deployment/.env.example deployment/.env && bash deployment/deploy.sh` or `cd deployment && docker compose up -d --build`.
+
 ## External Dependencies
 - **PostgreSQL**: The primary relational database for data storage.
 - **Prisma ORM**: Used for database interactions and object-relational mapping.

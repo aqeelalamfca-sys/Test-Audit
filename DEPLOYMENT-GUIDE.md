@@ -378,3 +378,41 @@ gunzip -c backups/LATEST_BACKUP.sql.gz \
 - [ ] SSL certificate installed and auto-renewing
 - [ ] Daily backups configured and verified
 - [ ] SSH key authentication (disable password auth in `/etc/ssh/sshd_config`)
+
+---
+
+## Quick Deploy (deployment/ folder)
+
+For a clean containerized deployment using only the `deployment/` folder:
+
+```bash
+cd /opt/auditwise
+
+cp deployment/.env.example deployment/.env
+nano deployment/.env
+
+bash deployment/deploy.sh
+```
+
+The `deployment/` folder contains everything needed:
+
+| File | Purpose |
+|------|---------|
+| `docker-compose.yml` | 5-service production stack (db, redis, backend, frontend, nginx) |
+| `nginx.conf` | Nginx reverse proxy (gzip, caching, security headers, rate limiting) |
+| `.env.example` | Environment variable template with all required placeholders |
+| `deploy.sh` | One-command deploy: git pull → stop → build → start → health check |
+| `healthcheck.sh` | Comprehensive health check across all 5 services |
+
+Build and start:
+
+```bash
+cd deployment
+docker compose up -d --build
+```
+
+Run health check:
+
+```bash
+bash deployment/healthcheck.sh
+```
