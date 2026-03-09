@@ -243,8 +243,8 @@ export async function registerRoutes(
               opinionType: true,
               reportDate: true,
               reportReference: true,
-              deliveredDate: true,
-              deliveredToClient: true,
+              releasedDate: true,
+              releasedToClient: true,
             },
           },
         },
@@ -257,8 +257,8 @@ export async function registerRoutes(
         clientName: eng.client?.name || "",
         yearEnd: eng.periodEnd ? eng.periodEnd.toISOString() : eng.fiscalYearEnd ? eng.fiscalYearEnd.toISOString() : "",
         opinionType: eng.auditReport?.opinionType || "NOT_APPLICABLE",
-        status: eng.auditReport?.deliveredToClient ? "ISSUED" : eng.auditReport ? "FINAL" : eng.status || "DRAFT",
-        deliveredDate: eng.auditReport?.deliveredDate?.toISOString() || null,
+        status: eng.auditReport?.releasedToClient ? "ISSUED" : eng.auditReport ? "FINAL" : eng.status || "DRAFT",
+        deliveredDate: eng.auditReport?.releasedDate?.toISOString() || null,
         reportReference: eng.auditReport?.reportReference || null,
       }));
 
