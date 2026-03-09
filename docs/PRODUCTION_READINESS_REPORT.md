@@ -258,10 +258,12 @@ Frontend Dockerfile (`docker/frontend.Dockerfile`):
 
 ### SSL Configuration
 
-- HTTP-only config (`nginx/default.conf`) for initial deployment
-- SSL config (`nginx/nginx-ssl.conf`) auto-activated when certs exist
+- HTTP-only config (`nginx/default.conf`) mounted as `/etc/nginx/nginx.conf` for initial deployment
+- SSL config (`nginx/nginx-ssl.conf`) mounted as `/etc/nginx/nginx-ssl.conf`
+- Entrypoint uses `nginx -c <selected-config>` to start with the correct config (no read-only overwrite)
 - `nginx -t` validation before startup
 - Let's Encrypt ACME challenge support at `/.well-known/acme-challenge/`
+- Healthcheck uses `--no-check-certificate` for HTTPS localhost probes
 
 ---
 
@@ -351,18 +353,18 @@ All 5 containers have Docker-level health checks with appropriate intervals, tim
 
 | Test | Result | Notes |
 |------|--------|-------|
-| Container startup | PASS | All 5 services defined with proper dependencies |
-| API health | PASS | All 5 health endpoints returning `200 OK` |
-| Database persistence | PASS | Named volume `pgdata`, schema synced (289 models) |
-| Frontend build | PASS | Vite produces optimized bundle |
-| Deployment pipeline | PASS | 3 GitHub Actions workflows configured |
-| Environment variables | PASS | `.env.example` documented, `env_file` with fallback |
-| Security headers | PASS | HSTS, CSP, X-Frame-Options, etc. |
-| SSL/TLS | PASS | Auto-detection with fallback to HTTP |
-| Rate limiting | PASS | Auth (5r/m) + API (30r/s) |
-| Error handling | PASS | Centralized middleware, 503 for DB errors |
-| Graceful shutdown | PASS | SIGTERM handler with 15s drain |
-| Logging | PASS | JSON in production, structured format |
+| Container startup | PASS | All 5 services defined with proper dependencies and healthchecks |
+| API health | PASS | All 5 health endpoints returning `200 OK` (verified via curl) |
+| Database persistence | PASS | Named volume `pgdata`, schema synced (289 models, verified via `prisma db push`) |
+| Frontend build | PASS | Vite produces optimized bundle in `dist/public/` |
+| Deployment pipeline | PASS | 3 GitHub Actions workflows: CI (ci-cd.yml), Docker publish (docker-publish.yml), VPS deploy (deploy.yml) |
+| Environment variables | PASS | `.env.example` documented, `env_file` with `required: false` fallback |
+| Security headers | PASS | X-Content-Type-Options, X-Frame-Options, HSTS (SSL config), rate limiting |
+| SSL/TLS | PASS | Config selection via `nginx -c` (no read-only mount conflict), healthcheck with `--no-check-certificate` |
+| Rate limiting | PASS | Auth (5r/m) + API (30r/s) via nginx `limit_req_zone` |
+| Error handling | PASS | Centralized middleware, 503 for DB errors, 500 masked in production |
+| Graceful shutdown | PASS | SIGTERM/SIGINT handler with configurable drain timeout |
+| Logging | PASS | JSON in production, human-readable in development |
 
 ### Fixes Applied This Session
 
@@ -376,6 +378,9 @@ All 5 containers have Docker-level health checks with appropriate intervals, tim
 8. Made `POSTGRES_PASSWORD` required (fails fast if not set)
 9. Removed duplicate `docker-entrypoint.sh` at project root
 10. Both compose files mount SSL config alongside default for runtime switching
+11. Fixed SSL auto-switch: uses `nginx -c <path>` instead of overwriting read-only mount
+12. Fixed nginx healthcheck: added `--no-check-certificate` for HTTPS localhost probes
+13. Fixed `deploy.yml`: was a step snippet, now a proper GitHub Actions workflow
 
 ---
 
