@@ -124,8 +124,18 @@ jobs:
               echo "  No code changes — rebuilding containers anyway"
             fi
 
-            # ── [4/8] Copy SSL certs into Docker volume ──
-            echo "[4/8] Syncing SSL certificates..."
+            # ── [4/8] Stop host Nginx (free ports 80/443 for container) ──
+            echo "[4/8] Stopping host-level Nginx..."
+            if systemctl is-active nginx &>/dev/null; then
+              sudo systemctl stop nginx 2>/dev/null || true
+              sudo systemctl disable nginx 2>/dev/null || true
+              echo "  Host Nginx stopped — container will handle ports 80/443"
+            else
+              echo "  Host Nginx already stopped"
+            fi
+
+            # ── [5/8] Copy SSL certs into Docker volume ──
+            echo "[5/8] Syncing SSL certificates..."
             CERT_VOLUME=$(docker volume inspect auditwise_certbot-etc --format '{{.Mountpoint}}' 2>/dev/null || echo "")
             if [ -z "$CERT_VOLUME" ]; then
               docker volume create auditwise_certbot-etc >/dev/null 2>&1 || true
@@ -141,14 +151,14 @@ jobs:
               echo "  No SSL certs found — nginx will serve HTTP only"
             fi
 
-            # ── [5/8] Rebuild and restart all containers ──
-            echo "[5/8] Rebuilding containers..."
+            # ── [6/8] Rebuild and restart all containers ──
+            echo "[6/8] Rebuilding containers..."
             docker compose build --no-cache backend frontend nginx
             docker compose up -d --force-recreate --remove-orphans
             echo "  All 5 containers restarting"
 
-            # ── [6/8] Wait for health ──
-            echo "[6/8] Waiting for app to become healthy (max 4 min)..."
+            # ── [7/8] Wait for health ──
+            echo "[7/8] Waiting for app to become healthy (max 4 min)..."
             HEALTHY=false
             for i in $(seq 1 240); do
               HTTP_CODE=$(curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/api/health 2>/dev/null || echo "000")
@@ -206,17 +216,6 @@ jobs:
             if [ "$NGINX_OK" = "false" ]; then
               echo "  WARNING: Nginx proxy not responding on port 80 — check container logs"
               docker compose logs --tail 10 nginx 2>/dev/null || true
-            fi
-
-            # ── [7/8] Disable host-level Nginx (replaced by container) ──
-            echo "[7/8] Managing host Nginx..."
-            if systemctl is-active nginx &>/dev/null; then
-              echo "  Stopping host-level Nginx (replaced by container)..."
-              sudo systemctl stop nginx 2>/dev/null || true
-              sudo systemctl disable nginx 2>/dev/null || true
-              echo "  Host Nginx disabled — container handles ports 80/443"
-            else
-              echo "  Host Nginx already stopped"
             fi
 
             # ── [8/8] Cleanup ──
