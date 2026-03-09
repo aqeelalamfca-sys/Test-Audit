@@ -1,59 +1,58 @@
-# AuditWise - Statutory Audit Management Software
+# AuditWise — Statutory Audit Management Platform
 
-## Overview
-AuditWise is a comprehensive full-stack statutory audit management platform designed to streamline and enhance the efficiency and compliance of statutory audit processes for firms. It integrates AI-assisted functionalities with human oversight to manage engagements, clients, risk assessments, and compliance through a phase-driven workflow. The platform supports regulatory standards like ISA 230 and ISQM 1, provides robust audit trail capabilities, and aims to deliver a complete audit lifecycle management tool, improving audit quality and firm-wide consistency. It includes both a web application and a VS Code extension, covering the entire audit lifecycle from planning to finalization.
+## Project Overview
 
-## User Preferences
-Not specified.
+AuditWise is a full-stack TypeScript web application built for Pakistani audit firms. It provides ISA 200-720 full coverage, ISQM-1 quality controls, and deep local regulatory integration.
 
-## System Architecture
-AuditWise utilizes a modern full-stack architecture with React 18, Vite, TailwindCSS, Radix UI, and React Query for the frontend, and Express.js in TypeScript with PostgreSQL and Prisma ORM for the backend. Session-based authentication is handled via Passport.js.
+## Architecture
 
-Key architectural patterns and features include:
-- **Multi-Tenant SaaS Architecture**: Strict tenant isolation with Row-Level Security (RLS) in PostgreSQL, `withTenantContext` helper, and `blockSuperAdmin` middleware. Features invite-based onboarding, a 5-level role hierarchy (STAFF→SENIOR→MANAGER→EQCR→PARTNER) plus FIRM_ADMIN and SUPER_ADMIN, subscription plans with overage pricing, and comprehensive subscription/firm status guards. Role display names: Audit Team, Senior, Manager, Engagement Quality Reviewer, Engagement Partner.
-- **Audit Enforcement Engine**: A global backend service ensuring compliance (ISA 230/ISQM-1) through phase sequencing, gate checks, and immutable audit logging.
-- **Integrated Audit Workspace**: Features a Global EngagementContext, auto-save (3s debounce, flush-on-unmount via `flushDraftSave` with `keepalive:true` + JWT auth), AI Assistance, phase gates, Evidence Vault, and cross-phase data linking. All 12 save bridges use `/api/workspace/:engagementId/:pageKey` endpoints (PUT for final saves, POST for draft saves to `/:pageKey/draft`).
-- **AI Audit Utilities Module**: Integrates AI services for evidence sufficiency analysis, risk-response gap detection, documentation completeness checks, draft memo generation, and AI output persistence with rate limiting.
-- **Core AI Engines**: Includes an AI Risk Assessment Engine (ISA 315/240/330), ISA 300/330 Audit Strategy & Approach Engine, ISA 530 Audit Sampling Engine, and ISA 330 Audit Program & Procedure Engine.
-- **Financial Statement Builder Module**: AI-assisted mapping of Trial Balance to Financial Statement captions and materiality handling.
-- **Materiality Engine Module (ISA 320/450)**: Configurable materiality calculation with an 8-step AI-driven analysis.
-- **Compliance & Control**: Features an AI Audit Health Dashboard for ISA/ISQM-1 compliance monitoring, a Dynamic Link Monitor + Auto-Repair Engine for audit chain integrity, a Firm Control Compliance Log, Regulatory Compliance Checklists (Companies Act 2017, FBR, SECP, ISA, ISQM, Custom) with full backend persistence (save/load per engagement via `/api/compliance/checklists/:engagementId`), FBR Documentation Pack with state-lifted tabs (tax computation, WHT reconciliation, advance tax, tax adjustments, NTN validation) and dirty-tracking, and a Compliance Simulation Engine with read-only sandbox checks (ISA coverage, file review, ISQM stress tests, security, AI governance).
-- **Compliance Export APIs**: `/api/compliance-export/` endpoints serving ISA coverage matrix, ISQM-1 control register, RBAC matrix, security checklist, and QCR readiness data as JSON. Role-gated (MANAGER+).
-- **Compliance Deliverable Docs**: `docs/compliance/` contains 8 static deliverables: ISA_Coverage_Matrix.md, ISQM1_Control_Register.md, RBAC_Matrix.md, ERD.md (Mermaid), Engagement_Workflow_Flowchart.md (Mermaid state diagram), Security_Checklist.md (37 controls), QCR_Readiness_Report.md (43 items, 100% score), Production_Validation_Summary.md.
-- **Sign-Off & Locking**: A Unified SignOffBar component enforcing role-based sign-offs (Maker-Checker-Approver) with an audit trail and a `useModuleReadOnly` hook for locking approved modules.
-- **Finalization Control Board**: A user-wise dashboard with a deterministic risk scoring engine, AI-assisted narrative risk analysis, role-scoped views, unadjusted differences tracking, and a Standards Gate blocking finalization based on risk and unresolved issues.
-- **Security & Access Control**: Implements robust password policies, input sanitization (XSS pattern stripping, `<`/`>` encoding only — `&` is NOT HTML-encoded since React handles output escaping), security headers, a comprehensive audit log service, account lockout mechanisms (in-memory, clears on restart), rate limiting middleware, and role-based access control.
-- **Platform Admin Real-Time Updates**: All platform admin pages (Dashboard, Firm Management, Plan Management, Billing Management, Notifications, Audit Logs, AI Configuration, Firm Feedback, System Monitoring) use `refetchInterval: 30000` (30s polling) to show live data. Feedback page polls every 15s. System Monitoring polls every 20s.
-- **Enterprise System Monitoring (merged into Dashboard)**: The Platform Dashboard at `/platform` combines both platform analytics (stats cards, quick nav links) at the top and the full dark ops-center system monitoring below. The ops-center section provides live VPS health monitoring with: Server Infrastructure (CPU/RAM/Disk arc gauges), Deploy Pipeline (5-step with SSE live updates), Health Probes (HTTP/API/DB/Nginx), Services, Source Repository, Application Runtime, Security, and Deploy Info panels. Backend at `GET /api/platform/system-health` uses `ssh2` for SSH mode or `child_process` for local mode. Auto-refresh every 20s with countdown. SCAN/LIVE/INTEL/DEPLOY controls in the ops command bar. No separate `/platform/system-monitoring` route — all in one dashboard view.
-- **Platform Admin RLS Bypass**: `withPlatformContext()` from `server/middleware/tenantDbContext.ts` sets `app.platform_bypass = 'true'` session variable (works without SUPERUSER/BYPASSRLS DB privilege) and also tries `SET LOCAL row_security = off` as fallback. All RLS policies include `current_setting('app.platform_bypass', true) = 'true'` OR clause for universal bypass. Used in all `platformRoutes.ts` queries that touch RLS-protected tables. Only used inside routes guarded by `requireSuperAdmin` middleware. Self-registered firms (via `/api/auth/signup`) and admin-created firms are both visible.
-- **Startup Data Cleanup**: On every server start, HTML entities (`&amp;`, `&lt;`, `&gt;`) are cleaned from Firm names/displayNames and Client names/tradingNames in the database (idempotent).
-- **Authentication**: Utilizes JWT access tokens (15-minute expiry) and refresh tokens (7-day expiry) with auto-refresh functionality on the frontend.
-- **Database Connection Management**: Robust connection layer in `server/db.ts` with environment validation (DATABASE_URL format, credential mismatch detection), exponential backoff readiness check (90s max, 20 attempts), global status tracking (`getDbStatus()`/`setDbStatus()`), and auto-reconnection detection via keepalive pings. System status endpoint: `GET /api/system/status` (no auth, returns DB state). Frontend `SystemStatusOverlay` component shows user-friendly message when DB is unavailable. Error handler sanitizes DB stack traces in production (returns 503 with `DB_UNAVAILABLE` code). Docker entrypoint validates env vars and credential consistency before starting.
-- **Performance Optimizations**: Includes lazy loading, response compression, database indexing, connection pooling, auto-save system, batched DB operations, and targeted query invalidation. QueryClient defaults: `staleTime: 5min`, `gcTime: 10min`, `refetchOnWindowFocus: true`. Save engine invalidates engagement lists only on final saves (not drafts) to avoid autosave churn. Client-detail engagement query keys use template string format (`/api/clients/${clientId}/engagements`) consistently.
-- **Production Deployment Pipeline**: Fully automated: Replit → `git push` → GitHub → Actions CI/CD → SSH to Hostinger VPS → Docker → Host Nginx → auditwise.tech. On push to `main`: build & verify in CI → SSH deploy (backup DB → git pull → `docker compose build --no-cache backend` → `docker compose up -d db redis backend` → health check `/api/health` → update host Nginx config → cleanup). Auto-rollback on health check failure. Host-level Nginx (Certbot SSL) proxies to backend container on `127.0.0.1:5000`. 3 production Docker containers: `auditwise-db` (PostgreSQL 16), `auditwise-redis` (Redis 7), `auditwise-backend` (port 5000, serves both API and frontend). Requires 4 GitHub Secrets: `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_PORT`. First-time setup: `deploy/hostinger-deploy.sh` (installs Docker, Nginx, Certbot, UFW, generates secrets). SSL config: `deploy/nginx/auditwise.conf` (HTTP), `deploy/nginx/auditwise-ssl.conf` (HTTPS+HSTS). Concurrency lock prevents parallel deploys. See `DEPLOYMENT-GUIDE.md` for complete setup.
-- **User Settings**: Provides configurable profile, notifications, preferences, AI configuration (admin only), and security settings, including backup/restore functionality.
-- **Standard Audit Templates**: Auto-seeded templates (68 ISA/ISQM) covering various audit phases, manageable through an administration module.
-- **Enhanced Platform Notifications**: Rich notification system with image upload (PNG/JPG/WEBP/GIF up to 10MB), YouTube video link embedding with preview, AI-powered content generation (topic + tone), and granular firm targeting (Global/Selected Firms with multi-select, search, and select-all). Preview dialog for media-rich notifications. Static file serving for uploaded notification images.
-- **Firm Admin Billing Details**: Firm Settings page (`/firm-admin/settings`) shows comprehensive Subscription & Billing card with: status badges (firm + subscription), plan details (limits, storage), monthly/yearly pricing from `priceSnapshot` or plan data (PKR formatted), billing period dates (start/end, trial, next invoice, grace), and recent invoices table (last 10) with overdue highlighting. API at `GET /api/tenant/subscription` includes `invoices` relation. Empty states for no subscription and no invoices.
-- **Invoice Auto-Email**: Automated invoice email delivery via Nodemailer on invoice generation and dispatch. Professional HTML email template with firm branding, line items, payment instructions. Graceful degradation when SMTP not configured.
-- **Review Notes Dashboard**: Dedicated `/review-notes` page aggregating review notes across all engagements. Three tabs (Assigned to Me, Created by Me, All Notes for managers). Stats cards showing open/total counts. Filters by status, severity, and search. Reply threads, status transitions (Open→Addressed→Cleared), resolution workflow with justification. Links to engagement workspace. API: `/api/review-notes-v2/*` routes with multi-user assignment via `ReviewNoteAssignee` model.
-- **System Monitoring Dual-Mode**: System monitoring (embedded in `/platform` dashboard) supports two execution modes: (1) **Local mode** — auto-activates when `NODE_ENV=production` (or `VPS_LOCAL_MODE=true`) with no SSH credentials; reads system metrics directly via `child_process.exec` with parallel command execution; (2) **SSH mode** — when `VPS_SSH_HOST` is configured, connects remotely via ssh2. API response includes `mode: "local"|"ssh"|"none"`. Frontend shows mode badge (Local/SSH), Docker container listing from `docker ps`, and updated connection status. Deploy pipeline works in both modes. `APP_DIR` env var configures the application directory (default `/opt/auditwise`).
+- **Frontend**: React 18 + Vite + Tailwind CSS + shadcn/ui components
+- **Backend**: Express.js (TypeScript) serving both the API and Vite dev middleware in development
+- **Database**: PostgreSQL via Prisma ORM
+- **Authentication**: JWT + session-based (Passport.js)
+- **Single server**: In development, Vite runs as middleware inside Express. Both frontend and backend share port 5000.
 
-- **AWS Deployment Support**: Full AWS-native deployment option alongside existing Hostinger VPS. Infrastructure as Code via CloudFormation (`aws/cloudformation.yml`) defining VPC, RDS PostgreSQL 15, ElastiCache Redis, ECS/Fargate, ALB, S3, CloudFront, ECR, Secrets Manager, CloudWatch. All AWS features are gated behind environment variables — without them, the app works identically to VPS mode.
-  - **S3 File Storage** (`server/services/storageService.ts`): Unified storage interface; uses S3 when `AWS_S3_BUCKET` is set, local disk otherwise. Supports `AWS_CLOUDFRONT_DOMAIN` for CDN URLs.
-  - **SES Email** (`server/services/emailService.ts`): AWS SES when `AWS_SES_REGION` is set; falls back to SMTP/Nodemailer otherwise.
-  - **Structured Logging** (`server/services/logger.ts`): JSON output when `AWS_CLOUDWATCH=true` (CloudWatch-compatible); human-readable in dev. Configurable via `LOG_LEVEL`, `SERVICE_NAME`.
-  - **RDS/ElastiCache**: `DATABASE_SSL=true` enables SSL for RDS (`verify-ca` with CA cert, `require` without). `REDIS_TLS=true` + `REDIS_AUTH_TOKEN` for ElastiCache TLS auth. Redis cache backend in `performanceCache.ts` with in-memory fallback.
-  - **ECS Task Definitions**: `aws/ecs-task-definition.json` (backend, 1024 CPU/4096 MB), `aws/ecs-task-definition-frontend.json` (256/512). ALB routing in `aws/ecs-service.json`.
-  - **Deployment Scripts**: `aws/setup.sh` (CloudFormation stack create/update), `aws/deploy.sh` (build + push to ECR + update ECS), `aws/buildspec.yml` (CodeBuild CI/CD).
-  - **Docker Entrypoint AWS Extensions**: Secrets Manager fetch at startup (`AWS_SECRET_ARN`, `AWS_DB_SECRET_ARN`), RDS CA cert auto-download, ECS metadata detection, graceful SIGTERM shutdown.
-  - **Environment Reference**: `aws/.env.example` documents all AWS-specific variables.
+## Project Structure
 
-- **Deployment Folder** (`deployment/`): Self-contained production deployment package with `docker-compose.yml` (5-service stack: db, redis, backend, frontend, nginx), `nginx.conf` (production reverse proxy with gzip, caching, security headers, rate limiting), `.env.example` (all env var placeholders), `deploy.sh` (one-command deploy: cd /opt/auditwise → git pull origin main → docker compose down → docker compose up -d --build → health check), `healthcheck.sh` (comprehensive service health checks), `system-health.sh` (docker ps + ss -tulpn + curl checks + system resources). Usage: `cp deployment/.env.example deployment/.env && bash deployment/deploy.sh` or `cd deployment && docker compose up -d --build`.
+```
+/client         - React frontend (Vite root)
+/server         - Express backend + Vite dev middleware
+/shared         - Shared TypeScript types and schema
+/prisma         - Prisma schema and seed files
+/dist           - Production build output
+```
 
-## External Dependencies
-- **PostgreSQL**: The primary relational database for data storage.
-- **Prisma ORM**: Used for database interactions and object-relational mapping.
-- **Passport.js**: Utilized for authentication middleware.
-- **OpenAI API**: Provides AI-powered functionalities, including mapping, classification, risk assessment, procedure generation, notes generation, and compliance checks.
-- **AWS SDK**: `@aws-sdk/client-s3`, `@aws-sdk/client-ses`, `@aws-sdk/client-secrets-manager`, `@aws-sdk/s3-request-presigner`, `multer-s3` — used for S3 file uploads, SES email, and Secrets Manager integration (only loaded when AWS env vars are present).
+## Key Configuration
+
+- **Port**: 5000 (both frontend and backend in dev)
+- **Host**: 0.0.0.0 (required for Replit proxy)
+- **Vite**: Runs in middleware mode inside Express (`server/vite.ts`)
+- **AllowedHosts**: Set to `true` in Vite server options for Replit proxy compatibility
+
+## Environment Variables
+
+- `DATABASE_URL` - PostgreSQL connection string (set by Replit)
+- `SESSION_SECRET` - Express session secret (auto-generated if not set)
+- `JWT_SECRET` - JWT signing secret (auto-generated or from `.jwt_secret` file)
+- `OPENAI_API_KEY` - For AI features (optional)
+
+## Database
+
+Uses Prisma with PostgreSQL. Schema is in `prisma/schema.prisma`.
+
+To push schema changes: `npx prisma db push`
+To generate client: `npx prisma generate`
+
+The app seeds data on startup:
+- SuperAdmin: aqeelalam2010@gmail.com
+- Demo users: partner, eqcr, manager, senior, staff (all with password `Test@123`)
+
+## Development
+
+The workflow runs: `NODE_OPTIONS='--max-old-space-size=1024' NODE_ENV=development npx tsx server/index.ts`
+
+## Deployment
+
+- Target: Autoscale
+- Build: `npm run build`
+- Run: `node dist/index.cjs`
