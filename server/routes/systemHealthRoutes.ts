@@ -69,11 +69,29 @@ function broadcastSSE(event: string, data: any) {
 
 function getSSHConfig() {
   const host = process.env.VPS_SSH_HOST || process.env.VPS_HOST;
-  const username = process.env.VPS_SSH_USER || "root";
+  const username = process.env.VPS_SSH_USER || process.env.VPS_USER || "root";
   const password = process.env.VPS_SSH_PASSWORD;
-  const privateKey = process.env.VPS_SSH_PRIVATE_KEY;
   const port = parseInt(process.env.VPS_SSH_PORT || "22");
-  return { host, username, password, privateKey, port };
+
+  let privateKey = process.env.VPS_SSH_PRIVATE_KEY || process.env.VPS_SSH_KEY || "";
+
+  if (!privateKey || !privateKey.includes("BEGIN")) {
+    const keyPaths = [
+      path.join(os.homedir(), ".ssh", "vps_key"),
+      "/tmp/replit_deploy_key",
+    ];
+    for (const kp of keyPaths) {
+      try {
+        const content = fs.readFileSync(kp, "utf-8");
+        if (content.includes("BEGIN")) {
+          privateKey = content;
+          break;
+        }
+      } catch {}
+    }
+  }
+
+  return { host, username, password, privateKey: privateKey || undefined, port };
 }
 
 function isLocalMode(): boolean {
@@ -166,8 +184,39 @@ async function runMultipleCommands(commands: Record<string, string>): Promise<Re
     });
     await Promise.all(promises);
   } else {
-    for (const [key, cmd] of Object.entries(commands)) {
-      results[key] = await executeSSH(cmd);
+    const entries = Object.entries(commands);
+    const separator = "___CMD_SEP___";
+    const combined = entries.map(([key, cmd]) => `echo '${separator}${key}'; (${cmd}) 2>&1; echo '${separator}RC_${key}='$?`).join("; ");
+    const batchResult = await executeSSH(combined, 30000);
+    if (batchResult.code === -1 || batchResult.code === -2) {
+      for (const [key] of entries) {
+        results[key] = { stdout: "", stderr: batchResult.stderr, code: batchResult.code };
+      }
+    } else {
+      const sections = batchResult.stdout.split(separator);
+      const rcMap: Record<string, number> = {};
+      for (const section of sections) {
+        const rcMatch = section.match(/^RC_(\w+)=(\d+)/);
+        if (rcMatch) {
+          rcMap[rcMatch[1]] = parseInt(rcMatch[2]);
+          continue;
+        }
+        if (!section.trim()) continue;
+        const lines = section.split("\n");
+        const key = lines[0]?.trim();
+        if (key && entries.some(([k]) => k === key)) {
+          const output = lines.slice(1).join("\n").trim().replace(/\n___CMD_SEP___RC_\w+=\d+$/, "");
+          results[key] = { stdout: output, stderr: "", code: 0 };
+        }
+      }
+      for (const [key] of entries) {
+        if (results[key] && rcMap[key] !== undefined) {
+          results[key].code = rcMap[key];
+        }
+        if (!results[key]) {
+          results[key] = { stdout: "", stderr: "Command output not captured", code: -1 };
+        }
+      }
     }
   }
   return results;
@@ -222,6 +271,15 @@ function formatUptime(ms: number): string {
   if (d > 0) return `${d}d ${h}h`;
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
+}
+
+function normalizeServiceStatus(raw: string): string {
+  const lower = raw.toLowerCase();
+  if (lower.startsWith("up ") || lower.includes("accepting") || lower === "active") return "active";
+  if (lower.includes("exited") || lower.includes("dead") || lower === "inactive") return "inactive";
+  if (lower === "" || lower === "inactive") return "inactive";
+  if (lower.includes("200") || lower.includes("301") || lower.includes("302")) return "active";
+  return raw;
 }
 
 router.get("/system-health/events", (req: Request, res: Response) => {
@@ -284,9 +342,10 @@ router.get("/system-health", async (req: AuthenticatedRequest, res: Response) =>
       hostname: "hostname 2>/dev/null || echo 'unknown'",
       osRelease: "cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"' || echo 'Unknown OS'",
       kernelVersion: "uname -r 2>/dev/null || echo 'N/A'",
-      nginxStatus: "curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:80/ 2>/dev/null && echo 'active' || (systemctl is-active nginx 2>/dev/null || echo 'inactive')",
-      postgresStatus: "pg_isready -h ${POSTGRES_HOST:-db} -U ${POSTGRES_USER:-auditwise} 2>/dev/null && echo 'active' || (systemctl is-active postgresql 2>/dev/null || echo 'inactive')",
-      dockerContainers: "docker ps --format '{{.Names}}|{{.Status}}|{{.Ports}}' 2>/dev/null || echo ''",
+      nginxStatus: "docker ps --filter 'name=nginx' --format '{{.Status}}' 2>/dev/null | head -1 || (curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:80/ 2>/dev/null && echo 'active' || echo 'inactive')",
+      postgresStatus: "docker exec auditwise-db pg_isready -U auditwise -h localhost 2>/dev/null && echo 'active' || (docker ps --filter 'name=db' --format '{{.Status}}' 2>/dev/null | head -1) || echo 'inactive'",
+      dockerContainers: "docker ps -a --format '{{.Names}}|{{.Status}}|{{.Ports}}' 2>/dev/null || echo ''",
+      publicIp: "curl -sf -4 --max-time 3 https://api.ipify.org 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}' || echo ''",
     };
 
     const results = await runMultipleCommands(commands);
@@ -348,7 +407,8 @@ router.get("/system-health", async (req: AuthenticatedRequest, res: Response) =>
       return { protocol: parts[0], address: parts[4] || parts[3], state: parts[parts.length - 1] };
     });
 
-    const serverIp = localMode ? (os.networkInterfaces()?.eth0?.[0]?.address || os.hostname()) : host;
+    const publicIp = results.publicIp?.stdout?.trim();
+    const serverIp = publicIp || host || (os.networkInterfaces()?.eth0?.[0]?.address || os.hostname());
 
     res.json({
       connected: true,
@@ -358,7 +418,10 @@ router.get("/system-health", async (req: AuthenticatedRequest, res: Response) =>
       resources: { cpu: { usagePercent: cpuUsage, cores: parseInt(results.cpuCores.stdout) || 1 }, memory: memoryData, disk: diskData },
       git: gitInfo,
       application: { pm2Processes: pm2Data.length > 0 ? pm2Data : pm2TableProcesses, nodeVersion: results.nodeVersion.stdout, npmVersion: results.npmVersion.stdout, dockerContainers },
-      services: { nginx: results.nginxStatus.stdout.trim(), postgresql: results.postgresStatus.stdout.trim() },
+      services: {
+        nginx: normalizeServiceStatus(results.nginxStatus.stdout.trim()),
+        postgresql: normalizeServiceStatus(results.postgresStatus.stdout.trim()),
+      },
       security: { firewall: ufwLines, openPorts, ssl: results.sslCheck.stdout.trim() },
       deployment: { cronJobs: results.cronJobs.stdout, lastFetch: results.fetchHead.stdout, pullLog: results.gitPullLog.stdout, status: activeDeployment },
     });
@@ -621,39 +684,53 @@ router.post("/system-health/probe/:probe", async (req: AuthenticatedRequest, res
     const { probe } = req.params;
     let result: { ok: boolean; detail: string } = { ok: false, detail: "Unknown probe" };
 
-    if (probe === "http" || probe === "api") {
-      const selfUrl = `http://localhost:${process.env.PORT || 5000}`;
+    const domain = process.env.DOMAIN_NAME || "auditwise.tech";
+
+    if (probe === "http") {
       const startTime = Date.now();
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
-        const response = await fetch(`${selfUrl}/api/health`, { signal: controller.signal });
+        const response = await fetch(`https://${domain}/`, { signal: controller.signal });
         clearTimeout(timeout);
         result = { ok: response.status === 200, detail: `Status ${response.status}, ${Date.now() - startTime}ms` };
       } catch (e: any) {
         result = { ok: false, detail: e.message };
       }
-    } else if (probe === "database") {
-      try {
-        const { PrismaClient } = await import("@prisma/client");
-        const testPrisma = new PrismaClient();
-        await testPrisma.$queryRaw`SELECT 1`;
-        await testPrisma.$disconnect();
-        result = { ok: true, detail: "PostgreSQL accepting connections" };
-      } catch (dbErr: any) {
-        const cmdResult = await executeCommand("docker exec auditwise-db pg_isready -U auditwise 2>/dev/null || pg_isready -h ${process.env.POSTGRES_HOST || 'db'} -U ${process.env.POSTGRES_USER || 'auditwise'} 2>/dev/null || systemctl is-active postgresql 2>/dev/null");
-        result = { ok: cmdResult.stdout.includes("accepting") || cmdResult.stdout.includes("active"), detail: cmdResult.stdout || dbErr.message };
-      }
-    } else if (probe === "nginx") {
+    } else if (probe === "api") {
+      const startTime = Date.now();
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
-        const nginxResp = await fetch("http://127.0.0.1:80/api/health", { signal: controller.signal });
+        const timeout = setTimeout(() => controller.abort(), 10000);
+        const response = await fetch(`https://${domain}/api/health`, { signal: controller.signal });
         clearTimeout(timeout);
-        result = { ok: nginxResp.status === 200 || nginxResp.status === 301 || nginxResp.status === 302, detail: `Nginx responding (HTTP ${nginxResp.status})` };
-      } catch (nginxErr: any) {
-        const cmdResult = await executeCommand("systemctl is-active nginx 2>/dev/null || curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:80/ 2>/dev/null");
-        result = { ok: cmdResult.stdout.includes("active") || cmdResult.stdout.includes("200") || cmdResult.stdout.includes("301"), detail: cmdResult.stdout || nginxErr.message };
+        const body = await response.json().catch(() => ({}));
+        result = { ok: response.status === 200, detail: `Status ${response.status}, ${Date.now() - startTime}ms${body.status ? ` (${body.status})` : ""}` };
+      } catch (e: any) {
+        result = { ok: false, detail: e.message };
+      }
+    } else if (probe === "database") {
+      const cmdResult = await executeCommand("docker exec auditwise-db pg_isready -U auditwise -d auditwise -h localhost 2>/dev/null && echo 'accepting connections'");
+      if (cmdResult.stdout.includes("accepting")) {
+        result = { ok: true, detail: "PostgreSQL accepting connections" };
+      } else {
+        result = { ok: false, detail: cmdResult.stderr || cmdResult.stdout || "Database not responding" };
+      }
+    } else if (probe === "nginx") {
+      const cmdResult = await executeCommand("docker ps --filter 'name=nginx' --format '{{.Status}}' 2>/dev/null | head -1");
+      const status = cmdResult.stdout.trim().toLowerCase();
+      if (status.startsWith("up ") && status.includes("healthy")) {
+        result = { ok: true, detail: `Nginx container: ${cmdResult.stdout.trim()}` };
+      } else if (status.startsWith("up ")) {
+        result = { ok: true, detail: `Nginx container running: ${cmdResult.stdout.trim()}` };
+      } else {
+        const curlResult = await executeCommand("curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:80/ 2>/dev/null");
+        const code = curlResult.stdout.trim();
+        if (code === "200" || code === "301" || code === "302") {
+          result = { ok: true, detail: `Nginx responding (HTTP ${code})` };
+        } else {
+          result = { ok: false, detail: status ? `Container: ${status}` : "Nginx not responding" };
+        }
       }
     }
 

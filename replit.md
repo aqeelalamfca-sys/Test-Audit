@@ -67,6 +67,18 @@ The workflow runs: `NODE_OPTIONS='--max-old-space-size=1024' NODE_ENV=developmen
 - Build: `npm run build`
 - Run: `node dist/index.cjs`
 
+## Platform Admin Dashboard
+
+The Platform Dashboard (`/platform/dashboard`) shows real-time VPS metrics via SSH:
+- **Server Resources**: CPU, Memory, Disk usage from VPS (batched single SSH session)
+- **Health Probes**: HTTP/API probes hit `https://auditwise.tech`, DB/Nginx probes run Docker commands on VPS
+- **Services**: Docker container statuses normalized to active/inactive
+- **Deploy Pipeline**: Git Pull → Install → Build → Migrate → Restart (runs on VPS via SSH)
+- **Source Repository**: Git branch/commit/status from VPS `/opt/auditwise`
+- SSH key resolution: checks `VPS_SSH_PRIVATE_KEY` env → `VPS_SSH_KEY` env → `~/.ssh/vps_key` file → `/tmp/replit_deploy_key` file
+- Backend: `server/routes/systemHealthRoutes.ts`
+- Frontend: `client/src/pages/platform/platform-dashboard.tsx`
+
 ## DevOps Control Center (devops/)
 
 Replit serves as the central DevOps controller for the entire deployment pipeline:
