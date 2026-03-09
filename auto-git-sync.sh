@@ -65,8 +65,14 @@ else
   log "WARN: No GITHUB_TOKEN set. Commits will be saved locally only."
 fi
 
+CLEAN_REMOTE=$(git remote get-url origin 2>/dev/null | sed 's|https://[^@]*@|https://|')
 log "=== Git Auto-Sync started (interval: ${INTERVAL}s) ==="
+<<<<<<< HEAD
+=======
+log "Remote: ${CLEAN_REMOTE}"
+>>>>>>> 9c37d86eea315abb16a12f97f6e302f1a85d138c
 log "Branch: $(git branch --show-current 2>/dev/null)"
+log "Push auth: $([ -n \"$PUSH_URL\" ] && echo 'token configured' || echo 'no token')"
 
 PUSH_FAILURES=0
 
@@ -107,9 +113,20 @@ while true; do
     log "Committed: ${COMMIT_MSG}"
   fi
 
+<<<<<<< HEAD
   if [ -n "$PUSH_URL" ]; then
     PUSH_OUTPUT=$(timeout 30 git push "$PUSH_URL" main --force-with-lease 2>&1)
     PUSH_EXIT=$?
+=======
+      if [ -n "$PUSH_URL" ]; then
+        PULL_OUTPUT=$(timeout 30 git pull --rebase --autostash "$PUSH_URL" main 2>&1)
+        PULL_EXIT=$?
+        if [ $PULL_EXIT -ne 0 ]; then
+          PULL_ERROR=$(echo "$PULL_OUTPUT" | grep -v "token\|password\|ghp_" | tail -3)
+          log "WARN: Pull --rebase failed: ${PULL_ERROR}. Trying push anyway..."
+          git rebase --abort 2>/dev/null
+        fi
+>>>>>>> 9c37d86eea315abb16a12f97f6e302f1a85d138c
 
     if [ $PUSH_EXIT -eq 0 ]; then
       log "Pushed to GitHub successfully."
