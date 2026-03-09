@@ -394,7 +394,21 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {isAdmin && (
+                  {isFirmAdmin && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === "/firm-admin/settings" || location === "/firm-admin"}
+                        data-testid="nav-firm-settings"
+                      >
+                        <Link href="/firm-admin/settings">
+                          <Settings className="h-4 w-4" />
+                          <span>Firm Settings</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
+                  {!isFirmAdmin && isAdmin && (
                     <SidebarMenuItem>
                       <SidebarMenuButton
                         asChild
@@ -408,7 +422,21 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   )}
-                  {isAdmin && (
+                  {isFirmAdmin && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === "/firm-admin/users"}
+                        data-testid="nav-firm-users"
+                      >
+                        <Link href="/firm-admin/users">
+                          <Users className="h-4 w-4" />
+                          <span>User Management</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
+                  {!isFirmAdmin && isAdmin && (
                     <SidebarMenuItem>
                       <SidebarMenuButton
                         asChild
@@ -486,6 +514,34 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                  {isFirmAdmin && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === "/firm-admin/audit-logs"}
+                        data-testid="nav-firm-audit-logs"
+                      >
+                        <Link href="/firm-admin/audit-logs">
+                          <FileText className="h-4 w-4" />
+                          <span>Audit Logs</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
+                  {isFirmAdmin && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === "/firm-admin/ai-usage"}
+                        data-testid="nav-firm-ai-usage"
+                      >
+                        <Link href="/firm-admin/ai-usage">
+                          <Bot className="h-4 w-4" />
+                          <span>AI Usage</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
@@ -501,71 +557,6 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-
-            {isFirmAdmin && (
-              <SidebarGroup>
-                <SidebarGroupLabel className={`px-2 text-xs font-medium uppercase tracking-wide ${theme.groupLabelColor} ${theme.groupLabelColorDark}`}>
-                  <Shield className="h-3 w-3 inline mr-1" />
-                  Firm Administration
-                </SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location === "/firm-admin/users"}
-                        data-testid="nav-firm-users"
-                        className={activeClasses}
-                      >
-                        <Link href="/firm-admin/users">
-                          <Users className={`h-4 w-4 ${iconClasses}`} />
-                          <span>User Management</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location === "/firm-admin/settings" || location === "/firm-admin"}
-                        data-testid="nav-firm-settings"
-                        className={activeClasses}
-                      >
-                        <Link href="/firm-admin/settings">
-                          <Settings className={`h-4 w-4 ${iconClasses}`} />
-                          <span>Firm Settings</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location === "/firm-admin/audit-logs"}
-                        data-testid="nav-firm-audit-logs"
-                        className={activeClasses}
-                      >
-                        <Link href="/firm-admin/audit-logs">
-                          <FileText className={`h-4 w-4 ${iconClasses}`} />
-                          <span>Audit Logs</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location === "/firm-admin/ai-usage"}
-                        data-testid="nav-firm-ai-usage"
-                        className={activeClasses}
-                      >
-                        <Link href="/firm-admin/ai-usage">
-                          <Bot className={`h-4 w-4 ${iconClasses}`} />
-                          <span>AI Usage</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            )}
           </>
         )}
       </SidebarContent>
