@@ -21,10 +21,17 @@ clear_stale_lock() {
   return 0
 }
 
+cd /home/runner/workspace || exit 1
+
 git config user.name "Aqeel Alam" 2>/dev/null
 git config user.email "aqeelalamfca@gmail.com" 2>/dev/null
 
+export GIT_ASKPASS="replit-git-askpass"
+export REPLIT_ASKPASS_PID2_SESSION="${REPLIT_SESSION}"
+
 log "=== Git Auto-Sync started (interval: ${INTERVAL}s) ==="
+log "Remote: $(git remote get-url origin 2>/dev/null)"
+log "Branch: $(git branch --show-current 2>/dev/null)"
 
 while true; do
   cd /home/runner/workspace || { log "ERROR: Cannot cd to workspace"; sleep "$INTERVAL"; continue; }
