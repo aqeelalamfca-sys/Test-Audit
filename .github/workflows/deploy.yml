@@ -182,7 +182,8 @@ jobs:
               sudo cp deploy/nginx/auditwise.conf /etc/nginx/sites-available/auditwise
             fi
             sudo ln -sf /etc/nginx/sites-available/auditwise /etc/nginx/sites-enabled/auditwise
-            sudo nginx -t 2>&1 && sudo systemctl reload nginx
+            sudo nginx -t 2>&1 && (sudo systemctl is-active nginx && sudo systemctl reload nginx || sudo systemctl start nginx)
+            sudo systemctl enable nginx 2>/dev/null || true
             echo "  Nginx updated"
 
             # ── [7/7] Cleanup ──
