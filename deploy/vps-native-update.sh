@@ -86,7 +86,7 @@ pm2 save
 
 APP_HEALTHY=false
 for i in $(seq 1 120); do
-  HTTP_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/health 2>/dev/null || echo "000")
+  HTTP_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/api/health 2>/dev/null || echo "000")
   if [ "$HTTP_CODE" = "200" ]; then
     log "App healthy after ${i}s"
     APP_HEALTHY=true
@@ -105,7 +105,7 @@ if [ "$APP_HEALTHY" = "false" ]; then
   pm2 restart auditwise
 
   for i in $(seq 1 90); do
-    ROLLBACK_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/health 2>/dev/null || echo "000")
+    ROLLBACK_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/api/health 2>/dev/null || echo "000")
     if [ "$ROLLBACK_CODE" = "200" ]; then
       log "Rollback successful — running on ${PREV_COMMIT:0:8}"
       break
@@ -115,7 +115,7 @@ if [ "$APP_HEALTHY" = "false" ]; then
   fail "Update failed — rolled back to ${PREV_COMMIT:0:8}"
 fi
 
-HEALTH=$(curl -sf http://127.0.0.1:5000/health 2>/dev/null || echo '{}')
+HEALTH=$(curl -sf http://127.0.0.1:5000/api/health 2>/dev/null || echo '{}')
 
 echo ""
 echo "  /health -> $(echo "$HEALTH" | head -c 60)"

@@ -205,7 +205,7 @@ log "PM2 process started"
 info "Waiting for app to become healthy..."
 APP_HEALTHY=false
 for i in $(seq 1 120); do
-  HTTP_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/health 2>/dev/null || echo "000")
+  HTTP_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/api/health 2>/dev/null || echo "000")
   if [ "$HTTP_CODE" = "200" ]; then
     log "App healthy after ${i}s"
     APP_HEALTHY=true
@@ -302,7 +302,7 @@ echo "  ┌───────────────────────
 echo "  │  Endpoint Verification                           │"
 echo "  ├─────────────────────────────────────────────────┤"
 
-HEALTH=$(curl -sf http://127.0.0.1:5000/health 2>/dev/null || echo '{}')
+HEALTH=$(curl -sf http://127.0.0.1:5000/api/health 2>/dev/null || echo '{}')
 HOME_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/ 2>/dev/null || echo "000")
 HOME_HTML=$(curl -sf http://127.0.0.1:5000/ 2>/dev/null | grep -c '<html' || true)
 NGINX_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:80/ 2>/dev/null || echo "000")

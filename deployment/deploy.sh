@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-DEPLOY_DIR="$SCRIPT_DIR"
+PROJECT_DIR="/opt/auditwise"
+DEPLOY_DIR="$PROJECT_DIR/deployment"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -20,7 +19,7 @@ echo "  $(date -Is)"
 echo "══════════════════════════════════════════"
 echo ""
 
-cd "$PROJECT_DIR"
+cd "$PROJECT_DIR" || fail "Cannot cd to $PROJECT_DIR"
 
 if [ ! -f "$DEPLOY_DIR/.env" ]; then
   if [ -f "$DEPLOY_DIR/.env.example" ]; then
@@ -41,22 +40,17 @@ if [ ! -f "$DEPLOY_DIR/.env" ]; then
   fi
 fi
 
-echo "[1/7] Pulling latest code from GitHub..."
-if [ -d ".git" ]; then
-  PREV_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
-  git fetch --all -q
-  git reset --hard origin/main -q
-  NEW_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
-  if [ "$PREV_COMMIT" = "$NEW_COMMIT" ]; then
-    log "Already up to date ($NEW_COMMIT)"
-  else
-    log "Updated: ${PREV_COMMIT:0:8} → ${NEW_COMMIT:0:8}"
-  fi
+echo "[1/6] Pulling latest code from GitHub..."
+PREV_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+git pull origin main || fail "git pull failed"
+NEW_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+if [ "$PREV_COMMIT" = "$NEW_COMMIT" ]; then
+  log "Already up to date ($NEW_COMMIT)"
 else
-  warn "Not a git repo — skipping pull"
+  log "Updated: ${PREV_COMMIT:0:8} → ${NEW_COMMIT:0:8}"
 fi
 
-echo "[2/7] Pre-deploy database backup..."
+echo "[2/6] Pre-deploy database backup..."
 mkdir -p "$PROJECT_DIR/backups"
 if docker exec auditwise-db pg_isready -U auditwise -d auditwise -h localhost &>/dev/null; then
   BACKUP_FILE="backups/pre-deploy_$(date +%Y%m%d_%H%M%S).sql.gz"
@@ -67,20 +61,16 @@ else
   warn "Database not running — skipping backup"
 fi
 
-echo "[3/7] Stopping existing containers..."
+echo "[3/6] Stopping existing containers..."
 cd "$DEPLOY_DIR"
 docker compose down --remove-orphans 2>/dev/null || true
 log "Containers stopped"
 
-echo "[4/7] Building fresh containers..."
-docker compose build --no-cache
-log "Build complete"
-
-echo "[5/7] Starting all services..."
-docker compose up -d
+echo "[4/6] Building and starting all services..."
+docker compose up -d --build
 log "Containers starting"
 
-echo "[6/7] Waiting for services to become healthy..."
+echo "[5/6] Waiting for services to become healthy..."
 
 echo "  Waiting for database..."
 for i in $(seq 1 60); do
@@ -131,7 +121,7 @@ for i in $(seq 1 60); do
   sleep 1
 done
 
-echo "[7/7] Running health check..."
+echo "[6/6] Running health check..."
 echo ""
 bash "$DEPLOY_DIR/healthcheck.sh" || true
 

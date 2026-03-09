@@ -162,7 +162,7 @@ cd /opt/auditwise
 docker compose ps
 
 # Check app health
-curl -s http://127.0.0.1:5000/health | jq .
+curl -s http://127.0.0.1:5000/api/health | jq .
 
 # Check Nginx
 curl -so /dev/null -w '%{http_code}' http://127.0.0.1:80/

@@ -44,7 +44,7 @@ check "auditwise-db container up" bash -c 'docker inspect --format="{{.State.Run
 echo ""
 
 echo "[2/4] Local Health Checks"
-check_cmd "GET /health (port 5000)" curl -sf --max-time 5 http://127.0.0.1:5000/health
+check_cmd "GET /health (port 5000)" curl -sf --max-time 5 http://127.0.0.1:5000/api/health
 check_cmd "GET /__healthz (liveness)" curl -sf --max-time 5 http://127.0.0.1:5000/__healthz
 check "GET / returns HTML" bash -c 'curl -sf --max-time 5 http://127.0.0.1:5000/ | grep -q "<html"'
 check "GET /login SPA route" bash -c 'curl -sf --max-time 5 http://127.0.0.1:5000/login | grep -q "<html"'
@@ -53,8 +53,8 @@ echo ""
 
 echo "[3/4] NGINX & SSL (skip if not on VPS)"
 DOMAIN="${DOMAIN:-auditwise.tech}"
-if curl -sf --max-time 5 "https://${DOMAIN}/health" >/dev/null 2>&1; then
-  check_cmd "HTTPS ${DOMAIN}/health" curl -sf --max-time 5 "https://${DOMAIN}/health"
+if curl -sf --max-time 5 "https://${DOMAIN}/api/health" >/dev/null 2>&1; then
+  check_cmd "HTTPS ${DOMAIN}/health" curl -sf --max-time 5 "https://${DOMAIN}/api/health"
   check "HTTPS ${DOMAIN}/ returns HTML" bash -c "curl -sf --max-time 5 https://${DOMAIN}/ | grep -q '<html'"
   check "HTTP→HTTPS redirect" bash -c "curl -sI --max-time 5 http://${DOMAIN}/ | grep -qi 'location.*https'"
 else

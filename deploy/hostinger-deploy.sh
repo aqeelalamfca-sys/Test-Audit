@@ -4,7 +4,7 @@ set -euo pipefail
 DOMAIN="auditwise.tech"
 EMAIL="aqeelalam2010@gmail.com"
 APP_DIR="/opt/auditwise"
-REPO="https://github.com/aqeelalamfca-sys/Test-Audit.git"
+REPO="${GITHUB_REPO:-https://github.com/aqeelalamfca-sys/Test-Audit.git}"
 BRANCH="${1:-main}"
 BACKUP_DIR="${APP_DIR}/backups"
 
@@ -132,7 +132,8 @@ fi
 
 echo "[6/10] Building and starting containers..."
 docker compose down --remove-orphans 2>/dev/null || true
-docker compose up -d --build --force-recreate
+docker compose build --no-cache backend
+docker compose up -d --force-recreate db redis backend
 
 echo "  Waiting for database..."
 for i in $(seq 1 60); do
@@ -146,11 +147,11 @@ done
 
 echo "  Waiting for app (up to 4 min)..."
 for i in $(seq 1 240); do
-  if curl -sf http://127.0.0.1:5000/health &>/dev/null; then
+  if curl -sf http://127.0.0.1:5000/api/health &>/dev/null; then
     log "App healthy after ${i}s"
     break
   fi
-  [ "$i" -eq 240 ] && fail "App did not start within 240s. Check: docker compose logs app"
+  [ "$i" -eq 240 ] && fail "App did not start within 240s. Check: docker compose logs backend"
   sleep 1
 done
 
@@ -225,7 +226,7 @@ log "Log rotation configured"
 echo "[10/10] Verifying deployment..."
 echo ""
 
-HEALTH=$(curl -sf http://127.0.0.1:5000/health 2>/dev/null || echo '{}')
+HEALTH=$(curl -sf http://127.0.0.1:5000/api/health 2>/dev/null || echo '{}')
 HOME_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/ 2>/dev/null || echo "000")
 
 if echo "$HEALTH" | grep -q '"status":"ok"' && [ "$HOME_CODE" = "200" ]; then

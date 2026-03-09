@@ -51,7 +51,7 @@ log "Containers restarted"
 
 echo "[4/5] Waiting for app to become healthy..."
 for i in $(seq 1 240); do
-  HTTP_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/health 2>/dev/null || echo "000")
+  HTTP_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/api/health 2>/dev/null || echo "000")
   if [ "$HTTP_CODE" = "200" ]; then
     log "App healthy after ${i}s"
     break
@@ -65,7 +65,7 @@ for i in $(seq 1 240); do
 done
 
 echo "[5/5] Verifying..."
-HEALTH=$(curl -sf http://127.0.0.1:5000/health 2>/dev/null || echo '{}')
+HEALTH=$(curl -sf http://127.0.0.1:5000/api/health 2>/dev/null || echo '{}')
 HOME_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/ 2>/dev/null || echo "000")
 
 echo ""

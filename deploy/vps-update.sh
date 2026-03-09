@@ -48,7 +48,7 @@ log "Containers started"
 echo "[4/6] Waiting for app to become healthy..."
 APP_HEALTHY=false
 for i in $(seq 1 240); do
-  HTTP_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/health 2>/dev/null || echo "000")
+  HTTP_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/api/health 2>/dev/null || echo "000")
   if [ "$HTTP_CODE" = "200" ]; then
     log "App healthy after ${i}s"
     APP_HEALTHY=true
@@ -67,7 +67,7 @@ if [ "$APP_HEALTHY" = "false" ]; then
   docker compose up -d --force-recreate
 
   for i in $(seq 1 180); do
-    ROLLBACK_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/health 2>/dev/null || echo "000")
+    ROLLBACK_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/api/health 2>/dev/null || echo "000")
     if [ "$ROLLBACK_CODE" = "200" ]; then
       log "Rollback successful — running on ${PREV_COMMIT:0:8}"
       break
@@ -118,7 +118,7 @@ else
 fi
 
 echo "[6/6] Verifying endpoints..."
-HEALTH=$(curl -sf http://127.0.0.1:5000/health 2>/dev/null || echo '{"status":"error"}')
+HEALTH=$(curl -sf http://127.0.0.1:5000/api/health 2>/dev/null || echo '{"status":"error"}')
 HOME_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/ 2>/dev/null || echo "000")
 HOME_HTML=$(curl -sf http://127.0.0.1:5000/ 2>/dev/null | grep -c '<html' || true)
 
