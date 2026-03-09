@@ -1,0 +1,17 @@
+[Unit]
+Description=AuditWise Production (Docker Compose)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/auditwise
+ExecStartPre=/bin/bash -c 'which docker'
+ExecStart=/bin/bash -c 'docker compose up -d'
+ExecStop=/bin/bash -c 'docker compose stop'
+ExecReload=/bin/bash -c 'docker compose up -d --force-recreate'
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target

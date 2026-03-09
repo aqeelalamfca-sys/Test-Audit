@@ -1,0 +1,43 @@
+{
+  "family": "auditwise-frontend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/auditwise-task-role",
+  "containerDefinitions": [
+    {
+      "name": "auditwise-frontend",
+      "image": "YOUR_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com/auditwise-frontend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 80,
+          "hostPort": 80,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/auditwise-frontend",
+          "awslogs-region": "YOUR_REGION",
+          "awslogs-stream-prefix": "frontend",
+          "awslogs-create-group": "true"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -sf http://localhost/ || exit 1"],
+        "interval": 15,
+        "timeout": 5,
+        "retries": 10,
+        "startPeriod": 30
+      },
+      "mountPoints": [],
+      "volumesFrom": [],
+      "stopTimeout": 10
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+You are Replit AI acting as a Senior Full-Stack + DevOps engineer. Scan the entire repo and fix the exact Hostinger VPS deployment failures without breaking existing functionality. Do not guess. Implement only what is missing/broken.
+
+CONTEXT (must use this as ground truth):
+- Hostinger VPS Ubuntu 24.04, domain auditwise.tech
+- Docker build fails at: RUN npm run build
+- Vite error: Could not load /app/attached_assets/image_1772128204551.png
+  imported by client/src/lib/guide-screenshots.ts (ENOENT)
+- Result: docker image build fails → no containers running → port 5000 not listening → Nginx returns 502.
+
+PRIMARY OBJECTIVE:
+Make the build and deployment deterministic so “docker compose up -d --build” ALWAYS succeeds and starts the API on port 5000, and the UI loads on https://auditwise.tech without 502 / 404.
+
+MANDATORY STEP 1 — REPO SCAN (output short findings):
+1) Locate all imports of "/app/attached_assets/*" and specifically the missing image reference.
+2) Identify whether "attached_assets" is supposed to exist in repo, be generated, or be ignored.
+3) Check .gitignore / dockerignore / build scripts to confirm why the file is missing in Docker context.
+4) Identify ALL other potential absolute-path asset imports (e.g., /app/..., /opt/..., absolute filesystem paths) that will break container builds.
+
+MANDATORY STEP 2 — FIX ASSET HANDLING (choose safest production approach):
+Implement ONE robust strategy that guarantees build success:
+A) Move all UI guide images into a proper Vite-served location:
+   - Either client/src/assets/... (import as module)
+   - OR client/public/... (refer by "/<file>" URL)
+   - Update guide-screenshots.ts accordingly.
+   - Ensure paths are relative and portable (no "/app/..." absolute filesystem paths).
+B) Add a build-time fallback so missing optional screenshots do NOT fail builds:
+   - In guide-screenshots.ts create a safe resolver: if asset missing, use a placeholder or hide the screenshot entry.
+   - The Vite build must not throw ENOENT due to optional assets.
+Do BOTH if needed: relocate assets + add fallback.
+
+MANDATORY STEP 3 — HARDEN DOCKER BUILD CONTEXT:
+1) Ensure any required assets are included in Docker build context:
+   - Fix .dockerignore if it accidentally excludes attached_assets or client/public or client/src/assets.
+2) Ensure “npm run build” is deterministic:
+   - If package-lock.json exists use npm ci; if not, use npm install and generate lockfile.
+3) Make Dockerfile multi-stage correct:
+   - Build stage produces Vite dist.
+   - Production stage serves UI (either via backend static or separate nginx container).
+   - DO NOT hardcode paths like /app/attached_assets.
+
+MANDATORY STEP 4 — ENSURE PORT 5000 ALWAYS LISTENS:
+1) Confirm the backend binds to 0.0.0.0:5000 (not localhost only).
+2) Add health endpoint /health returning 200 JSON.
+3) Add container HEALTHCHECK and docker-compose healthcheck.
+
+MANDATORY STEP 5 — DEPLOYMENT SELF-HEAL:
+Add scripts:
+- scripts/deploy.sh: idempotent (pull → build → up → migrate → healthcheck → print LIVE)
+- scripts/verify.sh: prints clear PASS/FAIL for:
+  * docker compose ps
+  * curl http://127.0.0.1:5000/health
+  * curl -I https://auditwise.tech/health
+- scripts/diagnose.sh: prints last 200 lines of build and app logs.
+
+MANDATORY STEP 6 — NGINX ROUTING BEST PRACTICE (document only, do not break):
+- Production routing should be:
+  - UI at /
+  - API under /api
+  - /health proxies to backend
+- Provide recommended /etc/nginx/conf.d/auditwise.conf template.
+(You do not need to edit the VPS; just provide correct template + instructions.)
+
+FINAL ACCEPTANCE TESTS (must run locally in Replit shell using docker):
+1) docker compose build must PASS.
+2) docker compose up -d then “curl -f http://localhost:5000/health” returns 200.
+3) UI build must PASS and no Vite ENOENT for missing assets.
+4) / should return UI (not “Cannot GET /”).
+5) Document the exact Hostinger command: “cd /opt/auditwise && bash scripts/deploy.sh”.
+
+OUTPUT REQUIRED:
+- List files changed
+- Explain exactly how the missing screenshot assets are handled now
+- Provide the deploy.sh + nginx template content
+- Show the exact commands and their expected outputs for PASS

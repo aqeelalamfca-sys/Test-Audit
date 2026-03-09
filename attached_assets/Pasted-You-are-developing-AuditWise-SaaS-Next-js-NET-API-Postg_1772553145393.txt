@@ -1,0 +1,125 @@
+You are developing AuditWise SaaS (Next.js + .NET API + Postgres) on Replit. Implement a SELF-SIGNUP multi-tenant model where firms can onboard without any Super Admin involvement, and each new firm gets its OWN separate database. If the firm does not activate after trial expiry, the tenant becomes DORMANT (not deleted).
+
+OBJECTIVE (END-TO-END)
+1) Public website allows a firm to select a plan and self-register (create firm + firm admin login/password).
+2) On signup, system automatically provisions a NEW dedicated Postgres database for that firm (separate DB per firm).
+3) The firm admin logs in and uses the portal; all data is stored only in that firm’s database.
+4) Trial starts immediately. After trial expiry, if the firm is not activated (payment not confirmed), the firm becomes DORMANT:
+   - login allowed (firm admin only)
+   - read-only access OR show “Dormant: Activate to continue”
+   - no new engagements, no exports, no AI, no adding users
+   - data is retained (not deleted)
+5) If activated later, firm returns to ACTIVE instantly.
+
+A) ARCHITECTURE: DATABASE-PER-TENANT
+1) Create a PLATFORM database (shared):
+   - firms registry table (tenant metadata + db connection reference)
+   - plans
+   - subscriptions (status/trial/activation)
+   - invoices/payments (optional)
+   - platform users (optional; not required for onboarding)
+2) Each firm gets a SEPARATE tenant database:
+   - all audit tables: clients, engagements, tb_gl, workingpapers, docs, etc.
+   - same schema/migrations applied at provisioning time
+
+B) PLATFORM TABLES (POSTGRES)
+Create/ensure:
+- firms_registry:
+  id uuid pk
+  firm_code text unique
+  legal_name text
+  admin_email text unique
+  tenant_db_name text unique
+  tenant_db_host text
+  tenant_db_user text
+  tenant_db_password_enc text (or reference to secret manager / env)
+  status enum: active, trialing, dormant, suspended, deleted
+  created_at, updated_at
+- plans
+- subscriptions:
+  firm_id uuid unique
+  plan_id uuid
+  status enum: trialing, active, dormant, suspended, canceled
+  trial_start_at timestamptz
+  trial_end_at timestamptz
+  is_activated boolean default false
+  dormant_at timestamptz
+  created_at, updated_at
+
+C) SELF-SIGNUP FLOW (NO SUPER ADMIN)
+Frontend:
+- /pricing -> pick plan -> Start Trial
+- /signup -> firm info + admin email + password
+Backend endpoint: POST /api/public/signup
+Within a secure transaction + provisioning workflow:
+1) Validate admin_email uniqueness in firms_registry.
+2) Create firm_registry record with status='trialing'.
+3) Provision tenant DB:
+   - Generate tenant_db_name = "auditwise_tenant_<firm_code>" (sanitize)
+   - CREATE DATABASE tenant_db_name;
+   - Run tenant migrations/schema on new DB (apply all tenant tables).
+4) Create firm admin user INSIDE the tenant DB users table:
+   - role = FIRM_ADMIN
+   - password hashed (BCrypt/Identity)
+5) Create subscription in platform DB:
+   - status='trialing'
+   - trial_start_at=now()
+   - trial_end_at=now()+interval '60 days'
+   - is_activated=false
+6) Return login token and route user to tenant portal.
+
+D) TENANT ROUTING / CONNECTION RESOLUTION
+Implement middleware in .NET:
+1) For every tenant request, resolve firm by:
+   - subdomain (preferred): {firm_code}.auditwise.tech
+   OR
+   - firm_code in URL/header (fallback)
+2) Lookup firm_registry in PLATFORM DB to get tenant DB connection.
+3) Use the tenant DB connection for all audit data queries.
+
+E) TRIAL EXPIRY → DORMANT (NOT DELETED)
+Implement scheduled job (hourly):
+1) Find subscriptions where status='trialing' AND now() >= trial_end_at AND is_activated=false
+2) Set:
+   - subscriptions.status='dormant'
+   - subscriptions.dormant_at = now()
+   - firms_registry.status='dormant'
+
+Dormant enforcement rules in tenant API:
+- Allow login only for FIRM_ADMIN
+- Block: create/update engagements, upload docs, export, AI usage, add users
+- Allow read-only viewing OR show “Dormant: Activate to continue” page
+- Show banner with “Activate Now” CTA
+
+F) ACTIVATION (PAYMENT CONFIRM)
+Create endpoint in platform: POST /api/public/activate (or /api/billing/confirm)
+Once payment verified:
+- subscriptions.is_activated=true
+- subscriptions.status='active'
+- firms_registry.status='active'
+- Tenant portal regains full access instantly.
+
+G) PASSWORD POLICY (MANDATORY)
+Enforce for all firm admin passwords:
+- minimum 8 characters
+- at least one uppercase letter
+(Recommended also: lowercase, number, special char)
+Reject signup if policy fails.
+
+H) ACCEPTANCE CRITERIA
+1) Firm can sign up without Super Admin.
+2) New tenant database is created automatically and isolated.
+3) Firm admin created in tenant DB and can log in.
+4) Trial runs for 60 days.
+5) If not activated at trial end, firm becomes DORMANT (data retained).
+6) Dormant state blocks creation/export/AI and shows activation prompt.
+7) Activation flips dormant -> active without data loss.
+
+Now implement this end-to-end:
+- Platform DB schema + registry tables
+- Tenant DB schema migrations runner
+- Tenant DB provisioning (CREATE DATABASE + run migrations)
+- Signup + login + tenant routing
+- Dormant enforcement + scheduled job
+- Activation endpoint
+Return Replit-ready code changes.

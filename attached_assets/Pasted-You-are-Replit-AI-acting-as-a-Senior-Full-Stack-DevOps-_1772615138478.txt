@@ -1,0 +1,86 @@
+You are Replit AI acting as a Senior Full-Stack + DevOps engineer for AuditWise (multi-tenant SaaS). First, perform a COMPLETE repo scan (frontend, backend, DB, Docker, Nginx, scripts). Do NOT overwrite working modules. Implement only what is missing/broken. Your goal is to permanently eliminate the deployment issues experienced on Hostinger VPS (Ubuntu 24.04, domain auditwise.tech) and make releases repeatable, deterministic, and self-healing.
+
+NON-NEGOTIABLE OUTCOMES (must all pass):
+A) ONE production URL: https://auditwise.tech must always load a real UI (not “Cannot GET /”, not 404, not 502).
+B) /health must return HTTP 200 JSON: {status:"ok", version, uptime, timestamp}.
+C) API must be namespaced under /api (e.g., /api/auth, /api/users). UI must NOT collide with API routes.
+D) The system must work with Docker Compose + Nginx + SSL on Hostinger VPS, and also run locally.
+E) Build must NEVER fail due to npm ci lockfile absence: implement a deterministic dependency strategy (commit lockfiles OR auto-fallback: if package-lock exists use npm ci else npm install + generate lockfile).
+F) Prevent OOM failures during build: ensure production build does NOT require large memory in Docker build (enterprise approach: build UI outside docker OR multi-stage build with build args + swap instructions + caching).
+G) Fix 502 root cause permanently: Nginx must proxy to a stable upstream (Docker service name) NOT container IPs that change. Use “proxy_pass http://auditwise-app:5000;” via Docker network OR expose app on host consistently and proxy to 127.0.0.1:5000. Choose ONE, document it, and make it reliable.
+H) No manual copying of dist files after deployment. Packaging must be automatic and reproducible.
+I) Provide one idempotent script deploy.sh that: git pull → build UI → build/start containers → migrate (prisma) → health checks → nginx reload → prints “LIVE” only if checks pass.
+J) Provide rollback script rollback.sh (revert last deploy by git reset to previous commit + restart).
+K) Provide full troubleshooting mapping for: 404 on /, “Cannot GET /login”, 502 bad gateway, curl reset by peer, port 443 refused, docker build npm run build exit code 1, missing dist/public, wrong paths (/var/www vs /opt), SSL renewal.
+
+ARCHITECTURE TO IMPLEMENT (choose best enterprise pattern based on scan; do not guess):
+1) Detect whether UI exists (React/Vite/CRA in /client or /frontend or /web) and whether API is Express/Node running on port 5000 with Prisma.
+2) If UI exists: enforce “Nginx serves static UI” + “/api and /health proxy to backend”. This is the preferred enterprise pattern for stability on VPS.
+   - Build UI on VPS (outside docker) and sync to /var/www/auditwise/public OR bake UI into a dedicated nginx container image. Choose the approach that is simplest and most deterministic for this repo; implement it fully.
+3) If UI is Next.js and cannot be static: run Next server on port 3000 with pm2 AND keep API on 5000; Nginx routes / -> :3000 and /api + /health -> :5000. Provide a single switch flag in deploy.sh for NEXT_MODE=true/false.
+
+IMPLEMENTATION TASKS (must be delivered as code changes):
+1) ROUTING:
+   - UI must handle / with 200 (index.html) and SPA fallback (try_files /index.html).
+   - Backend must expose /health and keep /api namespace.
+   - If backend currently returns 404 for /login or /, do NOT “fake” by redirecting to /health; instead ensure UI exists and loads.
+
+2) DOCKER:
+   - Compose services: app (api) + db (+ optional nginx if containerized).
+   - Healthchecks for app and db.
+   - App must bind 0.0.0.0 and respect PORT=5000.
+   - Prisma migrations must run idempotently at startup (or via deploy.sh step).
+
+3) NGINX TEMPLATE:
+   - Provide production-ready /etc/nginx/conf.d/auditwise.conf template with:
+     * HTTP->HTTPS redirect
+     * SSL certificate paths
+     * client_max_body_size 50M
+     * websocket headers
+     * /api -> backend
+     * /health -> backend/health
+     * / -> static UI with SPA fallback
+   - Ensure nginx -t passes always.
+
+4) BUILD/DEPLOY SCRIPTS:
+   - scripts/deploy.sh (idempotent) must:
+     * validate directories (/opt/auditwise)
+     * pull latest code
+     * build UI (npm ci if lockfile else npm install + generate lockfile)
+     * place UI build into /var/www/auditwise/public (rsync --delete)
+     * docker compose up -d --build
+     * wait for /health=200
+     * reload nginx
+     * verify https homepage returns 200
+     * print “LIVE”
+   - scripts/healthcheck.sh returns non-zero if any check fails.
+   - scripts/rollback.sh resets to previous commit and restarts.
+
+5) LOCKFILES:
+   - Ensure package-lock.json is created and committed for UI and API (where applicable), or document why not and implement the fallback logic.
+
+6) DOCUMENTATION:
+   - DEPLOYMENT.md: one single command for Hostinger VPS: `bash scripts/deploy.sh`
+   - Include certbot command, firewall ports (80/443), and “how to verify” commands.
+
+VALIDATION (must be executed and shown in output logs):
+- Local: docker compose up + curl http://localhost:5000/health
+- Server simulation commands (printed in docs):
+  * nginx -t
+  * docker compose ps
+  * curl -I https://auditwise.tech/
+  * curl -I https://auditwise.tech/health
+  * curl -I https://auditwise.tech/api/...
+- If any step fails, auto-diagnose and patch until the acceptance criteria pass.
+
+DELIVERABLE FORMAT:
+- Provide a concise summary of what you changed (files modified).
+- Provide final “Hostinger one-liner” to deploy: `cd /opt/auditwise && bash scripts/deploy.sh`
+- Provide final endpoint list and expected responses.
+
+IMPORTANT GUARDRAILS:
+- Do NOT hardcode changing container IPs in Nginx.
+- Do NOT rely on manual cp of dist to /app/dist/public after deploy.
+- Do NOT leave / returning 404 or “Cannot GET /”.
+- Do NOT break multi-tenant isolation and existing RBAC/security.
+- Keep SuperAdmin seeding logic intact (aqeelalam2010@gmail.com), but ensure it does not break deployments.

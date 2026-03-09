@@ -1,0 +1,125 @@
+Stepper + Accordion Hybrid (Audit-Friendly Pattern)
+1) Layout Structure
+
+Top bar: Horizontal Stepper (macro sequence)
+
+Entity Understanding → Risk Assessment → Materiality → Audit Program → Execution → Misstatements → Conclusion → Reporting
+
+Main body: For the selected step, show a vertical Accordion of sub-sections (micro tasks)
+
+Example (Entity Understanding): SEC-001, SEC-002, SEC-003… each collapsible.
+
+2) Gating Rules (Makes it “Audit-grade”)
+A) Stepper gating (macro)
+
+Step N+1 is locked until Step N reaches “Prepared” (or “Reviewed”, if your policy requires).
+
+Allow Partner override with mandatory reason + audit trail.
+
+B) Accordion gating (micro)
+
+Inside a step:
+
+Section i+1 is locked until section i is at least Completed.
+
+Within a section, “Submit for Review” is locked until:
+
+Mandatory fields filled
+
+Evidence attached (if required)
+
+Cross-references linked (Risk/Assertion/FS head)
+
+3) Status Model (Simple + inspection-ready)
+
+Use the same status language everywhere:
+
+NOT_STARTED → IN_PROGRESS → COMPLETED → PREPARED → IN_REVIEW → RETURNED → APPROVED → LOCKED
+
+Display this on:
+
+Stepper step badge
+
+Accordion section header
+
+Each procedure / checklist item
+
+4) What Each Accordion Header Should Show (Reviewer-first)
+
+Each collapsed header should contain:
+
+Section code + title (ISA ref)
+
+Status pill (e.g., Prepared)
+
+Completion %
+
+Evidence count (e.g., 2 files)
+
+Open notes count (e.g., 1 High)
+
+Last updated + by whom
+
+This allows reviewers to audit progress without opening everything.
+
+5) Inside an Expanded Section (Recommended Structure)
+
+Use a consistent “audit page” template:
+
+Objective (ISA ref auto-filled)
+
+Required inputs (auto-fetched from planning)
+
+Work performed (text + tickmarks)
+
+Evidence panel (drag/drop + link + reliability flags)
+
+Conclusion (mandatory)
+
+Checklists (ISA 230 completeness + ISA 500 sufficiency)
+
+Notes thread (sticky notes, maker-checker)
+
+Bottom fixed actions:
+
+Back | Save | Save & Next Section | Submit for Review
+
+6) Visual Signals (Reduce reviewer time)
+
+Traffic light per section:
+
+Red = missing mandatory items
+
+Amber = complete but not submitted
+
+Green = approved/locked
+
+“Why locked?” tooltip listing exact blockers.
+
+7) Key Advantages (Why this is better for audits)
+
+Stepper enforces ISA sequence and prevents premature execution.
+
+Accordion organizes dense content without overwhelming users.
+
+Headers become a “mini audit file index” for Partner/EQCR review.
+
+Gating + logs provide strong QCR defensibility.
+
+8) Implementation Notes (Dev-ready)
+
+Use a state machine for step + section statuses.
+
+Maintain an aggregated completion engine:
+
+section_completion = f(checklist, evidence, conclusion)
+
+step_completion = avg(weighted sections)
+
+Any edit after approval triggers:
+
+status rollback to IN_PROGRESS
+
+version bump
+
+signoff event log

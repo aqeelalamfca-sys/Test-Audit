@@ -1,0 +1,193 @@
+{
+  "services": {
+    "backend": {
+      "serviceName": "auditwise-backend",
+      "cluster": "auditwise-cluster",
+      "taskDefinition": "auditwise-backend",
+      "desiredCount": 2,
+      "launchType": "FARGATE",
+      "platformVersion": "LATEST",
+      "deploymentConfiguration": {
+        "maximumPercent": 200,
+        "minimumHealthyPercent": 100,
+        "deploymentCircuitBreaker": {
+          "enable": true,
+          "rollback": true
+        }
+      },
+      "networkConfiguration": {
+        "awsvpcConfiguration": {
+          "subnets": [
+            "PRIVATE_SUBNET_1",
+            "PRIVATE_SUBNET_2"
+          ],
+          "securityGroups": [
+            "BACKEND_SECURITY_GROUP"
+          ],
+          "assignPublicIp": "DISABLED"
+        }
+      },
+      "loadBalancers": [
+        {
+          "targetGroupArn": "arn:aws:elasticloadbalancing:YOUR_REGION:YOUR_ACCOUNT_ID:targetgroup/auditwise-backend-tg/PLACEHOLDER",
+          "containerName": "auditwise-backend",
+          "containerPort": 5000
+        }
+      ],
+      "healthCheckGracePeriodSeconds": 180,
+      "enableExecuteCommand": true,
+      "propagateTags": "TASK_DEFINITION",
+      "serviceRegistries": []
+    },
+    "frontend": {
+      "serviceName": "auditwise-frontend",
+      "cluster": "auditwise-cluster",
+      "taskDefinition": "auditwise-frontend",
+      "desiredCount": 2,
+      "launchType": "FARGATE",
+      "platformVersion": "LATEST",
+      "deploymentConfiguration": {
+        "maximumPercent": 200,
+        "minimumHealthyPercent": 100,
+        "deploymentCircuitBreaker": {
+          "enable": true,
+          "rollback": true
+        }
+      },
+      "networkConfiguration": {
+        "awsvpcConfiguration": {
+          "subnets": [
+            "PUBLIC_SUBNET_1",
+            "PUBLIC_SUBNET_2"
+          ],
+          "securityGroups": [
+            "FRONTEND_SECURITY_GROUP"
+          ],
+          "assignPublicIp": "ENABLED"
+        }
+      },
+      "loadBalancers": [
+        {
+          "targetGroupArn": "arn:aws:elasticloadbalancing:YOUR_REGION:YOUR_ACCOUNT_ID:targetgroup/auditwise-frontend-tg/PLACEHOLDER",
+          "containerName": "auditwise-frontend",
+          "containerPort": 80
+        }
+      ],
+      "healthCheckGracePeriodSeconds": 60,
+      "enableExecuteCommand": true,
+      "propagateTags": "TASK_DEFINITION",
+      "serviceRegistries": []
+    }
+  },
+  "targetGroups": {
+    "backend": {
+      "name": "auditwise-backend-tg",
+      "protocol": "HTTP",
+      "port": 5000,
+      "targetType": "ip",
+      "vpcId": "VPC_ID",
+      "healthCheck": {
+        "enabled": true,
+        "path": "/api/health",
+        "protocol": "HTTP",
+        "port": "5000",
+        "healthyThresholdCount": 2,
+        "unhealthyThresholdCount": 5,
+        "timeoutSeconds": 10,
+        "intervalSeconds": 30,
+        "matcher": {
+          "httpCode": "200"
+        }
+      },
+      "stickiness": {
+        "enabled": false
+      }
+    },
+    "frontend": {
+      "name": "auditwise-frontend-tg",
+      "protocol": "HTTP",
+      "port": 80,
+      "targetType": "ip",
+      "vpcId": "VPC_ID",
+      "healthCheck": {
+        "enabled": true,
+        "path": "/",
+        "protocol": "HTTP",
+        "port": "80",
+        "healthyThresholdCount": 2,
+        "unhealthyThresholdCount": 3,
+        "timeoutSeconds": 5,
+        "intervalSeconds": 15,
+        "matcher": {
+          "httpCode": "200"
+        }
+      },
+      "stickiness": {
+        "enabled": false
+      }
+    }
+  },
+  "albListenerRules": {
+    "httpsListener": {
+      "port": 443,
+      "protocol": "HTTPS",
+      "certificates": [
+        {
+          "certificateArn": "arn:aws:acm:YOUR_REGION:YOUR_ACCOUNT_ID:certificate/CERTIFICATE_ID"
+        }
+      ],
+      "defaultActions": [
+        {
+          "type": "forward",
+          "targetGroupArn": "auditwise-frontend-tg"
+        }
+      ],
+      "rules": [
+        {
+          "priority": 10,
+          "conditions": [
+            {
+              "field": "path-pattern",
+              "values": ["/api/*"]
+            }
+          ],
+          "actions": [
+            {
+              "type": "forward",
+              "targetGroupArn": "auditwise-backend-tg"
+            }
+          ]
+        },
+        {
+          "priority": 20,
+          "conditions": [
+            {
+              "field": "path-pattern",
+              "values": ["/health"]
+            }
+          ],
+          "actions": [
+            {
+              "type": "forward",
+              "targetGroupArn": "auditwise-backend-tg"
+            }
+          ]
+        }
+      ]
+    },
+    "httpListener": {
+      "port": 80,
+      "protocol": "HTTP",
+      "defaultActions": [
+        {
+          "type": "redirect",
+          "redirectConfig": {
+            "protocol": "HTTPS",
+            "port": "443",
+            "statusCode": "HTTP_301"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,88 @@
+Below is your **ultimate short developer prompt** to implement full multi-tenant user hierarchy (Super Admin → Firm Admin → Users) in your **Next.js + .NET + Postgres AI Audit SaaS**:
+
+---
+
+## 🚀 ULTIMATE DEVELOPMENT PROMPT
+
+> Develop a secure multi-tenant user management system for an AI-based Audit SaaS (Next.js frontend, .NET API, Postgres DB) with strict RBAC and tenant isolation.
+>
+> Implement the following:
+>
+> 1️⃣ **Roles (Platform + Tenant)**
+>
+> * SuperAdmin (platform-wide, no firmId)
+> * FirmAdmin (firm-scoped)
+> * Partner/Approver
+> * Manager/Reviewer
+> * Associate/Preparer
+> * Viewer/ReadOnly
+>
+> 2️⃣ **Multi-Tenancy Rules**
+>
+> * Every non-super user must have firmId.
+> * All data queries must enforce firmId filter.
+> * SuperAdmin can manage all firms.
+> * FirmAdmin can manage only their firm.
+>
+> 3️⃣ **SuperAdmin Capabilities**
+>
+> * Create/Edit/Suspend/Terminate Firms
+> * Assign Trial & Subscription Plan
+> * Control Billing Status
+> * Push Global or Firm Notifications
+> * Set Default AI API Key (platform-wide)
+> * View All Audit Logs
+>
+> 4️⃣ **FirmAdmin Capabilities**
+>
+> * Create/Edit/Suspend Users within firm
+> * Assign roles
+> * Configure firm settings
+> * Add Firm AI API override (encrypted)
+> * View firm audit logs
+>
+> 5️⃣ **User Capabilities**
+>
+> * Role-based access to engagements & workpapers
+> * Preparer → Review → Approve workflow
+> * AI usage tracked per user & firm
+>
+> 6️⃣ **Security Controls**
+>
+> * JWT + Refresh token auth
+> * Role + Firm middleware guards
+> * Subscription status guard (Trial/Active/Suspended/Expired)
+> * Full audit log for all write actions
+> * Soft delete users (status-based)
+>
+> 7️⃣ **Database Requirements**
+>
+> * firms
+> * users (firmId nullable for SuperAdmin)
+> * roles
+> * subscriptions
+> * firm_settings (AI override)
+> * audit_logs
+>
+> 8️⃣ **Status Controls**
+>
+> * Firm status: TRIAL | ACTIVE | SUSPENDED | TERMINATED
+> * User status: ACTIVE | SUSPENDED | DELETED
+>
+> 9️⃣ **AI Control Logic**
+>
+> * Use platform default AI key unless firm override enabled
+> * Track token usage per firm & per user
+>
+> Ensure:
+>
+> * No cross-tenant data leakage
+> * All endpoints protected by role + tenant guard
+> * All actions logged
+> * Clean separation between /platform (super admin) and /tenant (firm scope)
+>
+> Production-ready, secure, and scalable architecture.
+
+---
+
+If you want, I can also give an even shorter **“Replit-ready one-paragraph version”** for rapid scaffolding.

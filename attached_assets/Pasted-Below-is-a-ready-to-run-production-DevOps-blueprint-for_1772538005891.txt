@@ -1,0 +1,497 @@
+Below is a **ready-to-run production DevOps blueprint** for **Next.js + .NET API + Postgres** (multi-tenant SaaS) on a VPS like Hostinger.
+
+You will get:
+
+1. **Folder structure**
+2. **docker-compose.yml (production)**
+3. **Nginx reverse proxy config (Next.js + /api → .NET)**
+4. **Certbot SSL (Let’s Encrypt) setup**
+5. **GitHub Actions CI/CD (build → push to GHCR → deploy via SSH)**
+6. **.env.prod template + operational commands**
+
+---
+
+## 1) Recommended Folder Structure on VPS
+
+Create:
+
+```bash
+/opt/auditwise/
+  docker-compose.yml
+  .env.prod
+  nginx/
+    conf.d/
+      auditwise.conf
+  certbot/
+    www/
+    conf/
+  data/
+    postgres/
+  logs/
+```
+
+---
+
+## 2) docker-compose.yml (Production)
+
+Create `/opt/auditwise/docker-compose.yml`
+
+```yaml
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: auditwise_nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot/www:/var/www/certbot:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+    depends_on:
+      - frontend
+      - api
+    networks:
+      - auditwise_net
+
+  frontend:
+    image: ghcr.io/YOUR_GITHUB_ORG/auditwise-frontend:prod-latest
+    container_name: auditwise_frontend
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ >/dev/null 2>&1 || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    networks:
+      - auditwise_net
+
+  api:
+    image: ghcr.io/YOUR_GITHUB_ORG/auditwise-api:prod-latest
+    container_name: auditwise_api
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+      - CONNECTIONSTRINGS__DEFAULT=${DB_CONNECTION}
+      - JWT__SIGNINGKEY=${JWT_SIGNING_KEY}
+      - ENCRYPTION__MASTERKEY=${ENCRYPTION_MASTER_KEY}
+      - AI__DEFAULT_API_KEY=${DEFAULT_AI_API_KEY}
+      - AI__ALLOW_FIRM_OVERRIDE=${AI_ALLOW_FIRM_OVERRIDE}
+      - SMTP__HOST=${SMTP_HOST}
+      - SMTP__PORT=${SMTP_PORT}
+      - SMTP__USER=${SMTP_USER}
+      - SMTP__PASS=${SMTP_PASS}
+      - APP__BASEURL=${APP_BASE_URL}
+    expose:
+      - "8080"
+    depends_on:
+      - db
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health >/dev/null 2>&1 || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    networks:
+      - auditwise_net
+
+  worker:
+    image: ghcr.io/YOUR_GITHUB_ORG/auditwise-worker:prod-latest
+    container_name: auditwise_worker
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - CONNECTIONSTRINGS__DEFAULT=${DB_CONNECTION}
+      - AI__DEFAULT_API_KEY=${DEFAULT_AI_API_KEY}
+      - ENCRYPTION__MASTERKEY=${ENCRYPTION_MASTER_KEY}
+    depends_on:
+      - db
+    networks:
+      - auditwise_net
+
+  db:
+    image: postgres:16-alpine
+    container_name: auditwise_db
+    restart: always
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks:
+      - auditwise_net
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: auditwise_certbot
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+    entrypoint: sh -c "trap exit TERM; while :; do sleep 12h & wait $${!}; certbot renew --webroot -w /var/www/certbot --quiet; done"
+    networks:
+      - auditwise_net
+
+networks:
+  auditwise_net:
+    driver: bridge
+```
+
+✅ Notes:
+
+* Nginx routes `/` to Next.js and `/api` to .NET.
+* Certbot renews every 12 hours.
+* `api` health endpoint required at `/health`.
+
+---
+
+## 3) Nginx Config (Domain + Reverse Proxy)
+
+Create `/opt/auditwise/nginx/conf.d/auditwise.conf`
+
+```nginx
+# HTTP (port 80) - for certbot challenge + redirect to HTTPS
+server {
+  listen 80;
+  server_name auditwise.tech www.auditwise.tech;
+
+  location /.well-known/acme-challenge/ {
+    root /var/www/certbot;
+  }
+
+  location / {
+    return 301 https://$host$request_uri;
+  }
+}
+
+# HTTPS (port 443)
+server {
+  listen 443 ssl http2;
+  server_name auditwise.tech www.auditwise.tech;
+
+  ssl_certificate /etc/letsencrypt/live/auditwise.tech/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/auditwise.tech/privkey.pem;
+
+  # Security headers (safe defaults)
+  add_header X-Content-Type-Options nosniff always;
+  add_header X-Frame-Options SAMEORIGIN always;
+  add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+  client_max_body_size 50m;
+
+  # Frontend
+  location / {
+    proxy_pass http://frontend:3000;
+    proxy_http_version 1.1;
+
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+  }
+
+  # API
+  location /api/ {
+    proxy_pass http://api:8080/;
+    proxy_http_version 1.1;
+
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+```
+
+✅ This expects:
+
+* Next.js listens on `3000`
+* .NET API listens on `8080`
+* Your app calls API via `https://auditwise.tech/api/...`
+
+---
+
+## 4) .env.prod Template (Secrets + URLs)
+
+Create `/opt/auditwise/.env.prod`
+
+```env
+# URLs
+APP_BASE_URL=https://auditwise.tech
+NEXT_PUBLIC_BASE_URL=https://auditwise.tech
+NEXT_PUBLIC_API_BASE_URL=https://auditwise.tech/api
+
+# Postgres
+POSTGRES_DB=auditwise
+POSTGRES_USER=auditwise_user
+POSTGRES_PASSWORD=CHANGE_ME_STRONG_PASSWORD
+
+# Connection string used by .NET API/Worker
+DB_CONNECTION=Host=db;Port=5432;Database=auditwise;Username=auditwise_user;Password=CHANGE_ME_STRONG_PASSWORD;Pooling=true;Minimum Pool Size=0;Maximum Pool Size=200;
+
+# Security
+JWT_SIGNING_KEY=CHANGE_ME_64CHARS_MIN_RANDOM
+ENCRYPTION_MASTER_KEY=CHANGE_ME_32BYTES_BASE64_OR_HEX
+
+# Platform AI (Super Admin default key)
+DEFAULT_AI_API_KEY=CHANGE_ME_PLATFORM_DEFAULT_AI_KEY
+AI_ALLOW_FIRM_OVERRIDE=true
+
+# SMTP (optional)
+SMTP_HOST=smtp.yourmail.com
+SMTP_PORT=587
+SMTP_USER=youruser
+SMTP_PASS=yourpass
+```
+
+**Permissions (important):**
+
+```bash
+chmod 600 /opt/auditwise/.env.prod
+```
+
+---
+
+## 5) First-Time SSL Issuance (Certbot)
+
+### Step A — Start HTTP stack first (without SSL files)
+
+Run:
+
+```bash
+cd /opt/auditwise
+docker compose --env-file .env.prod up -d nginx frontend api db
+```
+
+### Step B — Request certificate (one-time)
+
+Run:
+
+```bash
+docker run --rm \
+  -v /opt/auditwise/certbot/www:/var/www/certbot \
+  -v /opt/auditwise/certbot/conf:/etc/letsencrypt \
+  certbot/certbot certonly \
+  --webroot -w /var/www/certbot \
+  -d auditwise.tech -d www.auditwise.tech \
+  --email YOUR_EMAIL_HERE --agree-tos --no-eff-email
+```
+
+### Step C — Restart Nginx with SSL
+
+```bash
+cd /opt/auditwise
+docker compose --env-file .env.prod restart nginx
+```
+
+### Step D — Start certbot renew service
+
+```bash
+cd /opt/auditwise
+docker compose --env-file .env.prod up -d certbot
+```
+
+---
+
+## 6) GitHub Actions CI/CD (Build → GHCR → Deploy via SSH)
+
+### A) Required GitHub Secrets
+
+In your repo → Settings → Secrets and variables → Actions:
+
+* `VPS_HOST` (IP)
+* `VPS_USER` (e.g., root or deploy user)
+* `VPS_SSH_KEY` (private key)
+* `GHCR_PAT` (if needed; often `GITHUB_TOKEN` is enough)
+* Optional: `VPS_PORT` (default 22)
+
+### B) Workflow file
+
+Create `.github/workflows/prod-deploy.yml`
+
+```yaml
+name: Deploy Production
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/auditwise-frontend:prod-latest
+            ghcr.io/${{ github.repository_owner }}/auditwise-frontend:prod-${{ github.sha }}
+
+      - name: Build & Push API
+        uses: docker/build-push-action@v6
+        with:
+          context: ./api
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/auditwise-api:prod-latest
+            ghcr.io/${{ github.repository_owner }}/auditwise-api:prod-${{ github.sha }}
+
+      - name: Build & Push Worker
+        uses: docker/build-push-action@v6
+        with:
+          context: ./worker
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/auditwise-worker:prod-latest
+            ghcr.io/${{ github.repository_owner }}/auditwise-worker:prod-${{ github.sha }}
+
+      - name: Deploy on VPS (SSH)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/auditwise
+
+            # login to GHCR on server
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+            # pull latest images + restart
+            docker compose --env-file .env.prod pull
+            docker compose --env-file .env.prod up -d
+
+            # optional: clean unused images
+            docker image prune -f
+
+            # basic health checks
+            echo "Checking API health..."
+            curl -fsS https://auditwise.tech/api/health >/dev/null
+            echo "OK"
+```
+
+---
+
+## 7) Required Dockerfiles (Minimum Expectations)
+
+### Next.js Dockerfile (frontend/Dockerfile)
+
+Should:
+
+* build Next.js
+* run `next start -p 3000`
+
+### .NET API Dockerfile (api/Dockerfile)
+
+Should:
+
+* publish release
+* expose `8080`
+* have `/health` endpoint
+
+### Worker Dockerfile (worker/Dockerfile)
+
+Should:
+
+* publish release
+* run background service
+
+If you paste your current Dockerfiles, I can harden them (smaller images, caching, proper non-root user).
+
+---
+
+## 8) Production Operational Commands (VPS)
+
+### Start / Update
+
+```bash
+cd /opt/auditwise
+docker compose --env-file .env.prod up -d
+```
+
+### View logs
+
+```bash
+docker logs -f auditwise_api
+docker logs -f auditwise_frontend
+docker logs -f auditwise_nginx
+```
+
+### Restart safely
+
+```bash
+docker compose --env-file .env.prod restart
+```
+
+### Backup Postgres (daily cron recommended)
+
+```bash
+docker exec -t auditwise_db pg_dump -U auditwise_user auditwise > /opt/auditwise/backups/auditwise_$(date +%F).sql
+```
+
+---
+
+## 9) Mandatory Health Endpoints
+
+Implement in .NET API:
+
+* `GET /health` → 200 OK (and optionally checks DB connectivity)
+
+This is essential for reliable deployments.
+
+---
+
+## 10) AI Key Governance (Your Requirement)
+
+* `DEFAULT_AI_API_KEY` (Super Admin default) is injected via `.env.prod`
+* Firm-specific AI keys are stored encrypted in DB (FirmSettings table)
+* Runtime selection logic:
+
+  * If firm override enabled **and** firm key exists → use firm key
+  * Else use default key
+
+This ensures the platform always works even if firm key is missing.
+
+---
+
+### If you want, I can also provide:
+
+* A hardened **Nginx rate-limit** block specifically for `/api/auth/*` and `/api/ai/*`
+* A **one-shot migration service** pattern (EF Core migrations container) so DB schema always updates correctly on deploy
+
+Just tell me: **EF Core** or another migration tool?

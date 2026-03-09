@@ -1,0 +1,103 @@
+You are upgrading AuditWise SaaS (Next.js + .NET Web API + Postgres) on Replit into a STRICT multi-tenant system where the Platform Super Admin can create firms/users and manage billing, BUT can NEVER view or query any firm’s audit data (engagements, TB/GL, working papers, documents, client names, etc.). Implement tenant isolation at BOTH application and database levels (Postgres RLS) so even a coding mistake cannot leak data.
+
+GOAL (NON-NEGOTIABLE)
+- Many firms use the same software.
+- Super Admin can: create firm, create firm admin login/invite, assign plan, suspend/activate, billing/invoices, platform notices.
+- Super Admin cannot: access /app (tenant portal), cannot read tenant tables, cannot see any engagement/client/document data.
+- Firm users can only access their own firm’s data.
+
+A) DATABASE DESIGN — SPLIT PLATFORM VS TENANT DATA
+1) PLATFORM tables (Super Admin allowed):
+   - platform_users (super admins)
+   - firms (tenant registry only: id, legal_name, city, status)
+   - plans, subscriptions, invoices, payments
+   - platform_audit_log / billing_audit_log
+   These tables MUST NOT store audit content (no client names, no TB, no documents).
+2) TENANT tables (Super Admin must be blocked):
+   - clients, engagements, tb_gl, workingpapers, evidence, documents, tenant_audit_logs, etc.
+   ALL tenant tables MUST include firm_id uuid NOT NULL.
+
+B) POSTGRES ROW LEVEL SECURITY (RLS) — HARD ISOLATION
+For EVERY tenant table:
+1) Ensure firm_id exists and is indexed:
+   - ALTER TABLE <tenant_table> ADD COLUMN IF NOT EXISTS firm_id uuid NOT NULL;
+   - CREATE INDEX IF NOT EXISTS idx_<table>_firm_id ON <table>(firm_id);
+2) Enable RLS:
+   - ALTER TABLE <tenant_table> ENABLE ROW LEVEL SECURITY;
+3) Create a strict policy that only allows rows for current firm context:
+   - CREATE POLICY <table>_firm_isolation
+     ON <tenant_table>
+     USING (firm_id::text = current_setting('app.firm_id', true));
+4) Do NOT create any bypass policy for super admin.
+5) Ensure database role used by application is NOT a superuser and does NOT have BYPASSRLS.
+
+C) DB SESSION CONTEXT SETTING (MANDATORY)
+In .NET, for every request that touches tenant data, set firm context on the DB connection BEFORE any query:
+- SELECT set_config('app.firm_id', '<firm_uuid>', true);
+
+This must be done via middleware or per-request DB interceptor so it cannot be forgotten.
+
+D) AUTH & RBAC — TWO WORLDS
+1) Separate identity:
+   - platform_users: role = SUPER_ADMIN (platform only)
+   - tenant users: users table includes firm_id + role (FIRM_ADMIN / PARTNER / MANAGER / PREPARER / USER)
+2) JWT claims MUST include:
+   - user_type: PLATFORM or TENANT
+   - for TENANT: firm_id, role
+3) Route separation:
+   - Next.js routes:
+     /platform/* -> PLATFORM only (Super Admin)
+     /app/*      -> TENANT only (Firm portal)
+4) Enforce in both Next.js (route guards) and .NET API (authorization policies):
+   - Super Admin cannot call tenant endpoints.
+   - Tenant users cannot call platform endpoints.
+
+E) API STRUCTURE
+1) Platform API (Super Admin only):
+   - POST /api/platform/firms (create firm)
+   - POST /api/platform/firms/{id}/invite-admin (send one-time invite link) OR create admin with temp password
+   - POST /api/platform/firms/{id}/suspend
+   - POST /api/platform/firms/{id}/activate
+   - GET  /api/platform/firms (list with SAFE metadata only: plan/status/counts; no tenant content)
+   - GET  /api/platform/billing/* (invoices/payments)
+2) Tenant API (Firm portal):
+   - /api/app/* endpoints MUST require TENANT JWT and MUST set app.firm_id on DB session.
+   - Every query must be firm-scoped, but RLS is the final enforcement.
+
+F) FIRM CREATION WITHOUT DATA ACCESS (BEST PRACTICE)
+Implement invite-based onboarding:
+1) Super Admin creates firm record + subscription plan.
+2) System generates one-time invite token (expires in 48 hours).
+3) Invite link allows the firm admin to set password and create their account.
+4) Super Admin never knows tenant password and cannot log in to tenant portal.
+
+G) SAFE METRICS FOR BILLING (ALLOWED)
+Super Admin may see ONLY aggregated counts:
+- users_count, offices_count, engagements_count (numbers only)
+Do NOT show names/titles. Implement these as COUNT(*) queries grouped by firm_id OR via a usage_snapshot table. Counts are acceptable.
+
+H) COMPLIANCE / AUDIT LOGGING
+Write platform audit logs for:
+- firm created
+- admin invite created
+- plan assigned
+- suspend/activate
+- billing changes
+Do NOT log tenant content into platform logs.
+
+I) ACCEPTANCE TESTS (MUST PASS)
+1) Super Admin login can access /platform but gets 403/redirect on /app.
+2) Super Admin calling any tenant endpoint returns 403.
+3) Tenant user from Firm A cannot read Firm B data even if API bug tries to query without firm filter (RLS must block).
+4) RLS enabled on all tenant tables and app DB user has NO BYPASSRLS.
+5) Invite flow creates firm admin without exposing password to Super Admin.
+6) Platform screens show only safe metadata and aggregated counts.
+
+IMPLEMENT NOW
+- Create/modify Postgres migrations to add firm_id to all tenant tables, enable RLS, create policies.
+- Ensure application DB user role does NOT bypass RLS.
+- Add .NET middleware/interceptor to set_config('app.firm_id', firmId) for every tenant request.
+- Split API routes and authorization policies for PLATFORM vs TENANT.
+- Update Next.js route guards accordingly.
+- Add firm creation + invite flow in platform module.
+Return the complete code changes (migrations + .NET + Next.js) in a Replit-ready state.

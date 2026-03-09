@@ -1,0 +1,78 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: us-east-1
+    ECR_BACKEND_REPO: auditwise-backend
+    ECR_FRONTEND_REPO: auditwise-frontend
+    ECS_CLUSTER: auditwise-cluster
+    ECS_BACKEND_SERVICE: auditwise-backend
+    ECS_FRONTEND_SERVICE: auditwise-frontend
+  parameter-store:
+    DOCKER_HUB_TOKEN: /auditwise/dockerhub-token
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Installing dependencies..."
+      - npm ci --maxsockets 5
+
+  pre_build:
+    commands:
+      - echo "Logging in to Amazon ECR..."
+      - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - ECR_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_URI
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG="${COMMIT_HASH:-latest}"
+      - echo "Build tag = $IMAGE_TAG"
+
+  build:
+    commands:
+      - echo "Building backend Docker image..."
+      - docker build --platform linux/amd64 -f docker/backend.Dockerfile -t $ECR_BACKEND_REPO:$IMAGE_TAG -t $ECR_BACKEND_REPO:latest .
+
+      - echo "Building frontend Docker image..."
+      - docker build --platform linux/amd64 -f docker/frontend.Dockerfile -t $ECR_FRONTEND_REPO:$IMAGE_TAG -t $ECR_FRONTEND_REPO:latest .
+
+      - echo "Tagging images for ECR..."
+      - docker tag $ECR_BACKEND_REPO:$IMAGE_TAG $ECR_URI/$ECR_BACKEND_REPO:$IMAGE_TAG
+      - docker tag $ECR_BACKEND_REPO:latest $ECR_URI/$ECR_BACKEND_REPO:latest
+      - docker tag $ECR_FRONTEND_REPO:$IMAGE_TAG $ECR_URI/$ECR_FRONTEND_REPO:$IMAGE_TAG
+      - docker tag $ECR_FRONTEND_REPO:latest $ECR_URI/$ECR_FRONTEND_REPO:latest
+
+  post_build:
+    commands:
+      - echo "Pushing backend image to ECR..."
+      - docker push $ECR_URI/$ECR_BACKEND_REPO:$IMAGE_TAG
+      - docker push $ECR_URI/$ECR_BACKEND_REPO:latest
+
+      - echo "Pushing frontend image to ECR..."
+      - docker push $ECR_URI/$ECR_FRONTEND_REPO:$IMAGE_TAG
+      - docker push $ECR_URI/$ECR_FRONTEND_REPO:latest
+
+      - echo "Generating imagedefinitions files for ECS deploy..."
+      - printf '[{"name":"auditwise-backend","imageUri":"%s"}]' $ECR_URI/$ECR_BACKEND_REPO:$IMAGE_TAG > backend-imagedefinitions.json
+      - printf '[{"name":"auditwise-frontend","imageUri":"%s"}]' $ECR_URI/$ECR_FRONTEND_REPO:$IMAGE_TAG > frontend-imagedefinitions.json
+
+      - echo "Updating ECS backend service..."
+      - aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_BACKEND_SERVICE --force-new-deployment --region $AWS_DEFAULT_REGION > /dev/null
+
+      - echo "Updating ECS frontend service..."
+      - aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_FRONTEND_SERVICE --force-new-deployment --region $AWS_DEFAULT_REGION > /dev/null
+
+      - echo "Deployment triggered successfully"
+
+artifacts:
+  files:
+    - backend-imagedefinitions.json
+    - frontend-imagedefinitions.json
+    - aws/ecs-task-definition.json
+    - aws/ecs-task-definition-frontend.json
+
+cache:
+  paths:
+    - /root/.npm/**/*
+    - node_modules/**/*

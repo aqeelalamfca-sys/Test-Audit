@@ -1,0 +1,27 @@
+# Ignore environment files
+.env
+.env.*
+!.env.example
+
+node_modules/
+dist/
+*.log
+logs/
+
+auditwise-deploy.tar.gz
+.jwt_secret
+
+# Docker volumes and SSL certs
+nginx/ssl/
+backups/
+uploads/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

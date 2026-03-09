@@ -1,0 +1,70 @@
+Account Code,Account Name,Debit,Credit,Balance
+1100,Cash in Bank,2500000,0,2500000
+1110,Petty Cash,50000,0,50000
+1200,Trade Receivables,4500000,0,4500000
+1210,Other Receivables,350000,0,350000
+1300,Inventory - Raw Materials,1800000,0,1800000
+1310,Inventory - Work in Progress,450000,0,450000
+1320,Inventory - Finished Goods,2200000,0,2200000
+1400,Prepaid Insurance,120000,0,120000
+1410,Prepaid Rent,180000,0,180000
+1500,Land,5000000,0,5000000
+1510,Building,15000000,0,15000000
+1511,Accumulated Depreciation - Building,0,3000000,-3000000
+1520,Machinery and Equipment,8000000,0,8000000
+1521,Accumulated Depreciation - Machinery,0,2400000,-2400000
+1530,Furniture and Fixtures,500000,0,500000
+1531,Accumulated Depreciation - Furniture,0,150000,-150000
+1540,Motor Vehicles,2000000,0,2000000
+1541,Accumulated Depreciation - Vehicles,0,600000,-600000
+1600,Intangible Assets - Software,400000,0,400000
+1601,Accumulated Amortization - Software,0,160000,-160000
+1700,Long Term Investments,1500000,0,1500000
+2100,Trade Payables,0,3200000,-3200000
+2110,Other Payables,0,450000,-450000
+2200,Accrued Expenses,0,380000,-380000
+2210,Accrued Salaries,0,520000,-520000
+2300,Short Term Loan - ABC Bank,0,2000000,-2000000
+2310,Current Portion of Long Term Debt,0,500000,-500000
+2400,Tax Payable,0,850000,-850000
+2410,Withholding Tax Payable,0,120000,-120000
+2500,Long Term Borrowings - XYZ Bank,0,5000000,-5000000
+2600,Deferred Tax Liability,0,280000,-280000
+2700,Provision for Gratuity,0,650000,-650000
+3100,Share Capital - Ordinary Shares,0,10000000,-10000000
+3200,Share Premium,0,2000000,-2000000
+3300,General Reserve,0,1500000,-1500000
+3400,Retained Earnings - Opening,0,8320000,-8320000
+4100,Sales Revenue - Product A,0,45000000,-45000000
+4110,Sales Revenue - Product B,0,28000000,-28000000
+4120,Sales Revenue - Services,0,12000000,-12000000
+4200,Interest Income,0,180000,-180000
+4210,Dividend Income,0,75000,-75000
+4220,Gain on Sale of Assets,0,150000,-150000
+5100,Cost of Goods Sold - Product A,32000000,0,32000000
+5110,Cost of Goods Sold - Product B,19500000,0,19500000
+5120,Direct Labor,8500000,0,8500000
+5130,Manufacturing Overhead,4200000,0,4200000
+5200,Salaries and Wages - Admin,6500000,0,6500000
+5210,Salaries and Wages - Sales,4200000,0,4200000
+5220,Employee Benefits,1800000,0,1800000
+5230,Bonus and Incentives,950000,0,950000
+5300,Depreciation - Building,600000,0,600000
+5310,Depreciation - Machinery,800000,0,800000
+5320,Depreciation - Furniture,50000,0,50000
+5330,Depreciation - Vehicles,200000,0,200000
+5340,Amortization - Software,80000,0,80000
+5400,Interest Expense,750000,0,750000
+5410,Bank Charges,85000,0,85000
+5500,Rent Expense,1200000,0,1200000
+5510,Utilities Expense,480000,0,480000
+5520,Insurance Expense,240000,0,240000
+5530,Repairs and Maintenance,320000,0,320000
+5540,Office Supplies,95000,0,95000
+5550,Telephone and Internet,120000,0,120000
+5560,Travel and Transportation,450000,0,450000
+5570,Professional Fees,380000,0,380000
+5580,Advertising and Marketing,850000,0,850000
+5590,Training and Development,150000,0,150000
+5600,Miscellaneous Expenses,185000,0,185000
+6100,Income Tax Expense,4500000,0,4500000

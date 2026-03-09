@@ -1,0 +1,488 @@
+Below is a **complete, developer-ready package** for AuditWise-style **multi-tenant SaaS** (Next.js + .NET + Postgres) covering everything you ticked.
+
+---
+
+# 1) RBAC Matrix (Developer-Ready Table)
+
+## 1.1 Roles
+
+* **SuperAdmin** (platform-wide)
+* **FirmAdmin** (tenant-wide)
+* **Partner/Approver**
+* **Manager/Reviewer**
+* **Associate/Preparer**
+* **Viewer/ReadOnly**
+* *(Optional)* **BillingAdmin** (firm-level billing contact only, if you want)
+
+## 1.2 Objects
+
+* Platform: Firms, Plans, Subscriptions, Billing, Global Notifications, System Settings, Default AI, Platform Audit Logs
+* Tenant: Firm Settings, Users, Engagements, Templates, Working Papers, Evidence, AI Config, Tenant Audit Logs
+
+## 1.3 RBAC Matrix
+
+Legend: ✅ Allowed | ⛔ Not allowed | ⚠ Allowed with restrictions
+
+| Action \ Role               | SuperAdmin |     FirmAdmin |         Partner/Approver |    Manager/Reviewer |    Associate/Preparer |                               Viewer |
+| --------------------------- | ---------: | ------------: | -----------------------: | ------------------: | --------------------: | -----------------------------------: |
+| Create Firm (Tenant)        |          ✅ |             ⛔ |                        ⛔ |                   ⛔ |                     ⛔ |                                    ⛔ |
+| Suspend/Activate Firm       |          ✅ |             ⛔ |                        ⛔ |                   ⛔ |                     ⛔ |                                    ⛔ |
+| Set Plan/Trial Tenure       |          ✅ |             ⛔ |                        ⛔ |                   ⛔ |                     ⛔ |                                    ⛔ |
+| Billing/Invoices (Platform) |          ✅ |             ⛔ |                        ⛔ |                   ⛔ |                     ⛔ |                                    ⛔ |
+| Push Global Popup/Alert     |          ✅ |             ⛔ |                        ⛔ |                   ⛔ |                     ⛔ |                                    ⛔ |
+| Firm-specific Popup/Alert   |          ✅ | ⚠ (firm only) |      ⚠ (engagement only) | ⚠ (engagement only) |   ⚠ (engagement only) |                  ⚠ (engagement only) |
+| Manage Firm Settings        |          ✅ |             ✅ |                        ⛔ |                   ⛔ |                     ⛔ |                                    ⛔ |
+| Create/Update Users         |          ✅ |             ✅ |                        ⛔ |                   ⛔ |                     ⛔ |                                    ⛔ |
+| Suspend Users               |          ✅ |             ✅ |                        ⛔ |                   ⛔ |                     ⛔ |                                    ⛔ |
+| Assign Roles                |          ✅ |             ✅ |                        ⛔ |                   ⛔ |                     ⛔ |                                    ⛔ |
+| Create Engagement           |          ✅ |             ✅ |                        ✅ |                   ✅ |                     ✅ |                                    ⛔ |
+| Assign Engagement Team      |          ✅ |             ✅ |                        ✅ |                   ✅ | ⚠ (self-request only) |                                    ⛔ |
+| View Engagement             |          ✅ |             ✅ |                        ✅ |                   ✅ |                     ✅ |                                    ✅ |
+| Edit Engagement Setup       |          ✅ |             ✅ |                        ✅ |                   ✅ |    ⚠ (limited fields) |                                    ⛔ |
+| Create Working Papers       |          ✅ |             ✅ |                        ✅ |                   ✅ |                     ✅ |                                    ⛔ |
+| Edit Working Papers         |          ✅ |             ✅ |                        ✅ |                   ✅ |                     ✅ |                                    ⛔ |
+| Delete Working Papers       |          ✅ |             ✅ | ⚠ (with approval policy) |         ⚠ (limited) |                     ⛔ |                                    ⛔ |
+| Upload Evidence             |          ✅ |             ✅ |                        ✅ |                   ✅ |                     ✅ |                                    ⛔ |
+| Delete Evidence             |          ✅ |             ✅ |                        ⚠ |                   ⚠ |                     ⛔ |                                    ⛔ |
+| Run AI (Working Papers)     |          ✅ |             ✅ |                        ✅ |                   ✅ |                     ✅ | ⚠ (read-only AI insights if enabled) |
+| Set Default AI API Key      |          ✅ |             ⛔ |                        ⛔ |                   ⛔ |                     ⛔ |                                    ⛔ |
+| Add Firm AI Key Override    |          ✅ |             ✅ |                        ⛔ |                   ⛔ |                     ⛔ |                                    ⛔ |
+| Approve/Final Sign-off      |          ✅ |             ✅ |                        ✅ |                   ⛔ |                     ⛔ |                                    ⛔ |
+| Review Sign-off             |          ✅ |             ✅ |             ⚠ (optional) |                   ✅ |                     ⛔ |                                    ⛔ |
+| Prepare Sign-off            |          ✅ |             ✅ |             ⚠ (optional) |        ⚠ (optional) |                     ✅ |                                    ⛔ |
+| View Audit Logs             |    ✅ (all) | ✅ (firm only) |      ✅ (engagement only) | ✅ (engagement only) |       ✅ (own actions) |                ⚠ (read-only limited) |
+
+**Implementation rules (non-negotiable):**
+
+* Every request is evaluated by **(role + firmId + engagementId + object ownership)**.
+* SuperAdmin always has `firmId = NULL` scope but may “impersonate firm” through a controlled admin tool (logged).
+
+---
+
+# 2) Database ERD Structure (Postgres)
+
+## 2.1 Core Tables (Minimum Set)
+
+* `firms`
+* `users`
+* `roles`
+* `user_roles` (if multi-role)
+* `subscriptions`
+* `plans`
+* `invoices`
+* `firm_settings` (includes AI override config)
+* `engagements`
+* `engagement_team`
+* `workpapers`
+* `evidence_files`
+* `signoffs`
+* `notifications`
+* `audit_logs`
+* `ai_usage`
+
+## 2.2 Mermaid ERD (Developer-usable)
+
+```mermaid
+erDiagram
+  FIRMS ||--o{ USERS : has
+  ROLES ||--o{ USERS : assigns
+  FIRMS ||--|| FIRM_SETTINGS : config
+  PLANS ||--o{ SUBSCRIPTIONS : includes
+  FIRMS ||--o{ SUBSCRIPTIONS : subscribes
+  SUBSCRIPTIONS ||--o{ INVOICES : bills
+  FIRMS ||--o{ ENGAGEMENTS : runs
+  ENGAGEMENTS ||--o{ ENGAGEMENT_TEAM : members
+  USERS ||--o{ ENGAGEMENT_TEAM : assigned
+  ENGAGEMENTS ||--o{ WORKPAPERS : contains
+  WORKPAPERS ||--o{ EVIDENCE_FILES : attaches
+  ENGAGEMENTS ||--o{ SIGNOFFS : workflow
+  FIRMS ||--o{ NOTIFICATIONS : receives
+  USERS ||--o{ AUDIT_LOGS : generates
+  FIRMS ||--o{ AUDIT_LOGS : scoped
+  FIRMS ||--o{ AI_USAGE : consumes
+  USERS ||--o{ AI_USAGE : triggers
+
+  FIRMS {
+    uuid id PK
+    text name
+    text status "TRIAL|ACTIVE|SUSPENDED|EXPIRED|TERMINATED"
+    timestamptz created_at
+    timestamptz suspended_at
+  }
+
+  USERS {
+    uuid id PK
+    uuid firm_id FK
+    text email
+    text password_hash
+    text status "ACTIVE|SUSPENDED|DELETED"
+    uuid role_id FK
+    timestamptz last_login_at
+    timestamptz created_at
+  }
+
+  ROLES {
+    uuid id PK
+    text code "SUPERADMIN|FIRMADMIN|PARTNER|MANAGER|ASSOCIATE|VIEWER"
+    text name
+  }
+
+  FIRM_SETTINGS {
+    uuid firm_id PK, FK
+    boolean ai_override_enabled
+    text ai_api_key_encrypted
+    text ai_provider "OPENAI|AZURE_OPENAI|OTHER"
+    int token_limit_monthly
+    boolean custom_ai_allowed
+    jsonb ui_branding
+  }
+
+  PLANS {
+    uuid id PK
+    text code "BASIC|PRO|ENTERPRISE"
+    int max_users
+    int max_engagements
+    boolean allow_custom_ai
+    jsonb feature_flags
+  }
+
+  SUBSCRIPTIONS {
+    uuid id PK
+    uuid firm_id FK
+    uuid plan_id FK
+    text status "TRIAL|ACTIVE|PAST_DUE|SUSPENDED|CANCELED"
+    date trial_start
+    date trial_end
+    date current_period_start
+    date current_period_end
+  }
+
+  INVOICES {
+    uuid id PK
+    uuid subscription_id FK
+    numeric amount
+    text currency
+    text status "DRAFT|ISSUED|PAID|VOID|OVERDUE"
+    timestamptz issued_at
+    timestamptz paid_at
+  }
+
+  ENGAGEMENTS {
+    uuid id PK
+    uuid firm_id FK
+    text client_name
+    date period_start
+    date period_end
+    text status "DRAFT|IN_PROGRESS|REVIEW|APPROVAL|COMPLETED|ARCHIVED"
+    timestamptz created_at
+  }
+
+  ENGAGEMENT_TEAM {
+    uuid id PK
+    uuid engagement_id FK
+    uuid user_id FK
+    text team_role "PREPARER|REVIEWER|APPROVER|VIEWER"
+  }
+
+  WORKPAPERS {
+    uuid id PK
+    uuid engagement_id FK
+    text area "PLANNING|RISK|EXECUTION|REPORTING"
+    text title
+    text status "OPEN|PREPARED|REVIEWED|APPROVED|LOCKED"
+    uuid created_by FK
+    timestamptz updated_at
+  }
+
+  EVIDENCE_FILES {
+    uuid id PK
+    uuid workpaper_id FK
+    uuid uploaded_by FK
+    text storage_path
+    text file_hash
+    timestamptz uploaded_at
+  }
+
+  SIGNOFFS {
+    uuid id PK
+    uuid engagement_id FK
+    uuid prepared_by FK
+    timestamptz prepared_at
+    uuid reviewed_by FK
+    timestamptz reviewed_at
+    uuid approved_by FK
+    timestamptz approved_at
+    text status "PENDING|PREPARED|REVIEWED|APPROVED"
+  }
+
+  NOTIFICATIONS {
+    uuid id PK
+    uuid firm_id FK
+    text scope "GLOBAL|FIRM|ENGAGEMENT"
+    uuid engagement_id
+    text type "POPUP|BANNER|EMAIL"
+    text message
+    timestamptz start_at
+    timestamptz end_at
+    int priority
+  }
+
+  AUDIT_LOGS {
+    uuid id PK
+    uuid firm_id FK
+    uuid user_id FK
+    text action
+    text entity
+    uuid entity_id
+    inet ip
+    timestamptz at
+    jsonb meta
+  }
+
+  AI_USAGE {
+    uuid id PK
+    uuid firm_id FK
+    uuid user_id FK
+    uuid engagement_id
+    uuid workpaper_id
+    text model
+    int tokens_in
+    int tokens_out
+    numeric cost_estimate
+    timestamptz at
+  }
+```
+
+---
+
+# 3) Status Transition Diagram (Firm + Engagement + Workpaper)
+
+## 3.1 Firm / Subscription (Platform Control)
+
+```mermaid
+stateDiagram-v2
+  [*] --> TRIAL
+  TRIAL --> ACTIVE: payment_success OR trial_convert
+  TRIAL --> EXPIRED: trial_end_reached
+  ACTIVE --> PAST_DUE: payment_failed
+  PAST_DUE --> ACTIVE: payment_cleared
+  ACTIVE --> SUSPENDED: superadmin_suspend OR policy_violation
+  PAST_DUE --> SUSPENDED: grace_period_over
+  SUSPENDED --> ACTIVE: superadmin_reactivate
+  ACTIVE --> TERMINATED: superadmin_terminate
+  TERMINATED --> [*]
+```
+
+## 3.2 Engagement Lifecycle (Firm Control)
+
+```mermaid
+stateDiagram-v2
+  [*] --> DRAFT
+  DRAFT --> IN_PROGRESS: start_work
+  IN_PROGRESS --> REVIEW: reviewer_requests_review
+  REVIEW --> APPROVAL: reviewer_complete
+  APPROVAL --> COMPLETED: partner_approves
+  REVIEW --> IN_PROGRESS: changes_requested
+  APPROVAL --> IN_PROGRESS: partner_changes_requested
+  COMPLETED --> ARCHIVED: archive
+```
+
+## 3.3 Workpaper Sign-off (Preparer/Reviewer/Approver)
+
+```mermaid
+stateDiagram-v2
+  [*] --> OPEN
+  OPEN --> PREPARED: preparer_complete
+  PREPARED --> REVIEWED: reviewer_complete
+  REVIEWED --> APPROVED: approver_complete
+  PREPARED --> OPEN: reviewer_changes_requested
+  REVIEWED --> OPEN: approver_changes_requested
+  APPROVED --> LOCKED: engagement_completed OR lock_policy
+```
+
+---
+
+# 4) SaaS Subscription Logic Flow (Enforcement + Feature Flags)
+
+## 4.1 Runtime Enforcement Order (Every Login + API call)
+
+```mermaid
+flowchart TD
+  A[Request] --> B{Authenticated?}
+  B -- No --> X[401]
+  B -- Yes --> C{Firm Status}
+  C -- SUSPENDED/TERMINATED --> Y[403 Firm Locked]
+  C -- TRIAL/ACTIVE --> D{Subscription Status}
+  D -- EXPIRED/SUSPENDED/PAST_DUE --> Z[403 Billing Lock + Message]
+  D -- ACTIVE/TRIAL --> E{Plan Feature Flags}
+  E --> F{Allowed Module?}
+  F -- No --> R[403 Feature Not In Plan]
+  F -- Yes --> G{RBAC + Firm Scope + Engagement Scope}
+  G -- Fail --> S[403 Forbidden]
+  G -- Pass --> H[Proceed + Audit Log]
+```
+
+## 4.2 Billing Locks (Typical)
+
+* **PAST_DUE**: allow login, show persistent banner + restrict AI + restrict exports
+* **SUSPENDED**: block login except FirmAdmin (optional) for payment page only
+* **TERMINATED**: read-only for limited window (optional) then archive
+
+---
+
+# 5) API Architecture Structure (Next.js + .NET)
+
+## 5.1 High-Level
+
+* **Next.js**: UI + server actions (optional) + auth pages
+* **.NET API**: business logic + RBAC + tenant enforcement
+* **Postgres**: data
+* **Worker**: jobs (trial expiry, invoice generation, reminders, AI usage aggregation, backups triggers, audit log compaction)
+
+## 5.2 Suggested API Modules (Routes)
+
+### Auth
+
+* `POST /api/auth/login`
+* `POST /api/auth/refresh`
+* `POST /api/auth/logout`
+* `GET  /api/auth/me`
+
+### Platform (SuperAdmin only)
+
+* `POST /api/platform/firms`
+* `PATCH /api/platform/firms/{firmId}` (activate/suspend/terminate)
+* `POST /api/platform/firms/{firmId}/trial` (set/extend)
+* `GET  /api/platform/subscriptions`
+* `POST /api/platform/notifications` (global/firm)
+* `PUT  /api/platform/ai/default-key`
+* `GET  /api/platform/audit-logs`
+
+### Tenant (FirmAdmin)
+
+* `GET  /api/tenant/settings`
+* `PUT  /api/tenant/settings`
+* `POST /api/tenant/users`
+* `PATCH /api/tenant/users/{userId}`
+* `POST /api/tenant/ai/key` (firm override)
+* `GET  /api/tenant/audit-logs`
+
+### Engagements
+
+* `POST /api/engagements`
+* `GET  /api/engagements`
+* `GET  /api/engagements/{id}`
+* `PATCH /api/engagements/{id}`
+* `POST /api/engagements/{id}/team`
+* `POST /api/engagements/{id}/signoff/prepare`
+* `POST /api/engagements/{id}/signoff/review`
+* `POST /api/engagements/{id}/signoff/approve`
+
+### Workpapers & Evidence
+
+* `POST /api/workpapers`
+* `PATCH /api/workpapers/{id}`
+* `POST /api/workpapers/{id}/evidence`
+* `DELETE /api/evidence/{id}` (restricted)
+
+### AI
+
+* `POST /api/ai/workpaper/{workpaperId}/draft`
+* `POST /api/ai/workpaper/{workpaperId}/summarize`
+* `POST /api/ai/risk-assistant`
+* `GET  /api/ai/usage` (firm admin & super admin scopes)
+
+## 5.3 Middleware (Must-have)
+
+* **TenantResolver**: derives `firmId` from JWT; rejects null firmId unless SuperAdmin
+* **SubscriptionGuard**: checks plan/lock state
+* **RBACGuard**: role + scope + engagement_team membership
+* **AuditLogger**: writes `audit_logs` for every write endpoint and sensitive read endpoints
+* **RateLimiter**: strict for `/auth/*` and `/ai/*`
+
+---
+
+# 6) DevOps Deployment Model (Final Form)
+
+## 6.1 Single VPS (Production) Components
+
+* Docker Compose services: `nginx`, `frontend`, `api`, `worker`, `db`, `certbot`
+* Nginx: `/` → Next.js, `/api` → .NET
+* Certbot: webroot + auto renew
+* Backups: nightly `pg_dump` + retention
+* CI/CD: GitHub Actions → GHCR → SSH deploy → `docker compose pull && up -d`
+
+## 6.2 Minimum Production SLO
+
+* Health endpoints:
+
+  * `GET /api/health`
+  * `GET /` (front page)
+* Uptime monitoring:
+
+  * `https://auditwise.tech/api/health`
+  * `https://auditwise.tech/`
+
+---
+
+# 7) Production Security Checklist (Go-Live)
+
+## 7.1 Infrastructure
+
+* [ ] SSH key auth only; disable password auth
+* [ ] Non-root deploy user + least privilege
+* [ ] UFW: allow 22, 80, 443 only
+* [ ] Fail2ban enabled
+* [ ] OS auto-security updates enabled
+* [ ] Docker daemon not exposed publicly
+
+## 7.2 TLS / Network
+
+* [ ] TLS certificates valid + auto renew verified
+* [ ] HSTS enabled (after confirming stable HTTPS)
+* [ ] Nginx security headers configured
+* [ ] Upload limit set (e.g., 50MB) + server-side validation
+
+## 7.3 Application Security
+
+* [ ] JWT signing key strong (64+ chars) and rotated policy documented
+* [ ] Refresh tokens stored securely; revoke on password change
+* [ ] Brute force protection on login (rate limit + lockout)
+* [ ] Role & tenant enforcement in middleware (no “trust client”)
+* [ ] All write actions logged in `audit_logs`
+* [ ] Soft delete for key entities (users, workpapers, evidence)
+
+## 7.4 Data Protection
+
+* [ ] Firm AI keys encrypted at rest (AES-GCM) using `ENCRYPTION_MASTER_KEY`
+* [ ] DB backups encrypted + restore test performed
+* [ ] PII minimization (store only what needed)
+* [ ] Evidence files stored with hash + immutable pathing per firm
+
+## 7.5 SaaS Controls
+
+* [ ] Trial expiry job working + tested
+* [ ] Billing lock states enforced at API gate
+* [ ] Plan feature flags enforced server-side
+* [ ] AI usage metering per firm (tokens/cost) + throttles
+
+## 7.6 Observability
+
+* [ ] Central logs (at least docker logs + rotation)
+* [ ] Uptime alerts enabled (email/telegram)
+* [ ] DB disk space alert threshold set
+* [ ] Error tracking (optional but recommended): Sentry or similar
+
+---
+
+## If you want this in “developer handoff” format
+
+I can convert the above into:
+
+* **Jira-ready epics + user stories + acceptance criteria**
+* **SQL DDL starter schema** (Postgres) aligned to the ERD
+* **Middleware pseudocode** for TenantGuard + SubscriptionGuard + RBACGuard
+
+Tell me your preferred stack details for auth:
+
+* **JWT only** or **JWT + Refresh tokens**?

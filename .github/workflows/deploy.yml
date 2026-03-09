@@ -1,0 +1,207 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ghcr.io/aqeelalamfca-sys/auditwise-backend
+  FRONTEND_IMAGE: ghcr.io/aqeelalamfca-sys/auditwise-frontend
+  NODE_VERSION: "20"
+
+jobs:
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Type check
+        run: npx tsc --noEmit --project server/tsconfig.json
+        continue-on-error: true
+
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Build application
+        run: npm run build
+        env:
+          NODE_ENV: production
+          NODE_OPTIONS: "--max-old-space-size=4096"
+
+      - name: Verify build output
+        run: |
+          echo "Checking backend build..."
+          test -f dist/index.cjs && echo "  Backend build: OK" || exit 1
+          echo "Checking frontend build..."
+          test -f dist/public/index.html && echo "  Frontend build: OK" || exit 1
+          echo "Build verification passed."
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+          retention-days: 7
+
+  docker:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    needs: [build]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/backend.Dockerfile
+          push: true
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:latest
+            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/frontend.Dockerfile
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:latest
+            ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: [docker]
+    environment: production
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          timeout: 600s
+          command_timeout: 10m
+          script: |
+            set -e
+            echo "=== AuditWise Deployment ==="
+            echo "Commit: ${{ github.sha }}"
+            echo "Started at: $(date -Is)"
+
+            APP_DIR="/opt/auditwise"
+            cd "$APP_DIR"
+
+            echo "[1/8] Pre-deploy database backup..."
+            if docker ps --format '{{.Names}}' | grep -q "auditwise-db"; then
+              mkdir -p backups
+              BACKUP="backups/pre-deploy_$(date +%Y%m%d_%H%M%S).sql.gz"
+              docker exec auditwise-db pg_dump -U auditwise -d auditwise --no-owner --no-privileges 2>/dev/null | gzip > "$BACKUP" || echo "  Backup skipped (non-fatal)"
+              echo "  Backup: $BACKUP"
+            fi
+
+            echo "[2/8] Pulling latest code..."
+            git fetch --all -q
+            git reset --hard origin/main -q
+            echo "  Code updated to $(git log --oneline -1)"
+
+            echo "[3/8] Logging into GHCR..."
+            echo "${{ secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin 2>/dev/null || true
+
+            echo "[4/8] Pulling latest Docker images..."
+            docker compose pull backend frontend
+
+            echo "[5/8] Stopping old containers (removing orphans)..."
+            docker compose down --remove-orphans 2>/dev/null || true
+
+            echo "[6/8] Starting all 5 services..."
+            docker compose up -d
+
+            echo "[7/8] Waiting for backend health (up to 5 min)..."
+            TIMEOUT=300
+            ELAPSED=0
+            while [ $ELAPSED -lt $TIMEOUT ]; do
+              HTTP_CODE=$(curl -so /dev/null -w '%{http_code}' http://127.0.0.1:5000/api/health 2>/dev/null || echo "000")
+              if [ "$HTTP_CODE" = "200" ]; then
+                echo "  Backend healthy after ${ELAPSED}s"
+                break
+              fi
+              sleep 5
+              ELAPSED=$((ELAPSED + 5))
+              if [ $((ELAPSED % 30)) -eq 0 ]; then
+                echo "  Still waiting... (${ELAPSED}s, last HTTP: $HTTP_CODE)"
+              fi
+            done
+            if [ $ELAPSED -ge $TIMEOUT ]; then
+              echo "FATAL: Backend health check failed after ${TIMEOUT}s"
+              docker compose logs --tail=80 backend
+              exit 1
+            fi
+
+            echo "[8/8] Cleanup & verification..."
+            docker image prune -f 2>/dev/null || true
+
+            echo ""
+            echo "=== Container Status ==="
+            docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+            echo ""
+            echo "=== Deployment Complete ==="
+            echo "Finished at: $(date -Is)"
+            echo "Domain: https://auditwise.tech"

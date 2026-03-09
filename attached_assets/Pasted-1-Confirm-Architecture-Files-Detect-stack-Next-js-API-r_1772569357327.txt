@@ -1,0 +1,251 @@
+1) Confirm Architecture & Files
+
+Detect stack (Next.js + API routes / Express / .NET) and auth method (Prisma + bcrypt/JWT/session).
+
+Identify:
+
+Login page component (e.g., client/src/pages/login.tsx or app/(auth)/login/page.tsx)
+
+Auth API endpoint (e.g., /api/auth/login)
+
+Prisma schema (prisma/schema.prisma)
+
+Seed/startup logic
+
+2) Define Constants
+
+Add constants:
+
+SUPER_ADMIN_EMAIL = "aqeelalam2010@gmail.com"
+
+SUPER_ADMIN_PASSWORD_PLAIN = "Aqeel@123$" (never store plain; hash on create/reset only)
+
+SUPER_ADMIN_PORTAL_HOST = "187.77.130.117"
+
+TENANT_PORTAL_HOSTS = ["auditwise.tech","www.auditwise.tech"]
+
+PASSWORD_POLICY: min 8 chars + 1 uppercase
+
+Ensure these are configurable via .env but default to the above values.
+
+3) Database: Roles + Firm Isolation
+
+Ensure schema contains:
+
+User { id, email (unique), passwordHash, role, firmId (nullable for SuperAdmin), isActive, createdAt, updatedAt }
+
+Firm { id, name, status (TRIAL/ACTIVE/SUSPENDED/DORMANT/DELETED), themeColor, ... }
+
+Subscription/Billing { firmId, plan, trialEndsAt, status, ... }
+
+Add indexes:
+
+User(firmId), key firm data tables by firmId.
+
+Enforce: all firm transactional tables must include firmId.
+
+4) Seed/Bootstrap: Create or Repair SuperAdmin (Idempotent)
+
+Implement a startup/seed function ensureSuperAdmin() that:
+
+Looks up user by SUPER_ADMIN_EMAIL.
+
+If missing → create SuperAdmin with bcrypt hash of Aqeel@123$, role SUPER_ADMIN, firmId = null, isActive = true.
+
+If exists → ensure role is SUPER_ADMIN, firmId null, isActive true; do not create duplicates.
+
+Never throws unique constraint (wrap with upsert/transaction).
+
+Ensure seed scripts don’t reinsert existing users.
+
+5) Password Policy (Backend + Frontend)
+
+Add password validator used everywhere (create user, reset password, change password):
+
+length >= 8
+
+contains at least one uppercase letter
+
+Return structured validation errors; show user-friendly messages in UI.
+
+6) Hostname-Based Portal Detection (Frontend)
+
+Create a helper:
+
+isSuperAdminPortal = (typeof window !== "undefined" && window.location.hostname === SUPER_ADMIN_PORTAL_HOST)
+
+isTenantPortal = hostname in TENANT_PORTAL_HOSTS
+
+Login page behavior:
+
+If SuperAdmin portal → render only email + password + forgot password + submit UI.
+
+Use Rascal Red theme (red accent, restricted badge).
+
+Hide firm selector, hide “login type” toggles, hide any extra fields.
+
+If tenant portal → render normal firm login UI; ensure no SuperAdmin branding.
+
+7) Hostname-Based Enforcement (Backend)
+
+Add middleware/guard to auth login endpoint:
+
+Read hostname from req.hostname (and enable trust proxy if behind nginx).
+
+If hostname == 187.77.130.117:
+
+Allow login only if the authenticated user role is SUPER_ADMIN.
+
+If credentials match a non-SuperAdmin → return 403 Forbidden.
+
+If hostname is auditwise.tech or www.auditwise.tech:
+
+If credentials belong to SUPER_ADMIN → return 403 Forbidden.
+
+Otherwise (unknown host) → default deny or redirect to tenant portal.
+
+This must prevent bypass even if UI is modified.
+
+8) Firm Themes (Per Firm)
+
+Store Firm.themeColor (hex).
+
+On tenant portal:
+
+Resolve firm context (firm code selector / subdomain / firm pick after email).
+
+Apply theme variables dynamically (CSS variables or Tailwind config):
+
+Each firm sees its own color across pages.
+
+On SuperAdmin portal:
+
+Force Rascal Red theme regardless of firm.
+
+9) SuperAdmin Capabilities Without Firm Data Access
+
+Implement SuperAdmin dashboards:
+
+Firms CRUD: create, activate, suspend, delete/dormant
+
+Billing/subscription management: plan, trial, expiry, status
+
+User management limited to firm admins (create/reset) but only metadata (email, role, status) — no firm content.
+
+Hard-block firm data:
+
+Any endpoint that reads engagements/TB/working papers/evidence/reports must require role != SUPER_ADMIN and must enforce firmId scoping.
+
+Add a global query filter/helper: all firm queries require firmId from session/token, never from client input.
+
+10) Password Reset Flows
+
+Build secure reset:
+
+Token generated random; store hash + expiry in DB.
+
+Email the reset link (firm users) using configured SMTP.
+
+Reset endpoint validates token hash + expiry, then updates password hash.
+
+SuperAdmin reset rules:
+
+Only for aqeelalam2010@gmail.com
+
+Reset UI available only on IP portal
+
+Email cannot change; password can reset through link.
+
+Add “forgot password” on both portals, but enforce portal rules server-side.
+
+11) Make SuperAdmin Email Immutable
+
+Block any API/UI action that attempts to update SuperAdmin email:
+
+On update profile endpoint: if user.role == SUPER_ADMIN → return 403 for email change.
+
+On admin edit user endpoint: if target email == SUPER_ADMIN_EMAIL → block email edits.
+
+12) Diagnostics: Auto-Scan + Safe Auto-Fix
+
+Add a “maintenance check” routine callable on startup and via SuperAdmin (platform-only):
+
+Ensures SuperAdmin exists
+
+Ensures all users have valid firmId except SuperAdmin
+
+Ensures all firms have themeColor (set default if missing)
+
+Ensures subscription/trial dates not null for active firms
+
+Log issues server-side; auto-fix only safe items.
+
+13) Production Hardening
+
+Add:
+
+Rate limiting on /api/auth/login and reset endpoints
+
+Account lockout/cooldown after repeated failures
+
+Secure cookies/JWT settings
+
+Disable verbose errors in production
+
+Security headers
+
+Add /health endpoint returning { status: "ok" }.
+
+14) Hostinger VPS Deployment Optimization
+
+Ensure Docker build is production mode:
+
+NODE_ENV=production
+
+Build step produces optimized output
+
+Confirm nginx forwards correct hostname and sets X-Forwarded-* headers.
+
+App must respect hostname behind proxy (trust proxy enabled).
+
+15) Acceptance Tests (Must Pass)
+
+http://187.77.130.117/login:
+
+Shows only SuperAdmin minimal UI (Rascal Red).
+
+Login works only for aqeelalam2010@gmail.com / Aqeel@123$.
+
+Any non-superadmin login attempt returns 403.
+
+https://auditwise.tech/login:
+
+Normal user/admin login only.
+
+SuperAdmin login attempt returns 403.
+
+Each firm has unique theme color across all pages and PDFs.
+
+SuperAdmin can manage firms/billing/status but cannot access firm transactional data.
+
+Password reset works for firm users and SuperAdmin (with portal restrictions).
+
+Seeds do not create duplicates; no Prisma unique constraint errors.
+
+App builds clean and runs stable.
+
+Output Required from Replit
+
+Updated Prisma schema + migrations
+
+Updated backend middleware + auth logic
+
+Updated login UI (two portals)
+
+Firm theme implementation
+
+Reset password implementation
+
+Production check routine
+
+Minimal QA checklist + verification commands

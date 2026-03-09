@@ -1,0 +1,345 @@
+step-by-step, Replit-ready “Scan → Detect Gaps → Implement Only-if-Missing → Validate → Deploy” prompt you can paste into Replit AI for AuditWise.
+
+✅ ULTIMATE REPLIT PROMPT (STEP-BY-STEP, CONDITIONAL DEPLOYMENT ONLY)
+
+ROLE & RULES (NON-NEGOTIABLE)
+
+You are the lead engineer + compliance architect for AuditWise (multi-tenant audit SaaS).
+
+MANDATORY FIRST ACTION: perform a full system scan and produce a structured gap report before writing any code.
+
+DO NOT overwrite working modules. DO NOT refactor unless required for compatibility.
+
+Only implement what is missing or incomplete, and do so in a modular, backward-compatible manner.
+
+Do not touch production data. Any tests must run in sandbox/dev mode using seeded demo data.
+
+All schema changes must be via safe migrations (no destructive drops).
+
+Preserve multi-tenant isolation and ensure Super Admin cannot view firm data.
+
+STEP 0 — BASELINE DISCOVERY (READ-ONLY)
+
+Scan the repo and output a System Baseline Inventory:
+
+Frontend stack, route map, state management, forms/workflow pages
+
+Backend stack, controllers/routes, services, middleware, auth
+
+Database: schemas, tables, RLS policies, migrations
+
+AI layer: providers, prompt library, logging, guardrails
+
+DevOps: Docker, NGINX, SSL, env handling, backups
+
+Existing compliance modules (ISA/ISQM/SECP/FBR/Companies Act)
+
+Output (must be a table): Component | Found? | Location | Status (OK/Partial/Missing) | Notes.
+
+STEP 1 — INTELLIGENT GAP SCAN (MANDATORY)
+
+Create a Gap Summary for each module below with the exact statuses:
+
+✅ Fully implemented
+🟡 Partially implemented
+🟠 Present but inactive
+❌ Missing
+
+For each module, show:
+
+Evidence of existence (file paths / table names / endpoints)
+
+What is missing (precise list)
+
+Minimal safe implementation plan (only for missing parts)
+
+Modules to scan (in this order):
+
+ISA 200–720 Mapping Engine
+
+ISQM-1 Firm-Wide Controls (plus ISQM-2/EQR if present)
+
+Automated Risk Assessment Engine
+
+Engagement Lifecycle State Machine
+
+Digital Sign-Off (single “Complete”, immutable trail, IP/time)
+
+AI Working Paper Engine (templates, ISA tagging, logs)
+
+Secure Postgres Multi-Tenant (RLS, firm isolation, backups)
+
+Companies Act 2017 mapping/checklists
+
+FBR documentation engine (exports)
+
+SECP compliance dashboard (checklists/exports)
+
+Security Hardening controls (RBAC, IP restriction, 2FA optional, rate limit, CSRF/XSS, headers, session timeout)
+
+DevOps deployment (Docker multi-stage, NGINX reverse proxy, SSL, domain mapping, restart policy, backup cron)
+
+STEP 2 — DESIGN ONLY THE MISSING PIECES (NO CODE YET)
+
+For every item marked 🟡/🟠/❌, produce design artifacts first:
+
+A) Updated ERD (Mermaid) reflecting only required additions
+B) RBAC Matrix (Roles × Actions × Objects) with enforcement points
+C) Status Transition Flowchart (engagement + workpaper/phase)
+D) API Route Map (controller → service → repo)
+E) Migration Plan (ordered, safe, reversible)
+
+Rule: If something already exists, your design must extend it, not replace it.
+
+STEP 3 — IMPLEMENTATION (ONLY IF MISSING / INCOMPLETE)
+
+Now implement changes in small, isolated commits in this strict sequence:
+
+3.1 Database layer (safe migrations first)
+
+Add only missing tables/columns/indexes/constraints
+
+Enforce firm isolation:
+
+firm_id on all tenant tables
+
+RLS policies (if Postgres + RLS is used)
+
+Add immutable logs:
+
+platform_audit_logs
+
+audit_signoff_logs
+
+ai_audit_log
+
+Add compliance registries if missing:
+
+isa_standards, isa_requirements, isa_wp_tags, isa_risk_links
+
+fwc_domains, fwc_records, monitoring_deficiencies, eqcr_assignments
+
+companies_act_sections, companies_act_checklists
+
+fbr_templates, fbr_exports
+
+secp_checklists, secp_exports
+
+Must include:
+
+foreign keys
+
+unique constraints
+
+indexing for firm_id + engagement_id + status
+
+soft delete pattern where needed
+
+3.2 Backend enforcement (services + guards)
+
+RBAC middleware must enforce object/action permissions
+
+Controlled state machine for transitions:
+
+Draft → In Progress → Under Review → Approved → Locked → Archived
+
+Locking rules:
+
+after Approved/Locked, block edits at API + DB policy level
+
+Sign-off:
+
+single “Complete” endpoint
+
+server timestamp, IP, user agent, immutable audit trail
+
+AI:
+
+prompt library + role-based usage gates
+
+ISA tagging required for medium/high risk outputs
+
+block AI from generating audit opinion text directly
+
+store raw output + edited output + approvals in ai_audit_log
+
+3.3 Frontend (minimal safe UI additions)
+
+Add missing pages only:
+
+ISQM-1 dashboard + control register
+
+ISA mapping views (standard → requirement → workpaper links)
+
+Risk heatmap + auto risk→procedure mapping
+
+Compliance dashboards (Companies Act / SECP / FBR)
+
+Simulation Mode UI (read-only + sandbox toggle)
+
+Make forms user-friendly:
+
+consistent layout, fixed widths, validation messages
+
+stepper/accordion hybrid for audit phases
+
+Do not redesign working UI; only extend.
+
+3.4 Exports & inspection packs
+
+Implement export jobs:
+
+QCR Inspection Pack (zip/pdf/excel)
+
+ISA coverage matrix/heatmap
+
+ISQM register + monitoring exceptions
+
+Sign-off integrity report
+
+AI governance report
+
+Companies Act checklist
+
+SECP & FBR validation pack
+
+STEP 4 — ENTERPRISE COMPLIANCE AUDIT SIMULATION MODE (SANDBOX ONLY)
+
+If missing, implement Simulation Mode that runs on a cloned/sandbox dataset:
+
+Simulations to implement:
+
+ISA coverage gaps (missing references, weak evidence flags)
+
+Engagement file review stress test:
+
+missing evidence
+
+late partner review
+
+backdated sign-off attempt
+
+risk inconsistency
+
+ISQM stress test:
+
+acceptance w/o independence clearance
+
+missing annual evaluation
+
+remediation tracking gaps
+
+Security simulation:
+
+role escalation attempt
+
+cross-firm access attempt
+
+Super Admin data visibility attempt
+
+rate limit abuse
+
+AI governance simulation:
+
+AI output w/o review
+
+AI output inconsistent with evidence
+
+edit after lock attempt
+
+Hard rules:
+
+No manual override during simulation
+
+Lock engagement during inspection simulation
+
+Do not alter production tables; use sandbox schema or cloned DB.
+
+STEP 5 — SECURITY HARDENING (ONLY IF ABSENT)
+
+Implement only missing controls:
+
+Password policy: min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special
+
+Session timeout + refresh token rotation
+
+CSRF protection, secure headers, XSS sanitization
+
+API rate limiting (per IP + per user)
+
+Audit logging for auth events
+
+Super Admin:
+
+can manage firms/subscriptions/users activation
+
+cannot read firm engagement/workpaper/evidence data
+
+IP restriction for super admin login (if configured)
+
+Add optional 2FA hooks if architecture supports it (don’t force if not requested)
+
+STEP 6 — DEVOPS VALIDATION + DEPLOY (NON-BREAKING)
+
+Verify and implement missing:
+
+Docker multi-stage prod build
+
+Env secrets protection (.env not committed)
+
+NGINX reverse proxy config for domain
+
+SSL automation (Let’s Encrypt)
+
+Restart policy + health checks
+
+Daily backup cron (db dump + retention)
+
+Zero-downtime restart approach where possible
+
+STEP 7 — FINAL VALIDATION GATES (MUST PASS)
+
+Before marking “done”, run automated checks and produce results:
+
+Unit tests / API smoke tests
+
+Migration applied cleanly on empty DB + existing DB
+
+RLS isolation test (firm A cannot read firm B)
+
+Super Admin visibility test (must fail to read tenant data)
+
+Locking test (post-approval edits blocked)
+
+Simulation mode runs end-to-end in sandbox
+
+Export pack generated successfully
+
+STEP 8 — FINAL REQUIRED OUTPUT (AUTO-GENERATE)
+
+Generate these deliverables (as files in repo if possible):
+
+ISA_Coverage_Matrix.xlsx or JSON + export endpoint
+
+ISQM1_Control_Register.xlsx
+
+Risk_Engine_Logic_Diagram.mmd (or mermaid)
+
+Engagement_Workflow_Flowchart.mmd
+
+RBAC_Matrix.csv
+
+Updated_ERD.mmd
+
+Security_Checklist.md
+
+Deployment_Status_Report.md
+
+QCR_Readiness_Mapping.xlsx
+
+Production_Validation_Summary.md
+
+FINAL EXECUTION COMMAND
+
+Now execute exactly in this order:
+Scan entire system → output gap report → design artifacts → implement only missing/incomplete → run validations → enable sandbox simulation mode → generate deliverables → confirm production-ready state.
