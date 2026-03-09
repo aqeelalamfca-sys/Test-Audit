@@ -43,9 +43,8 @@ export GIT_TERMINAL_PROMPT=0
 
 PUSH_URL=""
 if [ -n "$GITHUB_TOKEN" ]; then
-  REPO_URL=$(git remote get-url origin 2>/dev/null | sed 's|https://[^@]*@github.com/|https://github.com/|')
+  REPO_URL=$(git remote get-url origin 2>/dev/null)
   PUSH_URL=$(echo "$REPO_URL" | sed "s|https://github.com/|https://${GITHUB_TOKEN}@github.com/|")
-  git remote set-url origin "$REPO_URL" 2>/dev/null
   log "GitHub token found — authenticated push enabled."
 else
   log "WARN: No GITHUB_TOKEN set. Commits will be saved locally only."
@@ -53,8 +52,9 @@ else
   log "  Generate at: https://github.com/settings/tokens (scope: repo)"
 fi
 
+CLEAN_REMOTE=$(git remote get-url origin 2>/dev/null | sed 's|https://[^@]*@|https://|')
 log "=== Git Auto-Sync started (interval: ${INTERVAL}s) ==="
-log "Remote: $(git remote get-url origin 2>/dev/null)"
+log "Remote: ${CLEAN_REMOTE}"
 log "Branch: $(git branch --show-current 2>/dev/null)"
 log "Push auth: $([ -n \"$PUSH_URL\" ] && echo 'token configured' || echo 'no token')"
 
@@ -85,13 +85,12 @@ while true; do
       log "Committed: ${COMMIT_MSG}"
 
       if [ -n "$PUSH_URL" ]; then
-        PULL_OUTPUT=$(timeout 30 git pull --rebase "$PUSH_URL" main 2>&1)
+        PULL_OUTPUT=$(timeout 30 git pull --rebase --autostash "$PUSH_URL" main 2>&1)
         PULL_EXIT=$?
         if [ $PULL_EXIT -ne 0 ]; then
-          log "WARN: Pull --rebase failed. Aborting rebase and retrying next cycle."
+          PULL_ERROR=$(echo "$PULL_OUTPUT" | grep -v "token\|password\|ghp_" | tail -3)
+          log "WARN: Pull --rebase failed: ${PULL_ERROR}. Trying push anyway..."
           git rebase --abort 2>/dev/null
-          sleep "$INTERVAL"
-          continue
         fi
 
         PUSH_OUTPUT=$(timeout 30 git push "$PUSH_URL" main 2>&1)
