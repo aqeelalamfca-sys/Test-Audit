@@ -21,6 +21,9 @@ clear_stale_lock() {
   return 0
 }
 
+git config user.name "Aqeel Alam" 2>/dev/null
+git config user.email "aqeelalamfca@gmail.com" 2>/dev/null
+
 log "=== Git Auto-Sync started (interval: ${INTERVAL}s) ==="
 
 while true; do
