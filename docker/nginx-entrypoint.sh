@@ -41,7 +41,7 @@ fi
 if [ -f /etc/nginx/ssl/fullchain.pem ] && [ -f /etc/nginx/ssl/privkey.pem ]; then
   echo "[nginx-entrypoint] SSL certificates found — enabling HTTPS"
   if [ -f /etc/nginx/nginx-ssl.conf ]; then
-    cp /etc/nginx/nginx-ssl.conf /etc/nginx/nginx.conf
+    cp /etc/nginx/nginx-ssl.conf /etc/nginx/conf.d/default.conf
     echo "[nginx-entrypoint] Switched to SSL config"
   fi
 else
