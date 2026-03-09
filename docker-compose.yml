@@ -132,67 +132,6 @@ services:
         max-size: "50m"
         max-file: "5"
 
-  frontend:
-    build:
-      context: .
-      dockerfile: docker/frontend.Dockerfile
-    image: ghcr.io/aqeelalamfca-sys/auditwise-frontend:${APP_VERSION:-latest}
-    container_name: auditwise-frontend
-    restart: always
-    expose:
-      - "80"
-    ports:
-      - "${APP_BIND:-127.0.0.1}:${FRONTEND_PORT:-3000}:80"
-    depends_on:
-      backend:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost/ > /dev/null || exit 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 60s
-    networks:
-      - auditwise
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "20m"
-        max-file: "3"
-
-  nginx:
-    image: nginx:alpine
-    container_name: auditwise-nginx
-    restart: always
-    entrypoint: ["/docker-entrypoint-custom.sh"]
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/default.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/nginx-ssl.conf:/etc/nginx/nginx-ssl.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-      - ./docker/nginx-entrypoint.sh:/docker-entrypoint-custom.sh:ro
-      - certbot-webroot:/var/www/certbot:ro
-    depends_on:
-      frontend:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost/api/health 2>/dev/null || wget -q --spider https://localhost/api/health 2>/dev/null || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    networks:
-      - auditwise
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "20m"
-        max-file: "3"
-
 networks:
   auditwise:
     driver: bridge
@@ -205,6 +144,4 @@ volumes:
   uploads:
     driver: local
   logs:
-    driver: local
-  certbot-webroot:
     driver: local
