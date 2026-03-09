@@ -151,3 +151,21 @@
     - Step 6 Deployment Ready: Prisma client generated, schema pushed, app running on port 5000
     - Step 7 Validation: Health endpoints /__healthz and /health both returning OK, no code changes required
 [x] 50. Current session migration - npm install, prisma db push (schema synced), added missing teamlead@auditwise.pk user to seedUsers.ts, restarted workflow, all demo data seeded successfully, app running on port 5000 with login page verified
+[x] 51. Full Docker Deployment Stack Audit:
+    - Validated docker-compose.yml and docker-compose.prod.yml structure and syntax
+    - All 5 services present: auditwise-db (postgres:16), auditwise-redis (redis:7-alpine), auditwise-backend, auditwise-frontend, auditwise-nginx
+    - Fixed nginx depends_on: now depends on BOTH frontend (service_healthy) AND backend (service_healthy)
+    - Fixed frontend port mapping: exposed on host port 3000 (configurable via FRONTEND_PORT env var)
+    - Production ports verified: frontend=3000, backend=5000, nginx=80/443
+    - restart: always on all 5 containers
+    - Healthchecks on all 5 containers (postgres pg_isready, redis ping, backend curl /api/health, frontend curl /, nginx wget /api/health)
+    - Fixed nginx/default.conf: added missing `upstream frontend` block, routes /assets/ and / to frontend, /api/ to backend
+    - Fixed nginx/nginx-ssl.conf: same upstream frontend addition
+    - Fixed nginx/nginx.conf: same upstream frontend addition (all 3 nginx configs now consistent)
+    - Updated nginx-entrypoint.sh: waits for BOTH frontend and backend before starting nginx
+    - Fixed docker-compose.prod.yml: env_file with required:false, matching env vars, resource limits
+    - Removed duplicate root-level docker-entrypoint.sh (docker/docker-entrypoint.sh is authoritative)
+    - Updated .env.example: Postgres 16, POSTGRES_PASSWORD marked as required, clear documentation
+    - Environment variables load from .env via env_file with required:false fallback
+    - POSTGRES_PASSWORD uses ${:?} syntax to fail fast if not set
+    - DATABASE_URL auto-constructed by docker-entrypoint.sh from component vars with URL-encoding
