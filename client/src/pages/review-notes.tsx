@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -51,6 +52,8 @@ import {
   ClipboardList,
   Users,
   Eye,
+  Paperclip,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
@@ -99,6 +102,21 @@ interface Stats {
   createdTotal: number;
 }
 
+interface EngagementOption {
+  id: string;
+  engagementCode: string;
+  engagementType: string;
+  status: string;
+  client?: { name: string } | null;
+}
+
+interface UserOption {
+  id: string;
+  fullName: string;
+  role: string;
+  email: string;
+}
+
 const severityConfig = {
   INFO: { icon: Info, label: "Info", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800" },
   LOW: { icon: Info, label: "Low", color: "text-slate-600 dark:text-slate-400", bg: "bg-slate-50 dark:bg-slate-950/30 border-slate-200 dark:border-slate-800" },
@@ -121,6 +139,17 @@ const noteTypeConfig: Record<string, { label: string; color: string }> = {
 };
 
 const MANAGER_ROLES = ["PARTNER", "MANAGER", "EQCR", "FIRM_ADMIN"];
+
+const VALID_PHASES = [
+  { value: "ONBOARDING", label: "Onboarding" },
+  { value: "PRE_PLANNING", label: "Pre-Planning" },
+  { value: "PLANNING", label: "Planning" },
+  { value: "EXECUTION", label: "Execution" },
+  { value: "FINALIZATION", label: "Finalization" },
+  { value: "REPORTING", label: "Reporting" },
+  { value: "EQCR", label: "EQCR" },
+  { value: "INSPECTION", label: "Inspection" },
+];
 
 function getInitials(name: string) {
   return name
@@ -311,6 +340,88 @@ function NoteCard({ note, onStatusChange, onReply, userId }: {
   );
 }
 
+function MultiSelectUsers({
+  users,
+  selectedIds,
+  onChange,
+}: {
+  users: UserOption[];
+  selectedIds: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const [search, setSearch] = useState("");
+
+  const filtered = users.filter(
+    (u) =>
+      u.fullName.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase()) ||
+      u.role.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const toggleUser = (uid: string) => {
+    if (selectedIds.includes(uid)) {
+      onChange(selectedIds.filter((id) => id !== uid));
+    } else {
+      onChange([...selectedIds, uid]);
+    }
+  };
+
+  const selectedUsers = users.filter((u) => selectedIds.includes(u.id));
+
+  return (
+    <div className="space-y-2">
+      {selectedUsers.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selectedUsers.map((u) => (
+            <Badge key={u.id} variant="secondary" className="text-xs gap-1 pr-1">
+              {u.fullName}
+              <button
+                type="button"
+                onClick={() => toggleUser(u.id)}
+                className="ml-0.5 rounded-full hover:bg-muted-foreground/20 p-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
+      )}
+      <Input
+        placeholder="Search team members..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="h-8 text-sm"
+        data-testid="input-search-assignees"
+      />
+      {search.trim() && (
+        <div className="max-h-32 overflow-y-auto border rounded-md divide-y">
+          {filtered.length === 0 ? (
+            <p className="text-xs text-muted-foreground p-2">No users found</p>
+          ) : (
+            filtered.slice(0, 8).map((u) => (
+              <button
+                key={u.id}
+                type="button"
+                onClick={() => { toggleUser(u.id); setSearch(""); }}
+                className={cn(
+                  "w-full text-left px-3 py-1.5 text-sm hover:bg-muted flex items-center justify-between",
+                  selectedIds.includes(u.id) && "bg-primary/5"
+                )}
+              >
+                <span>
+                  {u.fullName}
+                  <span className="text-xs text-muted-foreground ml-2">{u.role}</span>
+                </span>
+                {selectedIds.includes(u.id) && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ReviewNotesPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -322,6 +433,19 @@ export default function ReviewNotesPage() {
   const [replyMessage, setReplyMessage] = useState("");
   const [resolveNoteId, setResolveNoteId] = useState<string | null>(null);
   const [resolution, setResolution] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    title: "",
+    content: "",
+    engagementId: "",
+    phase: "PLANNING",
+    noteType: "ISSUE",
+    severity: "INFO",
+    dueDate: "",
+    assigneeIds: [] as string[],
+  });
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [replyAttachments, setReplyAttachments] = useState<File[]>([]);
   const isManager = MANAGER_ROLES.includes(user?.role || "");
 
   const statsQuery = useQuery<Stats>({
@@ -341,6 +465,46 @@ export default function ReviewNotesPage() {
   const allNotesQuery = useQuery<ReviewNoteData[]>({
     queryKey: ["/api/review-notes-v2/all"],
     enabled: activeTab === "all" && isManager,
+  });
+
+  const engagementsQuery = useQuery<EngagementOption[]>({
+    queryKey: ["/api/engagements"],
+    enabled: createOpen,
+  });
+
+  const usersQuery = useQuery<UserOption[]>({
+    queryKey: ["/api/users"],
+    enabled: createOpen || !!replyNoteId,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: typeof createForm) => {
+      const body: any = {
+        engagementId: data.engagementId,
+        phase: data.phase,
+        title: data.title,
+        content: data.content,
+        noteType: data.noteType,
+        severity: data.severity,
+        assigneeIds: data.assigneeIds.length > 0 ? data.assigneeIds : undefined,
+        dueDate: data.dueDate || undefined,
+      };
+      const res = await apiRequest("POST", "/api/review-notes-v2", body);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/review-notes-v2/my"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/review-notes-v2/created-by-me"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/review-notes-v2/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/review-notes-v2/stats/summary"] });
+      toast({ title: "Review note created successfully" });
+      setCreateOpen(false);
+      setCreateForm({ title: "", content: "", engagementId: "", phase: "PLANNING", noteType: "ISSUE", severity: "INFO", dueDate: "", assigneeIds: [] });
+      setAttachments([]);
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to create note", variant: "destructive" });
+    },
   });
 
   const statusMutation = useMutation({
@@ -372,9 +536,10 @@ export default function ReviewNotesPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/review-notes-v2/created-by-me"] });
       queryClient.invalidateQueries({ queryKey: ["/api/review-notes-v2/all"] });
       queryClient.invalidateQueries({ queryKey: ["/api/review-notes-v2/stats/summary"] });
-      toast({ title: "Reply added" });
+      toast({ title: "Reply sent" });
       setReplyNoteId(null);
       setReplyMessage("");
+      setReplyAttachments([]);
     },
     onError: (err: any) => {
       toast({ title: "Error", description: err.message || "Failed to reply", variant: "destructive" });
@@ -423,9 +588,36 @@ export default function ReviewNotesPage() {
   const handleReply = (noteId: string) => {
     setReplyNoteId(noteId);
     setReplyMessage("");
+    setReplyAttachments([]);
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, target: "create" | "reply") => {
+    const files = Array.from(e.target.files || []);
+    if (target === "create") {
+      setAttachments((prev) => [...prev, ...files]);
+    } else {
+      setReplyAttachments((prev) => [...prev, ...files]);
+    }
+    e.target.value = "";
+  };
+
+  const removeAttachment = (index: number, target: "create" | "reply") => {
+    if (target === "create") {
+      setAttachments((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      setReplyAttachments((prev) => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const activeEngagements = (engagementsQuery.data || []).filter(
+    (e) => e.status !== "COMPLETED" && e.status !== "ARCHIVED"
+  );
+
+  const replyNote = replyNoteId ? currentNotes.find((n) => n.id === replyNoteId) || null : null;
+
   const stats = statsQuery.data;
+
+  const canSubmitCreate = createForm.title.trim() && createForm.content.trim() && createForm.engagementId;
 
   return (
     <div className="min-h-screen bg-background" data-testid="review-notes-page">
@@ -437,6 +629,14 @@ export default function ReviewNotesPage() {
               Track and manage review observations across all engagements
             </p>
           </div>
+          <Button
+            onClick={() => setCreateOpen(true)}
+            className="gap-1.5"
+            data-testid="button-create-note"
+          >
+            <Plus className="h-4 w-4" />
+            Create Note
+          </Button>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -555,6 +755,15 @@ export default function ReviewNotesPage() {
                   ? "You haven't created any review notes yet."
                   : "No review notes match the current filters."}
               </p>
+              <Button
+                variant="outline"
+                className="mt-4 gap-1.5"
+                onClick={() => setCreateOpen(true)}
+                data-testid="button-create-note-empty"
+              >
+                <Plus className="h-4 w-4" />
+                Create Your First Note
+              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -575,22 +784,286 @@ export default function ReviewNotesPage() {
         )}
       </div>
 
-      <Dialog open={!!replyNoteId} onOpenChange={(open) => !open && setReplyNoteId(null)}>
-        <DialogContent>
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add Reply</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Create Review Note
+            </DialogTitle>
           </DialogHeader>
-          <Textarea
-            value={replyMessage}
-            onChange={(e) => setReplyMessage(e.target.value)}
-            placeholder="Type your reply..."
-            rows={4}
-            data-testid="input-reply-message"
-          />
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" data-testid="button-cancel-reply">Cancel</Button>
-            </DialogClose>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="create-subject">Subject</Label>
+              <Input
+                id="create-subject"
+                placeholder="Enter note subject..."
+                value={createForm.title}
+                onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                data-testid="input-create-subject"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Engagement</Label>
+                <Select
+                  value={createForm.engagementId}
+                  onValueChange={(v) => setCreateForm({ ...createForm, engagementId: v })}
+                >
+                  <SelectTrigger data-testid="select-engagement">
+                    <SelectValue placeholder="Select engagement..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeEngagements.map((eng) => (
+                      <SelectItem key={eng.id} value={eng.id}>
+                        {eng.client?.name ? `${eng.client.name} — ` : ""}{eng.engagementCode}
+                      </SelectItem>
+                    ))}
+                    {activeEngagements.length === 0 && (
+                      <SelectItem value="__none" disabled>No active engagements</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Phase</Label>
+                <Select
+                  value={createForm.phase}
+                  onValueChange={(v) => setCreateForm({ ...createForm, phase: v })}
+                >
+                  <SelectTrigger data-testid="select-phase">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VALID_PHASES.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>To (Assign to team members)</Label>
+              <MultiSelectUsers
+                users={usersQuery.data || []}
+                selectedIds={createForm.assigneeIds}
+                onChange={(ids) => setCreateForm({ ...createForm, assigneeIds: ids })}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label>Type</Label>
+                <Select
+                  value={createForm.noteType}
+                  onValueChange={(v) => setCreateForm({ ...createForm, noteType: v })}
+                >
+                  <SelectTrigger data-testid="select-note-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ISSUE">Issue</SelectItem>
+                    <SelectItem value="QUESTION">Question</SelectItem>
+                    <SelectItem value="TODO">To-Do</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Severity</Label>
+                <Select
+                  value={createForm.severity}
+                  onValueChange={(v) => setCreateForm({ ...createForm, severity: v })}
+                >
+                  <SelectTrigger data-testid="select-severity">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="INFO">Info</SelectItem>
+                    <SelectItem value="WARNING">Warning</SelectItem>
+                    <SelectItem value="CRITICAL">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Due Date</Label>
+                <Input
+                  type="date"
+                  value={createForm.dueDate}
+                  onChange={(e) => setCreateForm({ ...createForm, dueDate: e.target.value })}
+                  data-testid="input-due-date"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="create-content">Message</Label>
+              <Textarea
+                id="create-content"
+                placeholder="Describe the review observation, question, or to-do item..."
+                value={createForm.content}
+                onChange={(e) => setCreateForm({ ...createForm, content: e.target.value })}
+                rows={5}
+                data-testid="input-create-content"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Attachments</Label>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => document.getElementById("create-file-input")?.click()}
+                >
+                  <Paperclip className="h-3.5 w-3.5" />
+                  Attach File
+                </Button>
+                <input
+                  id="create-file-input"
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleFileSelect(e, "create")}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {attachments.length > 0 ? `${attachments.length} file(s) selected` : "No files attached"}
+                </span>
+              </div>
+              {attachments.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {attachments.map((file, idx) => (
+                    <Badge key={idx} variant="outline" className="text-xs gap-1 pr-1">
+                      <Paperclip className="h-3 w-3" />
+                      {file.name}
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(idx, "create")}
+                        className="ml-0.5 rounded-full hover:bg-muted-foreground/20 p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setCreateOpen(false)}
+              data-testid="button-cancel-create"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => createMutation.mutate(createForm)}
+              disabled={!canSubmitCreate || createMutation.isPending}
+              data-testid="button-send-create"
+            >
+              {createMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Send className="h-4 w-4 mr-2" />
+              )}
+              Send
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!replyNoteId} onOpenChange={(open) => { if (!open) { setReplyNoteId(null); setReplyAttachments([]); } }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Reply to Note
+            </DialogTitle>
+          </DialogHeader>
+
+          {replyNote && (
+            <div className="rounded-md border bg-muted/30 p-3 text-sm">
+              <p className="font-medium text-xs text-muted-foreground mb-1">Replying to:</p>
+              <p className="font-semibold text-sm">{replyNote.title || replyNote.content.slice(0, 60)}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                by {replyNote.author.fullName} &middot; {replyNote.engagement.client.name} — {replyNote.engagement.engagementCode}
+              </p>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="reply-message">Message</Label>
+              <Textarea
+                id="reply-message"
+                value={replyMessage}
+                onChange={(e) => setReplyMessage(e.target.value)}
+                placeholder="Type your reply..."
+                rows={4}
+                data-testid="input-reply-message"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => document.getElementById("reply-file-input")?.click()}
+                >
+                  <Paperclip className="h-3.5 w-3.5" />
+                  Attach File
+                </Button>
+                <input
+                  id="reply-file-input"
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleFileSelect(e, "reply")}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {replyAttachments.length > 0 ? `${replyAttachments.length} file(s)` : ""}
+                </span>
+              </div>
+              {replyAttachments.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {replyAttachments.map((file, idx) => (
+                    <Badge key={idx} variant="outline" className="text-xs gap-1 pr-1">
+                      <Paperclip className="h-3 w-3" />
+                      {file.name}
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(idx, "reply")}
+                        className="ml-0.5 rounded-full hover:bg-muted-foreground/20 p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => { setReplyNoteId(null); setReplyAttachments([]); }}
+              data-testid="button-cancel-reply"
+            >
+              Cancel
+            </Button>
             <Button
               onClick={() => replyNoteId && replyMutation.mutate({ noteId: replyNoteId, message: replyMessage })}
               disabled={!replyMessage.trim() || replyMutation.isPending}
