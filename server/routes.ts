@@ -961,7 +961,7 @@ export async function registerRoutes(
     try {
       const engagement = await prisma.engagement.findUnique({
         where: { id: req.params.id },
-        include: { team: true },
+        include: { team: { include: { user: { select: { id: true, fullName: true } } } } },
       });
 
       if (!engagement || engagement.firmId !== req.user!.firmId) {
@@ -978,6 +978,25 @@ export async function registerRoutes(
       });
 
       const { team, eqcrRequired } = teamSchema.parse(req.body);
+
+      const userIds = team.map(m => m.userId);
+      if (userIds.length > 0) {
+        const validUsers = await prisma.user.findMany({
+          where: { id: { in: userIds }, firmId: req.user!.firmId },
+          select: { id: true, fullName: true },
+        });
+        const validIds = new Set(validUsers.map(u => u.id));
+        const invalidIds = userIds.filter(id => !validIds.has(id));
+        if (invalidIds.length > 0) {
+          return res.status(400).json({ error: "Invalid user IDs: users not found in your firm" });
+        }
+      }
+
+      const beforeSnapshot = engagement.team.map(t => ({
+        role: t.role,
+        userId: t.userId,
+        fullName: t.user?.fullName || "Unknown",
+      }));
 
       await prisma.engagementTeam.deleteMany({
         where: { engagementId: req.params.id },
@@ -1001,13 +1020,23 @@ export async function registerRoutes(
         });
       }
 
+      const afterUsers = userIds.length > 0
+        ? await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, fullName: true } })
+        : [];
+      const userMap = new Map(afterUsers.map(u => [u.id, u.fullName]));
+      const afterSnapshot = team.map(t => ({
+        role: t.role,
+        userId: t.userId,
+        fullName: userMap.get(t.userId) || "Unknown",
+      }));
+
       await logAuditTrail(
         req.user!.id,
         "TEAM_UPDATED",
         "engagement",
         engagement.id,
-        engagement.team,
-        team,
+        beforeSnapshot,
+        afterSnapshot,
         engagement.id,
         "Team allocation updated",
         req.ip,
@@ -1026,6 +1055,36 @@ export async function registerRoutes(
       }
       console.error("Update team error:", error);
       res.status(500).json({ error: "Failed to update team" });
+    }
+  });
+
+  app.get("/api/engagements/:id/team-history", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const engagement = await prisma.engagement.findUnique({
+        where: { id: req.params.id },
+        select: { id: true, firmId: true },
+      });
+
+      if (!engagement || engagement.firmId !== req.user!.firmId) {
+        return res.status(404).json({ error: "Engagement not found" });
+      }
+
+      const history = await prisma.auditTrail.findMany({
+        where: {
+          engagementId: req.params.id,
+          action: "TEAM_UPDATED",
+        },
+        include: {
+          user: { select: { id: true, fullName: true, role: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+
+      res.json(history);
+    } catch (error) {
+      console.error("Get team history error:", error);
+      res.status(500).json({ error: "Failed to fetch team history" });
     }
   });
 

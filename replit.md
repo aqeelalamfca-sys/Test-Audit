@@ -67,6 +67,17 @@ The workflow runs: `NODE_OPTIONS='--max-old-space-size=1024' NODE_ENV=developmen
 - Build: `npm run build`
 - Run: `node dist/index.cjs`
 
+## Engagement Allocation
+
+The Engagement Allocation page (`/engagement-allocation`) provides:
+- **Status filtering**: Tabs for All / Active / Completed engagements with status badges
+- **Inline editing**: Click Edit on any row to get per-role dropdowns (Partner, Manager, Senior, Staff, EQCR) with Save/Cancel per row
+- **Allocation history trail**: Expand any row to see who changed team allocations, when, and what changed (before→after with staff names)
+- **Backend validation**: Team update endpoint validates all userIds belong to the same firm
+- **Audit trail**: Team changes are logged with enriched snapshots (role + userId + fullName) for readable history
+- Files: `client/src/pages/engagement-allocation.tsx`, backend in `server/routes.ts`
+- API: `GET /api/engagements/:id/team-history`, `PUT /api/engagements/:id/team`
+
 ## Platform Admin Dashboard
 
 The Platform Dashboard (`/platform/dashboard`) shows real-time VPS metrics via SSH:
