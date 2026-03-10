@@ -18,6 +18,7 @@ import {
 import { z } from "zod";
 import { validatePasswordPolicy } from "./utils/passwordPolicy";
 import { checkAccountLockout, recordFailedAttempt, clearLockout } from "./middleware/accountLockout";
+import { logPlatformAction } from "./services/platformAuditService";
 import { loginRateLimit } from "./middleware/rateLimiter";
 import { logSecurityEvent } from "./services/auditLogService";
 import { generateTwoFactorSecret, generateQRCodeDataURL, verifyTwoFactorToken } from "./services/twoFactorService";
@@ -285,6 +286,16 @@ router.post("/login", loginRateLimit(), async (req: AuthenticatedRequest, res: R
         clientIp,
         req.get("user-agent")
       );
+      logPlatformAction(
+        user.id,
+        "LOGIN_FAILED",
+        "User",
+        user.id,
+        user.firmId,
+        clientIp,
+        req.get("user-agent"),
+        { email: user.email, reason: "invalid_password" }
+      ).catch(() => {});
       if (lockResult.locked) {
         return res.status(429).json({
           error: "Account temporarily locked due to too many failed attempts. Try again in 15 minutes.",
@@ -326,6 +337,17 @@ router.post("/login", loginRateLimit(), async (req: AuthenticatedRequest, res: R
       clientIp,
       req.get("user-agent")
     );
+
+    logPlatformAction(
+      user.id,
+      "LOGIN_SUCCESS",
+      "User",
+      user.id,
+      user.firmId,
+      clientIp,
+      req.get("user-agent"),
+      { email: user.email, role: user.role }
+    ).catch(() => {});
 
     const { passwordHash, twoFactorSecret, ...safeUser } = user;
 
@@ -457,7 +479,12 @@ router.post("/signup", async (req: AuthenticatedRequest, res: Response) => {
     const now = new Date();
     const trialEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     const passwordHash = await hashPassword(data.password);
-    const username = data.adminEmail.split("@")[0] + "_admin";
+    const baseUsername = data.adminEmail.split("@")[0].replace(/[^a-zA-Z0-9_.-]/g, "") + "_admin";
+    let username = baseUsername;
+    const existingUsername = await prisma.user.findUnique({ where: { username } });
+    if (existingUsername) {
+      username = `${baseUsername}_${Date.now().toString(36)}`;
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       const firm = await tx.firm.create({
@@ -851,10 +878,11 @@ router.post("/invite/:token/accept", async (req: AuthenticatedRequest, res: Resp
       return res.status(400).json({ error: "A user with this email already exists" });
     }
 
-    const username = data.username || invite.email.split("@")[0] + "_admin";
-    const existingUsername = await prisma.user.findUnique({ where: { username } });
-    if (existingUsername) {
-      return res.status(400).json({ error: "Username already taken. Please choose a different one." });
+    const baseInviteUsername = (data.username || invite.email.split("@")[0]).replace(/[^a-zA-Z0-9_.-]/g, "");
+    let username = baseInviteUsername;
+    const existingInviteUsername = await prisma.user.findUnique({ where: { username } });
+    if (existingInviteUsername) {
+      username = `${baseInviteUsername}_${Date.now().toString(36)}`;
     }
 
     const passwordHash = await hashPassword(data.password);

@@ -21,6 +21,9 @@ const ACTION_COLORS: Record<string, string> = {
   SETTINGS_UPDATED: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
   AI_CONFIG_UPDATED: "bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-200",
   SUPER_ADMIN_BOOTSTRAP: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  LOGIN_SUCCESS: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
+  LOGIN_FAILED: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  FEEDBACK_STATUS_UPDATE: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
 };
 
 function formatAction(action: string): string {

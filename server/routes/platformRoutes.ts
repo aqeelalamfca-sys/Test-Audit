@@ -1242,6 +1242,104 @@ router.get("/analytics", async (_req: AuthenticatedRequest, res: Response) => {
   }
 });
 
+// ========== EXTENDED DASHBOARD METRICS ==========
+
+router.get("/dashboard-metrics", async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const result = await withPlatformContext(async (tx) => {
+      const [
+        activeSessions,
+        totalClients,
+        todayLogins,
+        failedLogins7d,
+        recentAuditLogs,
+        engagementsThisMonth,
+        usersCreatedThisMonth,
+        firmsCreatedThisMonth,
+        engagementsByStatus,
+        recentActivity,
+        dailyStats,
+      ] = await Promise.all([
+        tx.refreshToken.count({ where: { expiresAt: { gt: now }, revokedAt: null } }),
+        tx.client.count(),
+        tx.platformAuditLog.count({
+          where: {
+            action: { in: ["LOGIN", "LOGIN_SUCCESS", "USER_LOGIN"] },
+            createdAt: { gte: todayStart },
+          },
+        }),
+        tx.platformAuditLog.count({
+          where: {
+            action: { in: ["LOGIN_FAILED", "LOGIN_FAILURE", "FAILED_LOGIN"] },
+            createdAt: { gte: weekAgo },
+          },
+        }),
+        tx.platformAuditLog.count({ where: { createdAt: { gte: todayStart } } }),
+        tx.engagement.count({ where: { createdAt: { gte: monthStart } } }),
+        tx.user.count({ where: { createdAt: { gte: monthStart } } }),
+        tx.firm.count({ where: { createdAt: { gte: monthStart } } }),
+        tx.engagement.groupBy({
+          by: ["status"],
+          _count: { id: true },
+        }),
+        tx.platformAuditLog.findMany({
+          take: 15,
+          orderBy: { createdAt: "desc" },
+          select: { id: true, action: true, entity: true, createdAt: true, userId: true, ip: true },
+        }),
+        Promise.all(
+          Array.from({ length: 7 }, (_, i) => {
+            const dayStart = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
+            dayStart.setHours(0, 0, 0, 0);
+            const dayEnd = new Date(dayStart);
+            dayEnd.setHours(23, 59, 59, 999);
+            const dayLabel = dayStart.toLocaleDateString("en-US", { weekday: "short" });
+            return Promise.all([
+              tx.platformAuditLog.count({ where: { createdAt: { gte: dayStart, lte: dayEnd } } }),
+              tx.user.count({ where: { createdAt: { gte: dayStart, lte: dayEnd } } }),
+              tx.engagement.count({ where: { createdAt: { gte: dayStart, lte: dayEnd } } }),
+            ]).then(([actions, registrations, engagements]) => ({
+              day: dayLabel,
+              actions,
+              registrations,
+              engagements,
+            }));
+          })
+        ),
+      ]);
+
+      const engStatusMap: Record<string, number> = {};
+      for (const e of engagementsByStatus) {
+        engStatusMap[e.status] = e._count.id;
+      }
+
+      return {
+        activeSessions,
+        totalClients,
+        todayLogins,
+        failedLogins7d,
+        recentAuditLogs,
+        engagementsThisMonth,
+        usersCreatedThisMonth,
+        firmsCreatedThisMonth,
+        engagementsByStatus: engStatusMap,
+        recentActivity,
+        dailyStats,
+      };
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error("Dashboard metrics error:", error);
+    res.status(500).json({ error: "Failed to get dashboard metrics" });
+  }
+});
+
 // ========== AI USAGE ==========
 
 router.get("/ai-usage", async (req: AuthenticatedRequest, res: Response) => {
