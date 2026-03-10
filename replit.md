@@ -78,6 +78,24 @@ The Engagement Allocation page (`/engagement-allocation`) provides:
 - Files: `client/src/pages/engagement-allocation.tsx`, backend in `server/routes.ts`
 - API: `GET /api/engagements/:id/team-history`, `PUT /api/engagements/:id/team`
 
+## User Management & Role Matrix
+
+The User Management page (`/firm-admin/users`) has two tabs:
+- **Users Tab**: List, search, create, edit, suspend/activate users with role assignment
+- **Role Matrix Tab**: Editable permission grid — roles as columns (Staff, Senior, Manager, EQCR, Partner, Admin), permissions grouped by category as expandable rows. Checkboxes toggle permissions per role in real-time. FIRM_ADMIN always has all permissions (disabled checkboxes). Uses firm-specific overrides that take precedence over global defaults.
+- APIs: `GET /api/rbac/permissions`, `GET /api/rbac/permissions/roles`, `PUT /api/admin/role-permissions`
+- Files: `client/src/pages/firm-admin/firm-users.tsx`, `server/permissionRoutes.ts`, `server/adminRoutes.ts`
+
+## Audit Log PDF Export
+
+The Audit Logs page (`/firm-admin/audit-logs`) has an "Export PDF" button that:
+- Fetches ALL filtered logs (up to 5000 entries) regardless of current page
+- Generates a formatted landscape A4 PDF with jspdf + jspdf-autotable
+- Includes header with firm name, generation timestamp, active filters, and entry count
+- Table columns: Timestamp, User, Role, Action, Entity, IP Address
+- Footer shows page numbers and "AuditWise - ISA Compliant Audit Platform"
+- File: `client/src/pages/firm-admin/firm-audit-logs.tsx`
+
 ## AI Integration
 
 The AI Integration page (`/firm-admin/ai-usage`) provides multi-provider AI management:

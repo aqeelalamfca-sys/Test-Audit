@@ -27,19 +27,33 @@ router.get("/permissions/roles", requireAuth, requireMinRole("MANAGER"), async (
     const rolePermissions = await prisma.rolePermission.findMany({
       where: {
         OR: [{ firmId: null }, { firmId }],
-        isGranted: true,
       },
       include: { permission: true },
     });
     
-    const grouped: Record<string, { code: string; name: string; category: string }[]> = {};
+    const effectiveMap: Record<string, Record<string, { perm: any; isGranted: boolean; isFirmOverride: boolean }>> = {};
     for (const rp of rolePermissions) {
-      if (!grouped[rp.role]) grouped[rp.role] = [];
-      grouped[rp.role].push({
-        code: rp.permission.code,
-        name: rp.permission.name,
-        category: rp.permission.category,
-      });
+      if (!effectiveMap[rp.role]) effectiveMap[rp.role] = {};
+      const existing = effectiveMap[rp.role][rp.permission.code];
+      if (rp.firmId) {
+        effectiveMap[rp.role][rp.permission.code] = { perm: rp.permission, isGranted: rp.isGranted, isFirmOverride: true };
+      } else if (!existing || !existing.isFirmOverride) {
+        effectiveMap[rp.role][rp.permission.code] = { perm: rp.permission, isGranted: rp.isGranted, isFirmOverride: false };
+      }
+    }
+    
+    const grouped: Record<string, { code: string; name: string; category: string }[]> = {};
+    for (const [role, permMap] of Object.entries(effectiveMap)) {
+      grouped[role] = [];
+      for (const [code, entry] of Object.entries(permMap)) {
+        if (entry.isGranted) {
+          grouped[role].push({
+            code: entry.perm.code,
+            name: entry.perm.name,
+            category: entry.perm.category,
+          });
+        }
+      }
     }
     
     res.json(grouped);

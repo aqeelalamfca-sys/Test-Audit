@@ -1,11 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Search, User, Filter, X, ChevronLeft, ChevronRight, Clock, Globe, Shield, Settings, Eye, Pencil, Trash2, Plus, Key, LogIn, LogOut, RefreshCw } from "lucide-react";
+import { FileText, Search, User, Filter, X, ChevronLeft, ChevronRight, Clock, Globe, Shield, Settings, Eye, Pencil, Trash2, Plus, Key, LogIn, LogOut, RefreshCw, Download, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const ACTION_CATEGORIES: Record<string, { label: string; color: string; icon: any }> = {
   CREATE: { label: "Created", color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200", icon: Plus },
@@ -93,11 +95,86 @@ function formatTimestamp(ts: string): { date: string; time: string; relative: st
   };
 }
 
+async function exportAuditLogsPDF(logs: any[], filters: { user?: string; action?: string; startDate?: string; endDate?: string }) {
+  const { default: jsPDF } = await import("jspdf");
+  const { default: autoTable } = await import("jspdf-autotable");
+
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.text("AuditWise - Audit Log Report", 14, 18);
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(100);
+  const now = new Date();
+  doc.text(`Generated: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 14, 24);
+
+  let filterLine = "Filters: ";
+  const filterParts: string[] = [];
+  if (filters.user) filterParts.push(`User: ${filters.user}`);
+  if (filters.action) filterParts.push(`Action: ${filters.action}`);
+  if (filters.startDate) filterParts.push(`From: ${filters.startDate}`);
+  if (filters.endDate) filterParts.push(`To: ${filters.endDate}`);
+  if (filterParts.length === 0) filterParts.push("None");
+  filterLine += filterParts.join(" | ");
+  doc.text(filterLine, 14, 29);
+
+  doc.text(`Total entries: ${logs.length}`, 14, 34);
+  doc.setTextColor(0);
+
+  const tableData = logs.map((log: any) => {
+    const ts = new Date(log.createdAt);
+    return [
+      `${ts.toLocaleDateString()} ${ts.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+      log.userName || "System",
+      log.userRole || "-",
+      humanizeAction(log.action),
+      getEntityLabel(log.entity || log.entityType || ""),
+      log.ip || log.ipAddress || "-",
+    ];
+  });
+
+  autoTable(doc, {
+    startY: 38,
+    head: [["Timestamp", "User", "Role", "Action", "Entity", "IP Address"]],
+    body: tableData,
+    styles: { fontSize: 7.5, cellPadding: 2 },
+    headStyles: { fillColor: [37, 99, 235], textColor: 255, fontSize: 8, fontStyle: "bold" },
+    alternateRowStyles: { fillColor: [245, 247, 250] },
+    columnStyles: {
+      0: { cellWidth: 38 },
+      1: { cellWidth: 35 },
+      2: { cellWidth: 25 },
+      3: { cellWidth: 60 },
+      4: { cellWidth: 45 },
+      5: { cellWidth: 30 },
+    },
+    didDrawPage: (data: any) => {
+      const pageNum = doc.getNumberOfPages();
+      doc.setFontSize(7);
+      doc.setTextColor(150);
+      doc.text(
+        `Page ${data.pageNumber} of ${pageNum}`,
+        pageW - 30,
+        doc.internal.pageSize.getHeight() - 8
+      );
+      doc.text("AuditWise - ISA Compliant Audit Platform", 14, doc.internal.pageSize.getHeight() - 8);
+    },
+  });
+
+  doc.save(`audit-logs-${now.toISOString().slice(0, 10)}.pdf`);
+}
+
 export default function FirmAuditLogs() {
+  const { toast } = useToast();
   const [actionFilter, setActionFilter] = useState("");
   const [selectedUser, setSelectedUser] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [exporting, setExporting] = useState(false);
   const [page, setPage] = useState(1);
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
   const limit = 50;
@@ -150,6 +227,45 @@ export default function FirmAuditLogs() {
             <Badge variant="secondary" className="ml-1">{total.toLocaleString()} entries</Badge>
           )}
         </div>
+        {logs.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={exporting}
+            data-testid="button-export-pdf"
+            onClick={async () => {
+              setExporting(true);
+              try {
+                const exportParams = new URLSearchParams();
+                if (actionFilter) exportParams.set("action", actionFilter);
+                if (selectedUser) exportParams.set("userId", selectedUser);
+                if (startDate) exportParams.set("startDate", startDate);
+                if (endDate) exportParams.set("endDate", endDate);
+                exportParams.set("page", "1");
+                exportParams.set("limit", "5000");
+                const exportRes = await apiRequest("GET", `/api/tenant/audit-logs?${exportParams.toString()}`);
+                const exportData = await exportRes.json();
+                const allLogs = exportData?.logs || logs;
+
+                const userName = firmUsers?.find((u: any) => u.id === selectedUser)?.fullName;
+                await exportAuditLogsPDF(allLogs, {
+                  user: userName,
+                  action: actionFilter || undefined,
+                  startDate: startDate || undefined,
+                  endDate: endDate || undefined,
+                });
+                toast({ title: "PDF Exported", description: `${allLogs.length} audit log entries exported successfully.` });
+              } catch (err: any) {
+                toast({ title: "Export Failed", description: err.message, variant: "destructive" });
+              } finally {
+                setExporting(false);
+              }
+            }}
+          >
+            {exporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+            Export PDF
+          </Button>
+        )}
       </div>
 
       <Card>

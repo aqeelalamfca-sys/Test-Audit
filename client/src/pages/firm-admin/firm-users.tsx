@@ -1,14 +1,20 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Plus, Search, Ban, CheckCircle, Pencil, Loader2 } from "lucide-react";
+import { SimpleTabNavigation } from "@/components/numbered-tab-navigation";
+import { Separator } from "@/components/ui/separator";
+import {
+  Users, Plus, Search, Ban, CheckCircle, Pencil, Loader2,
+  Shield, Grid3X3, ChevronDown, ChevronRight, Info,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const ROLES = [
@@ -19,7 +25,241 @@ const ROLES = [
   { value: "EQCR", label: "Engagement Quality Reviewer" },
 ];
 
-export default function FirmUsers() {
+const MATRIX_ROLES = ["STAFF", "SENIOR", "MANAGER", "EQCR", "PARTNER", "FIRM_ADMIN"];
+
+const ROLE_SHORT: Record<string, string> = {
+  STAFF: "Staff",
+  SENIOR: "Senior",
+  MANAGER: "Manager",
+  EQCR: "EQCR",
+  PARTNER: "Partner",
+  FIRM_ADMIN: "Admin",
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  SYSTEM: "System Access",
+  ENGAGEMENT: "Engagement Management",
+  PLANNING: "Planning Phase",
+  EXECUTION: "Execution Phase",
+  COMPLETION: "Completion & Reporting",
+  REVIEW: "Review & Approval",
+  ADMINISTRATION: "Administration",
+  QUALITY: "Quality Control",
+  REPORT: "Reporting",
+};
+
+const VIEW_TABS = [
+  { id: "users", label: "Users", icon: <Users className="w-3.5 h-3.5" /> },
+  { id: "role-matrix", label: "Role Matrix", icon: <Grid3X3 className="w-3.5 h-3.5" /> },
+];
+
+function RoleMatrixTab() {
+  const { toast } = useToast();
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(["SYSTEM", "ENGAGEMENT"]));
+
+  const { data: allPermissions, isLoading: permLoading } = useQuery<any[]>({
+    queryKey: ["/api/rbac/permissions"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/rbac/permissions");
+      return res.json();
+    },
+  });
+
+  const { data: rolePermsMap, isLoading: rolePermLoading } = useQuery<Record<string, any[]>>({
+    queryKey: ["/api/rbac/permissions/roles"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/rbac/permissions/roles");
+      return res.json();
+    },
+  });
+
+  const togglePermMutation = useMutation({
+    mutationFn: async ({ role, permissionId, isGranted }: { role: string; permissionId: string; isGranted: boolean }) => {
+      const res = await apiRequest("PUT", "/api/admin/role-permissions", { role, permissionId, isGranted });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/rbac/permissions/roles"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const permsByCategory = useMemo(() => {
+    if (!allPermissions) return {};
+    const grouped: Record<string, any[]> = {};
+    for (const p of allPermissions) {
+      const cat = p.category || "OTHER";
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(p);
+    }
+    return grouped;
+  }, [allPermissions]);
+
+  const rolePermSets = useMemo(() => {
+    if (!rolePermsMap) return {};
+    const sets: Record<string, Set<string>> = {};
+    for (const role of MATRIX_ROLES) {
+      const perms = rolePermsMap[role] || [];
+      sets[role] = new Set(perms.map((p: any) => p.code));
+    }
+    return sets;
+  }, [rolePermsMap]);
+
+  const toggleCategory = (cat: string) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
+
+  const isLoading = permLoading || rolePermLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-muted-foreground">Loading role matrix...</span>
+      </div>
+    );
+  }
+
+  const categories = Object.keys(permsByCategory).sort();
+
+  return (
+    <div className="space-y-4" data-testid="tab-role-matrix">
+      <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200/50">
+        <CardContent className="p-3 flex items-start gap-2 text-sm">
+          <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div className="text-blue-800 dark:text-blue-200">
+            <span className="font-medium">Role Permission Matrix</span>
+            <span className="block text-xs mt-0.5">
+              Toggle permissions for each role. Changes take effect immediately for all users with that role. 
+              Click a category row to expand/collapse its permissions.
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="border rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm" data-testid="table-role-matrix">
+            <thead>
+              <tr className="bg-muted/60 border-b">
+                <th className="text-left p-2.5 font-semibold min-w-[220px] sticky left-0 bg-muted/60 z-10">Permission</th>
+                {MATRIX_ROLES.map(role => (
+                  <th key={role} className="text-center p-2 font-semibold min-w-[70px]">
+                    <Badge variant="outline" className="text-[10px] px-1.5">
+                      {ROLE_SHORT[role]}
+                    </Badge>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {categories.flatMap(cat => {
+                const perms = permsByCategory[cat];
+                const isExpanded = expandedCategories.has(cat);
+                const catLabel = CATEGORY_LABELS[cat] || cat.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+                const rows = [];
+
+                rows.push(
+                  <tr
+                    key={`cat-${cat}`}
+                    className="bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors border-b"
+                    onClick={() => toggleCategory(cat)}
+                    data-testid={`row-category-${cat}`}
+                  >
+                    <td className="p-2 font-medium sticky left-0 bg-muted/30 z-10" colSpan={1}>
+                      <div className="flex items-center gap-1.5">
+                        {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                        <Shield className="h-3.5 w-3.5 text-primary" />
+                        {catLabel}
+                        <Badge variant="secondary" className="text-[10px] ml-1">{perms.length}</Badge>
+                      </div>
+                    </td>
+                    {MATRIX_ROLES.map(role => {
+                      const roleSet = rolePermSets[role];
+                      const granted = roleSet ? perms.filter(p => roleSet.has(p.code)).length : 0;
+                      return (
+                        <td key={role} className="text-center p-2 text-[10px] text-muted-foreground">
+                          {granted}/{perms.length}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+
+                if (isExpanded) {
+                  for (const perm of perms) {
+                    rows.push(
+                      <tr key={perm.id} className="border-b hover:bg-muted/20 transition-colors" data-testid={`row-perm-${perm.code}`}>
+                        <td className="p-2 pl-8 sticky left-0 bg-background z-10">
+                          <div>
+                            <span className="text-xs font-medium">{perm.name}</span>
+                            {perm.description && (
+                              <span className="block text-[10px] text-muted-foreground mt-0.5 max-w-[300px] truncate">{perm.description}</span>
+                            )}
+                          </div>
+                        </td>
+                        {MATRIX_ROLES.map(role => {
+                          const roleSet = rolePermSets[role];
+                          const hasPermission = roleSet ? roleSet.has(perm.code) : false;
+                          const isFirmAdmin = role === "FIRM_ADMIN";
+
+                          return (
+                            <td key={role} className="text-center p-2">
+                              <div className="flex justify-center">
+                                <Checkbox
+                                  checked={isFirmAdmin ? true : hasPermission}
+                                  disabled={isFirmAdmin || togglePermMutation.isPending}
+                                  onCheckedChange={(checked) => {
+                                    if (isFirmAdmin) return;
+                                    togglePermMutation.mutate({
+                                      role,
+                                      permissionId: perm.id,
+                                      isGranted: !!checked,
+                                    });
+                                  }}
+                                  data-testid={`checkbox-${role}-${perm.code}`}
+                                  className="h-4 w-4"
+                                />
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  }
+                }
+
+                return rows;
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4 text-xs text-muted-foreground px-1">
+        <div className="flex items-center gap-1.5">
+          <Checkbox checked disabled className="h-3 w-3" />
+          <span>Granted</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Checkbox checked={false} disabled className="h-3 w-3" />
+          <span>Not granted</span>
+        </div>
+        <Separator orientation="vertical" className="h-3" />
+        <span>FIRM_ADMIN always has all permissions</span>
+      </div>
+    </div>
+  );
+}
+
+function UsersTab() {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -125,11 +365,17 @@ export default function FirmUsers() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto" data-testid="firm-users-page">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Users className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">Firm User Management</h1>
+    <div className="space-y-4" data-testid="tab-users">
+      <div className="flex items-center justify-between gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            data-testid="input-search-users"
+            placeholder="Search users..."
+            className="pl-9"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
@@ -176,17 +422,6 @@ export default function FirmUsers() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
-
-      <div className="relative">
-        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          data-testid="input-search-users"
-          placeholder="Search users..."
-          className="pl-9"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
       </div>
 
       {isLoading ? (
@@ -303,6 +538,28 @@ export default function FirmUsers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+export default function FirmUsers() {
+  const [activeTab, setActiveTab] = useState("users");
+
+  return (
+    <div className="p-6 space-y-5 max-w-6xl mx-auto" data-testid="firm-users-page">
+      <div className="flex items-center gap-3">
+        <Users className="h-6 w-6 text-primary" />
+        <h1 className="text-2xl font-bold" data-testid="text-page-title">Firm User Management</h1>
+      </div>
+
+      <SimpleTabNavigation
+        tabs={VIEW_TABS}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
+
+      {activeTab === "users" && <UsersTab />}
+      {activeTab === "role-matrix" && <RoleMatrixTab />}
     </div>
   );
 }
