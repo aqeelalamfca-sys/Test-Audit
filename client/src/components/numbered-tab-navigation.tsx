@@ -9,7 +9,8 @@ export interface NumberedTab {
 
 interface NumberedTabNavigationProps {
   activeTab: string;
-  setActiveTab: (tab: string) => void;
+  setActiveTab?: (tab: string) => void;
+  onTabChange?: (tab: string) => void;
   tabs: NumberedTab[];
   ariaLabel?: string;
   className?: string;
@@ -17,11 +18,13 @@ interface NumberedTabNavigationProps {
 
 export function NumberedTabNavigation({ 
   activeTab, 
-  setActiveTab, 
+  setActiveTab,
+  onTabChange,
   tabs, 
   ariaLabel = "Navigation tabs",
   className 
 }: NumberedTabNavigationProps) {
+  const handleTabChange = typeof setActiveTab === 'function' ? setActiveTab : typeof onTabChange === 'function' ? onTabChange : undefined;
   return (
     <div className={cn("relative", className)}>
       <div 
@@ -39,15 +42,15 @@ export function NumberedTabNavigation({
               aria-selected={isActive}
               aria-controls={`tabpanel-${tab.id}`}
               tabIndex={isActive ? 0 : -1}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange?.(tab.id)}
               onKeyDown={(e) => {
                 const currentIndex = tabs.findIndex(t => t.id === tab.id);
                 if (e.key === 'ArrowRight') {
                   const nextIndex = Math.min(currentIndex + 1, tabs.length - 1);
-                  setActiveTab(tabs[nextIndex].id);
+                  handleTabChange?.(tabs[nextIndex].id);
                 } else if (e.key === 'ArrowLeft') {
                   const prevIndex = Math.max(currentIndex - 1, 0);
-                  setActiveTab(tabs[prevIndex].id);
+                  handleTabChange?.(tabs[prevIndex].id);
                 }
               }}
               data-testid={`tab-${tab.id}`}
@@ -80,7 +83,8 @@ export function NumberedTabNavigation({
 
 interface SimpleTabNavigationProps {
   activeTab: string;
-  setActiveTab: (tab: string) => void;
+  setActiveTab?: (tab: string) => void;
+  onTabChange?: (tab: string) => void;
   tabs: Array<{ id: string; label: string; icon?: React.ReactNode }>;
   ariaLabel?: string;
   className?: string;
@@ -89,12 +93,14 @@ interface SimpleTabNavigationProps {
 
 export function SimpleTabNavigation({ 
   activeTab, 
-  setActiveTab, 
+  setActiveTab,
+  onTabChange,
   tabs, 
   ariaLabel = "Navigation tabs",
   className,
-  tabStatuses
+  tabStatuses,
 }: SimpleTabNavigationProps) {
+  const handleTabChange = typeof setActiveTab === 'function' ? setActiveTab : typeof onTabChange === 'function' ? onTabChange : undefined;
   const getStatusDotColor = (status: string) => {
     switch (status) {
       case "complete":
@@ -129,14 +135,14 @@ export function SimpleTabNavigation({
               aria-selected={isActive}
               aria-controls={`tabpanel-${tab.id}`}
               tabIndex={isActive ? 0 : -1}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange?.(tab.id)}
               onKeyDown={(e) => {
                 if (e.key === 'ArrowRight') {
                   const nextIndex = Math.min(index + 1, tabs.length - 1);
-                  setActiveTab(tabs[nextIndex].id);
+                  handleTabChange?.(tabs[nextIndex].id);
                 } else if (e.key === 'ArrowLeft') {
                   const prevIndex = Math.max(index - 1, 0);
-                  setActiveTab(tabs[prevIndex].id);
+                  handleTabChange?.(tabs[prevIndex].id);
                 }
               }}
               data-testid={`tab-${tab.id}`}
