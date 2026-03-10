@@ -384,6 +384,20 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   )}
+                  {isAdmin && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === "/firm-controls"}
+                        data-testid="nav-firm-controls"
+                      >
+                        <Link href="/firm-controls">
+                          <ShieldCheck className="h-4 w-4" />
+                          <span>Firm Wide Controls</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -446,20 +460,6 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                         <Link href="/users">
                           <Users className="h-4 w-4" />
                           <span>Users & Roles</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )}
-                  {isAdmin && (
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location === "/firm-controls"}
-                        data-testid="nav-firm-controls"
-                      >
-                        <Link href="/firm-controls">
-                          <ShieldCheck className="h-4 w-4" />
-                          <span>Firm Wide Controls</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
