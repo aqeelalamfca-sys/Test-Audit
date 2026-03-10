@@ -149,6 +149,15 @@ router.patch("/users/:id", requirePlatformOrFirmAdmin, async (req: Authenticated
       return res.status(403).json({ error: "Firm Admin cannot assign Admin or Firm Admin roles" });
     }
 
+    if (data.email && data.email !== targetUser.email) {
+      const emailConflict = await prisma.user.findFirst({
+        where: { email: data.email, id: { not: req.params.id } },
+      });
+      if (emailConflict) {
+        return res.status(400).json({ error: "Email already in use by another user" });
+      }
+    }
+
     const { ip, userAgent } = extractRequestMeta(req);
 
     const updated = await prisma.user.update({

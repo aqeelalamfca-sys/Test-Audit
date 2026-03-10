@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Plus, Search, Ban, CheckCircle } from "lucide-react";
+import { Users, Plus, Search, Ban, CheckCircle, Pencil, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const ROLES = [
@@ -23,12 +23,21 @@ export default function FirmUsers() {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editUser, setEditUser] = useState<any>(null);
   const [form, setForm] = useState({
     email: "", username: "", fullName: "", password: "", role: "STAFF",
+  });
+  const [editForm, setEditForm] = useState({
+    fullName: "", email: "", role: "",
   });
 
   const { data: users, isLoading } = useQuery<any[]>({
     queryKey: ["/api/tenant/users", search],
+    queryFn: async () => {
+      const params = search ? `?search=${encodeURIComponent(search)}` : "";
+      const res = await apiRequest("GET", `/api/tenant/users${params}`);
+      return res.json();
+    },
   });
 
   const createUserMutation = useMutation({
@@ -40,6 +49,21 @@ export default function FirmUsers() {
       toast({ title: "User Created" });
       setShowCreateDialog(false);
       setForm({ email: "", username: "", fullName: "", password: "", role: "STAFF" });
+      queryClient.invalidateQueries({ queryKey: ["/api/tenant/users"] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const res = await apiRequest("PATCH", `/api/tenant/users/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "User Updated", description: "User details have been saved" });
+      setEditUser(null);
       queryClient.invalidateQueries({ queryKey: ["/api/tenant/users"] });
     },
     onError: (error: any) => {
@@ -61,19 +85,43 @@ export default function FirmUsers() {
     },
   });
 
+  const openEditDialog = (user: any) => {
+    setEditUser(user);
+    setEditForm({
+      fullName: user.fullName || "",
+      email: user.email || "",
+      role: user.role || "STAFF",
+    });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editUser) return;
+    const changes: any = {};
+    if (editForm.fullName !== editUser.fullName) changes.fullName = editForm.fullName;
+    if (editForm.email !== editUser.email) changes.email = editForm.email;
+    if (editForm.role !== editUser.role && editUser.role !== "FIRM_ADMIN") changes.role = editForm.role;
+
+    if (Object.keys(changes).length === 0) {
+      toast({ title: "No Changes", description: "No fields were modified" });
+      return;
+    }
+
+    updateUserMutation.mutate({ id: editUser.id, data: changes });
+  };
+
   const roleColor: Record<string, string> = {
-    FIRM_ADMIN: "bg-red-100 text-red-800",
-    PARTNER: "bg-purple-100 text-purple-800",
-    EQCR: "bg-amber-100 text-amber-800",
-    MANAGER: "bg-blue-100 text-blue-800",
-    SENIOR: "bg-green-100 text-green-800",
-    STAFF: "bg-gray-100 text-gray-800",
+    FIRM_ADMIN: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+    PARTNER: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+    EQCR: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+    MANAGER: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+    SENIOR: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+    STAFF: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300",
   };
 
   const statusColor: Record<string, string> = {
-    ACTIVE: "bg-green-100 text-green-800",
-    SUSPENDED: "bg-red-100 text-red-800",
-    DELETED: "bg-gray-100 text-gray-800",
+    ACTIVE: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+    SUSPENDED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+    DELETED: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300",
   };
 
   return (
@@ -160,7 +208,14 @@ export default function FirmUsers() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  {user.status === "ACTIVE" && (
+                  <Button
+                    variant="outline" size="sm"
+                    data-testid={`button-edit-user-${user.id}`}
+                    onClick={() => openEditDialog(user)}
+                  >
+                    <Pencil className="h-3 w-3 mr-1" /> Edit
+                  </Button>
+                  {user.status === "ACTIVE" && user.role !== "FIRM_ADMIN" && (
                     <Button
                       variant="outline" size="sm"
                       data-testid={`button-suspend-user-${user.id}`}
@@ -187,6 +242,67 @@ export default function FirmUsers() {
           )}
         </div>
       )}
+
+      <Dialog open={!!editUser} onOpenChange={(open) => { if (!open) setEditUser(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+          {editUser && (
+            <div className="space-y-4">
+              <div>
+                <Label>Full Name</Label>
+                <Input
+                  data-testid="input-edit-fullname"
+                  value={editForm.fullName}
+                  onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Email</Label>
+                <Input
+                  data-testid="input-edit-email"
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Role</Label>
+                {editUser.role === "FIRM_ADMIN" ? (
+                  <Input value="FIRM_ADMIN" disabled className="bg-muted" />
+                ) : (
+                  <Select value={editForm.role} onValueChange={(v) => setEditForm({ ...editForm, role: v })}>
+                    <SelectTrigger data-testid="select-edit-role"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {ROLES.map((r) => (
+                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Username: @{editUser.username} · Status: {editUser.status}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditUser(null)}>Cancel</Button>
+            <Button
+              data-testid="button-save-edit-user"
+              onClick={handleSaveEdit}
+              disabled={updateUserMutation.isPending || !editForm.fullName || !editForm.email}
+            >
+              {updateUserMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Saving...</>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
