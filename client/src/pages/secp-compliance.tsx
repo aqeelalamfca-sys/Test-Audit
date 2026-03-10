@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -21,6 +23,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { SimpleTabNavigation } from "@/components/numbered-tab-navigation";
 import { PageShell } from "@/components/page-shell";
 import {
@@ -38,7 +48,11 @@ import {
   Clock,
   Gavel,
   Save,
-  RefreshCw,
+  FileSpreadsheet,
+  FileText,
+  Eye,
+  Search,
+  Pencil,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -341,6 +355,8 @@ function RegulatoryChecklistTab({ checklist, onStatusChange, onNotesChange, onSa
 }) {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   const categories = useMemo(() => [...new Set(checklist.map(c => c.category))], [checklist]);
 
@@ -348,13 +364,57 @@ function RegulatoryChecklistTab({ checklist, onStatusChange, onNotesChange, onSa
     return checklist.filter(item => {
       if (filterCategory !== "all" && item.category !== filterCategory) return false;
       if (filterStatus !== "all" && item.status !== filterStatus) return false;
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        return item.title.toLowerCase().includes(term) ||
+          item.section.toLowerCase().includes(term) ||
+          item.description.toLowerCase().includes(term);
+      }
       return true;
     });
-  }, [checklist, filterCategory, filterStatus]);
+  }, [checklist, filterCategory, filterStatus, searchTerm]);
+
+  const stats = useMemo(() => {
+    const met = checklist.filter(c => c.status === "met").length;
+    const partial = checklist.filter(c => c.status === "partial").length;
+    const notMet = checklist.filter(c => c.status === "not_met").length;
+    const na = checklist.filter(c => c.status === "na").length;
+    return { met, partial, notMet, na };
+  }, [checklist]);
 
   return (
     <div className="space-y-4" data-testid="tab-regulatory-checklist">
+      <div className="grid grid-cols-4 gap-2">
+        <Card className="p-2 text-center">
+          <div className="text-lg font-bold text-green-600">{stats.met}</div>
+          <div className="text-[10px] text-muted-foreground">Met</div>
+        </Card>
+        <Card className="p-2 text-center">
+          <div className="text-lg font-bold text-amber-600">{stats.partial}</div>
+          <div className="text-[10px] text-muted-foreground">Partial</div>
+        </Card>
+        <Card className="p-2 text-center">
+          <div className="text-lg font-bold text-red-600">{stats.notMet}</div>
+          <div className="text-[10px] text-muted-foreground">Not Met</div>
+        </Card>
+        <Card className="p-2 text-center">
+          <div className="text-lg font-bold text-gray-500">{stats.na}</div>
+          <div className="text-[10px] text-muted-foreground">N/A</div>
+        </Card>
+      </div>
+
       <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px] max-w-[300px]">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search requirements..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8 h-9"
+            data-testid="input-search-checklist"
+          />
+        </div>
+
         <Select value={filterCategory} onValueChange={setFilterCategory}>
           <SelectTrigger className="w-48" data-testid="select-filter-category">
             <SelectValue placeholder="Filter by Category" />
@@ -413,14 +473,16 @@ function RegulatoryChecklistTab({ checklist, onStatusChange, onNotesChange, onSa
             </TableHeader>
             <TableBody>
               {filtered.map(item => (
-                <TableRow key={item.id} data-testid={`checklist-row-${item.id}`}>
+                <TableRow key={item.id} data-testid={`checklist-row-${item.id}`} className="cursor-pointer hover:bg-muted/50" onClick={() => setExpandedRow(expandedRow === item.id ? null : item.id)}>
                   <TableCell className="font-mono font-semibold text-sm">{item.section}</TableCell>
                   <TableCell className="font-medium text-sm">{item.title}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{item.description}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {expandedRow === item.id ? item.description : (item.description.length > 80 ? item.description.slice(0, 80) + "..." : item.description)}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="text-[10px]">{item.category}</Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <Select
                       value={item.status}
                       onValueChange={(val: string) => onStatusChange(item.id, val as ComplianceStatus)}
@@ -437,7 +499,7 @@ function RegulatoryChecklistTab({ checklist, onStatusChange, onNotesChange, onSa
                     </Select>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{item.evidenceRef || "-"}</TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <Textarea
                       value={item.notes}
                       onChange={(e) => onNotesChange(item.id, e.target.value)}
@@ -448,6 +510,13 @@ function RegulatoryChecklistTab({ checklist, onStatusChange, onNotesChange, onSa
                   </TableCell>
                 </TableRow>
               ))}
+              {filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                    No items match your filters
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -457,6 +526,10 @@ function RegulatoryChecklistTab({ checklist, onStatusChange, onNotesChange, onSa
 }
 
 function OpinionTrackerTab({ engagements, isLoading }: { engagements: OpinionTracker[]; isLoading: boolean }) {
+  const [filterOpinion, setFilterOpinion] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [selectedEngagement, setSelectedEngagement] = useState<OpinionTracker | null>(null);
+
   const opinionBreakdown = useMemo(() => {
     const counts: Record<string, number> = {};
     engagements.forEach(e => {
@@ -475,13 +548,33 @@ function OpinionTrackerTab({ engagements, isLoading }: { engagements: OpinionTra
     PENDING: "bg-gray-400",
   };
 
+  const filtered = useMemo(() => {
+    return engagements.filter(eng => {
+      if (filterOpinion !== "all" && (eng.opinionType || "PENDING") !== filterOpinion) return false;
+      if (filterStatus !== "all") {
+        const engStatus = eng.status || "DRAFT";
+        if (engStatus !== filterStatus) return false;
+      }
+      return true;
+    });
+  }, [engagements, filterOpinion, filterStatus]);
+
+  const uniqueStatuses = useMemo(() => {
+    return [...new Set(engagements.map(e => e.status || "DRAFT"))];
+  }, [engagements]);
+
   if (isLoading) return <LoadingState message="Loading opinion data..." />;
 
   return (
     <div className="space-y-4" data-testid="tab-opinion-tracker">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {Object.entries(opinionBreakdown).map(([opinion, count]) => (
-          <Card key={opinion} className="p-3" data-testid={`opinion-count-${opinion.toLowerCase()}`}>
+          <Card
+            key={opinion}
+            className={`p-3 cursor-pointer transition-all ${filterOpinion === opinion ? "ring-2 ring-primary" : "hover:shadow-md"}`}
+            data-testid={`opinion-count-${opinion.toLowerCase()}`}
+            onClick={() => setFilterOpinion(filterOpinion === opinion ? "all" : opinion)}
+          >
             <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{opinion.replace(/_/g, " ")}</div>
             <div className="text-2xl font-bold mt-1">{count}</div>
             <div className={`w-full h-1 rounded-full mt-2 ${opinionColors[opinion] || "bg-gray-300"}`} />
@@ -492,6 +585,38 @@ function OpinionTrackerTab({ engagements, isLoading }: { engagements: OpinionTra
             <div className="text-sm text-muted-foreground text-center py-4">No engagement opinions available</div>
           </Card>
         )}
+      </div>
+
+      <div className="flex items-center gap-3 flex-wrap">
+        <Select value={filterOpinion} onValueChange={setFilterOpinion}>
+          <SelectTrigger className="w-48" data-testid="select-filter-opinion">
+            <SelectValue placeholder="Filter by Opinion" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Opinions</SelectItem>
+            <SelectItem value="UNMODIFIED">Unmodified</SelectItem>
+            <SelectItem value="QUALIFIED">Qualified</SelectItem>
+            <SelectItem value="ADVERSE">Adverse</SelectItem>
+            <SelectItem value="DISCLAIMER">Disclaimer</SelectItem>
+            <SelectItem value="NOT_APPLICABLE">Not Applicable</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-40" data-testid="select-filter-opinion-status">
+            <SelectValue placeholder="Filter by Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            {uniqueStatuses.map(s => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <span className="text-sm text-muted-foreground">
+          Showing {filtered.length} of {engagements.length} engagements
+        </span>
       </div>
 
       <Card>
@@ -512,10 +637,11 @@ function OpinionTrackerTab({ engagements, isLoading }: { engagements: OpinionTra
                 <TableHead>Opinion Type</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Delivered Date</TableHead>
+                <TableHead className="w-16">Details</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {engagements.map(eng => (
+              {filtered.map(eng => (
                 <TableRow key={eng.engagementId} data-testid={`opinion-detail-${eng.engagementId}`}>
                   <TableCell className="font-medium text-sm">{eng.engagementName || "-"}</TableCell>
                   <TableCell className="text-sm">{eng.clientName || "-"}</TableCell>
@@ -533,12 +659,23 @@ function OpinionTrackerTab({ engagements, isLoading }: { engagements: OpinionTra
                   <TableCell className="text-sm text-muted-foreground">
                     {eng.deliveredDate ? new Date(eng.deliveredDate).toLocaleDateString() : "-"}
                   </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => setSelectedEngagement(eng)}
+                      data-testid={`button-view-${eng.engagementId}`}
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
-              {engagements.length === 0 && (
+              {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
-                    No engagement data available
+                  <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                    {engagements.length === 0 ? "No engagement data available" : "No engagements match your filters"}
                   </TableCell>
                 </TableRow>
               )}
@@ -546,13 +683,72 @@ function OpinionTrackerTab({ engagements, isLoading }: { engagements: OpinionTra
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!selectedEngagement} onOpenChange={(open) => !open && setSelectedEngagement(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Opinion Details</DialogTitle>
+            <DialogDescription>
+              {selectedEngagement?.engagementName || selectedEngagement?.clientName}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedEngagement && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <Label className="text-muted-foreground text-xs">Client</Label>
+                  <div className="font-medium">{selectedEngagement.clientName || "-"}</div>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Engagement</Label>
+                  <div className="font-medium">{selectedEngagement.engagementName || "-"}</div>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Year End</Label>
+                  <div className="font-medium">{selectedEngagement.yearEnd ? new Date(selectedEngagement.yearEnd).toLocaleDateString() : "-"}</div>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Opinion Type</Label>
+                  <div>
+                    <Badge className={`text-[10px] border-0 text-white no-default-hover-elevate no-default-active-elevate ${opinionColors[selectedEngagement.opinionType] || opinionColors.PENDING}`}>
+                      {(selectedEngagement.opinionType || "PENDING").replace(/_/g, " ")}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Report Status</Label>
+                  <div>
+                    <Badge variant="outline" className="text-[10px]">
+                      {selectedEngagement.status || "DRAFT"}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Delivered Date</Label>
+                  <div className="font-medium">{selectedEngagement.deliveredDate ? new Date(selectedEngagement.deliveredDate).toLocaleDateString() : "Not yet delivered"}</div>
+                </div>
+                {selectedEngagement.reportReference && (
+                  <div className="col-span-2">
+                    <Label className="text-muted-foreground text-xs">Report Reference</Label>
+                    <div className="font-medium font-mono text-xs">{selectedEngagement.reportReference}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedEngagement(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function XBRLReadinessTab({ xbrlItems, onToggle, onSave, isSaving, hasChanges }: {
+function XBRLReadinessTab({ xbrlItems, onToggle, onNotesChange, onSave, isSaving, hasChanges }: {
   xbrlItems: XBRLItem[];
   onToggle: (id: string) => void;
+  onNotesChange: (id: string, notes: string) => void;
   onSave: () => void;
   isSaving: boolean;
   hasChanges: boolean;
@@ -560,11 +756,32 @@ function XBRLReadinessTab({ xbrlItems, onToggle, onSave, isSaving, hasChanges }:
   const readyCount = xbrlItems.filter(x => x.ready).length;
   const total = xbrlItems.length;
   const pct = total > 0 ? Math.round((readyCount / total) * 100) : 0;
+  const [editingNotes, setEditingNotes] = useState<string | null>(null);
 
   const categories = [...new Set(xbrlItems.map(x => x.category))];
 
+  const categoryStats = categories.map(cat => {
+    const items = xbrlItems.filter(x => x.category === cat);
+    const ready = items.filter(x => x.ready).length;
+    return { category: cat, total: items.length, ready, pct: items.length > 0 ? Math.round((ready / items.length) * 100) : 0 };
+  });
+
   return (
     <div className="space-y-4" data-testid="tab-xbrl-readiness">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {categoryStats.map(cat => (
+          <Card key={cat.category} className="p-3">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{cat.category}</div>
+            <div className="flex items-center gap-2 mt-1">
+              <div className="text-lg font-bold">{cat.ready}/{cat.total}</div>
+              <Badge className={`text-[10px] border-0 text-white no-default-hover-elevate no-default-active-elevate ${cat.pct === 100 ? "bg-green-500" : cat.pct >= 50 ? "bg-amber-500" : "bg-red-500"}`}>
+                {cat.pct}%
+              </Badge>
+            </div>
+          </Card>
+        ))}
+      </div>
+
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -601,12 +818,12 @@ function XBRLReadinessTab({ xbrlItems, onToggle, onSave, isSaving, hasChanges }:
                 {xbrlItems.filter(x => x.category === cat).map(item => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-3 p-2 rounded-md border"
+                    className="flex items-start gap-3 p-3 rounded-md border"
                     data-testid={`xbrl-readiness-${item.id}`}
                   >
                     <button
                       onClick={() => onToggle(item.id)}
-                      className="flex-shrink-0"
+                      className="flex-shrink-0 mt-0.5"
                       data-testid={`button-toggle-${item.id}`}
                     >
                       {item.ready ? (
@@ -617,7 +834,25 @@ function XBRLReadinessTab({ xbrlItems, onToggle, onSave, isSaving, hasChanges }:
                     </button>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium">{item.requirement}</div>
-                      <div className="text-xs text-muted-foreground">{item.notes}</div>
+                      {editingNotes === item.id ? (
+                        <Textarea
+                          value={item.notes}
+                          onChange={(e) => onNotesChange(item.id, e.target.value)}
+                          onBlur={() => setEditingNotes(null)}
+                          placeholder="Add notes..."
+                          className="mt-1 text-xs min-h-[40px] resize-none"
+                          autoFocus
+                          data-testid={`input-xbrl-notes-${item.id}`}
+                        />
+                      ) : (
+                        <div
+                          className="text-xs text-muted-foreground mt-0.5 cursor-pointer hover:text-foreground flex items-center gap-1"
+                          onClick={(e) => { e.stopPropagation(); setEditingNotes(item.id); }}
+                        >
+                          {item.notes || "Click to add notes..."}
+                          <Pencil className="w-3 h-3 opacity-50" />
+                        </div>
+                      )}
                     </div>
                     <StatusBadgeDisplay status={item.ready ? "met" : "not_met"} />
                   </div>
@@ -632,41 +867,66 @@ function XBRLReadinessTab({ xbrlItems, onToggle, onSave, isSaving, hasChanges }:
   );
 }
 
-function ComplianceExportTab({ checklist, engagements, xbrlItems }: {
+function ComplianceExportTab({ checklist, engagements, xbrlItems, selectedEngagementId, engagementsList }: {
   checklist: ChecklistItem[];
   engagements: OpinionTracker[];
   xbrlItems: XBRLItem[];
+  selectedEngagementId: string | null;
+  engagementsList: any[];
 }) {
   const { toast } = useToast();
+  const [isExporting, setIsExporting] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
-  const handleExport = () => {
+  const generateReportLines = useCallback(() => {
     const met = checklist.filter(c => c.status === "met").length;
+    const partial = checklist.filter(c => c.status === "partial").length;
+    const notMet = checklist.filter(c => c.status === "not_met").length;
     const applicable = checklist.filter(c => c.status !== "na").length;
     const compliancePct = applicable > 0 ? Math.round((met / applicable) * 100) : 0;
+    const xbrlReady = xbrlItems.filter(x => x.ready).length;
+
+    const selectedEng = engagementsList.find((e: any) => e.id === selectedEngagementId);
 
     const lines: string[] = [];
     lines.push("SECP COMPLIANCE REPORT");
     lines.push("=".repeat(60));
     lines.push(`Generated: ${new Date().toLocaleString()}`);
+    if (selectedEng) {
+      lines.push(`Engagement: ${selectedEng.engagementCode || selectedEng.client?.name || selectedEng.id}`);
+    }
     lines.push(`Overall Compliance: ${compliancePct}% (${met}/${applicable} requirements met)`);
+    lines.push(`Partial: ${partial} | Not Met: ${notMet}`);
     lines.push("");
 
     lines.push("REGULATORY CHECKLIST - COMPANIES ACT 2017");
     lines.push("-".repeat(60));
-    checklist.forEach(item => {
-      const statusLabel = STATUS_CONFIG[item.status].label;
-      lines.push(`[${statusLabel.padEnd(7)}] ${item.section} - ${item.title}`);
-      if (item.evidenceRef) lines.push(`          Evidence: ${item.evidenceRef}`);
-      if (item.notes) lines.push(`          Notes: ${item.notes}`);
+    const categories = [...new Set(checklist.map(c => c.category))];
+    categories.forEach(cat => {
+      lines.push("");
+      lines.push(`  ${cat.toUpperCase()}`);
+      checklist.filter(c => c.category === cat).forEach(item => {
+        const statusLabel = STATUS_CONFIG[item.status].label;
+        lines.push(`  [${statusLabel.padEnd(7)}] ${item.section} - ${item.title}`);
+        if (item.evidenceRef) lines.push(`             Evidence: ${item.evidenceRef}`);
+        if (item.notes) lines.push(`             Notes: ${item.notes}`);
+      });
     });
     lines.push("");
 
     lines.push("ENGAGEMENT OPINION TRACKER");
     lines.push("-".repeat(60));
     if (engagements.length > 0) {
+      lines.push(`Total Engagements: ${engagements.length}`);
+      lines.push(`Issued: ${engagements.filter(e => e.status === "ISSUED").length}`);
+      lines.push(`Unmodified: ${engagements.filter(e => e.opinionType === "UNMODIFIED").length}`);
+      lines.push(`Modified: ${engagements.filter(e => ["QUALIFIED", "ADVERSE", "DISCLAIMER"].includes(e.opinionType)).length}`);
+      lines.push("");
       engagements.forEach(eng => {
         const yearEnd = eng.yearEnd ? new Date(eng.yearEnd).toLocaleDateString() : "N/A";
-        lines.push(`${eng.engagementName || eng.clientName} | ${yearEnd} | Opinion: ${(eng.opinionType || "PENDING").replace(/_/g, " ")} | Status: ${eng.status || "DRAFT"}`);
+        lines.push(`  ${(eng.engagementName || eng.clientName).padEnd(30)} | ${yearEnd.padEnd(12)} | Opinion: ${(eng.opinionType || "PENDING").replace(/_/g, " ").padEnd(15)} | ${eng.status || "DRAFT"}`);
+        if (eng.deliveredDate) lines.push(`  ${"".padEnd(30)} | Delivered: ${new Date(eng.deliveredDate).toLocaleDateString()}`);
+        if (eng.reportReference) lines.push(`  ${"".padEnd(30)} | Ref: ${eng.reportReference}`);
       });
     } else {
       lines.push("No engagement data available");
@@ -675,41 +935,110 @@ function ComplianceExportTab({ checklist, engagements, xbrlItems }: {
 
     lines.push("XBRL READINESS");
     lines.push("-".repeat(60));
-    const xbrlReady = xbrlItems.filter(x => x.ready).length;
     lines.push(`Overall: ${xbrlReady}/${xbrlItems.length} items ready (${xbrlItems.length > 0 ? Math.round((xbrlReady / xbrlItems.length) * 100) : 0}%)`);
     lines.push("");
-    xbrlItems.forEach(item => {
-      lines.push(`[${item.ready ? "READY  " : "PENDING"}] ${item.requirement}`);
-      if (item.notes) lines.push(`          ${item.notes}`);
+    const xbrlCats = [...new Set(xbrlItems.map(x => x.category))];
+    xbrlCats.forEach(cat => {
+      lines.push(`  ${cat}`);
+      xbrlItems.filter(x => x.category === cat).forEach(item => {
+        lines.push(`    [${item.ready ? "READY  " : "PENDING"}] ${item.requirement}`);
+        if (item.notes) lines.push(`              ${item.notes}`);
+      });
     });
 
-    const blob = new Blob([lines.join("\n")], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `secp-compliance-report-${new Date().toISOString().split("T")[0]}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+    lines.push("");
+    lines.push("=".repeat(60));
+    lines.push("End of SECP Compliance Report");
 
-    toast({ title: "Export Complete", description: "SECP compliance report downloaded successfully." });
+    return lines;
+  }, [checklist, engagements, xbrlItems, selectedEngagementId, engagementsList]);
+
+  const handleExport = () => {
+    setIsExporting(true);
+    try {
+      const lines = generateReportLines();
+      const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `secp-compliance-report-${new Date().toISOString().split("T")[0]}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Export Complete", description: "SECP compliance report downloaded successfully." });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleExportCSV = () => {
-    const rows: string[][] = [["Section", "Title", "Category", "Status", "Evidence", "Notes"]];
-    checklist.forEach(item => {
-      rows.push([item.section, item.title, item.category, STATUS_CONFIG[item.status].label, item.evidenceRef, item.notes]);
-    });
+    setIsExporting(true);
+    try {
+      const rows: string[][] = [["Section", "Title", "Category", "Status", "Evidence", "Notes"]];
+      checklist.forEach(item => {
+        rows.push([item.section, item.title, item.category, STATUS_CONFIG[item.status].label, item.evidenceRef, item.notes]);
+      });
+      const csv = rows.map(r => r.map(c => `"${(c || "").replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `secp-checklist-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "CSV Export Complete", description: "Checklist exported as CSV." });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
-    const csv = rows.map(r => r.map(c => `"${(c || "").replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `secp-checklist-${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleExportOpinionsCSV = () => {
+    setIsExporting(true);
+    try {
+      const rows: string[][] = [["Engagement", "Client", "Year End", "Opinion Type", "Status", "Delivered Date", "Report Reference"]];
+      engagements.forEach(eng => {
+        rows.push([
+          eng.engagementName || "",
+          eng.clientName || "",
+          eng.yearEnd ? new Date(eng.yearEnd).toLocaleDateString() : "",
+          (eng.opinionType || "PENDING").replace(/_/g, " "),
+          eng.status || "DRAFT",
+          eng.deliveredDate ? new Date(eng.deliveredDate).toLocaleDateString() : "",
+          eng.reportReference || "",
+        ]);
+      });
+      const csv = rows.map(r => r.map(c => `"${(c || "").replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `secp-opinions-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "CSV Export Complete", description: "Opinion tracker exported as CSV." });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
-    toast({ title: "CSV Export Complete", description: "Checklist exported as CSV." });
+  const handleExportXBRLCSV = () => {
+    setIsExporting(true);
+    try {
+      const rows: string[][] = [["Requirement", "Category", "Status", "Notes"]];
+      xbrlItems.forEach(item => {
+        rows.push([item.requirement, item.category, item.ready ? "Ready" : "Pending", item.notes]);
+      });
+      const csv = rows.map(r => r.map(c => `"${(c || "").replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `secp-xbrl-readiness-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "CSV Export Complete", description: "XBRL readiness exported as CSV." });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const met = checklist.filter(c => c.status === "met").length;
@@ -717,78 +1046,172 @@ function ComplianceExportTab({ checklist, engagements, xbrlItems }: {
   const notMet = checklist.filter(c => c.status === "not_met").length;
   const applicable = checklist.filter(c => c.status !== "na").length;
   const xbrlReady = xbrlItems.filter(x => x.ready).length;
+  const compliancePct = applicable > 0 ? Math.round((met / applicable) * 100) : 0;
 
   return (
     <div className="space-y-4" data-testid="tab-compliance-export">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="p-4">
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <ClipboardList className="w-4 h-4" />
+            Regulatory Compliance
+          </h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Compliance Score</span>
+              <span className={`font-bold ${compliancePct >= 80 ? "text-green-600" : compliancePct >= 50 ? "text-amber-600" : "text-red-600"}`}>{compliancePct}%</span>
+            </div>
+            <Progress value={compliancePct} className="h-2" />
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Requirements Met</span>
+              <span className="font-medium text-green-600">{met}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Partially Met</span>
+              <span className="font-medium text-amber-600">{partial}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Not Met</span>
+              <span className="font-medium text-red-600">{notMet}</span>
+            </div>
+            <Separator />
+            <div className="flex justify-between font-semibold">
+              <span>Total Applicable</span>
+              <span>{applicable}</span>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <Gavel className="w-4 h-4" />
+            Opinion Summary
+          </h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Total Engagements</span>
+              <span className="font-medium">{engagements.length}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Reports Issued</span>
+              <span className="font-medium text-green-600">{engagements.filter(e => e.status === "ISSUED").length}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Unmodified Opinions</span>
+              <span className="font-medium">{engagements.filter(e => e.opinionType === "UNMODIFIED").length}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Modified Opinions</span>
+              <span className="font-medium text-amber-600">{engagements.filter(e => ["QUALIFIED", "ADVERSE", "DISCLAIMER"].includes(e.opinionType)).length}</span>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <FileCheck className="w-4 h-4" />
+            XBRL Readiness
+          </h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Overall Readiness</span>
+              <span className={`font-bold ${xbrlItems.length > 0 && Math.round((xbrlReady / xbrlItems.length) * 100) >= 80 ? "text-green-600" : "text-amber-600"}`}>
+                {xbrlItems.length > 0 ? Math.round((xbrlReady / xbrlItems.length) * 100) : 0}%
+              </span>
+            </div>
+            <Progress value={xbrlItems.length > 0 ? Math.round((xbrlReady / xbrlItems.length) * 100) : 0} className="h-2" />
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Items Ready</span>
+              <span className="font-medium text-green-600">{xbrlReady}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Items Pending</span>
+              <span className="font-medium text-red-600">{xbrlItems.length - xbrlReady}</span>
+            </div>
+            <Separator />
+            <div className="flex justify-between font-semibold">
+              <span>Total Items</span>
+              <span>{xbrlItems.length}</span>
+            </div>
+          </div>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Download className="w-4 h-4" />
-            Compliance Export Summary
+            Export Options
           </CardTitle>
-          <CardDescription>Export comprehensive SECP compliance data for regulatory submission</CardDescription>
+          <CardDescription>Download compliance data for regulatory submission or internal review</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <Card className="p-4">
-              <h3 className="text-sm font-semibold mb-3">Regulatory Compliance Summary</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Requirements Met</span>
-                  <span className="font-medium text-green-600">{met}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Partially Met</span>
-                  <span className="font-medium text-amber-600">{partial}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Not Met</span>
-                  <span className="font-medium text-red-600">{notMet}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between font-semibold">
-                  <span>Total Applicable</span>
-                  <span>{applicable}</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Button onClick={handleExport} disabled={isExporting} className="justify-start h-auto py-3" data-testid="button-export-txt">
+              <div className="flex items-start gap-3">
+                <FileText className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <div className="text-left">
+                  <div className="font-medium">Full Compliance Report (TXT)</div>
+                  <div className="text-xs opacity-80 font-normal">Complete report with checklist, opinions, and XBRL status</div>
                 </div>
               </div>
-            </Card>
-
-            <Card className="p-4">
-              <h3 className="text-sm font-semibold mb-3">Filing Readiness</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Engagements Tracked</span>
-                  <span className="font-medium">{engagements.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Reports Issued</span>
-                  <span className="font-medium">{engagements.filter(e => e.status === "ISSUED").length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">XBRL Items Ready</span>
-                  <span className="font-medium">{xbrlReady}/{xbrlItems.length}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between font-semibold">
-                  <span>XBRL Readiness</span>
-                  <span>{xbrlItems.length > 0 ? Math.round((xbrlReady / xbrlItems.length) * 100) : 0}%</span>
+            </Button>
+            <Button onClick={handleExportCSV} disabled={isExporting} variant="outline" className="justify-start h-auto py-3" data-testid="button-export-csv">
+              <div className="flex items-start gap-3">
+                <FileSpreadsheet className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <div className="text-left">
+                  <div className="font-medium">Regulatory Checklist (CSV)</div>
+                  <div className="text-xs opacity-80 font-normal">Companies Act 2017 compliance checklist data</div>
                 </div>
               </div>
-            </Card>
+            </Button>
+            <Button onClick={handleExportOpinionsCSV} disabled={isExporting} variant="outline" className="justify-start h-auto py-3" data-testid="button-export-opinions-csv">
+              <div className="flex items-start gap-3">
+                <FileSpreadsheet className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <div className="text-left">
+                  <div className="font-medium">Opinion Tracker (CSV)</div>
+                  <div className="text-xs opacity-80 font-normal">Engagement opinions and audit report status</div>
+                </div>
+              </div>
+            </Button>
+            <Button onClick={handleExportXBRLCSV} disabled={isExporting} variant="outline" className="justify-start h-auto py-3" data-testid="button-export-xbrl-csv">
+              <div className="flex items-start gap-3">
+                <FileSpreadsheet className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <div className="text-left">
+                  <div className="font-medium">XBRL Readiness (CSV)</div>
+                  <div className="text-xs opacity-80 font-normal">SECP XBRL filing readiness assessment data</div>
+                </div>
+              </div>
+            </Button>
           </div>
 
-          <div className="flex gap-3 flex-wrap">
-            <Button onClick={handleExport} data-testid="button-export-txt">
-              <Download className="w-4 h-4 mr-2" />
-              Export Full Report (TXT)
-            </Button>
-            <Button onClick={handleExportCSV} variant="outline" data-testid="button-export-csv">
-              <Download className="w-4 h-4 mr-2" />
-              Export Checklist (CSV)
-            </Button>
-          </div>
+          <Separator className="my-4" />
+
+          <Button variant="secondary" onClick={() => setPreviewOpen(true)} className="w-full" data-testid="button-preview-report">
+            <Eye className="w-4 h-4 mr-2" />
+            Preview Full Report
+          </Button>
         </CardContent>
       </Card>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Report Preview</DialogTitle>
+            <DialogDescription>SECP Compliance Report</DialogDescription>
+          </DialogHeader>
+          <div className="overflow-auto max-h-[60vh] bg-muted rounded-md p-4">
+            <pre className="text-xs font-mono whitespace-pre-wrap">{generateReportLines().join("\n")}</pre>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewOpen(false)}>Close</Button>
+            <Button onClick={handleExport}>
+              <Download className="w-4 h-4 mr-2" />
+              Download
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -925,6 +1348,19 @@ export default function SECPCompliancePage() {
     setXbrlDirty(true);
   };
 
+  const handleXbrlNotesChange = (id: string, notes: string) => {
+    setXbrlItems(prev => prev.map(item => item.id === id ? { ...item, notes } : item));
+    setXbrlDirty(true);
+  };
+
+  const handleEngagementChange = (val: string) => {
+    setSelectedEngagementId(val);
+    setChecklist(DEFAULT_CHECKLIST.map(item => ({ ...item })));
+    setXbrlItems(DEFAULT_XBRL.map(item => ({ ...item })));
+    setChecklistDirty(false);
+    setXbrlDirty(false);
+  };
+
   const deliverableEngagements = opinionsQuery.data || [];
   const isLoading = opinionsQuery.isLoading || engagementsQuery.isLoading;
 
@@ -939,19 +1375,13 @@ export default function SECPCompliancePage() {
         <SimpleTabNavigation
           tabs={VIEW_TABS}
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          setActiveTab={setActiveTab}
         />
 
-        {(activeTab === "checklist" || activeTab === "xbrl") && engagementsQuery.data && engagementsQuery.data.length > 1 && (
+        {engagementsQuery.data && engagementsQuery.data.length >= 1 && (
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Engagement:</span>
-            <Select value={selectedEngagementId || ""} onValueChange={(val) => {
-              setSelectedEngagementId(val);
-              setChecklist(DEFAULT_CHECKLIST);
-              setXbrlItems(DEFAULT_XBRL);
-              setChecklistDirty(false);
-              setXbrlDirty(false);
-            }}>
+            <Select value={selectedEngagementId || ""} onValueChange={handleEngagementChange}>
               <SelectTrigger className="w-64" data-testid="select-engagement">
                 <SelectValue placeholder="Select Engagement" />
               </SelectTrigger>
@@ -963,6 +1393,14 @@ export default function SECPCompliancePage() {
                 ))}
               </SelectContent>
             </Select>
+            {savedChecklistQuery.isLoading && (
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            )}
+            {savedChecklistQuery.isSuccess && selectedEngagementId && (
+              <Badge variant="outline" className="text-[10px]">
+                {savedChecklistQuery.data?.length || 0} checklists saved
+              </Badge>
+            )}
           </div>
         )}
 
@@ -997,6 +1435,7 @@ export default function SECPCompliancePage() {
               <XBRLReadinessTab
                 xbrlItems={xbrlItems}
                 onToggle={handleXbrlToggle}
+                onNotesChange={handleXbrlNotesChange}
                 onSave={() => saveXbrlMutation.mutate()}
                 isSaving={saveXbrlMutation.isPending}
                 hasChanges={xbrlDirty}
@@ -1007,6 +1446,8 @@ export default function SECPCompliancePage() {
                 checklist={checklist}
                 engagements={deliverableEngagements}
                 xbrlItems={xbrlItems}
+                selectedEngagementId={selectedEngagementId}
+                engagementsList={engagementsQuery.data || []}
               />
             )}
           </>
