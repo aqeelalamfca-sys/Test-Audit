@@ -343,7 +343,7 @@ export default function AdminDashboard() {
                       <Settings className="h-5 w-5 text-blue-500" />
                       <h3 className="font-semibold">General Settings</h3>
                     </div>
-                    <Link href="/settings">
+                    <Link href="/firm-admin/settings">
                       <Button variant="outline" className="w-full">
                         Configure Settings
                       </Button>

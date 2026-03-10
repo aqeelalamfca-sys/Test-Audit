@@ -542,18 +542,6 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   )}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={location === "/settings"}
-                      data-testid="nav-settings"
-                    >
-                      <Link href="/settings">
-                        <Settings className="h-4 w-4" />
-                        <span>Admin Settings</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

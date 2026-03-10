@@ -628,7 +628,7 @@ export const USER_GUIDE_REGISTRY: GuideModule[] = [
   {
     key: "settings",
     label: "Settings",
-    routePath: "/settings",
+    routePath: "/firm-admin/settings",
     phase: "Cross-Phase Tools",
     purpose: "User-level settings including theme preferences, notification settings, and display options.",
     prerequisites: ["Logged-in user"],

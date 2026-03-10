@@ -113,7 +113,7 @@ export function useKeyboardShortcuts(options: {
             return;
           case "s":
             e.preventDefault();
-            setLocation("/settings");
+            setLocation("/firm-admin/settings");
             return;
         }
       }

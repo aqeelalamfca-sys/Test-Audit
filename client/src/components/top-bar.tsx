@@ -416,7 +416,7 @@ export function TopBar({}: TopBarProps) {
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>
-            <Link href="/settings">
+            <Link href="/firm-admin/settings">
               <DropdownMenuItem>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>

@@ -1,41 +1,98 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, lazy, Suspense } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryClient as qc, apiRequest } from "@/lib/queryClient";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Settings, Bot, Save, Shield, Calendar, CreditCard, Receipt, FileText } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Settings,
+  Bot,
+  Save,
+  Shield,
+  Calendar,
+  CreditCard,
+  Receipt,
+  FileText,
+  User,
+  Bell,
+  Palette,
+  Globe,
+  Sparkles,
+  Loader2,
+  ArrowUp,
+  ArrowDown,
+  AlertTriangle,
+  Info,
+  CheckCircle,
+  XCircle,
+  Download,
+  Upload,
+  HardDrive,
+  FileJson,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
 
-export default function FirmSettingsPage() {
-  const { toast } = useToast();
-  const [aiKeyForm, setAiKeyForm] = useState({ apiKey: "", provider: "openai" });
+type Provider = "openai" | "gemini" | "deepseek";
 
-  const { data: settings, isLoading: settingsLoading } = useQuery<any>({
-    queryKey: ["/api/tenant/settings"],
-  });
+interface AISettingsData {
+  aiEnabled: boolean;
+  preferredProvider: string;
+  providerPriority: Provider[];
+  hasOpenAI: boolean;
+  openaiEnabled: boolean;
+  openaiTestStatus: string | null;
+  openaiLastTested: string | null;
+  hasGemini: boolean;
+  geminiEnabled: boolean;
+  geminiTestStatus: string | null;
+  geminiLastTested: string | null;
+  hasDeepseek: boolean;
+  deepseekEnabled: boolean;
+  deepseekTestStatus: string | null;
+  deepseekLastTested: string | null;
+  maxTokensPerResponse: number;
+  autoSuggestionsEnabled: boolean;
+  manualTriggerOnly: boolean;
+  requestTimeout: number;
+}
 
-  const { data: subscription, isLoading: subLoading } = useQuery<any>({
-    queryKey: ["/api/tenant/subscription"],
-  });
+function loadLocalPrefs<T>(key: string, defaults: T): T {
+  try {
+    const stored = localStorage.getItem(key);
+    if (stored) return { ...defaults, ...JSON.parse(stored) };
+  } catch {}
+  return defaults;
+}
 
-  const setAiKeyMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/tenant/settings/ai-key", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({ title: "AI Key Saved", description: "Your firm AI key has been encrypted and stored." });
-      setAiKeyForm({ apiKey: "", provider: "openai" });
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/settings"] });
-    },
-    onError: (error: any) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    },
-  });
+function saveLocalPrefs(key: string, value: unknown) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function SubscriptionBillingTab({ settings, settingsLoading, subscription, subLoading, aiKeyForm, setAiKeyForm, setAiKeyMutation }: any) {
+  const formatPkr = (amount: number | string | null | undefined) => {
+    if (amount == null) return "—";
+    const num = typeof amount === "string" ? parseFloat(amount) : amount;
+    return `PKR ${num.toLocaleString("en-PK")}`;
+  };
+  const formatDate = (date: string | null | undefined) => {
+    if (!date) return "—";
+    return new Date(date).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" });
+  };
 
   const statusColor: Record<string, string> = {
     ACTIVE: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
@@ -57,17 +114,6 @@ export default function FirmSettingsPage() {
     VOID: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
   };
 
-  const formatPkr = (amount: number | string | null | undefined) => {
-    if (amount == null) return "—";
-    const num = typeof amount === "string" ? parseFloat(amount) : amount;
-    return `PKR ${num.toLocaleString("en-PK")}`;
-  };
-
-  const formatDate = (date: string | null | undefined) => {
-    if (!date) return "—";
-    return new Date(date).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" });
-  };
-
   const sub = subscription?.subscription;
   const plan = sub?.plan;
   const snap = sub?.priceSnapshot as any;
@@ -76,133 +122,127 @@ export default function FirmSettingsPage() {
   const yearlyPrice = snap?.yearlyPrice || (monthlyPrice ? monthlyPrice * 12 : null);
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto" data-testid="firm-settings-page">
-      <div className="flex items-center gap-3">
-        <Settings className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold" data-testid="text-page-title">Firm Settings</h1>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Shield className="h-4 w-4" /> Subscription & Billing
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {subLoading ? (
-              <div className="text-muted-foreground">Loading...</div>
-            ) : (
-              <div className="space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="rounded-lg border p-4 space-y-2">
-                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Shield className="h-4 w-4" /> Subscription & Billing
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {subLoading ? (
+            <div className="text-muted-foreground">Loading...</div>
+          ) : (
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="rounded-lg border p-4 space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">Firm:</span>
+                    <Badge className={statusColor[subscription?.firmStatus] || ""} data-testid="badge-firm-status">
+                      {subscription?.firmStatus || "Unknown"}
+                    </Badge>
+                  </div>
+                  {sub ? (
                     <div className="flex items-center gap-2">
-                      <span className="text-sm">Firm:</span>
-                      <Badge className={statusColor[subscription?.firmStatus] || ""} data-testid="badge-firm-status">
-                        {subscription?.firmStatus || "Unknown"}
+                      <span className="text-sm">Subscription:</span>
+                      <Badge className={statusColor[sub.status] || ""} data-testid="badge-sub-status">
+                        {sub.status}
                       </Badge>
                     </div>
-                    {sub ? (
+                  ) : (
+                    <div className="text-sm text-muted-foreground" data-testid="text-no-subscription">No subscription</div>
+                  )}
+                </div>
+
+                <div className="rounded-lg border p-4 space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Plan</div>
+                  {plan ? (
+                    <>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm">Subscription:</span>
-                        <Badge className={statusColor[sub.status] || ""} data-testid="badge-sub-status">
-                          {sub.status}
-                        </Badge>
+                        <Badge variant="outline" data-testid="badge-plan-name" className="text-sm">{plan.name}</Badge>
                       </div>
-                    ) : (
-                      <div className="text-sm text-muted-foreground" data-testid="text-no-subscription">No subscription</div>
-                    )}
-                  </div>
+                      <div className="text-sm text-muted-foreground">
+                        Max {plan.maxUsers} users · {plan.maxEngagements} engagements
+                      </div>
+                      {plan.storageGb && (
+                        <div className="text-sm text-muted-foreground">Storage: {plan.storageGb} GB</div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">No plan assigned</div>
+                  )}
+                </div>
 
-                  <div className="rounded-lg border p-4 space-y-2">
-                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Plan</div>
-                    {plan ? (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" data-testid="badge-plan-name" className="text-sm">{plan.name}</Badge>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Max {plan.maxUsers} users · {plan.maxEngagements} engagements
-                        </div>
-                        {plan.storageGb && (
-                          <div className="text-sm text-muted-foreground">Storage: {plan.storageGb} GB</div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="text-sm text-muted-foreground">No plan assigned</div>
-                    )}
+                <div className="rounded-lg border p-4 space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                    <CreditCard className="h-3.5 w-3.5" /> Pricing
                   </div>
-
-                  <div className="rounded-lg border p-4 space-y-2">
-                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                      <CreditCard className="h-3.5 w-3.5" /> Pricing
-                    </div>
-                    {monthlyPrice != null ? (
-                      <>
-                        <div className="text-lg font-bold text-foreground" data-testid="text-monthly-price">
-                          {formatPkr(monthlyPrice)}<span className="text-xs font-normal text-muted-foreground">/mo</span>
+                  {monthlyPrice != null ? (
+                    <>
+                      <div className="text-lg font-bold text-foreground" data-testid="text-monthly-price">
+                        {formatPkr(monthlyPrice)}<span className="text-xs font-normal text-muted-foreground">/mo</span>
+                      </div>
+                      {yearlyPrice != null && (
+                        <div className="text-sm text-muted-foreground" data-testid="text-yearly-price">
+                          {formatPkr(yearlyPrice)}/year
                         </div>
-                        {yearlyPrice != null && (
-                          <div className="text-sm text-muted-foreground" data-testid="text-yearly-price">
-                            {formatPkr(yearlyPrice)}/year
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="text-sm text-muted-foreground">—</div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">—</div>
+                  )}
+                </div>
+              </div>
+
+              {sub && (
+                <div className="rounded-lg border p-4">
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5" /> Billing Dates
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {sub.trialEnd && (
+                      <div>
+                        <div className="text-xs text-muted-foreground">Trial Ends</div>
+                        <div className="text-sm font-medium" data-testid="text-trial-end">{formatDate(sub.trialEnd)}</div>
+                      </div>
+                    )}
+                    {sub.currentPeriodStart && (
+                      <div>
+                        <div className="text-xs text-muted-foreground">Billing Period Start</div>
+                        <div className="text-sm font-medium" data-testid="text-period-start">{formatDate(sub.currentPeriodStart)}</div>
+                      </div>
+                    )}
+                    {sub.currentPeriodEnd && (
+                      <div>
+                        <div className="text-xs text-muted-foreground">Billing Period End</div>
+                        <div className="text-sm font-medium" data-testid="text-period-end">{formatDate(sub.currentPeriodEnd)}</div>
+                      </div>
+                    )}
+                    {sub.nextInvoiceAt && (
+                      <div>
+                        <div className="text-xs text-muted-foreground">Next Invoice</div>
+                        <div className="text-sm font-medium" data-testid="text-next-invoice">{formatDate(sub.nextInvoiceAt)}</div>
+                      </div>
+                    )}
+                    {sub.graceEndAt && (
+                      <div>
+                        <div className="text-xs text-muted-foreground">Grace Period Ends</div>
+                        <div className="text-sm font-medium text-orange-600" data-testid="text-grace-end">{formatDate(sub.graceEndAt)}</div>
+                      </div>
                     )}
                   </div>
                 </div>
+              )}
 
-                {sub && (
-                  <div className="rounded-lg border p-4">
-                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" /> Billing Dates
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {sub.trialEnd && (
-                        <div>
-                          <div className="text-xs text-muted-foreground">Trial Ends</div>
-                          <div className="text-sm font-medium" data-testid="text-trial-end">{formatDate(sub.trialEnd)}</div>
-                        </div>
-                      )}
-                      {sub.currentPeriodStart && (
-                        <div>
-                          <div className="text-xs text-muted-foreground">Billing Period Start</div>
-                          <div className="text-sm font-medium" data-testid="text-period-start">{formatDate(sub.currentPeriodStart)}</div>
-                        </div>
-                      )}
-                      {sub.currentPeriodEnd && (
-                        <div>
-                          <div className="text-xs text-muted-foreground">Billing Period End</div>
-                          <div className="text-sm font-medium" data-testid="text-period-end">{formatDate(sub.currentPeriodEnd)}</div>
-                        </div>
-                      )}
-                      {sub.nextInvoiceAt && (
-                        <div>
-                          <div className="text-xs text-muted-foreground">Next Invoice</div>
-                          <div className="text-sm font-medium" data-testid="text-next-invoice">{formatDate(sub.nextInvoiceAt)}</div>
-                        </div>
-                      )}
-                      {sub.graceEndAt && (
-                        <div>
-                          <div className="text-xs text-muted-foreground">Grace Period Ends</div>
-                          <div className="text-sm font-medium text-orange-600" data-testid="text-grace-end">{formatDate(sub.graceEndAt)}</div>
-                        </div>
-                      )}
-                    </div>
+              {sub && (
+                <div className="rounded-lg border p-4">
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1">
+                    <Receipt className="h-3.5 w-3.5" /> Recent Invoices
                   </div>
-                )}
-
-                {sub && (
-                  <div className="rounded-lg border p-4">
-                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1">
-                      <Receipt className="h-3.5 w-3.5" /> Recent Invoices
-                    </div>
-                    {invoices.length === 0 ? (
-                      <div className="text-sm text-muted-foreground py-3 text-center" data-testid="text-no-invoices">No invoices yet</div>
-                    ) : (
+                  {invoices.length === 0 ? (
+                    <div className="text-sm text-muted-foreground py-3 text-center" data-testid="text-no-invoices">No invoices yet</div>
+                  ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
@@ -244,14 +284,15 @@ export default function FirmSettingsPage() {
                         </tbody>
                       </table>
                     </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
@@ -268,13 +309,13 @@ export default function FirmSettingsPage() {
                 data-testid="input-firm-ai-key"
                 type="password"
                 value={aiKeyForm.apiKey}
-                onChange={(e) => setAiKeyForm({ ...aiKeyForm, apiKey: e.target.value })}
+                onChange={(e: any) => setAiKeyForm({ ...aiKeyForm, apiKey: e.target.value })}
                 placeholder="sk-..."
               />
             </div>
             <div>
               <Label>Provider</Label>
-              <Select value={aiKeyForm.provider} onValueChange={(v) => setAiKeyForm({ ...aiKeyForm, provider: v })}>
+              <Select value={aiKeyForm.provider} onValueChange={(v: string) => setAiKeyForm({ ...aiKeyForm, provider: v })}>
                 <SelectTrigger data-testid="select-ai-provider"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="openai">OpenAI</SelectItem>
@@ -297,25 +338,395 @@ export default function FirmSettingsPage() {
             </p>
           </CardContent>
         </Card>
+
+        {settings && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Current Firm Settings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><span className="font-medium">RBAC Enforced:</span> {settings.enforceRBAC ? "Yes" : "No"}</div>
+                <div><span className="font-medium">AI Enabled:</span> {settings.aiEnabled ? "Yes" : "No"}</div>
+                <div><span className="font-medium">AI Requires Approval:</span> {settings.aiRequiresHumanApproval ? "Yes" : "No"}</div>
+                <div><span className="font-medium">Digital Signatures:</span> {settings.requireDigitalSignatures ? "Yes" : "No"}</div>
+                <div><span className="font-medium">Partner PIN:</span> {settings.requirePartnerPIN ? "Yes" : "No"}</div>
+                <div><span className="font-medium">Maker-Checker:</span> {settings.makerCheckerMode}</div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProfileTab() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [fullName, setFullName] = useState(user?.fullName || "");
+  const [profileSaving, setProfileSaving] = useState(false);
+
+  useEffect(() => {
+    if (user?.fullName) setFullName(user.fullName);
+  }, [user?.fullName]);
+
+  const handleSaveProfile = async () => {
+    if (!fullName.trim() || fullName.trim().length < 2) {
+      toast({ title: "Validation Error", description: "Full name must be at least 2 characters", variant: "destructive" });
+      return;
+    }
+    setProfileSaving(true);
+    try {
+      const res = await fetchWithAuth('/api/auth/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName: fullName.trim() }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to update profile");
+      }
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      toast({ title: "Profile Updated", description: "Your profile has been saved successfully" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to update profile", variant: "destructive" });
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Profile Information</CardTitle>
+        <CardDescription>Update your personal information</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="fullName">Full Name</Label>
+            <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} data-testid="input-full-name" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" defaultValue={user?.email || ""} disabled data-testid="input-email" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <Input id="username" defaultValue={user?.username || ""} disabled data-testid="input-username" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="role">Role</Label>
+            <Input id="role" defaultValue={user?.role || ""} disabled data-testid="input-role" />
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={handleSaveProfile} disabled={profileSaving} data-testid="button-save-profile">
+            {profileSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+            {profileSaving ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function NotificationsTab() {
+  const { toast } = useToast();
+  const [notifications, setNotifications] = useState(() =>
+    loadLocalPrefs("auditwise_notifications", {
+      emailAlerts: true,
+      reviewReminders: true,
+      deadlineWarnings: true,
+      teamUpdates: false,
+    })
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Notification Preferences</CardTitle>
+        <CardDescription>Choose what notifications you receive</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label>Email Alerts</Label>
+            <p className="text-sm text-muted-foreground">Receive email notifications for important updates</p>
+          </div>
+          <Switch checked={notifications.emailAlerts} onCheckedChange={(v) => setNotifications({ ...notifications, emailAlerts: v })} />
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label>Review Reminders</Label>
+            <p className="text-sm text-muted-foreground">Get reminded about pending reviews</p>
+          </div>
+          <Switch checked={notifications.reviewReminders} onCheckedChange={(v) => setNotifications({ ...notifications, reviewReminders: v })} />
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label>Deadline Warnings</Label>
+            <p className="text-sm text-muted-foreground">Receive warnings about approaching deadlines</p>
+          </div>
+          <Switch checked={notifications.deadlineWarnings} onCheckedChange={(v) => setNotifications({ ...notifications, deadlineWarnings: v })} />
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label>Team Updates</Label>
+            <p className="text-sm text-muted-foreground">Get notified when team members complete tasks</p>
+          </div>
+          <Switch checked={notifications.teamUpdates} onCheckedChange={(v) => setNotifications({ ...notifications, teamUpdates: v })} />
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={() => { saveLocalPrefs("auditwise_notifications", notifications); toast({ title: "Preferences Saved", description: "Notification preferences updated" }); }}>
+            <Save className="h-4 w-4 mr-2" />
+            Save Preferences
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PreferencesTab() {
+  const { toast } = useToast();
+  const [preferences, setPreferences] = useState(() =>
+    loadLocalPrefs("auditwise_preferences", {
+      language: "en",
+      dateFormat: "DD/MM/YYYY",
+      timezone: "PKT",
+    })
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Display Preferences</CardTitle>
+        <CardDescription>Customize your display settings</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Language</Label>
+            <Select value={preferences.language} onValueChange={(v) => setPreferences({ ...preferences, language: v })}>
+              <SelectTrigger>
+                <Globe className="h-4 w-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="ur">Urdu</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Date Format</Label>
+            <Select value={preferences.dateFormat} onValueChange={(v) => setPreferences({ ...preferences, dateFormat: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Timezone</Label>
+            <Select value={preferences.timezone} onValueChange={(v) => setPreferences({ ...preferences, timezone: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PKT">Pakistan Standard Time (PKT)</SelectItem>
+                <SelectItem value="UTC">UTC</SelectItem>
+                <SelectItem value="GST">Gulf Standard Time (GST)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={() => { saveLocalPrefs("auditwise_preferences", preferences); toast({ title: "Preferences Saved", description: "Display preferences updated" }); }}>
+            <Save className="h-4 w-4 mr-2" />
+            Save Preferences
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SecurityTab() {
+  const { toast } = useToast();
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (!currentPassword) {
+      toast({ title: "Error", description: "Current password is required", variant: "destructive" });
+      return;
+    }
+    const pwErrors: string[] = [];
+    if (newPassword.length < 8) pwErrors.push("at least 8 characters");
+    if (!/[a-z]/.test(newPassword)) pwErrors.push("a lowercase letter");
+    if (!/[A-Z]/.test(newPassword)) pwErrors.push("an uppercase letter");
+    if (!/\d/.test(newPassword)) pwErrors.push("a number");
+    if (!/[@$!%*?&#^()_+\-=\[\]{}|\\:";'<>,./~`]/.test(newPassword)) pwErrors.push("a special character");
+    if (pwErrors.length > 0) {
+      toast({ title: "Weak Password", description: `Password must contain ${pwErrors.join(", ")}`, variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Error", description: "New passwords do not match", variant: "destructive" });
+      return;
+    }
+    setPasswordSaving(true);
+    try {
+      const res = await fetchWithAuth('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to change password");
+      }
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      toast({ title: "Password Changed", description: "Your password has been updated successfully" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to change password", variant: "destructive" });
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Change Password</CardTitle>
+        <CardDescription>Update your account password</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="currentPassword">Current Password</Label>
+          <Input id="currentPassword" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="newPassword">New Password</Label>
+          <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword">Confirm New Password</Label>
+          <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={handleChangePassword} disabled={passwordSaving}>
+            {passwordSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Shield className="h-4 w-4 mr-2" />}
+            {passwordSaving ? "Updating..." : "Change Password"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function FirmSettingsPage() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [aiKeyForm, setAiKeyForm] = useState({ apiKey: "", provider: "openai" });
+
+  const { data: settings, isLoading: settingsLoading } = useQuery<any>({
+    queryKey: ["/api/tenant/settings"],
+  });
+
+  const { data: subscription, isLoading: subLoading } = useQuery<any>({
+    queryKey: ["/api/tenant/subscription"],
+  });
+
+  const setAiKeyMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/tenant/settings/ai-key", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "AI Key Saved", description: "Your firm AI key has been encrypted and stored." });
+      setAiKeyForm({ apiKey: "", provider: "openai" });
+      qc.invalidateQueries({ queryKey: ["/api/tenant/settings"] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const isFirmAdmin = user?.role === "FIRM_ADMIN";
+
+  return (
+    <div className="p-6 space-y-4 max-w-5xl mx-auto" data-testid="firm-settings-page">
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-xl bg-primary/10">
+          <Settings className="h-6 w-6 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold" data-testid="text-page-title">Firm Settings</h1>
+          <p className="text-muted-foreground">Manage firm configuration and your account settings</p>
+        </div>
       </div>
 
-      {settings && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Current Firm Settings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-              <div><span className="font-medium">RBAC Enforced:</span> {settings.enforceRBAC ? "Yes" : "No"}</div>
-              <div><span className="font-medium">AI Enabled:</span> {settings.aiEnabled ? "Yes" : "No"}</div>
-              <div><span className="font-medium">AI Requires Approval:</span> {settings.aiRequiresHumanApproval ? "Yes" : "No"}</div>
-              <div><span className="font-medium">Digital Signatures:</span> {settings.requireDigitalSignatures ? "Yes" : "No"}</div>
-              <div><span className="font-medium">Partner PIN:</span> {settings.requirePartnerPIN ? "Yes" : "No"}</div>
-              <div><span className="font-medium">Maker-Checker:</span> {settings.makerCheckerMode}</div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Tabs defaultValue="firm" className="space-y-4">
+        <TabsList className="bg-muted/50 flex-wrap h-auto gap-1 p-1">
+          <TabsTrigger value="firm" data-testid="tab-firm">
+            <Shield className="h-4 w-4 mr-1.5" />
+            Subscription
+          </TabsTrigger>
+          <TabsTrigger value="profile" data-testid="tab-profile">
+            <User className="h-4 w-4 mr-1.5" />
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="notifications" data-testid="tab-notifications">
+            <Bell className="h-4 w-4 mr-1.5" />
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger value="preferences" data-testid="tab-preferences">
+            <Palette className="h-4 w-4 mr-1.5" />
+            Preferences
+          </TabsTrigger>
+          <TabsTrigger value="security" data-testid="tab-security">
+            <Shield className="h-4 w-4 mr-1.5" />
+            Security
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="firm">
+          <SubscriptionBillingTab
+            settings={settings}
+            settingsLoading={settingsLoading}
+            subscription={subscription}
+            subLoading={subLoading}
+            aiKeyForm={aiKeyForm}
+            setAiKeyForm={setAiKeyForm}
+            setAiKeyMutation={setAiKeyMutation}
+          />
+        </TabsContent>
+
+        <TabsContent value="profile">
+          <ProfileTab />
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <NotificationsTab />
+        </TabsContent>
+
+        <TabsContent value="preferences">
+          <PreferencesTab />
+        </TabsContent>
+
+        <TabsContent value="security">
+          <SecurityTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

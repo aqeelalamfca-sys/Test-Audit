@@ -300,7 +300,9 @@ function Router() {
       <Route path="/users" component={UserManagementLazy} />
       <Route path="/firm-controls" component={FirmWideControls} />
       <Route path="/reports" component={ReportsLazy} />
-      <Route path="/settings" component={SettingsLazy} />
+      <Route path="/settings">
+        <Redirect to="/firm-admin/settings" />
+      </Route>
       <Route path="/user-guide" component={UserGuideLazy} />
       <Route path="/deployment-guide" component={DeploymentGuideLazy} />
       <Route path="/phase/:phase" component={PhaseViewLazy} />
