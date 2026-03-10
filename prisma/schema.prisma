@@ -6144,7 +6144,7 @@ model AISettings {
   aiEnabled Boolean @default(false)
 
   preferredProvider String   @default("openai")
-  providerPriority  String[] @default(["openai", "gemini", "deepseek"])
+  providerPriority  String[] @default(["openai", "gemini", "deepseek", "anthropic"])
 
   openaiApiKey     String?
   openaiEnabled    Boolean   @default(true)
@@ -6160,6 +6160,11 @@ model AISettings {
   deepseekEnabled    Boolean   @default(false)
   deepseekLastTested DateTime?
   deepseekTestStatus String?
+
+  anthropicApiKey     String?
+  anthropicEnabled    Boolean   @default(false)
+  anthropicLastTested DateTime?
+  anthropicTestStatus String?
 
   maxTokensPerResponse   Int     @default(2000)
   autoSuggestionsEnabled Boolean @default(false)

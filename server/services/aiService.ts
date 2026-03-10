@@ -1,6 +1,7 @@
 import OpenAI from "openai";
+import { decryptString } from "./encryptionService";
 
-type AIProvider = "openai" | "gemini" | "deepseek";
+type AIProvider = "openai" | "gemini" | "deepseek" | "anthropic";
 
 interface AIProviderConfig {
   provider: AIProvider;
@@ -36,6 +37,8 @@ interface AISettings {
   geminiEnabled: boolean;
   deepseekApiKey?: string | null;
   deepseekEnabled: boolean;
+  anthropicApiKey?: string | null;
+  anthropicEnabled: boolean;
   maxTokensPerResponse: number;
   requestTimeout: number;
 }
@@ -179,15 +182,61 @@ async function generateWithDeepSeek(
   };
 }
 
+async function generateWithAnthropic(
+  config: AIProviderConfig,
+  options: AIGenerateOptions
+): Promise<AIGenerateResult> {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": config.apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: options.maxTokens || 2000,
+      system: options.systemPrompt || DEFAULT_SYSTEM_PROMPT,
+      messages: [
+        { role: "user", content: `${options.prompt}\n\nContext:\n${options.context}` },
+      ],
+    }),
+    signal: AbortSignal.timeout(options.timeout || 30000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Anthropic API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const content = data.content?.[0]?.text || "";
+
+  return {
+    content,
+    provider: "anthropic",
+    promptTokens: data.usage?.input_tokens,
+    completionTokens: data.usage?.output_tokens,
+  };
+}
+
+function safeDecrypt(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    return decryptString(value);
+  } catch {
+    return value;
+  }
+}
+
 function getEnabledProviders(settings: AISettings): AIProviderConfig[] {
   const providers: AIProviderConfig[] = [];
   
-  const priority = settings.providerPriority || ["openai", "gemini", "deepseek"];
+  const priority = settings.providerPriority || ["openai", "gemini", "deepseek", "anthropic"];
   
   for (const providerName of priority) {
     switch (providerName) {
       case "openai":
-        const openaiKey = settings.openaiApiKey || process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+        const openaiKey = safeDecrypt(settings.openaiApiKey) || process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
         if (settings.openaiEnabled && openaiKey) {
           providers.push({
             provider: "openai",
@@ -198,19 +247,31 @@ function getEnabledProviders(settings: AISettings): AIProviderConfig[] {
         }
         break;
       case "gemini":
-        if (settings.geminiEnabled && settings.geminiApiKey) {
+        const geminiKey = safeDecrypt(settings.geminiApiKey);
+        if (settings.geminiEnabled && geminiKey) {
           providers.push({
             provider: "gemini",
-            apiKey: settings.geminiApiKey,
+            apiKey: geminiKey,
             enabled: true,
           });
         }
         break;
       case "deepseek":
-        if (settings.deepseekEnabled && settings.deepseekApiKey) {
+        const deepseekKey = safeDecrypt(settings.deepseekApiKey);
+        if (settings.deepseekEnabled && deepseekKey) {
           providers.push({
             provider: "deepseek",
-            apiKey: settings.deepseekApiKey,
+            apiKey: deepseekKey,
+            enabled: true,
+          });
+        }
+        break;
+      case "anthropic":
+        const anthropicKey = safeDecrypt(settings.anthropicApiKey);
+        if (settings.anthropicEnabled && anthropicKey) {
+          providers.push({
+            provider: "anthropic",
+            apiKey: anthropicKey,
             enabled: true,
           });
         }
@@ -251,6 +312,7 @@ export async function generateAIContent(
         openai: generateWithOpenAI,
         gemini: generateWithGemini,
         deepseek: generateWithDeepSeek,
+        anthropic: generateWithAnthropic,
       }[config.provider];
 
       const result = await generateFn(config, {

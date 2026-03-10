@@ -321,6 +321,347 @@ router.post("/settings/ai-key", requirePlatformOrFirmAdmin, async (req: Authenti
   }
 });
 
+// ========== AI SETTINGS MANAGEMENT ==========
+
+router.get("/ai-settings", requirePlatformOrFirmAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(403).json({ error: "No firm context" });
+
+    const settings = await prisma.aISettings.findUnique({ where: { firmId } });
+
+    if (!settings) {
+      return res.json({
+        aiEnabled: false,
+        preferredProvider: "openai",
+        providerPriority: ["openai", "gemini", "deepseek", "anthropic"],
+        openaiEnabled: true,
+        openaiConfigured: false,
+        openaiLastTested: null,
+        openaiTestStatus: null,
+        geminiEnabled: false,
+        geminiConfigured: false,
+        geminiLastTested: null,
+        geminiTestStatus: null,
+        deepseekEnabled: false,
+        deepseekConfigured: false,
+        deepseekLastTested: null,
+        deepseekTestStatus: null,
+        anthropicEnabled: false,
+        anthropicConfigured: false,
+        anthropicLastTested: null,
+        anthropicTestStatus: null,
+        maxTokensPerResponse: 2000,
+        autoSuggestionsEnabled: false,
+        manualTriggerOnly: true,
+        requestTimeout: 30000,
+        platformKeyAvailable: !!(process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY),
+      });
+    }
+
+    res.json({
+      aiEnabled: settings.aiEnabled,
+      preferredProvider: settings.preferredProvider,
+      providerPriority: settings.providerPriority,
+      openaiEnabled: settings.openaiEnabled,
+      openaiConfigured: !!settings.openaiApiKey,
+      openaiLastTested: settings.openaiLastTested,
+      openaiTestStatus: settings.openaiTestStatus,
+      geminiEnabled: settings.geminiEnabled,
+      geminiConfigured: !!settings.geminiApiKey,
+      geminiLastTested: settings.geminiLastTested,
+      geminiTestStatus: settings.geminiTestStatus,
+      deepseekEnabled: settings.deepseekEnabled,
+      deepseekConfigured: !!settings.deepseekApiKey,
+      deepseekLastTested: settings.deepseekLastTested,
+      deepseekTestStatus: settings.deepseekTestStatus,
+      anthropicEnabled: settings.anthropicEnabled,
+      anthropicConfigured: !!settings.anthropicApiKey,
+      anthropicLastTested: settings.anthropicLastTested,
+      anthropicTestStatus: settings.anthropicTestStatus,
+      maxTokensPerResponse: settings.maxTokensPerResponse,
+      autoSuggestionsEnabled: settings.autoSuggestionsEnabled,
+      manualTriggerOnly: settings.manualTriggerOnly,
+      requestTimeout: settings.requestTimeout,
+      platformKeyAvailable: !!(process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY),
+    });
+  } catch (error) {
+    console.error("Get AI settings error:", error);
+    res.status(500).json({ error: "Failed to fetch AI settings" });
+  }
+});
+
+router.put("/ai-settings", requirePlatformOrFirmAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(403).json({ error: "No firm context" });
+
+    const schema = z.object({
+      aiEnabled: z.boolean().optional(),
+      preferredProvider: z.string().optional(),
+      providerPriority: z.array(z.string()).optional(),
+      maxTokensPerResponse: z.number().min(100).max(16000).optional(),
+      autoSuggestionsEnabled: z.boolean().optional(),
+      manualTriggerOnly: z.boolean().optional(),
+      requestTimeout: z.number().min(5000).max(120000).optional(),
+    });
+
+    const data = schema.parse(req.body);
+    const { ip, userAgent } = extractRequestMeta(req);
+
+    const settings = await prisma.aISettings.upsert({
+      where: { firmId },
+      update: { ...data },
+      create: { firmId, ...data },
+    });
+
+    await logPlatformAction(req.user!.id, "AI_SETTINGS_UPDATED", "ai_settings", settings.id, firmId, ip, userAgent, data);
+
+    res.json({ success: true });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Validation failed", details: error.errors });
+    }
+    console.error("Update AI settings error:", error);
+    res.status(500).json({ error: "Failed to update AI settings" });
+  }
+});
+
+router.post("/ai-settings/provider-key", requirePlatformOrFirmAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(403).json({ error: "No firm context" });
+
+    const schema = z.object({
+      provider: z.enum(["openai", "gemini", "deepseek", "anthropic"]),
+      apiKey: z.string().min(5),
+      enabled: z.boolean().optional(),
+    });
+
+    const data = schema.parse(req.body);
+    const { ip, userAgent } = extractRequestMeta(req);
+
+    const encrypted = encryptString(data.apiKey);
+
+    const updateData: any = {};
+    updateData[`${data.provider}ApiKey`] = encrypted;
+    if (data.enabled !== undefined) {
+      updateData[`${data.provider}Enabled`] = data.enabled;
+    }
+
+    const settings = await prisma.aISettings.upsert({
+      where: { firmId },
+      update: updateData,
+      create: { firmId, aiEnabled: true, ...updateData },
+    });
+
+    await logPlatformAction(req.user!.id, "AI_PROVIDER_KEY_SET", "ai_settings", settings.id, firmId, ip, userAgent, {
+      provider: data.provider,
+    });
+
+    res.json({ success: true, provider: data.provider });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Validation failed", details: error.errors });
+    }
+    console.error("Set AI provider key error:", error);
+    res.status(500).json({ error: "Failed to set provider key" });
+  }
+});
+
+router.delete("/ai-settings/provider-key/:provider", requirePlatformOrFirmAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(403).json({ error: "No firm context" });
+
+    const provider = req.params.provider;
+    if (!["openai", "gemini", "deepseek", "anthropic"].includes(provider)) {
+      return res.status(400).json({ error: "Invalid provider" });
+    }
+
+    const { ip, userAgent } = extractRequestMeta(req);
+
+    const existing = await prisma.aISettings.findUnique({ where: { firmId } });
+    if (!existing) {
+      return res.json({ success: true });
+    }
+
+    const updateData: any = {};
+    updateData[`${provider}ApiKey`] = null;
+    updateData[`${provider}Enabled`] = false;
+    updateData[`${provider}TestStatus`] = null;
+    updateData[`${provider}LastTested`] = null;
+
+    await prisma.aISettings.update({
+      where: { firmId },
+      data: updateData,
+    });
+
+    await logPlatformAction(req.user!.id, "AI_PROVIDER_KEY_REMOVED", "ai_settings", firmId, firmId, ip, userAgent, { provider });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete AI provider key error:", error);
+    res.status(500).json({ error: "Failed to remove provider key" });
+  }
+});
+
+router.post("/ai-settings/provider-toggle", requirePlatformOrFirmAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(403).json({ error: "No firm context" });
+
+    const schema = z.object({
+      provider: z.enum(["openai", "gemini", "deepseek", "anthropic"]),
+      enabled: z.boolean(),
+    });
+
+    const data = schema.parse(req.body);
+
+    const updateData: any = {};
+    updateData[`${data.provider}Enabled`] = data.enabled;
+
+    await prisma.aISettings.upsert({
+      where: { firmId },
+      update: updateData,
+      create: { firmId, ...updateData },
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Validation failed", details: error.errors });
+    }
+    console.error("Toggle AI provider error:", error);
+    res.status(500).json({ error: "Failed to toggle provider" });
+  }
+});
+
+router.post("/ai-settings/test-provider", requirePlatformOrFirmAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(403).json({ error: "No firm context" });
+
+    const schema = z.object({
+      provider: z.enum(["openai", "gemini", "deepseek", "anthropic"]),
+    });
+
+    const { provider } = schema.parse(req.body);
+
+    const settings = await prisma.aISettings.findUnique({ where: { firmId } });
+    if (!settings) return res.status(404).json({ error: "AI settings not configured" });
+
+    const keyField = `${provider}ApiKey` as keyof typeof settings;
+    const encryptedKey = settings[keyField] as string | null;
+
+    let apiKey: string | undefined;
+    if (encryptedKey) {
+      try {
+        apiKey = decryptString(encryptedKey);
+      } catch {
+        apiKey = encryptedKey;
+      }
+    }
+
+    if (!apiKey && provider === "openai") {
+      apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+    }
+
+    if (!apiKey) {
+      const updateData: any = {};
+      updateData[`${provider}TestStatus`] = "no_key";
+      updateData[`${provider}LastTested`] = new Date();
+      await prisma.aISettings.update({ where: { firmId }, data: updateData });
+      return res.json({ success: false, status: "no_key", message: "No API key configured for this provider" });
+    }
+
+    let testResult = { success: false, message: "" };
+    const startTime = Date.now();
+
+    try {
+      switch (provider) {
+        case "openai": {
+          const { default: OpenAI } = await import("openai");
+          const openai = new OpenAI({
+            apiKey,
+            baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+            timeout: 15000,
+          });
+          const resp = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [{ role: "user", content: "Reply with: OK" }],
+            max_tokens: 5,
+          });
+          testResult = { success: true, message: `Connected. Model: gpt-4o. Response time: ${Date.now() - startTime}ms` };
+          break;
+        }
+        case "gemini": {
+          const resp = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: "Reply with: OK" }] }],
+                generationConfig: { maxOutputTokens: 5 },
+              }),
+              signal: AbortSignal.timeout(15000),
+            }
+          );
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          testResult = { success: true, message: `Connected. Model: gemini-1.5-flash. Response time: ${Date.now() - startTime}ms` };
+          break;
+        }
+        case "deepseek": {
+          const { default: OpenAI } = await import("openai");
+          const deepseek = new OpenAI({ apiKey, baseURL: "https://api.deepseek.com", timeout: 15000 });
+          await deepseek.chat.completions.create({
+            model: "deepseek-chat",
+            messages: [{ role: "user", content: "Reply with: OK" }],
+            max_tokens: 5,
+          });
+          testResult = { success: true, message: `Connected. Model: deepseek-chat. Response time: ${Date.now() - startTime}ms` };
+          break;
+        }
+        case "anthropic": {
+          const resp = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": apiKey,
+              "anthropic-version": "2023-06-01",
+            },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 5,
+              messages: [{ role: "user", content: "Reply with: OK" }],
+            }),
+            signal: AbortSignal.timeout(15000),
+          });
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          testResult = { success: true, message: `Connected. Model: claude-sonnet-4-20250514. Response time: ${Date.now() - startTime}ms` };
+          break;
+        }
+      }
+    } catch (err: any) {
+      testResult = { success: false, message: err.message || "Connection failed" };
+    }
+
+    const updateData: any = {};
+    updateData[`${provider}TestStatus`] = testResult.success ? "success" : "failed";
+    updateData[`${provider}LastTested`] = new Date();
+    await prisma.aISettings.update({ where: { firmId }, data: updateData });
+
+    res.json({ success: testResult.success, status: testResult.success ? "success" : "failed", message: testResult.message });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Validation failed", details: error.errors });
+    }
+    console.error("Test AI provider error:", error);
+    res.status(500).json({ error: "Failed to test provider" });
+  }
+});
+
 // ========== AUDIT LOGS (Firm-scoped) ==========
 
 router.get("/audit-logs", async (req: AuthenticatedRequest, res: Response) => {

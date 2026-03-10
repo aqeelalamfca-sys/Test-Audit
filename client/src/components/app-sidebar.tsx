@@ -537,7 +537,7 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       >
                         <Link href="/firm-admin/ai-usage">
                           <Bot className="h-4 w-4" />
-                          <span>AI Usage</span>
+                          <span>AI Integration</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

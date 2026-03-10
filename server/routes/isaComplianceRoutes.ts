@@ -58,13 +58,15 @@ async function fetchAISettings(firmId: string): Promise<AISettings> {
   return {
     aiEnabled: settings?.aiEnabled ?? true,
     preferredProvider: settings?.preferredProvider ?? "openai",
-    providerPriority: settings?.providerPriority ?? ["openai", "gemini", "deepseek"],
+    providerPriority: settings?.providerPriority ?? ["openai", "gemini", "deepseek", "anthropic"],
     openaiApiKey: settings?.openaiApiKey,
     openaiEnabled: settings?.openaiEnabled ?? true,
     geminiApiKey: settings?.geminiApiKey,
     geminiEnabled: settings?.geminiEnabled ?? false,
     deepseekApiKey: settings?.deepseekApiKey,
     deepseekEnabled: settings?.deepseekEnabled ?? false,
+    anthropicApiKey: settings?.anthropicApiKey,
+    anthropicEnabled: settings?.anthropicEnabled ?? false,
     maxTokensPerResponse: settings?.maxTokensPerResponse ?? 3000,
     requestTimeout: settings?.requestTimeout ?? 60000,
   };

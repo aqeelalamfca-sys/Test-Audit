@@ -78,6 +78,17 @@ The Engagement Allocation page (`/engagement-allocation`) provides:
 - Files: `client/src/pages/engagement-allocation.tsx`, backend in `server/routes.ts`
 - API: `GET /api/engagements/:id/team-history`, `PUT /api/engagements/:id/team`
 
+## AI Integration
+
+The AI Integration page (`/firm-admin/ai-usage`) provides multi-provider AI management:
+- **Providers Tab**: Configure OpenAI, Anthropic Claude, Google Gemini, DeepSeek with encrypted API keys, enable/disable toggles, and connection testing
+- **Configuration Tab**: Global AI settings (enable/disable AI, preferred provider, token limits, timeout, auto-suggestions, manual trigger mode)
+- **Usage Analytics Tab**: Token usage stats, provider breakdown, recent AI activity log
+- **AI Governance**: Audit trail logging, AI-assisted labeling, prohibited field protection, AES-256-GCM key encryption
+- Backend routes: `GET/PUT /api/tenant/ai-settings`, `POST/DELETE /api/tenant/ai-settings/provider-key`, `POST /api/tenant/ai-settings/provider-toggle`, `POST /api/tenant/ai-settings/test-provider`
+- Key decryption handled at runtime via `safeDecrypt()` in `aiService.ts` with plaintext fallback for legacy keys
+- Files: `client/src/pages/firm-admin/firm-ai-usage.tsx`, `server/routes/tenantRoutes.ts`, `server/services/aiService.ts`
+
 ## Platform Admin Dashboard
 
 The Platform Dashboard (`/platform/dashboard`) shows real-time VPS metrics via SSH:
