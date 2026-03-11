@@ -292,6 +292,10 @@ export default function Engagements() {
                 <TableHead className="whitespace-nowrap">Manager</TableHead>
                 <TableHead className="whitespace-nowrap">Senior</TableHead>
                 <TableHead className="whitespace-nowrap">Prior Auditor</TableHead>
+                <TableHead className="whitespace-nowrap">Auditor Email</TableHead>
+                <TableHead className="whitespace-nowrap">Auditor Phone</TableHead>
+                <TableHead className="whitespace-nowrap">Prior Audit Opinion</TableHead>
+                <TableHead className="whitespace-nowrap">Auditor Address</TableHead>
                 <TableHead className="whitespace-nowrap">UDIN</TableHead>
                 <TableHead className="whitespace-nowrap">EQCR</TableHead>
                 <TableHead className="whitespace-nowrap">Phase</TableHead>
@@ -302,7 +306,7 @@ export default function Engagements() {
             <TableBody>
               {filteredEngagements.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={21} className="text-center py-4 text-muted-foreground">
+                  <TableCell colSpan={25} className="text-center py-4 text-muted-foreground">
                     No engagements found.
                   </TableCell>
                 </TableRow>
@@ -333,6 +337,10 @@ export default function Engagements() {
                     <TableCell className="whitespace-nowrap">{getManager(eng.team)}</TableCell>
                     <TableCell className="whitespace-nowrap">{getSenior(eng.team)}</TableCell>
                     <TableCell className="whitespace-nowrap">{eng.priorAuditor || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{eng.priorAuditorEmail || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{eng.priorAuditorPhone || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{eng.priorAuditOpinion?.replace(/_/g, " ") || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap max-w-[200px] truncate" title={eng.priorAuditorAddress || ""}>{eng.priorAuditorAddress || "-"}</TableCell>
                     <TableCell className="whitespace-nowrap font-mono text-sm">{eng.udin || "-"}</TableCell>
                     <TableCell className="whitespace-nowrap">
                       {eng.eqcrRequired ? (
