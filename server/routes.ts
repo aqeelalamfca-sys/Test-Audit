@@ -481,7 +481,7 @@ export async function registerRoutes(
 
         const engagementCode = await generateUniqueCode(data.engagementCode);
 
-        const engagementData = {
+        const engagementData: any = {
           firmId,
           clientId: data.clientId,
           engagementCode,
