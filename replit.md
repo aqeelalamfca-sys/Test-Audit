@@ -81,10 +81,27 @@ The Engagement Allocation page (`/engagement-allocation`) provides:
 ## User Management & Role Matrix
 
 The User Management page (`/firm-admin/users`) has two tabs:
-- **Users Tab**: List, search, create, edit, suspend/activate users with role assignment
-- **Role Matrix Tab**: Editable permission grid — roles as columns (Staff, Senior, Manager, EQCR, Partner, Admin), permissions grouped by category as expandable rows. Checkboxes toggle permissions per role in real-time. FIRM_ADMIN always has all permissions (disabled checkboxes). Uses firm-specific overrides that take precedence over global defaults.
+- **Users Tab**: List, search, create, edit users with role assignment. Status dropdown (Active/Suspended/Blocked) for each non-admin user — changes save immediately.
+- **Role Matrix Tab**: Editable permission grid — roles as columns (Staff, Senior, Manager, EQCR, Partner, Admin), permissions grouped by category as expandable rows. Checkboxes toggle permissions per role in real-time. FIRM_ADMIN always has all permissions (disabled checkboxes). "Save & Close" button at bottom right.
+- **User Status**: `UserStatus` enum with ACTIVE, SUSPENDED, BLOCKED, DELETED. Backend endpoint `POST /api/tenant/users/:id/set-status`. Blocked/Suspended users cannot log in.
 - APIs: `GET /api/rbac/permissions`, `GET /api/rbac/permissions/roles`, `PUT /api/admin/role-permissions`
-- Files: `client/src/pages/firm-admin/firm-users.tsx`, `server/permissionRoutes.ts`, `server/adminRoutes.ts`
+- Files: `client/src/pages/firm-admin/firm-users.tsx`, `server/permissionRoutes.ts`, `server/adminRoutes.ts`, `server/routes/tenantRoutes.ts`
+
+## Client Creation
+
+Shared `CreateClientDialog` component used everywhere (client list, dashboard, engagement dialog):
+- Required fields: Legal Name, NTN/CNIC, Focal Person (Name, Mobile, Email)
+- Optional: Trade Name, SECP No., Incorporation Date, City, Address, Email, Phone, Country, Entity Type, Industry
+- File: `client/src/components/create-client-dialog.tsx`
+
+## Engagement Dialog
+
+Enhanced engagement creation/edit dialog (`client/src/components/create-engagement-dialog.tsx`):
+- Tax Period dropdown (auto-sets periodStart/periodEnd)
+- Authorized Capital, Paid-up Capital (replaces single Share Capital)
+- Revenue (Last Year), Revenue (Year Before Last)
+- No. of Employees, Company Category dropdown (Pakistani categories)
+- DB columns: `authorizedCapital`, `paidUpCapital`, `companyCategory` on Engagement model
 
 ## Audit Log PDF Export
 
