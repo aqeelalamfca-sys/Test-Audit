@@ -97,7 +97,7 @@ async function validatePortalSession(token: string) {
 }
 
 async function invalidatePortalSession(token: string) {
-  await prisma.clientPortalSession.delete({ where: { token } }).catch(() => {});
+  await prisma.clientPortalSession.delete({ where: { token } }).catch(err => console.error("Portal session cleanup failed:", err));
 }
 
 async function requirePortalAuth(req: PortalAuthenticatedRequest, res: Response, next: NextFunction) {
@@ -211,7 +211,7 @@ router.post('/auth/logout', async (req: PortalAuthenticatedRequest, res: Respons
             activityDetails: JSON.stringify({ ip: req.ip }),
           },
         });
-      } catch (e) {}
+      } catch (e) { console.error("Portal logout activity logging failed:", e); }
       await invalidatePortalSession(token);
     }
   }
@@ -617,7 +617,7 @@ router.post('/portal/requests/:requestId/upload', requirePortalAuth, upload.sing
       const s3Key = generateStorageKey("portal-attachments", req.file.originalname);
       await uploadFile(req.file.path, s3Key, req.file.mimetype);
       storagePath = s3Key;
-      try { await fs.promises.unlink(req.file.path); } catch {}
+      try { await fs.promises.unlink(req.file.path); } catch (err) { console.error("Temp file cleanup failed:", err); }
     }
 
     const attachment = await prisma.requestAttachment.create({

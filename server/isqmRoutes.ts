@@ -3,6 +3,25 @@ import { z } from "zod";
 import { prisma } from "./db";
 import { requireAuth, requireMinRole, requireRoles, logAuditTrail, AuthenticatedRequest } from "./auth";
 import { logFirmControlActivity } from "./routes/firmControlComplianceLogRoutes";
+import { withTenantContext } from "./middleware/tenantDbContext";
+
+function handleSentinelError(error: unknown, res: Response, fallbackMessage: string) {
+  if (error instanceof z.ZodError) {
+    return res.status(400).json({ error: "Validation failed", details: error.errors });
+  }
+  const msg = error instanceof Error ? error.message : String(error);
+  if (msg.startsWith("NOT_FOUND:")) {
+    return res.status(404).json({ error: msg.slice(10) });
+  }
+  if (msg.startsWith("FORBIDDEN:")) {
+    return res.status(403).json({ error: msg.slice(10) });
+  }
+  if (msg.startsWith("BAD_REQUEST:")) {
+    return res.status(400).json({ error: msg.slice(12) });
+  }
+  console.error(fallbackMessage, error);
+  return res.status(500).json({ error: fallbackMessage });
+}
 
 const router = Router();
 
@@ -15,9 +34,11 @@ router.get("/governance/structure", requireAuth, async (req: AuthenticatedReques
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const structure = await prisma.qualityManagementStructure.findFirst({
-      where: { firmId },
-      orderBy: { createdAt: "desc" },
+    const structure = await withTenantContext(firmId, async (tx) => {
+      return tx.qualityManagementStructure.findFirst({
+        where: { firmId },
+        orderBy: { createdAt: "desc" },
+      });
     });
 
     res.json(structure);
@@ -44,13 +65,15 @@ router.post("/governance/structure", requireAuth, requireRoles("PARTNER", "FIRM_
 
     const data = schema.parse(req.body);
 
-    const structure = await prisma.qualityManagementStructure.create({
-      data: {
-        firmId,
-        ...data,
-        approvedById: req.user!.id,
-        approvedDate: new Date(),
-      },
+    const structure = await withTenantContext(firmId, async (tx) => {
+      return tx.qualityManagementStructure.create({
+        data: {
+          firmId,
+          ...data,
+          approvedById: req.user!.id,
+          approvedDate: new Date(),
+        },
+      });
     });
 
     await logAuditTrail(req.user!.id, "GOVERNANCE_STRUCTURE_CREATED", "quality_management_structure", structure.id, null, structure, undefined, "Governance structure updated", req.ip, req.get("user-agent"));
@@ -67,13 +90,11 @@ router.post("/governance/structure", requireAuth, requireRoles("PARTNER", "FIRM_
       description: "Governance structure created/updated",
       ipAddress: req.ip,
       userAgent: req.get("user-agent"),
-    }).catch(() => {});
+    }).catch(err => console.error("Firm control activity logging failed:", err));
 
     res.status(201).json(structure);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Create governance structure error:", error);
-    res.status(500).json({ error: "Failed to create governance structure" });
+    handleSentinelError(error, res, "Failed to create governance structure");
   }
 });
 
@@ -86,9 +107,11 @@ router.get("/affirmations", requireAuth, async (req: AuthenticatedRequest, res: 
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const affirmations = await prisma.leadershipAffirmation.findMany({
-      where: { firmId },
-      orderBy: { createdAt: "desc" },
+    const affirmations = await withTenantContext(firmId, async (tx) => {
+      return tx.leadershipAffirmation.findMany({
+        where: { firmId },
+        orderBy: { createdAt: "desc" },
+      });
     });
 
     res.json(affirmations);
@@ -111,16 +134,18 @@ router.post("/affirmations", requireAuth, async (req: AuthenticatedRequest, res:
 
     const data = schema.parse(req.body);
 
-    const affirmation = await prisma.leadershipAffirmation.create({
-      data: {
-        userId: req.user!.id,
-        firmId,
-        affirmationType: data.affirmationType,
-        affirmationText: data.affirmationText,
-        signoffDate: new Date(),
-        nextAffirmationDue: data.nextAffirmationDue,
-        ipAddress: req.ip,
-      },
+    const affirmation = await withTenantContext(firmId, async (tx) => {
+      return tx.leadershipAffirmation.create({
+        data: {
+          userId: req.user!.id,
+          firmId,
+          affirmationType: data.affirmationType,
+          affirmationText: data.affirmationText,
+          signoffDate: new Date(),
+          nextAffirmationDue: data.nextAffirmationDue,
+          ipAddress: req.ip,
+        },
+      });
     });
 
     void logFirmControlActivity({
@@ -135,13 +160,11 @@ router.post("/affirmations", requireAuth, async (req: AuthenticatedRequest, res:
       description: `${data.affirmationType} affirmation submitted`,
       ipAddress: req.ip,
       userAgent: req.get("user-agent"),
-    }).catch(() => {});
+    }).catch(err => console.error("Firm control activity logging failed:", err));
 
     res.status(201).json(affirmation);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Create affirmation error:", error);
-    res.status(500).json({ error: "Failed to create affirmation" });
+    handleSentinelError(error, res, "Failed to create affirmation");
   }
 });
 
@@ -156,18 +179,20 @@ router.get("/independence/declarations", requireAuth, async (req: AuthenticatedR
 
     const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
     
-    const firmUserIds = await prisma.user.findMany({
-      where: { firmId },
-      select: { id: true },
-    });
-    const userIds = firmUserIds.map(u => u.id);
+    const declarations = await withTenantContext(firmId, async (tx) => {
+      const firmUserIds = await tx.user.findMany({
+        where: { firmId },
+        select: { id: true },
+      });
+      const userIds = firmUserIds.map((u: any) => u.id);
 
-    const declarations = await prisma.firmIndependenceDeclaration.findMany({
-      where: { 
-        declarationYear: year,
-        userId: { in: userIds },
-      },
-      orderBy: { createdAt: "desc" },
+      return tx.firmIndependenceDeclaration.findMany({
+        where: { 
+          declarationYear: year,
+          userId: { in: userIds },
+        },
+        orderBy: { createdAt: "desc" },
+      });
     });
 
     res.json(declarations);
@@ -196,12 +221,14 @@ router.post("/independence/declarations", requireAuth, async (req: Authenticated
 
     const data = schema.parse(req.body);
 
-    const declaration = await prisma.firmIndependenceDeclaration.create({
-      data: {
-        userId: req.user!.id,
-        ...data,
-        declarationDate: new Date(),
-      },
+    const declaration = await withTenantContext(req.user!.firmId!, async (tx) => {
+      return tx.firmIndependenceDeclaration.create({
+        data: {
+          userId: req.user!.id,
+          ...data,
+          declarationDate: new Date(),
+        },
+      });
     });
 
     if (req.user!.firmId) {
@@ -217,14 +244,12 @@ router.post("/independence/declarations", requireAuth, async (req: Authenticated
         description: `Independence declaration for year ${data.declarationYear}`,
         ipAddress: req.ip,
         userAgent: req.get("user-agent"),
-      }).catch(() => {});
+      }).catch(err => console.error("Firm control activity logging failed:", err));
     }
 
     res.status(201).json(declaration);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Create independence declaration error:", error);
-    res.status(500).json({ error: "Failed to create independence declaration" });
+    handleSentinelError(error, res, "Failed to create independence declaration");
   }
 });
 
@@ -235,25 +260,29 @@ router.get("/independence/compliance", requireAuth, requireMinRole("MANAGER"), a
 
     const year = new Date().getFullYear();
     
-    const totalUsers = await prisma.user.count({ where: { firmId, isActive: true } });
-    const firmUserIds = await prisma.user.findMany({
-      where: { firmId },
-      select: { id: true },
-    });
-    const userIds = firmUserIds.map(u => u.id);
-    const declaredUsers = await prisma.firmIndependenceDeclaration.groupBy({
-      by: ["userId"],
-      where: { declarationYear: year, declarationType: "Annual", userId: { in: userIds } },
+    const result = await withTenantContext(firmId, async (tx) => {
+      const totalUsers = await tx.user.count({ where: { firmId, isActive: true } });
+      const firmUserIds = await tx.user.findMany({
+        where: { firmId },
+        select: { id: true },
+      });
+      const userIds = firmUserIds.map((u: any) => u.id);
+      const declaredUsers = await tx.firmIndependenceDeclaration.groupBy({
+        by: ["userId"],
+        where: { declarationYear: year, declarationType: "Annual", userId: { in: userIds } },
+      });
+
+      const compliancePercentage = totalUsers > 0 ? (declaredUsers.length / totalUsers) * 100 : 0;
+
+      return {
+        totalUsers,
+        declaredUsers: declaredUsers.length,
+        compliancePercentage: Math.round(compliancePercentage * 10) / 10,
+        pendingUsers: totalUsers - declaredUsers.length,
+      };
     });
 
-    const compliancePercentage = totalUsers > 0 ? (declaredUsers.length / totalUsers) * 100 : 0;
-
-    res.json({
-      totalUsers,
-      declaredUsers: declaredUsers.length,
-      compliancePercentage: Math.round(compliancePercentage * 10) / 10,
-      pendingUsers: totalUsers - declaredUsers.length,
-    });
+    res.json(result);
   } catch (error) {
     console.error("Get independence compliance error:", error);
     res.status(500).json({ error: "Failed to fetch independence compliance" });
@@ -269,9 +298,11 @@ router.get("/financial-interests", requireAuth, async (req: AuthenticatedRequest
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const interests = await prisma.financialInterest.findMany({
-      where: { userId: req.user!.id },
-      orderBy: { createdAt: "desc" },
+    const interests = await withTenantContext(firmId, async (tx) => {
+      return tx.financialInterest.findMany({
+        where: { userId: req.user!.id },
+        orderBy: { createdAt: "desc" },
+      });
     });
 
     res.json(interests);
@@ -295,19 +326,19 @@ router.post("/financial-interests", requireAuth, async (req: AuthenticatedReques
 
     const data = schema.parse(req.body);
 
-    const interest = await prisma.financialInterest.create({
-      data: {
-        userId: req.user!.id,
-        ...data,
-        reportedDate: new Date(),
-      },
+    const interest = await withTenantContext(req.user!.firmId!, async (tx) => {
+      return tx.financialInterest.create({
+        data: {
+          userId: req.user!.id,
+          ...data,
+          reportedDate: new Date(),
+        },
+      });
     });
 
     res.status(201).json(interest);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Create financial interest error:", error);
-    res.status(500).json({ error: "Failed to create financial interest" });
+    handleSentinelError(error, res, "Failed to create financial interest");
   }
 });
 
@@ -320,9 +351,11 @@ router.get("/gifts-hospitality", requireAuth, async (req: AuthenticatedRequest, 
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const gifts = await prisma.giftHospitality.findMany({
-      where: { userId: req.user!.id },
-      orderBy: { dateReceived: "desc" },
+    const gifts = await withTenantContext(firmId, async (tx) => {
+      return tx.giftHospitality.findMany({
+        where: { userId: req.user!.id },
+        orderBy: { dateReceived: "desc" },
+      });
     });
 
     res.json(gifts);
@@ -347,18 +380,18 @@ router.post("/gifts-hospitality", requireAuth, async (req: AuthenticatedRequest,
 
     const data = schema.parse(req.body);
 
-    const gift = await prisma.giftHospitality.create({
-      data: {
-        userId: req.user!.id,
-        ...data,
-      },
+    const gift = await withTenantContext(req.user!.firmId!, async (tx) => {
+      return tx.giftHospitality.create({
+        data: {
+          userId: req.user!.id,
+          ...data,
+        },
+      });
     });
 
     res.status(201).json(gift);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Create gift hospitality error:", error);
-    res.status(500).json({ error: "Failed to create gift hospitality" });
+    handleSentinelError(error, res, "Failed to create gift hospitality");
   }
 });
 
@@ -371,9 +404,11 @@ router.get("/ethics-breaches", requireAuth, requireMinRole("MANAGER"), async (re
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const breaches = await prisma.ethicsBreach.findMany({
-      where: { firmId },
-      orderBy: { reportedDate: "desc" },
+    const breaches = await withTenantContext(firmId, async (tx) => {
+      return tx.ethicsBreach.findMany({
+        where: { firmId },
+        orderBy: { reportedDate: "desc" },
+      });
     });
 
     res.json(breaches);
@@ -396,13 +431,15 @@ router.post("/ethics-breaches", requireAuth, async (req: AuthenticatedRequest, r
 
     const data = schema.parse(req.body);
 
-    const breach = await prisma.ethicsBreach.create({
-      data: {
-        firmId,
-        ...data,
-        reportedById: req.user!.id,
-        reportedDate: new Date(),
-      },
+    const breach = await withTenantContext(firmId, async (tx) => {
+      return tx.ethicsBreach.create({
+        data: {
+          firmId,
+          ...data,
+          reportedById: req.user!.id,
+          reportedDate: new Date(),
+        },
+      });
     });
 
     void logFirmControlActivity({
@@ -417,13 +454,11 @@ router.post("/ethics-breaches", requireAuth, async (req: AuthenticatedRequest, r
       description: `Ethics breach reported: ${data.description?.substring(0, 80) || "No description"}`,
       ipAddress: req.ip,
       userAgent: req.get("user-agent"),
-    }).catch(() => {});
+    }).catch(err => console.error("Firm control activity logging failed:", err));
 
     res.status(201).json(breach);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Create ethics breach error:", error);
-    res.status(500).json({ error: "Failed to create ethics breach" });
+    handleSentinelError(error, res, "Failed to create ethics breach");
   }
 });
 
@@ -436,16 +471,18 @@ router.get("/competency", requireAuth, requireMinRole("MANAGER"), async (req: Au
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const firmUserIds = await prisma.user.findMany({
-      where: { firmId },
-      select: { id: true },
-    });
-    const userIds = firmUserIds.map(u => u.id);
-    const where: any = { userId: { in: userIds } };
+    const competencies = await withTenantContext(firmId, async (tx) => {
+      const firmUserIds = await tx.user.findMany({
+        where: { firmId },
+        select: { id: true },
+      });
+      const userIds = firmUserIds.map((u: any) => u.id);
+      const where: any = { userId: { in: userIds } };
 
-    const competencies = await prisma.staffCompetency.findMany({
-      where,
-      orderBy: { assessmentDate: "desc" },
+      return tx.staffCompetency.findMany({
+        where,
+        orderBy: { assessmentDate: "desc" },
+      });
     });
 
     res.json(competencies);
@@ -473,24 +510,24 @@ router.post("/competency", requireAuth, requireMinRole("MANAGER"), async (req: A
 
     const data = schema.parse(req.body);
 
-    const targetUser = await prisma.user.findUnique({ where: { id: data.userId }, select: { firmId: true } });
-    if (!targetUser || targetUser.firmId !== firmId) {
-      return res.status(403).json({ error: "Cannot assess user from different firm" });
-    }
+    const competency = await withTenantContext(firmId, async (tx) => {
+      const targetUser = await tx.user.findUnique({ where: { id: data.userId }, select: { firmId: true } });
+      if (!targetUser || targetUser.firmId !== firmId) {
+        throw new Error("FORBIDDEN:Cannot assess user from different firm");
+      }
 
-    const competency = await prisma.staffCompetency.create({
-      data: {
-        ...data,
-        assessmentDate: new Date(),
-        assessedById: req.user!.id,
-      },
+      return tx.staffCompetency.create({
+        data: {
+          ...data,
+          assessmentDate: new Date(),
+          assessedById: req.user!.id,
+        },
+      });
     });
 
     res.status(201).json(competency);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Create competency error:", error);
-    res.status(500).json({ error: "Failed to create competency" });
+    handleSentinelError(error, res, "Failed to create competency");
   }
 });
 
@@ -503,14 +540,17 @@ router.get("/training", requireAuth, async (req: AuthenticatedRequest, res: Resp
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const trainings = await prisma.trainingCPD.findMany({
-      where: { userId: req.user!.id },
-      orderBy: { trainingDate: "desc" },
+    const result = await withTenantContext(firmId, async (tx) => {
+      const trainings = await tx.trainingCPD.findMany({
+        where: { userId: req.user!.id },
+        orderBy: { trainingDate: "desc" },
+      });
+
+      const totalHours = trainings.reduce((sum: number, t: any) => sum + (t.cpdHoursClaimed?.toNumber() || 0), 0);
+      return { trainings, totalHours };
     });
 
-    const totalHours = trainings.reduce((sum: number, t: any) => sum + (t.cpdHoursClaimed?.toNumber() || 0), 0);
-
-    res.json({ trainings, totalHours });
+    res.json(result);
   } catch (error) {
     console.error("Get training error:", error);
     res.status(500).json({ error: "Failed to fetch training" });
@@ -533,18 +573,18 @@ router.post("/training", requireAuth, async (req: AuthenticatedRequest, res: Res
 
     const data = schema.parse(req.body);
 
-    const training = await prisma.trainingCPD.create({
-      data: {
-        userId: req.user!.id,
-        ...data,
-      },
+    const training = await withTenantContext(req.user!.firmId!, async (tx) => {
+      return tx.trainingCPD.create({
+        data: {
+          userId: req.user!.id,
+          ...data,
+        },
+      });
     });
 
     res.status(201).json(training);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Create training error:", error);
-    res.status(500).json({ error: "Failed to create training" });
+    handleSentinelError(error, res, "Failed to create training");
   }
 });
 
@@ -557,9 +597,11 @@ router.get("/consultations", requireAuth, async (req: AuthenticatedRequest, res:
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const consultations = await prisma.consultationRegister.findMany({
-      where: { firmId },
-      orderBy: { consultationDate: "desc" },
+    const consultations = await withTenantContext(firmId, async (tx) => {
+      return tx.consultationRegister.findMany({
+        where: { firmId },
+        orderBy: { consultationDate: "desc" },
+      });
     });
 
     res.json(consultations);
@@ -586,18 +628,18 @@ router.post("/consultations", requireAuth, async (req: AuthenticatedRequest, res
 
     const data = schema.parse(req.body);
 
-    const consultation = await prisma.consultationRegister.create({
-      data: {
-        firmId,
-        ...data,
-      },
+    const consultation = await withTenantContext(firmId, async (tx) => {
+      return tx.consultationRegister.create({
+        data: {
+          firmId,
+          ...data,
+        },
+      });
     });
 
     res.status(201).json(consultation);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Create consultation error:", error);
-    res.status(500).json({ error: "Failed to create consultation" });
+    handleSentinelError(error, res, "Failed to create consultation");
   }
 });
 
@@ -610,10 +652,12 @@ router.get("/monitoring/plans", requireAuth, requireMinRole("MANAGER"), async (r
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const plans = await prisma.monitoringPlan.findMany({
-      where: { firmId },
-      include: { inspections: true },
-      orderBy: { planYear: "desc" },
+    const plans = await withTenantContext(firmId, async (tx) => {
+      return tx.monitoringPlan.findMany({
+        where: { firmId },
+        include: { inspections: true },
+        orderBy: { planYear: "desc" },
+      });
     });
 
     res.json(plans);
@@ -640,20 +684,20 @@ router.post("/monitoring/plans", requireAuth, requireRoles("PARTNER", "FIRM_ADMI
 
     const data = schema.parse(req.body);
 
-    const plan = await prisma.monitoringPlan.create({
-      data: {
-        firmId,
-        ...data,
-        approvedById: req.user!.id,
-        approvalDate: new Date(),
-      },
+    const plan = await withTenantContext(firmId, async (tx) => {
+      return tx.monitoringPlan.create({
+        data: {
+          firmId,
+          ...data,
+          approvedById: req.user!.id,
+          approvalDate: new Date(),
+        },
+      });
     });
 
     res.status(201).json(plan);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Create monitoring plan error:", error);
-    res.status(500).json({ error: "Failed to create monitoring plan" });
+    handleSentinelError(error, res, "Failed to create monitoring plan");
   }
 });
 
@@ -675,18 +719,18 @@ router.post("/monitoring/inspections", requireAuth, requireMinRole("MANAGER"), a
 
     const data = schema.parse(req.body);
 
-    const inspection = await prisma.fileInspection.create({
-      data: {
-        ...data,
-        inspectorId: req.user!.id,
-      },
+    const inspection = await withTenantContext(req.user!.firmId!, async (tx) => {
+      return tx.fileInspection.create({
+        data: {
+          ...data,
+          inspectorId: req.user!.id,
+        },
+      });
     });
 
     res.status(201).json(inspection);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Create inspection error:", error);
-    res.status(500).json({ error: "Failed to create inspection" });
+    handleSentinelError(error, res, "Failed to create inspection");
   }
 });
 
@@ -699,10 +743,12 @@ router.get("/deficiencies", requireAuth, requireMinRole("MANAGER"), async (req: 
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const deficiencies = await prisma.qualityDeficiency.findMany({
-      where: { firmId },
-      include: { remediations: true },
-      orderBy: { createdAt: "desc" },
+    const deficiencies = await withTenantContext(firmId, async (tx) => {
+      return tx.qualityDeficiency.findMany({
+        where: { firmId },
+        include: { remediations: true },
+        orderBy: { createdAt: "desc" },
+      });
     });
 
     res.json(deficiencies);
@@ -730,18 +776,18 @@ router.post("/deficiencies", requireAuth, requireMinRole("MANAGER"), async (req:
 
     const data = schema.parse(req.body);
 
-    const deficiency = await prisma.qualityDeficiency.create({
-      data: {
-        firmId,
-        ...data,
-      },
+    const deficiency = await withTenantContext(firmId, async (tx) => {
+      return tx.qualityDeficiency.create({
+        data: {
+          firmId,
+          ...data,
+        },
+      });
     });
 
     res.status(201).json(deficiency);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Create deficiency error:", error);
-    res.status(500).json({ error: "Failed to create deficiency" });
+    handleSentinelError(error, res, "Failed to create deficiency");
   }
 });
 
@@ -754,10 +800,12 @@ router.get("/quality-objectives", requireAuth, async (req: AuthenticatedRequest,
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const objectives = await prisma.qualityObjective.findMany({
-      where: { firmId },
-      include: { risks: { include: { responses: true } } },
-      orderBy: { isqmComponent: "asc" },
+    const objectives = await withTenantContext(firmId, async (tx) => {
+      return tx.qualityObjective.findMany({
+        where: { firmId },
+        include: { risks: { include: { responses: true } } },
+        orderBy: { isqmComponent: "asc" },
+      });
     });
 
     res.json(objectives);
@@ -782,18 +830,18 @@ router.post("/quality-objectives", requireAuth, requireRoles("PARTNER", "FIRM_AD
 
     const data = schema.parse(req.body);
 
-    const objective = await prisma.qualityObjective.create({
-      data: {
-        firmId,
-        ...data,
-      },
+    const objective = await withTenantContext(firmId, async (tx) => {
+      return tx.qualityObjective.create({
+        data: {
+          firmId,
+          ...data,
+        },
+      });
     });
 
     res.status(201).json(objective);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Create quality objective error:", error);
-    res.status(500).json({ error: "Failed to create quality objective" });
+    handleSentinelError(error, res, "Failed to create quality objective");
   }
 });
 
@@ -812,18 +860,18 @@ router.post("/quality-risks", requireAuth, requireMinRole("MANAGER"), async (req
 
     const data = schema.parse(req.body);
 
-    const risk = await prisma.qualityRisk.create({
-      data: {
-        ...data,
-        lastAssessmentDate: new Date(),
-      },
+    const risk = await withTenantContext(req.user!.firmId!, async (tx) => {
+      return tx.qualityRisk.create({
+        data: {
+          ...data,
+          lastAssessmentDate: new Date(),
+        },
+      });
     });
 
     res.status(201).json(risk);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Create quality risk error:", error);
-    res.status(500).json({ error: "Failed to create quality risk" });
+    handleSentinelError(error, res, "Failed to create quality risk");
   }
 });
 
@@ -836,9 +884,11 @@ router.get("/policies", requireAuth, async (req: AuthenticatedRequest, res: Resp
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const policies = await prisma.policyDocument.findMany({
-      where: { firmId, isActive: true },
-      orderBy: [{ policyCategory: "asc" }, { policyName: "asc" }],
+    const policies = await withTenantContext(firmId, async (tx) => {
+      return tx.policyDocument.findMany({
+        where: { firmId, isActive: true },
+        orderBy: [{ policyCategory: "asc" }, { policyName: "asc" }],
+      });
     });
 
     res.json(policies);
@@ -865,20 +915,20 @@ router.post("/policies", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), asy
 
     const data = schema.parse(req.body);
 
-    const policy = await prisma.policyDocument.create({
-      data: {
-        firmId,
-        ...data,
-        approvedById: req.user!.id,
-        approvalDate: new Date(),
-      },
+    const policy = await withTenantContext(firmId, async (tx) => {
+      return tx.policyDocument.create({
+        data: {
+          firmId,
+          ...data,
+          approvedById: req.user!.id,
+          approvalDate: new Date(),
+        },
+      });
     });
 
     res.status(201).json(policy);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Create policy error:", error);
-    res.status(500).json({ error: "Failed to create policy" });
+    handleSentinelError(error, res, "Failed to create policy");
   }
 });
 
@@ -893,8 +943,10 @@ router.get("/evaluation", requireAuth, requireMinRole("MANAGER"), async (req: Au
 
     const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
 
-    const evaluation = await prisma.annualQualityEvaluation.findFirst({
-      where: { firmId, evaluationYear: year },
+    const evaluation = await withTenantContext(firmId, async (tx) => {
+      return tx.annualQualityEvaluation.findFirst({
+        where: { firmId, evaluationYear: year },
+      });
     });
 
     res.json(evaluation);
@@ -924,28 +976,28 @@ router.post("/evaluation", requireAuth, requireRoles("PARTNER"), async (req: Aut
 
     const data = schema.parse(req.body);
 
-    const evaluation = await prisma.annualQualityEvaluation.upsert({
-      where: { firmId_evaluationYear: { firmId, evaluationYear: data.evaluationYear } },
-      update: {
-        ...data,
-        evaluationDate: new Date(),
-        partnerSignOffId: req.user!.id,
-        partnerSignOffDate: new Date(),
-      },
-      create: {
-        firmId,
-        ...data,
-        evaluationDate: new Date(),
-        partnerSignOffId: req.user!.id,
-        partnerSignOffDate: new Date(),
-      },
+    const evaluation = await withTenantContext(firmId, async (tx) => {
+      return tx.annualQualityEvaluation.upsert({
+        where: { firmId_evaluationYear: { firmId, evaluationYear: data.evaluationYear } },
+        update: {
+          ...data,
+          evaluationDate: new Date(),
+          partnerSignOffId: req.user!.id,
+          partnerSignOffDate: new Date(),
+        },
+        create: {
+          firmId,
+          ...data,
+          evaluationDate: new Date(),
+          partnerSignOffId: req.user!.id,
+          partnerSignOffDate: new Date(),
+        },
+      });
     });
 
     res.json(evaluation);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Create evaluation error:", error);
-    res.status(500).json({ error: "Failed to create evaluation" });
+    handleSentinelError(error, res, "Failed to create evaluation");
   }
 });
 
@@ -960,45 +1012,49 @@ router.get("/dashboard", requireAuth, async (req: AuthenticatedRequest, res: Res
 
     const year = new Date().getFullYear();
 
-    const firmUserIds = await prisma.user.findMany({
-      where: { firmId },
-      select: { id: true },
+    const dashboardData = await withTenantContext(firmId, async (tx) => {
+      const firmUserIds = await tx.user.findMany({
+        where: { firmId },
+        select: { id: true },
+      });
+      const userIds = firmUserIds.map((u: any) => u.id);
+
+      const [
+        totalUsers,
+        independenceDeclarations,
+        openDeficiencies,
+        trainings,
+        affirmations,
+        breaches,
+      ] = await Promise.all([
+        tx.user.count({ where: { firmId, isActive: true } }),
+        tx.firmIndependenceDeclaration.groupBy({
+          by: ["userId"],
+          where: { declarationYear: year, declarationType: "Annual", userId: { in: userIds } },
+        }),
+        tx.qualityDeficiency.count({ where: { firmId, status: { in: ["Open", "In_Progress"] } } }),
+        tx.trainingCPD.aggregate({
+          where: { userId: { in: userIds } },
+          _sum: { cpdHoursClaimed: true },
+        }),
+        tx.leadershipAffirmation.count({ where: { firmId } }),
+        tx.ethicsBreach.count({ where: { firmId, status: { not: "Closed" } } }),
+      ]);
+
+      const independenceCompliance = totalUsers > 0 ? (independenceDeclarations.length / totalUsers) * 100 : 0;
+
+      return {
+        independenceCompliance: Math.round(independenceCompliance * 10) / 10,
+        totalUsers,
+        declaredUsers: independenceDeclarations.length,
+        openDeficiencies,
+        totalTrainingHours: trainings._sum.cpdHoursClaimed?.toNumber() || 0,
+        leadershipAffirmations: affirmations,
+        openBreaches: breaches,
+      };
     });
-    const userIds = firmUserIds.map(u => u.id);
 
-    const [
-      totalUsers,
-      independenceDeclarations,
-      openDeficiencies,
-      trainings,
-      affirmations,
-      breaches,
-    ] = await Promise.all([
-      prisma.user.count({ where: { firmId, isActive: true } }),
-      prisma.firmIndependenceDeclaration.groupBy({
-        by: ["userId"],
-        where: { declarationYear: year, declarationType: "Annual", userId: { in: userIds } },
-      }),
-      prisma.qualityDeficiency.count({ where: { firmId, status: { in: ["Open", "In_Progress"] } } }),
-      prisma.trainingCPD.aggregate({
-        where: { userId: { in: userIds } },
-        _sum: { cpdHoursClaimed: true },
-      }),
-      prisma.leadershipAffirmation.count({ where: { firmId } }),
-      prisma.ethicsBreach.count({ where: { firmId, status: { not: "Closed" } } }),
-    ]);
-
-    const independenceCompliance = totalUsers > 0 ? (independenceDeclarations.length / totalUsers) * 100 : 0;
-
-    res.json({
-      independenceCompliance: Math.round(independenceCompliance * 10) / 10,
-      totalUsers,
-      declaredUsers: independenceDeclarations.length,
-      openDeficiencies,
-      totalTrainingHours: trainings._sum.cpdHoursClaimed?.toNumber() || 0,
-      leadershipAffirmations: affirmations,
-      openBreaches: breaches,
-    });
+    res.json(dashboardData);
   } catch (error) {
     console.error("Get ISQM dashboard error:", error);
     res.status(500).json({ error: "Failed to fetch ISQM dashboard" });
@@ -1016,12 +1072,6 @@ router.put("/independence/declarations/:id", requireAuth, async (req: Authentica
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    // Verify ownership
-    const existing = await prisma.firmIndependenceDeclaration.findFirst({
-      where: { id, userId: req.user!.id },
-    });
-    if (!existing) return res.status(404).json({ error: "Declaration not found" });
-
     const schema = z.object({
       declarationType: z.string().optional(),
       declarationYear: z.number().optional(),
@@ -1036,16 +1086,21 @@ router.put("/independence/declarations/:id", requireAuth, async (req: Authentica
     });
 
     const data = schema.parse(req.body);
-    const updated = await prisma.firmIndependenceDeclaration.update({
-      where: { id },
-      data,
+    const updated = await withTenantContext(firmId, async (tx) => {
+      const existing = await tx.firmIndependenceDeclaration.findFirst({
+        where: { id, userId: req.user!.id },
+      });
+      if (!existing) throw new Error("NOT_FOUND:Declaration not found");
+
+      return tx.firmIndependenceDeclaration.update({
+        where: { id },
+        data,
+      });
     });
 
     res.json(updated);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Update independence declaration error:", error);
-    res.status(500).json({ error: "Failed to update declaration" });
+    handleSentinelError(error, res, "Failed to update declaration");
   }
 });
 
@@ -1053,11 +1108,6 @@ router.put("/independence/declarations/:id", requireAuth, async (req: Authentica
 router.put("/financial-interests/:id", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const existing = await prisma.financialInterest.findFirst({
-      where: { id, userId: req.user!.id },
-    });
-    if (!existing) return res.status(404).json({ error: "Financial interest not found" });
-
     const schema = z.object({
       entityName: z.string().optional(),
       natureOfInterest: z.string().optional(),
@@ -1069,16 +1119,21 @@ router.put("/financial-interests/:id", requireAuth, async (req: AuthenticatedReq
     });
 
     const data = schema.parse(req.body);
-    const updated = await prisma.financialInterest.update({
-      where: { id },
-      data: data as any,
+    const updated = await withTenantContext(req.user!.firmId!, async (tx) => {
+      const existing = await tx.financialInterest.findFirst({
+        where: { id, userId: req.user!.id },
+      });
+      if (!existing) throw new Error("NOT_FOUND:Financial interest not found");
+
+      return tx.financialInterest.update({
+        where: { id },
+        data: data as any,
+      });
     });
 
     res.json(updated);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Update financial interest error:", error);
-    res.status(500).json({ error: "Failed to update financial interest" });
+    handleSentinelError(error, res, "Failed to update financial interest");
   }
 });
 
@@ -1086,11 +1141,6 @@ router.put("/financial-interests/:id", requireAuth, async (req: AuthenticatedReq
 router.put("/gifts-hospitality/:id", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const existing = await prisma.giftHospitality.findFirst({
-      where: { id, userId: req.user!.id },
-    });
-    if (!existing) return res.status(404).json({ error: "Gift/hospitality record not found" });
-
     const schema = z.object({
       description: z.string().optional(),
       dateReceived: z.string().optional().transform(s => s ? new Date(s) : undefined),
@@ -1102,16 +1152,21 @@ router.put("/gifts-hospitality/:id", requireAuth, async (req: AuthenticatedReque
     });
 
     const data = schema.parse(req.body);
-    const updated = await prisma.giftHospitality.update({
-      where: { id },
-      data: data as any,
+    const updated = await withTenantContext(req.user!.firmId!, async (tx) => {
+      const existing = await tx.giftHospitality.findFirst({
+        where: { id, userId: req.user!.id },
+      });
+      if (!existing) throw new Error("NOT_FOUND:Gift/hospitality record not found");
+
+      return tx.giftHospitality.update({
+        where: { id },
+        data: data as any,
+      });
     });
 
     res.json(updated);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Update gift/hospitality error:", error);
-    res.status(500).json({ error: "Failed to update gift/hospitality" });
+    handleSentinelError(error, res, "Failed to update gift/hospitality");
   }
 });
 
@@ -1121,11 +1176,6 @@ router.put("/ethics-breaches/:id", requireAuth, requireMinRole("MANAGER"), async
     const { id } = req.params;
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
-
-    const existing = await prisma.ethicsBreach.findFirst({
-      where: { id, firmId },
-    });
-    if (!existing) return res.status(404).json({ error: "Ethics breach not found" });
 
     const schema = z.object({
       reportedDate: z.string().optional().transform(s => s ? new Date(s) : undefined),
@@ -1139,16 +1189,21 @@ router.put("/ethics-breaches/:id", requireAuth, requireMinRole("MANAGER"), async
     });
 
     const data = schema.parse(req.body);
-    const updated = await prisma.ethicsBreach.update({
-      where: { id },
-      data,
+    const updated = await withTenantContext(firmId, async (tx) => {
+      const existing = await tx.ethicsBreach.findFirst({
+        where: { id, firmId },
+      });
+      if (!existing) throw new Error("NOT_FOUND:Ethics breach not found");
+
+      return tx.ethicsBreach.update({
+        where: { id },
+        data,
+      });
     });
 
     res.json(updated);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Update ethics breach error:", error);
-    res.status(500).json({ error: "Failed to update ethics breach" });
+    handleSentinelError(error, res, "Failed to update ethics breach");
   }
 });
 
@@ -1158,16 +1213,6 @@ router.put("/competency/:id", requireAuth, requireMinRole("MANAGER"), async (req
     const { id } = req.params;
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
-
-    const existing = await prisma.staffCompetency.findFirst({
-      where: { id },
-    });
-    if (!existing) return res.status(404).json({ error: "Competency assessment not found" });
-    
-    const competencyUser = await prisma.user.findUnique({ where: { id: existing.userId } });
-    if (!competencyUser || competencyUser.firmId !== firmId) {
-      return res.status(403).json({ error: "Not authorized to update this competency record" });
-    }
 
     const schema = z.object({
       technicalKnowledgeRating: z.string().optional(),
@@ -1179,16 +1224,26 @@ router.put("/competency/:id", requireAuth, requireMinRole("MANAGER"), async (req
     });
 
     const data = schema.parse(req.body);
-    const updated = await prisma.staffCompetency.update({
-      where: { id },
-      data: data as any,
+    const updated = await withTenantContext(firmId, async (tx) => {
+      const existing = await tx.staffCompetency.findFirst({
+        where: { id },
+      });
+      if (!existing) throw new Error("NOT_FOUND:Competency assessment not found");
+      
+      const competencyUser = await tx.user.findUnique({ where: { id: existing.userId } });
+      if (!competencyUser || competencyUser.firmId !== firmId) {
+        throw new Error("FORBIDDEN:Not authorized to update this competency record");
+      }
+
+      return tx.staffCompetency.update({
+        where: { id },
+        data: data as any,
+      });
     });
 
     res.json(updated);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Update competency assessment error:", error);
-    res.status(500).json({ error: "Failed to update competency assessment" });
+    handleSentinelError(error, res, "Failed to update competency assessment");
   }
 });
 
@@ -1196,11 +1251,6 @@ router.put("/competency/:id", requireAuth, requireMinRole("MANAGER"), async (req
 router.put("/training/:id", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const existing = await prisma.trainingCPD.findFirst({
-      where: { id, userId: req.user!.id },
-    });
-    if (!existing) return res.status(404).json({ error: "Training record not found" });
-
     const schema = z.object({
       trainingDate: z.string().optional().transform(s => s ? new Date(s) : undefined),
       trainingType: z.string().optional(),
@@ -1211,16 +1261,21 @@ router.put("/training/:id", requireAuth, async (req: AuthenticatedRequest, res: 
     });
 
     const data = schema.parse(req.body);
-    const updated = await prisma.trainingCPD.update({
-      where: { id },
-      data: data as any,
+    const updated = await withTenantContext(req.user!.firmId!, async (tx) => {
+      const existing = await tx.trainingCPD.findFirst({
+        where: { id, userId: req.user!.id },
+      });
+      if (!existing) throw new Error("NOT_FOUND:Training record not found");
+
+      return tx.trainingCPD.update({
+        where: { id },
+        data: data as any,
+      });
     });
 
     res.json(updated);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Update training error:", error);
-    res.status(500).json({ error: "Failed to update training" });
+    handleSentinelError(error, res, "Failed to update training");
   }
 });
 
@@ -1230,11 +1285,6 @@ router.put("/monitoring/plans/:id", requireAuth, requireRoles("PARTNER", "FIRM_A
     const { id } = req.params;
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
-
-    const existing = await prisma.monitoringPlan.findFirst({
-      where: { id, firmId },
-    });
-    if (!existing) return res.status(404).json({ error: "Monitoring plan not found" });
 
     const schema = z.object({
       planYear: z.number().optional(),
@@ -1246,16 +1296,21 @@ router.put("/monitoring/plans/:id", requireAuth, requireRoles("PARTNER", "FIRM_A
     });
 
     const data = schema.parse(req.body);
-    const updated = await prisma.monitoringPlan.update({
-      where: { id },
-      data,
+    const updated = await withTenantContext(firmId, async (tx) => {
+      const existing = await tx.monitoringPlan.findFirst({
+        where: { id, firmId },
+      });
+      if (!existing) throw new Error("NOT_FOUND:Monitoring plan not found");
+
+      return tx.monitoringPlan.update({
+        where: { id },
+        data,
+      });
     });
 
     res.json(updated);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Update monitoring plan error:", error);
-    res.status(500).json({ error: "Failed to update monitoring plan" });
+    handleSentinelError(error, res, "Failed to update monitoring plan");
   }
 });
 
@@ -1265,11 +1320,6 @@ router.put("/deficiencies/:id", requireAuth, requireMinRole("MANAGER"), async (r
     const { id } = req.params;
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
-
-    const existing = await prisma.qualityDeficiency.findFirst({
-      where: { id, firmId },
-    });
-    if (!existing) return res.status(404).json({ error: "Deficiency not found" });
 
     const schema = z.object({
       sourceType: z.string().optional(),
@@ -1281,16 +1331,21 @@ router.put("/deficiencies/:id", requireAuth, requireMinRole("MANAGER"), async (r
     });
 
     const data = schema.parse(req.body);
-    const updated = await prisma.qualityDeficiency.update({
-      where: { id },
-      data: data as any,
+    const updated = await withTenantContext(firmId, async (tx) => {
+      const existing = await tx.qualityDeficiency.findFirst({
+        where: { id, firmId },
+      });
+      if (!existing) throw new Error("NOT_FOUND:Deficiency not found");
+
+      return tx.qualityDeficiency.update({
+        where: { id },
+        data: data as any,
+      });
     });
 
     res.json(updated);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Update deficiency error:", error);
-    res.status(500).json({ error: "Failed to update deficiency" });
+    handleSentinelError(error, res, "Failed to update deficiency");
   }
 });
 
@@ -1301,11 +1356,6 @@ router.put("/quality-objectives/:id", requireAuth, requireRoles("PARTNER", "FIRM
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const existing = await prisma.qualityObjective.findFirst({
-      where: { id, firmId },
-    });
-    if (!existing) return res.status(404).json({ error: "Quality objective not found" });
-
     const schema = z.object({
       isqmComponent: z.string().optional(),
       objectiveCode: z.string().optional(),
@@ -1315,16 +1365,21 @@ router.put("/quality-objectives/:id", requireAuth, requireRoles("PARTNER", "FIRM
     });
 
     const data = schema.parse(req.body);
-    const updated = await prisma.qualityObjective.update({
-      where: { id },
-      data: data as any,
+    const updated = await withTenantContext(firmId, async (tx) => {
+      const existing = await tx.qualityObjective.findFirst({
+        where: { id, firmId },
+      });
+      if (!existing) throw new Error("NOT_FOUND:Quality objective not found");
+
+      return tx.qualityObjective.update({
+        where: { id },
+        data: data as any,
+      });
     });
 
     res.json(updated);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Update quality objective error:", error);
-    res.status(500).json({ error: "Failed to update quality objective" });
+    handleSentinelError(error, res, "Failed to update quality objective");
   }
 });
 
@@ -1334,11 +1389,6 @@ router.put("/policies/:id", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), 
     const { id } = req.params;
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
-
-    const existing = await prisma.policyDocument.findFirst({
-      where: { id, firmId },
-    });
-    if (!existing) return res.status(404).json({ error: "Policy not found" });
 
     const schema = z.object({
       policyCategory: z.string().optional(),
@@ -1350,16 +1400,21 @@ router.put("/policies/:id", requireAuth, requireRoles("PARTNER", "FIRM_ADMIN"), 
     });
 
     const data = schema.parse(req.body);
-    const updated = await prisma.policyDocument.update({
-      where: { id },
-      data: data as any,
+    const updated = await withTenantContext(firmId, async (tx) => {
+      const existing = await tx.policyDocument.findFirst({
+        where: { id, firmId },
+      });
+      if (!existing) throw new Error("NOT_FOUND:Policy not found");
+
+      return tx.policyDocument.update({
+        where: { id },
+        data: data as any,
+      });
     });
 
     res.json(updated);
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed", details: error.errors });
-    console.error("Update policy error:", error);
-    res.status(500).json({ error: "Failed to update policy" });
+    handleSentinelError(error, res, "Failed to update policy");
   }
 });
 

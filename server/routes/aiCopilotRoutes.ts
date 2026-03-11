@@ -14,9 +14,9 @@ import {
   type CopilotObservation,
 } from "../services/aiCopilotService";
 import { prisma } from "../db";
+import { withTenantContext } from "../middleware/tenantDbContext";
 
 const router = Router();
-const db = prisma as any;
 
 const contextSchema = z.object({
   engagementId: z.string().uuid(),
@@ -32,12 +32,13 @@ router.post("/analysis", requireAuth, async (req: AuthenticatedRequest, res: Res
     const data = contextSchema.parse(req.body);
     const userId = req.user!.id;
     const userRole = req.user!.role;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const engagement = await db.engagement.findFirst({
-      where: {
-        id: data.engagementId,
-        firmId: req.user!.firmId,
-      },
+    const engagement = await withTenantContext(firmId, async (tx) => {
+      return (tx as any).engagement.findFirst({
+        where: { id: data.engagementId, firmId },
+      });
     });
 
     if (!engagement) {
@@ -78,12 +79,13 @@ router.get("/fs-head/:engagementId/:fsHeadKey", requireAuth, async (req: Authent
     const { engagementId, fsHeadKey } = req.params;
     const userId = req.user!.id;
     const userRole = req.user!.role;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const engagement = await db.engagement.findFirst({
-      where: {
-        id: engagementId,
-        firmId: req.user!.firmId,
-      },
+    const engagement = await withTenantContext(firmId, async (tx) => {
+      return (tx as any).engagement.findFirst({
+        where: { id: engagementId, firmId },
+      });
     });
 
     if (!engagement) {
@@ -120,12 +122,13 @@ router.get("/linkages/:engagementId", requireAuth, async (req: AuthenticatedRequ
   try {
     const { engagementId } = req.params;
     const userId = req.user!.id;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const engagement = await db.engagement.findFirst({
-      where: {
-        id: engagementId,
-        firmId: req.user!.firmId,
-      },
+    const engagement = await withTenantContext(firmId, async (tx) => {
+      return (tx as any).engagement.findFirst({
+        where: { id: engagementId, firmId },
+      });
     });
 
     if (!engagement) {
@@ -152,12 +155,13 @@ router.get("/risk-coverage/:engagementId", requireAuth, async (req: Authenticate
   try {
     const { engagementId } = req.params;
     const userId = req.user!.id;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const engagement = await db.engagement.findFirst({
-      where: {
-        id: engagementId,
-        firmId: req.user!.firmId,
-      },
+    const engagement = await withTenantContext(firmId, async (tx) => {
+      return (tx as any).engagement.findFirst({
+        where: { id: engagementId, firmId },
+      });
     });
 
     if (!engagement) {
@@ -184,12 +188,13 @@ router.get("/quality-score/:engagementId", requireAuth, async (req: Authenticate
   try {
     const { engagementId } = req.params;
     const userId = req.user!.id;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const engagement = await db.engagement.findFirst({
-      where: {
-        id: engagementId,
-        firmId: req.user!.firmId,
-      },
+    const engagement = await withTenantContext(firmId, async (tx) => {
+      return (tx as any).engagement.findFirst({
+        where: { id: engagementId, firmId },
+      });
     });
 
     if (!engagement) {
@@ -217,12 +222,13 @@ router.get("/isa-compliance/:engagementId", requireAuth, async (req: Authenticat
   try {
     const { engagementId } = req.params;
     const userId = req.user!.id;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const engagement = await db.engagement.findFirst({
-      where: {
-        id: engagementId,
-        firmId: req.user!.firmId,
-      },
+    const engagement = await withTenantContext(firmId, async (tx) => {
+      return (tx as any).engagement.findFirst({
+        where: { id: engagementId, firmId },
+      });
     });
 
     if (!engagement) {
@@ -249,25 +255,24 @@ router.get("/isa-compliance/:engagementId", requireAuth, async (req: Authenticat
 router.get("/dismissed/:engagementId", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { engagementId } = req.params;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const engagement = await db.engagement.findFirst({
-      where: {
-        id: engagementId,
-        firmId: req.user!.firmId,
-      },
+    const { engagement, dismissedLogs } = await withTenantContext(firmId, async (tx) => {
+      const eng = await (tx as any).engagement.findFirst({
+        where: { id: engagementId, firmId },
+      });
+      if (!eng) return { engagement: null, dismissedLogs: [] };
+      const logs = await (tx as any).aIAuditLog.findMany({
+        where: { engagementId, action: "COPILOT_DISMISS_OBSERVATION" },
+        orderBy: { createdAt: "desc" },
+      });
+      return { engagement: eng, dismissedLogs: logs };
     });
 
     if (!engagement) {
       return res.status(404).json({ error: "Engagement not found" });
     }
-
-    const dismissedLogs = await db.aIAuditLog.findMany({
-      where: {
-        engagementId,
-        action: "COPILOT_DISMISS_OBSERVATION",
-      },
-      orderBy: { createdAt: "desc" },
-    });
 
     const dismissedIds = dismissedLogs.map((log: any) => log.fieldKey).filter((id: string) => id !== "system");
 
@@ -291,12 +296,13 @@ router.post("/suggest", requireAuth, async (req: AuthenticatedRequest, res: Resp
     const data = suggestionSchema.parse(req.body);
     const userId = req.user!.id;
     const userRole = req.user!.role;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const engagement = await db.engagement.findFirst({
-      where: {
-        id: data.engagementId,
-        firmId: req.user!.firmId,
-      },
+    const engagement = await withTenantContext(firmId, async (tx) => {
+      return (tx as any).engagement.findFirst({
+        where: { id: data.engagementId, firmId },
+      });
     });
 
     if (!engagement) {
@@ -364,31 +370,28 @@ router.get("/history/:engagementId", requireAuth, async (req: AuthenticatedReque
   try {
     const { engagementId } = req.params;
     const { limit = "50" } = req.query;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const engagement = await db.engagement.findFirst({
-      where: {
-        id: engagementId,
-        firmId: req.user!.firmId,
-      },
+    const { engagement, logs } = await withTenantContext(firmId, async (tx) => {
+      const eng = await (tx as any).engagement.findFirst({
+        where: { id: engagementId, firmId },
+      });
+      if (!eng) return { engagement: null, logs: [] };
+      const l = await (tx as any).aIAuditLog.findMany({
+        where: { engagementId, action: { startsWith: "COPILOT_" } },
+        orderBy: { createdAt: "desc" },
+        take: parseInt(limit as string, 10),
+        include: {
+          user: { select: { id: true, firstName: true, lastName: true, role: true } },
+        },
+      });
+      return { engagement: eng, logs: l };
     });
 
     if (!engagement) {
       return res.status(404).json({ error: "Engagement not found" });
     }
-
-    const logs = await db.aIAuditLog.findMany({
-      where: {
-        engagementId,
-        action: { startsWith: "COPILOT_" },
-      },
-      orderBy: { createdAt: "desc" },
-      take: parseInt(limit as string, 10),
-      include: {
-        user: {
-          select: { id: true, firstName: true, lastName: true, role: true },
-        },
-      },
-    });
 
     res.json({ logs });
   } catch (error) {

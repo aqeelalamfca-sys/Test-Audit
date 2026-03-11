@@ -5,56 +5,82 @@ import { prisma } from "./db";
 import { z } from "zod";
 import { ImportStagingRow } from "@prisma/client";
 import { requireAuth, AuthenticatedRequest } from "./auth";
+import { withTenantContext } from "./middleware/tenantDbContext";
 import { classifyAccount, getDefaultClassificationForCode } from "./services/accountClassificationService";
 import { generateBankConfirmationLetter, generateARAPConfirmationLetter, generateLegalAdvisorConfirmationLetter, generateTaxAdvisorConfirmationLetter, generateAllConfirmationLetters } from "./services/confirmationLetterService";
 import { importInputWorkbook, rerunValidations, getSummaryRun, importSingleDataset } from "./services/inputWorkbookService";
 import { syncTbToFsMapping } from "./routes/reviewMappingRoutes";
 import { autoFixDeterministic } from "./services/reconIssuesEngine";
 
-async function autoClassifyAndSync(engagementId: string, userId?: string) {
+function handleSentinelError(error: unknown, res: Response, fallbackMessage: string) {
+  if (error instanceof z.ZodError) {
+    return res.status(400).json({ error: "Validation failed", details: error.errors });
+  }
+  const msg = error instanceof Error ? error.message : String(error);
+  if (msg.startsWith("NOT_FOUND:")) {
+    return res.status(404).json({ error: msg.slice(10) });
+  }
+  if (msg.startsWith("FORBIDDEN:")) {
+    return res.status(403).json({ error: msg.slice(10) });
+  }
+  if (msg.startsWith("BAD_REQUEST:")) {
+    return res.status(400).json({ error: msg.slice(12) });
+  }
+  console.error(fallbackMessage, error);
+  return res.status(500).json({ error: fallbackMessage });
+}
+
+async function autoClassifyAndSync(engagementId: string, userId?: string, firmId?: string) {
   try {
-    const records = await prisma.importAccountBalance.findMany({
-      where: { engagementId },
-    });
-
-    const updates: Array<{ id: string; accountClass: string; accountSubclass: string; fsHeadKey: string; source: string; confidence: number }> = [];
-    for (const record of records) {
-      const rec = record as any;
-      if (rec.classificationSource === 'MANUAL') continue;
-
-      const classification = classifyAccount(record.accountCode, record.accountName || '')
-        || getDefaultClassificationForCode(record.accountCode);
-
-      updates.push({
-        id: record.id,
-        accountClass: classification.accountClass,
-        accountSubclass: classification.accountSubclass,
-        fsHeadKey: classification.fsHeadKey,
-        source: classification.source,
-        confidence: classification.confidence,
+    const doWork = async (tx: typeof prisma) => {
+      const records = await tx.importAccountBalance.findMany({
+        where: { engagementId },
       });
-    }
 
-    if (updates.length > 0) {
-      const BATCH_SIZE = 50;
-      for (let i = 0; i < updates.length; i += BATCH_SIZE) {
-        const batch = updates.slice(i, i + BATCH_SIZE);
-        await prisma.$transaction(
-          batch.map(u => prisma.$executeRaw`
-            UPDATE "ImportAccountBalance" 
-            SET "accountClass" = ${u.accountClass},
-                "accountSubclass" = ${u.accountSubclass},
-                "fsHeadKey" = ${u.fsHeadKey},
-                "classificationSource" = ${u.source},
-                "classificationConfidence" = ${u.confidence}
-            WHERE id = ${u.id}
-          `)
-        );
+      const updates: Array<{ id: string; accountClass: string; accountSubclass: string; fsHeadKey: string; source: string; confidence: number }> = [];
+      for (const record of records) {
+        const rec = record as any;
+        if (rec.classificationSource === 'MANUAL') continue;
+
+        const classification = classifyAccount(record.accountCode, record.accountName || '')
+          || getDefaultClassificationForCode(record.accountCode);
+
+        updates.push({
+          id: record.id,
+          accountClass: classification.accountClass,
+          accountSubclass: classification.accountSubclass,
+          fsHeadKey: classification.fsHeadKey,
+          source: classification.source,
+          confidence: classification.confidence,
+        });
       }
+
+      if (updates.length > 0) {
+        const BATCH_SIZE = 50;
+        for (let i = 0; i < updates.length; i += BATCH_SIZE) {
+          const batch = updates.slice(i, i + BATCH_SIZE);
+          for (const u of batch) {
+            await tx.$executeRaw`
+              UPDATE "ImportAccountBalance" 
+              SET "accountClass" = ${u.accountClass},
+                  "accountSubclass" = ${u.accountSubclass},
+                  "fsHeadKey" = ${u.fsHeadKey},
+                  "classificationSource" = ${u.source},
+                  "classificationConfidence" = ${u.confidence}
+              WHERE id = ${u.id}
+            `;
+          }
+        }
+      }
+    };
+
+    if (firmId) {
+      await withTenantContext(firmId, async (tx) => doWork(tx));
+    } else {
+      await doWork(prisma);
     }
 
     const syncResult = await syncTbToFsMapping(engagementId, userId);
-
     const fixResult = await autoFixDeterministic(engagementId, userId || 'system');
   } catch (error) {
     console.error("Auto-classify and sync error (non-blocking):", error);
@@ -1979,10 +2005,11 @@ router.get("/:engagementId/data/tb/summary", async (req: Request, res: Response)
   }
 });
 
-router.post("/:engagementId/data/tb", async (req: Request, res: Response) => {
+router.post("/:engagementId/data/tb", requireAuth, async (req: Request, res: Response) => {
   try {
     const { engagementId } = req.params;
     const data = req.body;
+    const firmId = (req as AuthenticatedRequest).user?.firmId;
 
     const latestBatch = await prisma.importBatch.findFirst({
       where: { engagementId },
@@ -2044,7 +2071,7 @@ router.post("/:engagementId/data/tb", async (req: Request, res: Response) => {
       WHERE id = ${record.id}
     `;
 
-    autoClassifyAndSync(engagementId).catch(() => {});
+    autoClassifyAndSync(engagementId, undefined, firmId || undefined).catch(err => console.error("Auto classify/sync after TB record create failed:", err));
 
     res.status(201).json(record);
   } catch (error) {
@@ -2058,84 +2085,83 @@ router.patch("/:engagementId/data/tb/:id", requireAuth, async (req: Authenticate
     const { engagementId, id } = req.params;
     const data = req.body;
     const userId = req.user?.id;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const primaryRecord = await prisma.importAccountBalance.findUnique({ where: { id } });
-    if (!primaryRecord) {
-      return res.status(404).json({ error: "Record not found" });
-    }
+    const result = await withTenantContext(firmId, async (tx) => {
+      const primaryRecord = await tx.importAccountBalance.findUnique({ where: { id } });
+      if (!primaryRecord) throw new Error("NOT_FOUND:Record not found");
 
-    const siblingRecords = await prisma.importAccountBalance.findMany({
-      where: {
-        engagementId,
-        accountCode: primaryRecord.accountCode,
-        id: { not: id },
-      },
-    });
-    const obRecord = primaryRecord.balanceType === 'OB' ? primaryRecord : siblingRecords.find(r => r.balanceType === 'OB');
-    const cbRecord = primaryRecord.balanceType === 'CB' ? primaryRecord : siblingRecords.find(r => r.balanceType === 'CB');
+      const siblingRecords = await tx.importAccountBalance.findMany({
+        where: { engagementId, accountCode: primaryRecord.accountCode, id: { not: id } },
+      });
+      const obRecord = primaryRecord.balanceType === 'OB' ? primaryRecord : siblingRecords.find(r => r.balanceType === 'OB');
+      const cbRecord = primaryRecord.balanceType === 'CB' ? primaryRecord : siblingRecords.find(r => r.balanceType === 'CB');
 
-    const sharedUpdate: any = {};
-    if (data.glCode !== undefined || data.accountCode !== undefined) sharedUpdate.accountCode = data.glCode || data.accountCode;
-    if (data.glName !== undefined || data.accountName !== undefined) sharedUpdate.accountName = data.glName || data.accountName;
-    if (data.accountClass !== undefined) {
-      sharedUpdate.accountClass = data.accountClass;
-      sharedUpdate.classificationSource = 'MANUAL';
-      sharedUpdate.classificationConfidence = 100;
-    }
-    if (data.accountSubclass !== undefined) {
-      sharedUpdate.accountSubclass = data.accountSubclass;
-      sharedUpdate.classificationSource = 'MANUAL';
-      sharedUpdate.classificationConfidence = 100;
-    }
-    if (data.fsHeadKey !== undefined) {
-      sharedUpdate.fsHeadKey = data.fsHeadKey;
-      sharedUpdate.classificationSource = 'MANUAL';
-      sharedUpdate.classificationConfidence = 100;
-    }
-
-    const obUpdate: any = { ...sharedUpdate };
-    if (data.openingDebit !== undefined) obUpdate.debitAmount = parseFloat(data.openingDebit) || 0;
-    if (data.openingCredit !== undefined) obUpdate.creditAmount = parseFloat(data.openingCredit) || 0;
-
-    const cbUpdate: any = { ...sharedUpdate };
-    if (data.closingDebit !== undefined) cbUpdate.debitAmount = parseFloat(data.closingDebit) || 0;
-    if (data.closingCredit !== undefined) cbUpdate.creditAmount = parseFloat(data.closingCredit) || 0;
-
-    const updates: Promise<any>[] = [];
-    if (obRecord && Object.keys(obUpdate).length > 0) {
-      updates.push(prisma.importAccountBalance.update({ where: { id: obRecord.id }, data: obUpdate }));
-    }
-    if (cbRecord && Object.keys(cbUpdate).length > 0) {
-      updates.push(prisma.importAccountBalance.update({ where: { id: cbRecord.id }, data: cbUpdate }));
-    }
-    if (updates.length === 0 && Object.keys(sharedUpdate).length > 0) {
-      updates.push(prisma.importAccountBalance.update({ where: { id }, data: sharedUpdate }));
-    }
-
-    const results = await Promise.all(updates);
-
-    await prisma.dataEdit.create({
-      data: {
-        engagementId,
-        batchId: primaryRecord.batchId,
-        dataset: 'TB',
-        operation: 'UPDATE',
-        rowId: id,
-        field: null,
-        oldValue: JSON.stringify(primaryRecord),
-        newValue: JSON.stringify(results[0] || primaryRecord),
-        fullRowJson: results[0] || primaryRecord,
-        editedById: userId!,
-        notes: obRecord && cbRecord ? 'Dual OB/CB update' : null,
+      const sharedUpdate: any = {};
+      if (data.glCode !== undefined || data.accountCode !== undefined) sharedUpdate.accountCode = data.glCode || data.accountCode;
+      if (data.glName !== undefined || data.accountName !== undefined) sharedUpdate.accountName = data.glName || data.accountName;
+      if (data.accountClass !== undefined) {
+        sharedUpdate.accountClass = data.accountClass;
+        sharedUpdate.classificationSource = 'MANUAL';
+        sharedUpdate.classificationConfidence = 100;
       }
+      if (data.accountSubclass !== undefined) {
+        sharedUpdate.accountSubclass = data.accountSubclass;
+        sharedUpdate.classificationSource = 'MANUAL';
+        sharedUpdate.classificationConfidence = 100;
+      }
+      if (data.fsHeadKey !== undefined) {
+        sharedUpdate.fsHeadKey = data.fsHeadKey;
+        sharedUpdate.classificationSource = 'MANUAL';
+        sharedUpdate.classificationConfidence = 100;
+      }
+
+      const obUpdate: any = { ...sharedUpdate };
+      if (data.openingDebit !== undefined) obUpdate.debitAmount = parseFloat(data.openingDebit) || 0;
+      if (data.openingCredit !== undefined) obUpdate.creditAmount = parseFloat(data.openingCredit) || 0;
+
+      const cbUpdate: any = { ...sharedUpdate };
+      if (data.closingDebit !== undefined) cbUpdate.debitAmount = parseFloat(data.closingDebit) || 0;
+      if (data.closingCredit !== undefined) cbUpdate.creditAmount = parseFloat(data.closingCredit) || 0;
+
+      const updates: Promise<any>[] = [];
+      if (obRecord && Object.keys(obUpdate).length > 0) {
+        updates.push(tx.importAccountBalance.update({ where: { id: obRecord.id }, data: obUpdate }));
+      }
+      if (cbRecord && Object.keys(cbUpdate).length > 0) {
+        updates.push(tx.importAccountBalance.update({ where: { id: cbRecord.id }, data: cbUpdate }));
+      }
+      if (updates.length === 0 && Object.keys(sharedUpdate).length > 0) {
+        updates.push(tx.importAccountBalance.update({ where: { id }, data: sharedUpdate }));
+      }
+
+      const results = await Promise.all(updates);
+
+      await tx.dataEdit.create({
+        data: {
+          engagementId,
+          batchId: primaryRecord.batchId,
+          dataset: 'TB',
+          operation: 'UPDATE',
+          rowId: id,
+          field: null,
+          oldValue: JSON.stringify(primaryRecord),
+          newValue: JSON.stringify(results[0] || primaryRecord),
+          fullRowJson: results[0] || primaryRecord,
+          editedById: userId!,
+          notes: obRecord && cbRecord ? 'Dual OB/CB update' : null,
+        }
+      });
+
+      return results[0] || primaryRecord;
     });
 
-    autoClassifyAndSync(engagementId, userId).catch(() => {});
+    autoClassifyAndSync(engagementId, userId, firmId).catch(err => console.error("Auto classify/sync after TB record update failed:", err));
 
-    res.json(results[0] || primaryRecord);
+    res.json(result);
   } catch (error) {
-    console.error("Error updating TB record:", error);
-    res.status(500).json({ error: "Failed to update trial balance record" });
+    handleSentinelError(error, res, "Failed to update trial balance record");
   }
 });
 
@@ -2143,36 +2169,37 @@ router.delete("/:engagementId/data/tb/:id", requireAuth, async (req: Authenticat
   try {
     const { engagementId, id } = req.params;
     const userId = req.user?.id;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const oldRecord = await prisma.importAccountBalance.findUnique({ where: { id } });
-    if (!oldRecord) {
-      return res.status(404).json({ error: "Record not found" });
-    }
+    await withTenantContext(firmId, async (tx) => {
+      const oldRecord = await tx.importAccountBalance.findUnique({ where: { id } });
+      if (!oldRecord) throw new Error("NOT_FOUND:Record not found");
 
-    await prisma.importAccountBalance.delete({ where: { id } });
+      await tx.importAccountBalance.delete({ where: { id } });
 
-    await prisma.dataEdit.create({
-      data: {
-        engagementId,
-        batchId: oldRecord.batchId,
-        dataset: 'TB',
-        operation: 'DELETE',
-        rowId: id,
-        field: null,
-        oldValue: JSON.stringify(oldRecord),
-        newValue: null,
-        fullRowJson: oldRecord,
-        editedById: userId!,
-        notes: null,
-      }
+      await tx.dataEdit.create({
+        data: {
+          engagementId,
+          batchId: oldRecord.batchId,
+          dataset: 'TB',
+          operation: 'DELETE',
+          rowId: id,
+          field: null,
+          oldValue: JSON.stringify(oldRecord),
+          newValue: null,
+          fullRowJson: oldRecord,
+          editedById: userId!,
+          notes: null,
+        }
+      });
     });
 
-    autoClassifyAndSync(engagementId, userId).catch(() => {});
+    autoClassifyAndSync(engagementId, userId, firmId).catch(err => console.error("Auto classify/sync after TB record delete failed:", err));
 
     res.json({ message: "Record deleted" });
   } catch (error) {
-    console.error("Error deleting TB record:", error);
-    res.status(500).json({ error: "Failed to delete trial balance record" });
+    handleSentinelError(error, res, "Failed to delete trial balance record");
   }
 });
 
@@ -2666,84 +2693,82 @@ router.patch("/:engagementId/data/party/:id", requireAuth, async (req: Authentic
     const { engagementId, id } = req.params;
     const data = req.body;
     const userId = req.user?.id;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const primaryRecord = await prisma.importPartyBalance.findUnique({ where: { id } });
-    if (!primaryRecord) {
-      return res.status(404).json({ error: "Record not found" });
-    }
+    const result = await withTenantContext(firmId, async (tx) => {
+      const primaryRecord = await tx.importPartyBalance.findUnique({ where: { id } });
+      if (!primaryRecord) throw new Error("NOT_FOUND:Record not found");
 
-    const siblingRecords = await prisma.importPartyBalance.findMany({
-      where: {
-        engagementId,
-        partyCode: primaryRecord.partyCode,
-        partyType: primaryRecord.partyType,
-        id: { not: id },
-      },
+      const siblingRecords = await tx.importPartyBalance.findMany({
+        where: { engagementId, partyCode: primaryRecord.partyCode, partyType: primaryRecord.partyType, id: { not: id } },
+      });
+      const obRecord = primaryRecord.balanceType === 'OB' ? primaryRecord : siblingRecords.find(r => r.balanceType === 'OB');
+      const cbRecord = primaryRecord.balanceType === 'CB' ? primaryRecord : siblingRecords.find(r => r.balanceType === 'CB');
+
+      const sharedUpdate: any = {};
+      if (data.partyCode !== undefined) sharedUpdate.partyCode = data.partyCode;
+      if (data.partyName !== undefined) sharedUpdate.partyName = data.partyName;
+      if (data.partyType !== undefined) sharedUpdate.partyType = data.partyType;
+      if (data.glCode !== undefined || data.controlAccountCode !== undefined || data.controlAccount !== undefined) {
+        sharedUpdate.controlAccountCode = data.glCode || data.controlAccountCode || data.controlAccount;
+      }
+      if (data.email !== undefined || data.partyEmail !== undefined) sharedUpdate.partyEmail = data.email || data.partyEmail;
+      if (data.address !== undefined || data.partyAddress !== undefined) sharedUpdate.partyAddress = data.address || data.partyAddress;
+      if (data.attentionTo !== undefined) sharedUpdate.attentionTo = data.attentionTo;
+
+      const updates: Promise<any>[] = [];
+      if (data.openingBalance !== undefined && obRecord) {
+        const val = parseFloat(data.openingBalance) || 0;
+        updates.push(tx.importPartyBalance.update({
+          where: { id: obRecord.id },
+          data: { ...sharedUpdate, balance: Math.abs(val), drcr: val >= 0 ? 'DR' : 'CR' },
+        }));
+      }
+      const closingBalVal = data.balance !== undefined ? data.balance : data.closingBalance;
+      if (closingBalVal !== undefined && cbRecord) {
+        const val = parseFloat(closingBalVal) || 0;
+        updates.push(tx.importPartyBalance.update({
+          where: { id: cbRecord.id },
+          data: { ...sharedUpdate, balance: Math.abs(val), drcr: val >= 0 ? 'DR' : 'CR' },
+        }));
+      }
+      if (updates.length === 0 && Object.keys(sharedUpdate).length > 0) {
+        if (cbRecord) {
+          updates.push(tx.importPartyBalance.update({ where: { id: cbRecord.id }, data: sharedUpdate }));
+        }
+        if (obRecord && obRecord.id !== cbRecord?.id) {
+          updates.push(tx.importPartyBalance.update({ where: { id: obRecord.id }, data: sharedUpdate }));
+        }
+        if (updates.length === 0) {
+          updates.push(tx.importPartyBalance.update({ where: { id }, data: sharedUpdate }));
+        }
+      }
+
+      const results = await Promise.all(updates);
+
+      await tx.dataEdit.create({
+        data: {
+          engagementId,
+          batchId: primaryRecord.batchId,
+          dataset: 'PARTY',
+          operation: 'UPDATE',
+          rowId: id,
+          field: null,
+          oldValue: JSON.stringify(primaryRecord),
+          newValue: JSON.stringify(results[0] || primaryRecord),
+          fullRowJson: results[0] || primaryRecord,
+          editedById: userId!,
+          notes: obRecord && cbRecord ? 'Dual OB/CB update' : null,
+        }
+      });
+
+      return results[0] || primaryRecord;
     });
-    const obRecord = primaryRecord.balanceType === 'OB' ? primaryRecord : siblingRecords.find(r => r.balanceType === 'OB');
-    const cbRecord = primaryRecord.balanceType === 'CB' ? primaryRecord : siblingRecords.find(r => r.balanceType === 'CB');
 
-    const sharedUpdate: any = {};
-    if (data.partyCode !== undefined) sharedUpdate.partyCode = data.partyCode;
-    if (data.partyName !== undefined) sharedUpdate.partyName = data.partyName;
-    if (data.partyType !== undefined) sharedUpdate.partyType = data.partyType;
-    if (data.glCode !== undefined || data.controlAccountCode !== undefined || data.controlAccount !== undefined) {
-      sharedUpdate.controlAccountCode = data.glCode || data.controlAccountCode || data.controlAccount;
-    }
-    if (data.email !== undefined || data.partyEmail !== undefined) sharedUpdate.partyEmail = data.email || data.partyEmail;
-    if (data.address !== undefined || data.partyAddress !== undefined) sharedUpdate.partyAddress = data.address || data.partyAddress;
-    if (data.attentionTo !== undefined) sharedUpdate.attentionTo = data.attentionTo;
-
-    const updates: Promise<any>[] = [];
-    if (data.openingBalance !== undefined && obRecord) {
-      const val = parseFloat(data.openingBalance) || 0;
-      updates.push(prisma.importPartyBalance.update({
-        where: { id: obRecord.id },
-        data: { ...sharedUpdate, balance: Math.abs(val), drcr: val >= 0 ? 'DR' : 'CR' },
-      }));
-    }
-    const closingBalVal = data.balance !== undefined ? data.balance : data.closingBalance;
-    if (closingBalVal !== undefined && cbRecord) {
-      const val = parseFloat(closingBalVal) || 0;
-      updates.push(prisma.importPartyBalance.update({
-        where: { id: cbRecord.id },
-        data: { ...sharedUpdate, balance: Math.abs(val), drcr: val >= 0 ? 'DR' : 'CR' },
-      }));
-    }
-    if (updates.length === 0 && Object.keys(sharedUpdate).length > 0) {
-      if (cbRecord) {
-        updates.push(prisma.importPartyBalance.update({ where: { id: cbRecord.id }, data: sharedUpdate }));
-      }
-      if (obRecord && obRecord.id !== cbRecord?.id) {
-        updates.push(prisma.importPartyBalance.update({ where: { id: obRecord.id }, data: sharedUpdate }));
-      }
-      if (updates.length === 0) {
-        updates.push(prisma.importPartyBalance.update({ where: { id }, data: sharedUpdate }));
-      }
-    }
-
-    const results = await Promise.all(updates);
-
-    await prisma.dataEdit.create({
-      data: {
-        engagementId,
-        batchId: primaryRecord.batchId,
-        dataset: 'PARTY',
-        operation: 'UPDATE',
-        rowId: id,
-        field: null,
-        oldValue: JSON.stringify(primaryRecord),
-        newValue: JSON.stringify(results[0] || primaryRecord),
-        fullRowJson: results[0] || primaryRecord,
-        editedById: userId!,
-        notes: obRecord && cbRecord ? 'Dual OB/CB update' : null,
-      }
-    });
-
-    res.json(results[0] || primaryRecord);
+    res.json(result);
   } catch (error) {
-    console.error("Error updating party record:", error);
-    res.status(500).json({ error: "Failed to update party balance record" });
+    handleSentinelError(error, res, "Failed to update party balance record");
   }
 });
 
@@ -2751,34 +2776,35 @@ router.delete("/:engagementId/data/party/:id", requireAuth, async (req: Authenti
   try {
     const { engagementId, id } = req.params;
     const userId = req.user?.id;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const oldRecord = await prisma.importPartyBalance.findUnique({ where: { id } });
-    if (!oldRecord) {
-      return res.status(404).json({ error: "Record not found" });
-    }
+    await withTenantContext(firmId, async (tx) => {
+      const oldRecord = await tx.importPartyBalance.findUnique({ where: { id } });
+      if (!oldRecord) throw new Error("NOT_FOUND:Record not found");
 
-    await prisma.importPartyBalance.delete({ where: { id } });
+      await tx.importPartyBalance.delete({ where: { id } });
 
-    await prisma.dataEdit.create({
-      data: {
-        engagementId,
-        batchId: oldRecord.batchId,
-        dataset: 'PARTY',
-        operation: 'DELETE',
-        rowId: id,
-        field: null,
-        oldValue: JSON.stringify(oldRecord),
-        newValue: null,
-        fullRowJson: oldRecord,
-        editedById: userId!,
-        notes: null,
-      }
+      await tx.dataEdit.create({
+        data: {
+          engagementId,
+          batchId: oldRecord.batchId,
+          dataset: 'PARTY',
+          operation: 'DELETE',
+          rowId: id,
+          field: null,
+          oldValue: JSON.stringify(oldRecord),
+          newValue: null,
+          fullRowJson: oldRecord,
+          editedById: userId!,
+          notes: null,
+        }
+      });
     });
 
     res.json({ message: "Record deleted" });
   } catch (error) {
-    console.error("Error deleting party record:", error);
-    res.status(500).json({ error: "Failed to delete party balance record" });
+    handleSentinelError(error, res, "Failed to delete party balance record");
   }
 });
 
@@ -2950,44 +2976,47 @@ router.patch("/:engagementId/data/bank/:id", requireAuth, async (req: Authentica
     const { engagementId, id } = req.params;
     const data = req.body;
     const userId = req.user?.id;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const oldRecord = await prisma.importBankAccount.findUnique({ where: { id } });
-    if (!oldRecord) {
-      return res.status(404).json({ error: "Record not found" });
-    }
+    const record = await withTenantContext(firmId, async (tx) => {
+      const oldRecord = await tx.importBankAccount.findUnique({ where: { id } });
+      if (!oldRecord) throw new Error("NOT_FOUND:Record not found");
 
-    const record = await prisma.importBankAccount.update({
-      where: { id },
-      data: {
-        bankAccountCode: data.bankAccountId || data.bankCode || data.bankAccountCode,
-        bankName: data.bankName,
-        branchName: data.branch || data.branchName,
-        accountNo: data.accountNumber || data.accountNo,
-        accountTitle: data.accountTitle || data.accountType,
-        currency: data.currency,
-      },
-    });
+      const updated = await tx.importBankAccount.update({
+        where: { id },
+        data: {
+          bankAccountCode: data.bankAccountId || data.bankCode || data.bankAccountCode,
+          bankName: data.bankName,
+          branchName: data.branch || data.branchName,
+          accountNo: data.accountNumber || data.accountNo,
+          accountTitle: data.accountTitle || data.accountType,
+          currency: data.currency,
+        },
+      });
 
-    await prisma.dataEdit.create({
-      data: {
-        engagementId,
-        batchId: oldRecord.batchId,
-        dataset: 'BANK',
-        operation: 'UPDATE',
-        rowId: id,
-        field: null,
-        oldValue: JSON.stringify(oldRecord),
-        newValue: JSON.stringify(record),
-        fullRowJson: record,
-        editedById: userId!,
-        notes: null,
-      }
+      await tx.dataEdit.create({
+        data: {
+          engagementId,
+          batchId: oldRecord.batchId,
+          dataset: 'BANK',
+          operation: 'UPDATE',
+          rowId: id,
+          field: null,
+          oldValue: JSON.stringify(oldRecord),
+          newValue: JSON.stringify(updated),
+          fullRowJson: updated,
+          editedById: userId!,
+          notes: null,
+        }
+      });
+
+      return updated;
     });
 
     res.json(record);
   } catch (error) {
-    console.error("Error updating bank record:", error);
-    res.status(500).json({ error: "Failed to update bank account record" });
+    handleSentinelError(error, res, "Failed to update bank account record");
   }
 });
 
@@ -2995,34 +3024,35 @@ router.delete("/:engagementId/data/bank/:id", requireAuth, async (req: Authentic
   try {
     const { engagementId, id } = req.params;
     const userId = req.user?.id;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    const oldRecord = await prisma.importBankAccount.findUnique({ where: { id } });
-    if (!oldRecord) {
-      return res.status(404).json({ error: "Record not found" });
-    }
+    await withTenantContext(firmId, async (tx) => {
+      const oldRecord = await tx.importBankAccount.findUnique({ where: { id } });
+      if (!oldRecord) throw new Error("NOT_FOUND:Record not found");
 
-    await prisma.importBankAccount.delete({ where: { id } });
+      await tx.importBankAccount.delete({ where: { id } });
 
-    await prisma.dataEdit.create({
-      data: {
-        engagementId,
-        batchId: oldRecord.batchId,
-        dataset: 'BANK',
-        operation: 'DELETE',
-        rowId: id,
-        field: null,
-        oldValue: JSON.stringify(oldRecord),
-        newValue: null,
-        fullRowJson: oldRecord,
-        editedById: userId!,
-        notes: null,
-      }
+      await tx.dataEdit.create({
+        data: {
+          engagementId,
+          batchId: oldRecord.batchId,
+          dataset: 'BANK',
+          operation: 'DELETE',
+          rowId: id,
+          field: null,
+          oldValue: JSON.stringify(oldRecord),
+          newValue: null,
+          fullRowJson: oldRecord,
+          editedById: userId!,
+          notes: null,
+        }
+      });
     });
 
     res.json({ message: "Record deleted" });
   } catch (error) {
-    console.error("Error deleting bank record:", error);
-    res.status(500).json({ error: "Failed to delete bank account record" });
+    handleSentinelError(error, res, "Failed to delete bank account record");
   }
 });
 
@@ -3174,9 +3204,14 @@ router.post("/:engagementId/upload-dataset/:datasetType", requireAuth, upload.si
       return res.status(400).json({ success: false, error: "No file uploaded" });
     }
 
-    const engagement = await prisma.engagement.findUnique({
-      where: { id: engagementId },
-      select: { id: true, engagementCode: true },
+    const userFirmId = (req as AuthenticatedRequest).user!.firmId;
+    if (!userFirmId) return res.status(400).json({ success: false, error: "User not associated with a firm" });
+
+    const engagement = await withTenantContext(userFirmId, async (tx) => {
+      return tx.engagement.findUnique({
+        where: { id: engagementId },
+        select: { id: true, engagementCode: true },
+      });
     });
 
     if (!engagement) {
@@ -3196,7 +3231,7 @@ router.post("/:engagementId/upload-dataset/:datasetType", requireAuth, upload.si
     }
 
     if (datasetType === 'tb') {
-      autoClassifyAndSync(engagementId, userId).catch(() => {});
+      autoClassifyAndSync(engagementId, userId, userFirmId).catch(err => console.error("Auto classify/sync after dataset upload failed:", err));
     }
 
     res.json(result);
@@ -3222,9 +3257,14 @@ router.post("/:engagementId/input-workbook", requireAuth, upload.single("file"),
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const engagement = await prisma.engagement.findUnique({
-      where: { id: engagementId },
-      select: { id: true, engagementCode: true },
+    const userFirmId = (req as AuthenticatedRequest).user!.firmId;
+    if (!userFirmId) return res.status(400).json({ error: "User not associated with a firm" });
+
+    const engagement = await withTenantContext(userFirmId, async (tx) => {
+      return tx.engagement.findUnique({
+        where: { id: engagementId },
+        select: { id: true, engagementCode: true },
+      });
     });
 
     if (!engagement) {
@@ -3271,7 +3311,7 @@ router.post("/:engagementId/input-workbook", requireAuth, upload.single("file"),
       });
     }
 
-    autoClassifyAndSync(engagementId, userId).catch(() => {});
+    autoClassifyAndSync(engagementId, userId, userFirmId).catch(err => console.error("Auto classify/sync after workbook upload failed:", err));
 
     res.json(result);
   } catch (error) {
@@ -3334,9 +3374,14 @@ router.get("/:engagementId/summary/export", requireAuth, async (req: Request, re
       return res.status(404).json({ error: "No summary data available" });
     }
 
-    const engagement = await prisma.engagement.findUnique({
-      where: { id: engagementId },
-      include: { firm: true },
+    const userFirmId = (req as AuthenticatedRequest).user!.firmId;
+    if (!userFirmId) return res.status(400).json({ error: "User not associated with a firm" });
+
+    const engagement = await withTenantContext(userFirmId, async (tx) => {
+      return tx.engagement.findUnique({
+        where: { id: engagementId },
+        include: { firm: true },
+      });
     });
     const firmName = engagement?.firm?.displayName || engagement?.firm?.name || "";
 
@@ -3436,9 +3481,14 @@ router.post("/:engagementId/validate-workbook", requireAuth, upload.single("file
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const engagement = await prisma.engagement.findUnique({
-      where: { id: engagementId },
-      select: { id: true },
+    const userFirmId = (req as AuthenticatedRequest).user!.firmId;
+    if (!userFirmId) return res.status(400).json({ error: "User not associated with a firm" });
+
+    const engagement = await withTenantContext(userFirmId, async (tx) => {
+      return tx.engagement.findUnique({
+        where: { id: engagementId },
+        select: { id: true },
+      });
     });
 
     if (!engagement) {

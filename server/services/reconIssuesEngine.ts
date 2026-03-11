@@ -1018,14 +1018,14 @@ export async function generateDraftFSSnapshot(
         where: { engagementId },
         data: { bsFooting: ValidationStatus.PASS },
       })
-      .catch(() => {});
+      .catch(err => console.error("Recon gate status update (BS footing PASS) failed:", err));
   } else {
     await prisma.reconGateStatus
       .update({
         where: { engagementId },
         data: { bsFooting: ValidationStatus.FAIL },
       })
-      .catch(() => {});
+      .catch(err => console.error("Recon gate status update (BS footing FAIL) failed:", err));
   }
 
   return snapshot;

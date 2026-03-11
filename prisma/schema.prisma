@@ -1644,10 +1644,12 @@ model EngagementTeam {
   hoursAllocated Float?
   assignedAt     DateTime @default(now())
 
-  engagement Engagement @relation(fields: [engagementId], references: [id])
-  user       User       @relation(fields: [userId], references: [id])
+  engagement Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([engagementId, userId])
+  @@index([engagementId])
+  @@index([userId])
 }
 
 model PhaseProgress {
@@ -1668,7 +1670,7 @@ model PhaseProgress {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  engagement Engagement @relation(fields: [engagementId], references: [id])
+  engagement Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
   lockedBy   User?      @relation("LockedBy", fields: [lockedById], references: [id])
   approvedBy User?      @relation("ApprovedBy", fields: [approvedById], references: [id])
 
@@ -1701,6 +1703,7 @@ model ChecklistItem {
   reviewNotes ReviewNote[]
   @@index([engagementId, phase])
   @@index([engagementId, status])
+  @@index([engagementId, phase, status])
 }
 
 model ReviewNote {
@@ -3344,7 +3347,10 @@ model TrialBalanceLine {
 
   createdAt DateTime @default(now())
 
-  trialBalance TrialBalance @relation(fields: [trialBalanceId], references: [id])
+  trialBalance TrialBalance @relation(fields: [trialBalanceId], references: [id], onDelete: Cascade)
+
+  @@index([fsArea])
+  @@index([trialBalanceId])
 }
 
 model TBMapping {
@@ -7770,6 +7776,8 @@ model GLEntry {
   @@index([engagementId, accountCode])
   @@index([batchId, hasErrors])
   @@index([isDuplicate])
+  @@index([clusterId])
+  @@index([duplicateOfId])
 }
 
 // GL Validation Error

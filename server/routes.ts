@@ -80,6 +80,7 @@ import complianceExportRoutes from "./routes/complianceExportRoutes";
 import reviewNoteRoutes from "./routes/reviewNoteRoutes";
 import firmControlComplianceLogRoutes from "./routes/firmControlComplianceLogRoutes";
 import { attachEnforcementContext, enforceInspectionMode } from "./middleware/enforcementMiddleware";
+import { withTenantContext } from "./middleware/tenantDbContext";
 import { generateInformationRequestLetter } from "./exportInfoRequestLetter";
 import { aiRateLimit, authRateLimit } from "./middleware/rateLimiter";
 import { subscriptionGuard } from "./middleware/subscriptionGuard";
@@ -276,58 +277,62 @@ export async function registerRoutes(
         return res.status(400).json({ error: "User not associated with a firm" });
       }
 
-      const [
-        activeEngagements,
-        totalClients,
-        openReviewNotes,
-        engagements,
-      ] = await Promise.all([
-        prisma.engagement.count({
-          where: { firmId, status: "ACTIVE" },
-        }),
-        prisma.client.count({
-          where: { firmId, isActive: true },
-        }),
-        prisma.reviewNote.count({
-          where: {
-            engagement: { firmId },
-            status: "OPEN",
-          },
-        }),
-        prisma.engagement.findMany({
-          where: { firmId },
-          include: {
-            client: true,
-            phases: true,
-            team: { include: { user: true } },
-            _count: { select: { reviewNotes: { where: { status: "OPEN" } } } },
-          },
-          orderBy: { updatedAt: "desc" },
-          take: 10,
-        }),
-      ]);
-
-      const phaseDistribution = await prisma.phaseProgress.groupBy({
-        by: ["status"],
-        where: {
-          engagement: { firmId, status: "ACTIVE" },
-        },
-        _count: true,
-      });
-
-      res.json({
-        stats: {
+      const result = await withTenantContext(firmId, async (tx) => {
+        const [
           activeEngagements,
           totalClients,
           openReviewNotes,
-          completedThisMonth: 0,
-        },
-        engagements: engagements.map((eng) => ({
-          ...eng,
-          openReviewNotes: eng._count.reviewNotes,
-        })),
-        phaseDistribution,
+          engagements,
+        ] = await Promise.all([
+          tx.engagement.count({
+            where: { firmId, status: "ACTIVE" },
+          }),
+          tx.client.count({
+            where: { firmId, isActive: true },
+          }),
+          tx.reviewNote.count({
+            where: {
+              engagement: { firmId },
+              status: "OPEN",
+            },
+          }),
+          tx.engagement.findMany({
+            where: { firmId },
+            include: {
+              client: true,
+              phases: true,
+              team: { include: { user: true } },
+              _count: { select: { reviewNotes: { where: { status: "OPEN" } } } },
+            },
+            orderBy: { updatedAt: "desc" },
+            take: 10,
+          }),
+        ]);
+
+        const phaseDistribution = await tx.phaseProgress.groupBy({
+          by: ["status"],
+          where: {
+            engagement: { firmId, status: "ACTIVE" },
+          },
+          _count: true,
+        });
+
+        return {
+          stats: {
+            activeEngagements,
+            totalClients,
+            openReviewNotes,
+            completedThisMonth: 0,
+          },
+          engagements: engagements.map((eng) => ({
+            ...eng,
+            openReviewNotes: eng._count.reviewNotes,
+          })),
+          phaseDistribution,
+        };
       });
+
+      res.json(result);
     } catch (error) {
       console.error("Dashboard error:", error);
       res.status(500).json({ error: "Failed to fetch dashboard data" });
@@ -341,14 +346,16 @@ export async function registerRoutes(
         return res.status(400).json({ error: "User not associated with a firm" });
       }
 
-      const engagements = await prisma.engagement.findMany({
-        where: { firmId },
-        include: {
-          client: true,
-          phases: true,
-          team: { include: { user: { select: { id: true, fullName: true, role: true } } } },
-        },
-        orderBy: { updatedAt: "desc" },
+      const engagements = await withTenantContext(firmId, async (tx) => {
+        return tx.engagement.findMany({
+          where: { firmId },
+          include: {
+            client: true,
+            phases: true,
+            team: { include: { user: { select: { id: true, fullName: true, role: true } } } },
+          },
+          orderBy: { updatedAt: "desc" },
+        });
       });
 
       res.json(engagements);
@@ -360,23 +367,30 @@ export async function registerRoutes(
 
   app.get("/api/engagements/:id", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const engagement = await prisma.engagement.findUnique({
-        where: { id: req.params.id },
-        include: {
-          client: true,
-          firm: true,
-          phases: { orderBy: { phase: "asc" } },
-          team: { include: { user: { select: { id: true, fullName: true, role: true, email: true } } } },
-          financialPeriods: true,
-          _count: { select: { reviewNotes: true, checklistItems: true, documents: true } },
-        },
+      const firmId = req.user!.firmId;
+      if (!firmId) {
+        return res.status(400).json({ error: "User not associated with a firm" });
+      }
+
+      const engagement = await withTenantContext(firmId, async (tx) => {
+        return tx.engagement.findUnique({
+          where: { id: req.params.id },
+          include: {
+            client: true,
+            firm: true,
+            phases: { orderBy: { phase: "asc" } },
+            team: { include: { user: { select: { id: true, fullName: true, role: true, email: true } } } },
+            financialPeriods: true,
+            _count: { select: { reviewNotes: true, checklistItems: true, documents: true } },
+          },
+        });
       });
 
       if (!engagement) {
         return res.status(404).json({ error: "Engagement not found" });
       }
 
-      if (engagement.firmId !== req.user!.firmId) {
+      if (engagement.firmId !== firmId) {
         return res.status(403).json({ error: "Access denied" });
       }
 
@@ -387,40 +401,40 @@ export async function registerRoutes(
     }
   });
 
+  const nullableUuid = z.string().uuid().nullish().transform(v => v || undefined);
+  const nullableStr = z.string().nullish().transform(v => v || undefined);
+  const nullableNum = z.number().nullish().transform(v => v ?? undefined);
+
   const createEngagementSchema = z.object({
     clientId: z.string().uuid(),
-    engagementCode: z.string().optional(),
+    engagementCode: nullableStr,
     engagementType: z.string().default("statutory_audit"),
-    reportingFramework: z.string().optional(),
-    sizeClassification: z.string().optional(),
+    reportingFramework: z.enum(["IFRS", "IFRS_SME", "LOCAL_GAAP", "OTHER"]).nullish(),
+    sizeClassification: nullableStr,
     periodStart: z.string().min(1, "Period start is required"),
     periodEnd: z.string().min(1, "Period end is required"),
     riskRating: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
-    fiscalYearEnd: z.string().optional(),
-    fieldworkStartDate: z.string().optional(),
-    reportDeadline: z.string().optional(),
-    budgetHours: z.number().optional(),
-    // Financial metrics
-    shareCapital: z.number().optional(),
-    numberOfEmployees: z.number().optional(),
-    lastYearRevenue: z.number().optional(),
-    previousYearRevenue: z.number().optional(),
-    // Previous auditor information
-    priorAuditor: z.string().optional(),
-    priorAuditorEmail: z.string().email().optional().or(z.literal("")),
-    priorAuditorPhone: z.string().optional(),
-    priorAuditorAddress: z.string().optional(),
-    priorAuditOpinion: z.string().optional(),
-    priorAuditorReason: z.string().optional(),
-    udin: z.string().optional(),
-    managementIntegrity: z.string().optional(),
-    // EQCR
+    fiscalYearEnd: nullableStr,
+    fieldworkStartDate: nullableStr,
+    reportDeadline: nullableStr,
+    budgetHours: nullableNum,
+    shareCapital: nullableNum,
+    numberOfEmployees: nullableNum,
+    lastYearRevenue: nullableNum,
+    previousYearRevenue: nullableNum,
+    priorAuditor: nullableStr,
+    priorAuditorEmail: z.string().email().nullish().or(z.literal("")).transform(v => v || undefined),
+    priorAuditorPhone: nullableStr,
+    priorAuditorAddress: nullableStr,
+    priorAuditOpinion: nullableStr,
+    priorAuditorReason: nullableStr,
+    udin: nullableStr,
+    managementIntegrity: nullableStr,
     eqcrRequired: z.boolean().default(false),
-    eqcrPartnerUserId: z.string().uuid().optional(),
-    // Team assignments
-    engagementPartnerId: z.string().uuid().optional(),
-    engagementManagerId: z.string().uuid().optional(),
-    teamLeadId: z.string().uuid().optional(),
+    eqcrPartnerUserId: nullableUuid,
+    engagementPartnerId: nullableUuid,
+    engagementManagerId: nullableUuid,
+    teamLeadId: nullableUuid,
   });
 
   app.post("/api/engagements", requireAuth, requireMinRole("SENIOR"), async (req: AuthenticatedRequest, res: Response) => {
@@ -432,35 +446,39 @@ export async function registerRoutes(
 
       const data = createEngagementSchema.parse(req.body);
 
-      const client = await prisma.client.findFirst({
-        where: { id: data.clientId, firmId },
-      });
-
-      if (!client) {
-        return res.status(404).json({ error: "Client not found" });
-      }
-
-      // Update client's size classification if provided
-      if (data.sizeClassification) {
-        await prisma.client.update({
-          where: { id: data.clientId },
-          data: { sizeClassification: data.sizeClassification },
+      const fullEngagement = await withTenantContext(firmId, async (tx) => {
+        const client = await tx.client.findFirst({
+          where: { id: data.clientId, firmId },
         });
-      }
 
-      // Auto-generate engagement code if not provided
-      let engagementCode = data.engagementCode;
-      if (!engagementCode) {
-        const periodYear = new Date(data.periodEnd).getFullYear();
-        const clientCode = client.name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'X');
-        const count = await prisma.engagement.count({
-          where: { firmId, clientId: data.clientId },
-        });
-        engagementCode = `${clientCode}-${periodYear}-${String(count + 1).padStart(2, '0')}`;
-      }
+        if (!client) {
+          throw Object.assign(new Error("Client not found"), { statusCode: 404 });
+        }
 
-      const engagement = await prisma.engagement.create({
-        data: {
+        if (data.sizeClassification) {
+          await tx.client.update({
+            where: { id: data.clientId },
+            data: { sizeClassification: data.sizeClassification },
+          });
+        }
+
+        const generateUniqueCode = async (preferredCode?: string): Promise<string> => {
+          if (preferredCode) {
+            const existing = await tx.engagement.findUnique({ where: { engagementCode: preferredCode } });
+            if (!existing) return preferredCode;
+          }
+          const periodYear = new Date(data.periodEnd).getFullYear();
+          const clientCode = client.name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'X');
+          const count = await tx.engagement.count({ where: { firmId, clientId: data.clientId } });
+          const baseCode = `${clientCode}-${periodYear}-${String(count + 1).padStart(3, '0')}`;
+          const baseExisting = await tx.engagement.findUnique({ where: { engagementCode: baseCode } });
+          if (!baseExisting) return baseCode;
+          return `${clientCode}-${periodYear}-${String(count + 1).padStart(3, '0')}-${Math.random().toString(36).slice(2, 6)}`;
+        };
+
+        const engagementCode = await generateUniqueCode(data.engagementCode);
+
+        const engagementData = {
           firmId,
           clientId: data.clientId,
           engagementCode,
@@ -472,12 +490,10 @@ export async function registerRoutes(
           fieldworkStartDate: data.fieldworkStartDate ? new Date(data.fieldworkStartDate) : null,
           reportDeadline: data.reportDeadline ? new Date(data.reportDeadline) : null,
           budgetHours: data.budgetHours,
-          // Financial metrics
           shareCapital: data.shareCapital,
           numberOfEmployees: data.numberOfEmployees,
           lastYearRevenue: data.lastYearRevenue,
           previousYearRevenue: data.previousYearRevenue,
-          // Previous auditor information
           priorAuditor: data.priorAuditor,
           priorAuditorEmail: data.priorAuditorEmail || null,
           priorAuditorPhone: data.priorAuditorPhone || null,
@@ -487,122 +503,134 @@ export async function registerRoutes(
           udin: data.udin || null,
           managementIntegrity: data.managementIntegrity,
           eqcrRequired: data.eqcrRequired || false,
-          // Team assignments
           engagementPartnerId: data.engagementPartnerId || null,
           engagementManagerId: data.engagementManagerId || null,
           teamLeadId: data.teamLeadId || null,
-        },
-      });
+        };
 
-      // Create EQCR assignment if required
-      if (data.eqcrRequired && data.eqcrPartnerUserId) {
-        await prisma.eQCRAssignment.create({
+        let engagement: any;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            engagement = await tx.engagement.create({ data: engagementData });
+            break;
+          } catch (err: any) {
+            if (err?.code === 'P2002' && attempt < 2) {
+              engagementData.engagementCode = await generateUniqueCode();
+              continue;
+            }
+            throw err;
+          }
+        }
+        if (!engagement) throw new Error("Failed to create engagement after retries");
+
+        if (data.eqcrRequired && data.eqcrPartnerUserId) {
+          await tx.eQCRAssignment.create({
+            data: {
+              engagementId: engagement.id,
+              isRequired: true,
+              requirementReason: "Assigned at engagement creation",
+              status: "ASSIGNED",
+              assignedReviewerId: data.eqcrPartnerUserId,
+              assignedDate: new Date(),
+              assignedById: req.user!.id,
+            },
+          });
+        }
+
+        for (const phase of PHASE_ORDER) {
+          await tx.phaseProgress.create({
+            data: {
+              engagementId: engagement.id,
+              phase,
+              status: phase === "ONBOARDING" ? "IN_PROGRESS" : "NOT_STARTED",
+              completionPercentage: 0,
+              startedAt: phase === "ONBOARDING" ? new Date() : null,
+            },
+          });
+        }
+
+        await tx.engagementTeam.create({
           data: {
             engagementId: engagement.id,
-            isRequired: true,
-            requirementReason: "Assigned at engagement creation",
-            status: "ASSIGNED",
-            assignedReviewerId: data.eqcrPartnerUserId,
-            assignedDate: new Date(),
-            assignedById: req.user!.id,
+            userId: req.user!.id,
+            role: req.user!.role,
+            isLead: !data.engagementPartnerId && !data.engagementManagerId,
           },
         });
-      }
 
-      for (const phase of PHASE_ORDER) {
-        await prisma.phaseProgress.create({
-          data: {
-            engagementId: engagement.id,
-            phase,
-            status: phase === "ONBOARDING" ? "IN_PROGRESS" : "NOT_STARTED",
-            completionPercentage: 0,
-            startedAt: phase === "ONBOARDING" ? new Date() : null,
-          },
+        if (data.engagementPartnerId && data.engagementPartnerId !== req.user!.id) {
+          const partner = await tx.user.findUnique({ where: { id: data.engagementPartnerId } });
+          if (partner && partner.firmId === firmId) {
+            await tx.engagementTeam.create({
+              data: {
+                engagementId: engagement.id,
+                userId: data.engagementPartnerId,
+                role: partner.role,
+                isLead: true,
+              },
+            });
+          }
+        }
+
+        if (data.engagementManagerId && 
+            data.engagementManagerId !== req.user!.id && 
+            data.engagementManagerId !== data.engagementPartnerId) {
+          const manager = await tx.user.findUnique({ where: { id: data.engagementManagerId } });
+          if (manager && manager.firmId === firmId) {
+            await tx.engagementTeam.create({
+              data: {
+                engagementId: engagement.id,
+                userId: data.engagementManagerId,
+                role: manager.role,
+                isLead: false,
+              },
+            });
+          }
+        }
+
+        if (data.teamLeadId && 
+            data.teamLeadId !== req.user!.id && 
+            data.teamLeadId !== data.engagementPartnerId &&
+            data.teamLeadId !== data.engagementManagerId) {
+          const teamLead = await tx.user.findUnique({ where: { id: data.teamLeadId } });
+          if (teamLead && teamLead.firmId === firmId) {
+            await tx.engagementTeam.create({
+              data: {
+                engagementId: engagement.id,
+                userId: data.teamLeadId,
+                role: teamLead.role,
+                isLead: false,
+              },
+            });
+          }
+        }
+
+        await logAuditTrail(
+          req.user!.id,
+          "ENGAGEMENT_CREATED",
+          "engagement",
+          engagement.id,
+          null,
+          engagement,
+          engagement.id,
+          "New engagement created",
+          req.ip,
+          req.get("user-agent")
+        );
+
+        return tx.engagement.findUnique({
+          where: { id: engagement.id },
+          include: { client: true, phases: true, team: { include: { user: true } } },
         });
-      }
-
-      // Add the creator to the team
-      await prisma.engagementTeam.create({
-        data: {
-          engagementId: engagement.id,
-          userId: req.user!.id,
-          role: req.user!.role,
-          isLead: !data.engagementPartnerId && !data.engagementManagerId,
-        },
-      });
-
-      // Add engagement partner to team if specified and different from creator
-      if (data.engagementPartnerId && data.engagementPartnerId !== req.user!.id) {
-        const partner = await prisma.user.findUnique({ where: { id: data.engagementPartnerId } });
-        if (partner && partner.firmId === firmId) {
-          await prisma.engagementTeam.create({
-            data: {
-              engagementId: engagement.id,
-              userId: data.engagementPartnerId,
-              role: partner.role,
-              isLead: true,
-            },
-          });
-        }
-      }
-
-      // Add engagement manager to team if specified and different from creator/partner
-      if (data.engagementManagerId && 
-          data.engagementManagerId !== req.user!.id && 
-          data.engagementManagerId !== data.engagementPartnerId) {
-        const manager = await prisma.user.findUnique({ where: { id: data.engagementManagerId } });
-        if (manager && manager.firmId === firmId) {
-          await prisma.engagementTeam.create({
-            data: {
-              engagementId: engagement.id,
-              userId: data.engagementManagerId,
-              role: manager.role,
-              isLead: false,
-            },
-          });
-        }
-      }
-
-      // Add team lead to team if specified and different from other assignments
-      if (data.teamLeadId && 
-          data.teamLeadId !== req.user!.id && 
-          data.teamLeadId !== data.engagementPartnerId &&
-          data.teamLeadId !== data.engagementManagerId) {
-        const teamLead = await prisma.user.findUnique({ where: { id: data.teamLeadId } });
-        if (teamLead && teamLead.firmId === firmId) {
-          await prisma.engagementTeam.create({
-            data: {
-              engagementId: engagement.id,
-              userId: data.teamLeadId,
-              role: teamLead.role,
-              isLead: false,
-            },
-          });
-        }
-      }
-
-      await logAuditTrail(
-        req.user!.id,
-        "ENGAGEMENT_CREATED",
-        "engagement",
-        engagement.id,
-        null,
-        engagement,
-        engagement.id,
-        "New engagement created",
-        req.ip,
-        req.get("user-agent")
-      );
-
-      const fullEngagement = await prisma.engagement.findUnique({
-        where: { id: engagement.id },
-        include: { client: true, phases: true, team: { include: { user: true } } },
       });
 
       res.status(201).json(fullEngagement);
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Validation failed", details: error.errors });
+      }
+      if (error?.statusCode === 404) {
+        return res.status(404).json({ error: error.message });
       }
       console.error("Create engagement error:", error);
       res.status(500).json({ error: "Failed to create engagement" });
@@ -611,16 +639,9 @@ export async function registerRoutes(
 
   app.patch("/api/engagements/:id", requireAuth, requireMinRole("MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const existing = await prisma.engagement.findUnique({
-        where: { id: req.params.id },
-      });
-
-      if (!existing) {
-        return res.status(404).json({ error: "Engagement not found" });
-      }
-
-      if (existing.firmId !== req.user!.firmId) {
-        return res.status(403).json({ error: "Access denied" });
+      const firmId = req.user!.firmId;
+      if (!firmId) {
+        return res.status(400).json({ error: "User not associated with a firm" });
       }
 
       const updateSchema = z.object({
@@ -637,7 +658,7 @@ export async function registerRoutes(
         fieldworkEndDate: z.string().optional().nullable(),
         reportDeadline: z.string().optional().nullable(),
         filingDeadline: z.string().optional().nullable(),
-        reportingFramework: z.enum(["IFRS", "LOCAL_GAAP", "US_GAAP", "OTHER"]).optional(),
+        reportingFramework: z.enum(["IFRS", "IFRS_SME", "LOCAL_GAAP", "OTHER"]).optional(),
         applicableLaw: z.string().optional().nullable(),
         priorAuditor: z.string().optional().nullable(),
         priorAuditorReason: z.string().optional().nullable(),
@@ -690,28 +711,50 @@ export async function registerRoutes(
       if (data.engagementManagerId !== undefined) updateData.engagementManagerId = data.engagementManagerId;
       if (data.teamLeadId !== undefined) updateData.teamLeadId = data.teamLeadId;
 
-      const engagement = await prisma.engagement.update({
-        where: { id: req.params.id },
-        data: updateData,
+      const engagement = await withTenantContext(firmId, async (tx) => {
+        const existing = await tx.engagement.findUnique({
+          where: { id: req.params.id },
+        });
+
+        if (!existing) {
+          throw Object.assign(new Error("Engagement not found"), { statusCode: 404 });
+        }
+
+        if (existing.firmId !== firmId) {
+          throw Object.assign(new Error("Access denied"), { statusCode: 403 });
+        }
+
+        const updated = await tx.engagement.update({
+          where: { id: req.params.id },
+          data: updateData,
+        });
+
+        await logAuditTrail(
+          req.user!.id,
+          "ENGAGEMENT_UPDATED",
+          "engagement",
+          updated.id,
+          existing,
+          updated,
+          updated.id,
+          req.body.justification || "Engagement updated",
+          req.ip,
+          req.get("user-agent")
+        );
+
+        return updated;
       });
 
-      await logAuditTrail(
-        req.user!.id,
-        "ENGAGEMENT_UPDATED",
-        "engagement",
-        engagement.id,
-        existing,
-        engagement,
-        engagement.id,
-        req.body.justification || "Engagement updated",
-        req.ip,
-        req.get("user-agent")
-      );
-
       res.json(engagement);
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Validation failed", details: error.errors });
+      }
+      if (error?.statusCode === 404) {
+        return res.status(404).json({ error: error.message });
+      }
+      if (error?.statusCode === 403) {
+        return res.status(403).json({ error: error.message });
       }
       console.error("Update engagement error:", error);
       res.status(500).json({ error: "Failed to update engagement" });
@@ -1477,7 +1520,7 @@ export async function registerRoutes(
       }
 
       // Get started by user if startedAt exists
-      let startedBy = null;
+      let startedBy: { id: string; fullName: string } | null = null;
       if (engagement.startedAt) {
         const startLog = await prisma.auditTrail.findFirst({
           where: { engagementId: id, action: "ENGAGEMENT_STARTED" },
@@ -1825,172 +1868,6 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/clients", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const firmId = req.user!.firmId;
-      if (!firmId) {
-        return res.status(400).json({ error: "User not associated with a firm" });
-      }
-
-      const clients = await prisma.client.findMany({
-        where: { firmId, isActive: true },
-        orderBy: { name: "asc" },
-      });
-
-      res.json(clients);
-    } catch (error) {
-      console.error("Get clients error:", error);
-      res.status(500).json({ error: "Failed to fetch clients" });
-    }
-  });
-
-  app.post("/api/clients", requireAuth, requireMinRole("MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const firmId = req.user!.firmId;
-      if (!firmId) {
-        return res.status(400).json({ error: "User not associated with a firm" });
-      }
-
-      const createSchema = z.object({
-        name: z.string().min(1),
-        tradingName: z.string().optional(),
-        secpNo: z.string().optional(),
-        ntn: z.string().optional(),
-        strn: z.string().optional(),
-        entityType: z.string().optional(),
-        industry: z.string().optional(),
-        address: z.string().optional(),
-        phone: z.string().optional(),
-        email: z.string().email().optional(),
-      });
-
-      const data = createSchema.parse(req.body);
-
-      const client = await prisma.client.create({
-        data: { ...data, firmId },
-      });
-
-      await logAuditTrail(
-        req.user!.id,
-        "CLIENT_CREATED",
-        "client",
-        client.id,
-        null,
-        client,
-        undefined,
-        "New client created",
-        req.ip,
-        req.get("user-agent")
-      );
-
-      res.status(201).json(client);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Validation failed", details: error.errors });
-      }
-      console.error("Create client error:", error);
-      res.status(500).json({ error: "Failed to create client" });
-    }
-  });
-
-  // GET /api/clients/:id - Get single client with details
-  app.get("/api/clients/:id", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const firmId = req.user!.firmId;
-      const client = await prisma.client.findUnique({
-        where: { id: req.params.id },
-        include: {
-          kycDocuments: {
-            where: { deletedAt: null },
-            orderBy: { uploadedAt: "desc" },
-            include: {
-              uploadedBy: { select: { id: true, fullName: true } },
-            },
-          },
-          _count: { select: { engagements: true } },
-        },
-      });
-
-      if (!client) {
-        return res.status(404).json({ error: "Client not found" });
-      }
-
-      if (client.firmId !== firmId) {
-        return res.status(403).json({ error: "Access denied" });
-      }
-
-      res.json(client);
-    } catch (error) {
-      console.error("Get client error:", error);
-      res.status(500).json({ error: "Failed to fetch client" });
-    }
-  });
-
-  // PATCH /api/clients/:id - Update client
-  app.patch("/api/clients/:id", requireAuth, requireMinRole("MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const firmId = req.user!.firmId;
-      const existing = await prisma.client.findUnique({ where: { id: req.params.id } });
-      
-      if (!existing) {
-        return res.status(404).json({ error: "Client not found" });
-      }
-      if (existing.firmId !== firmId) {
-        return res.status(403).json({ error: "Access denied" });
-      }
-
-      const updateSchema = z.object({
-        name: z.string().min(1).optional(),
-        tradingName: z.string().optional().nullable(),
-        secpNo: z.string().optional().nullable(),
-        ntn: z.string().optional().nullable(),
-        strn: z.string().optional().nullable(),
-        entityType: z.string().optional().nullable(),
-        industry: z.string().optional().nullable(),
-        address: z.string().optional().nullable(),
-        phone: z.string().optional().nullable(),
-        email: z.string().email().optional().nullable(),
-        website: z.string().optional().nullable(),
-        ownershipStructure: z.string().optional().nullable(),
-        parentCompany: z.string().optional().nullable(),
-        ceoName: z.string().optional().nullable(),
-        ceoContact: z.string().optional().nullable(),
-        cfoName: z.string().optional().nullable(),
-        cfoContact: z.string().optional().nullable(),
-        priorAuditorName: z.string().optional().nullable(),
-        priorAuditorContact: z.string().optional().nullable(),
-        auditorChangeReason: z.string().optional().nullable(),
-      });
-
-      const data = updateSchema.parse(req.body);
-      const client = await prisma.client.update({
-        where: { id: req.params.id },
-        data,
-      });
-
-      await logAuditTrail(
-        req.user!.id,
-        "CLIENT_UPDATED",
-        "client",
-        client.id,
-        existing,
-        client,
-        undefined,
-        "Client updated",
-        req.ip,
-        req.get("user-agent")
-      );
-
-      res.json(client);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Validation failed", details: error.errors });
-      }
-      console.error("Update client error:", error);
-      res.status(500).json({ error: "Failed to update client" });
-    }
-  });
-
   // GET /api/clients/:id/engagements - Get engagements for a client
   app.get("/api/clients/:id/engagements", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -2179,8 +2056,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/guide-issues", async (req, res) => {
-    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+  app.get("/api/guide-issues", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
     try {
@@ -2196,8 +2072,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/guide-issues", async (req, res) => {
-    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+  app.post("/api/guide-issues", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
     const feedbackSchema = z.object({
@@ -2229,8 +2104,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/guide-issues/:id", async (req, res) => {
-    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+  app.patch("/api/guide-issues/:id", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
     const role = req.user!.role;
@@ -2258,8 +2132,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/guide-issues/:id", async (req, res) => {
-    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+  app.delete("/api/guide-issues/:id", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
     const role = req.user!.role;

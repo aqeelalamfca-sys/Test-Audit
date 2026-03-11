@@ -499,13 +499,13 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           setDbStatus({ state: "ready", message: "Database connection restored", retryCount: 0 });
           logger.info("Database connection restored. Restart the application to complete initialization.", { source: "startup" });
           clearInterval(reconnectInterval);
-        } catch {}
+        } catch (err) { console.error("Database reconnection attempt failed:", err); }
       }, 15000);
       return;
     }
 
     const seedKeepalive = setInterval(async () => {
-      try { await prisma.$queryRaw`SELECT 1`; } catch (_) {}
+      try { await prisma.$queryRaw`SELECT 1`; } catch (err) { console.error("Seed keepalive ping failed:", err); }
     }, 10000);
 
     try {

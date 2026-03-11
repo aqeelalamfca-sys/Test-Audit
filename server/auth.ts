@@ -74,7 +74,7 @@ export async function validateSession(token: string) {
 }
 
 export async function invalidateSession(token: string) {
-  await prisma.session.delete({ where: { token } }).catch(() => {});
+  await prisma.session.delete({ where: { token } }).catch(err => console.error("Session invalidation failed:", err));
 }
 
 export async function logAuditTrail(

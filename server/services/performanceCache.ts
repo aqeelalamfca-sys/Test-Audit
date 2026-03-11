@@ -91,7 +91,7 @@ class PerformanceCache {
         this.redisPrefix + key,
         ttlSeconds,
         JSON.stringify(data)
-      ).catch(() => {});
+      ).catch(err => console.error("Redis cache set failed:", err));
     }
   }
 
@@ -99,7 +99,7 @@ class PerformanceCache {
     this.cache.delete(key);
 
     if (this.redisClient && this.redisConnected) {
-      this.redisClient.del(this.redisPrefix + key).catch(() => {});
+      this.redisClient.del(this.redisPrefix + key).catch(err => console.error("Redis cache invalidate failed:", err));
     }
   }
 
@@ -113,8 +113,8 @@ class PerformanceCache {
 
     if (this.redisClient && this.redisConnected) {
       this.redisClient.keys(this.redisPrefix + pattern.replace(/\*/g, '*'))
-        .then(keys => { if (keys.length > 0) this.redisClient!.del(keys).catch(() => {}); })
-        .catch(() => {});
+        .then(keys => { if (keys.length > 0) this.redisClient!.del(keys).catch(err => console.error("Redis pattern delete failed:", err)); })
+        .catch(err => console.error("Redis pattern key lookup failed:", err));
     }
   }
 
@@ -123,8 +123,8 @@ class PerformanceCache {
 
     if (this.redisClient && this.redisConnected) {
       this.redisClient.keys(this.redisPrefix + '*')
-        .then(keys => { if (keys.length > 0) this.redisClient!.del(keys).catch(() => {}); })
-        .catch(() => {});
+        .then(keys => { if (keys.length > 0) this.redisClient!.del(keys).catch(err => console.error("Redis cache clear delete failed:", err)); })
+        .catch(err => console.error("Redis cache clear key lookup failed:", err));
     }
   }
 

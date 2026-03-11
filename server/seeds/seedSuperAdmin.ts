@@ -4,7 +4,7 @@ import { validatePasswordPolicy } from "../utils/passwordPolicy";
 import { logPlatformAction } from "../services/platformAuditService";
 
 const DEFAULT_EMAIL = "aqeelalam2010@gmail.com";
-const DEFAULT_PASSWORD = "Aqeel@123$";
+const DEFAULT_PASSWORD = process.env.INITIAL_SUPER_ADMIN_PASSWORD || process.env.SUPER_ADMIN_PASSWORD || "";
 
 export async function seedSuperAdmin() {
   try {

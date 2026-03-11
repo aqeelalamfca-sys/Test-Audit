@@ -354,10 +354,10 @@ export function EngagementDialog({
           variant: "destructive" 
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({ 
         title: "Error", 
-        description: `Failed to ${isEditMode ? "update" : "create"} engagement`, 
+        description: error?.message || `Failed to ${isEditMode ? "update" : "create"} engagement`, 
         variant: "destructive" 
       });
     } finally {

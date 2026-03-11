@@ -211,7 +211,7 @@ router.post("/login", loginRateLimit(), async (req: AuthenticatedRequest, res: R
       logSecurityEvent("ACCOUNT_LOCKED_ATTEMPT", clientIp, req.get("user-agent"), {
         email: email.toLowerCase(),
         remainingSeconds: lockStatus.remainingSeconds,
-      }).catch(() => {});
+      }).catch(err => console.error("Security event logging failed:", err));
       return res.status(429).json({
         error: "Account temporarily locked due to too many failed attempts.",
         code: "ACCOUNT_LOCKED",
@@ -225,7 +225,7 @@ router.post("/login", loginRateLimit(), async (req: AuthenticatedRequest, res: R
       recordFailedAttempt(lockoutKey);
       logSecurityEvent("LOGIN_FAILED_UNKNOWN_USER", clientIp, req.get("user-agent"), {
         email: email.toLowerCase(),
-      }).catch(() => {});
+      }).catch(err => console.error("Security event logging failed:", err));
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
@@ -239,7 +239,7 @@ router.post("/login", loginRateLimit(), async (req: AuthenticatedRequest, res: R
         logSecurityEvent("SUPER_ADMIN_IP_BLOCKED", clientIp, req.get("user-agent"), {
           email: email.toLowerCase(),
           reason: ipCheck.reason,
-        }).catch(() => {});
+        }).catch(err => console.error("Security event logging failed:", err));
         return res.status(403).json({
           error: ipCheck.reason,
           code: "IP_NOT_ALLOWED",
@@ -295,7 +295,7 @@ router.post("/login", loginRateLimit(), async (req: AuthenticatedRequest, res: R
         clientIp,
         req.get("user-agent"),
         { email: user.email, reason: "invalid_password" }
-      ).catch(() => {});
+      ).catch(err => console.error("Platform action logging failed:", err));
       if (lockResult.locked) {
         return res.status(429).json({
           error: "Account temporarily locked due to too many failed attempts. Try again in 15 minutes.",
@@ -347,7 +347,7 @@ router.post("/login", loginRateLimit(), async (req: AuthenticatedRequest, res: R
       clientIp,
       req.get("user-agent"),
       { email: user.email, role: user.role }
-    ).catch(() => {});
+    ).catch(err => console.error("Platform action logging failed:", err));
 
     const { passwordHash, twoFactorSecret, ...safeUser } = user;
 

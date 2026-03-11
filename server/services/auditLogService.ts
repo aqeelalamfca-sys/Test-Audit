@@ -24,7 +24,7 @@ export async function logPlatformAction(entry: AuditLogEntry): Promise<void> {
         entityId: entry.entityId || null,
         ip: entry.ip || null,
         userAgent: entry.userAgent || null,
-        meta: entry.meta || {},
+        meta: (entry.meta || {}) as any,
       },
     });
   } catch (error) {
@@ -50,7 +50,7 @@ export async function logSecurityEvent(
         entityId: null,
         ip,
         userAgent: userAgent || null,
-        meta,
+        meta: meta as any,
       },
     });
   } catch (error) {
@@ -94,7 +94,7 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
           path: req.path,
           statusCode: res.statusCode,
         },
-      }).catch(() => {});
+      }).catch(err => console.error("Audit log platform action failed:", err));
     }
   });
 
