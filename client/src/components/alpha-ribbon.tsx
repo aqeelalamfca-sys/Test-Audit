@@ -10,7 +10,7 @@ export function AlphaRibbon() {
       <span className="text-[11px] font-medium text-amber-700 dark:text-amber-300">
         <span className="font-semibold">Beta Version</span>
         <span className="mx-1.5 text-amber-500/60 dark:text-amber-500/40">—</span>
-        Platform undergoing cybersecurity review and E2E validation. Your feedback is welcome.
+        A preliminary release of software made available for testing, feedback, and refinement.
       </span>
     </div>
   );
