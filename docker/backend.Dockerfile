@@ -34,18 +34,18 @@ ENV NODE_ENV=production
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-COPY --from=proddeps /app/node_modules ./node_modules
-COPY --from=proddeps /app/prisma ./prisma
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/package.json ./
-COPY docker/docker-entrypoint.sh ./docker-entrypoint.sh
+COPY --from=proddeps --chown=appuser:appgroup /app/node_modules ./node_modules
+COPY --from=proddeps --chown=appuser:appgroup /app/prisma ./prisma
+COPY --from=build --chown=appuser:appgroup /app/dist ./dist
+COPY --from=build --chown=appuser:appgroup /app/package.json ./
+COPY --chown=appuser:appgroup docker/docker-entrypoint.sh ./docker-entrypoint.sh
 
 RUN curl -sS -o /app/rds-combined-ca-bundle.pem \
       "https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem" 2>/dev/null || true
 
 RUN mkdir -p uploads/logos uploads/notifications logs && \
     chmod +x docker-entrypoint.sh && \
-    chown -R appuser:appgroup /app
+    chown -R appuser:appgroup uploads logs rds-combined-ca-bundle.pem 2>/dev/null || true
 
 STOPSIGNAL SIGTERM
 
