@@ -794,6 +794,14 @@ router.get("/:engagementId/drilldown/:fsLineItem", requireAuth, async (req: Auth
       return res.status(404).json({ error: "Engagement not found" });
     }
 
+    const importBalances = await prisma.importAccountBalance.findMany({
+      where: {
+        engagementId,
+        fsHeadKey: fsLineItem
+      },
+      orderBy: { accountCode: "asc" }
+    });
+
     const coaAccounts = await prisma.coAAccount.findMany({
       where: { 
         engagementId,
@@ -802,7 +810,10 @@ router.get("/:engagementId/drilldown/:fsLineItem", requireAuth, async (req: Auth
       orderBy: { accountCode: "asc" }
     });
 
-    if (coaAccounts.length === 0) {
+    const importClosingRecords = importBalances.filter(b => b.balanceType === 'CB');
+    const useImportData = importClosingRecords.length > 0;
+
+    if (!useImportData && coaAccounts.length === 0) {
       return res.json({
         fsLineItem,
         displayName: LINE_ITEM_DISPLAY_NAMES[fsLineItem] || fsLineItem,
@@ -824,17 +835,71 @@ router.get("/:engagementId/drilldown/:fsLineItem", requireAuth, async (req: Auth
       });
     }
 
-    const accountCodes = coaAccounts.map(a => a.accountCode);
-    
-    const accounts = coaAccounts.map(coa => ({
-      glCode: coa.accountCode,
-      glName: coa.accountName,
-      opening: Number(coa.openingBalance || 0),
-      periodDr: Number(coa.periodDr || 0),
-      periodCr: Number(coa.periodCr || 0),
-      closing: Number(coa.closingBalance || 0),
-      net: Number(coa.closingBalance || 0)
-    }));
+    let accountCodes: string[] = [];
+    let accounts: Array<{ glCode: string; glName: string; opening: number; periodDr: number; periodCr: number; closing: number; net: number }> = [];
+    let mappingClass: string | null = null;
+    let mappingSubClass: string | null = null;
+
+    if (useImportData) {
+      const closingByCode: Record<string, { debit: number; credit: number; name: string; accountClass: string | null; accountSubclass: string | null }> = {};
+      const openingByCode: Record<string, { debit: number; credit: number }> = {};
+
+      for (const line of importBalances) {
+        const debit = Number(line.debitAmount) || 0;
+        const credit = Number(line.creditAmount) || 0;
+
+        if (line.balanceType === 'CB') {
+          closingByCode[line.accountCode] = {
+            debit,
+            credit,
+            name: line.accountName || '',
+            accountClass: line.accountClass || null,
+            accountSubclass: line.accountSubclass || null
+          };
+        } else if (line.balanceType === 'OB') {
+          openingByCode[line.accountCode] = { debit, credit };
+        }
+      }
+
+      accountCodes = Object.keys(closingByCode);
+      const firstEntry = Object.values(closingByCode)[0];
+      mappingClass = firstEntry?.accountClass || null;
+      mappingSubClass = firstEntry?.accountSubclass || null;
+
+      accounts = accountCodes.map(code => {
+        const closing = closingByCode[code];
+        const opening = openingByCode[code] || { debit: 0, credit: 0 };
+
+        const openingNet = opening.debit - opening.credit;
+        const closingNet = closing.debit - closing.credit;
+        const periodDr = closing.debit - opening.debit;
+        const periodCr = closing.credit - opening.credit;
+
+        return {
+          glCode: code,
+          glName: closing.name,
+          opening: openingNet,
+          periodDr: periodDr > 0 ? periodDr : 0,
+          periodCr: periodCr > 0 ? periodCr : 0,
+          closing: closingNet,
+          net: closingNet
+        };
+      });
+    } else {
+      accountCodes = coaAccounts.map(a => a.accountCode);
+      mappingClass = coaAccounts[0]?.accountClass || null;
+      mappingSubClass = coaAccounts[0]?.accountSubclass || null;
+
+      accounts = coaAccounts.map(coa => ({
+        glCode: coa.accountCode,
+        glName: coa.accountName,
+        opening: Number(coa.openingBalance || 0),
+        periodDr: Number(coa.periodDr || 0),
+        periodCr: Number(coa.periodCr || 0),
+        closing: Number(coa.closingBalance || 0),
+        net: Number(coa.closingBalance || 0)
+      }));
+    }
 
     const accountsTotal = accounts.reduce((sum, a) => sum + a.closing, 0);
 
@@ -907,12 +972,11 @@ router.get("/:engagementId/drilldown/:fsLineItem", requireAuth, async (req: Auth
       sourceModule: entry.documentType || null
     }));
 
-    const firstAccount = coaAccounts[0];
     const mapping = {
       fsHead: fsLineItem,
-      class: firstAccount?.accountClass || null,
-      subClass: firstAccount?.accountSubclass || null,
-      mappedGlCount: coaAccounts.length
+      class: mappingClass,
+      subClass: mappingSubClass,
+      mappedGlCount: accounts.length
     };
 
     res.json({
