@@ -119,6 +119,16 @@ The Platform Dashboard (`/platform/dashboard`) shows real-time VPS metrics via S
 - Backend: `server/routes/systemHealthRoutes.ts`
 - Frontend: `client/src/pages/platform/platform-dashboard.tsx`
 
+## Legal Acceptance Feature
+
+Signup captures legal acceptance with Terms of Service and Privacy Policy:
+- **Signup page** (`client/src/pages/signup.tsx`): Required checkbox with clickable "Terms of Service" and "Privacy Policy" links that open PDF modals
+- **PDF files**: `client/public/legal/terms-of-service.pdf` and `client/public/legal/privacy-policy.pdf` (version 1.0)
+- **Database table**: `LegalAcceptance` stores firm_name, admin_name, email, mobile, IP address, timestamps, and document versions
+- **Backend**: Legal acceptance record created inside the signup transaction (`server/authRoutes.ts`)
+- **Super Admin dashboard**: `/platform/legal-acceptances` page with search, pagination, and detail view
+- **API**: `GET /api/platform/legal-acceptances` and `GET /api/platform/legal-acceptances/:id` (super admin only)
+
 ## DevOps Control Center (devops/)
 
 Replit serves as the central DevOps controller for the entire deployment pipeline:

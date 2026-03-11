@@ -10,6 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -90,6 +96,7 @@ export default function SignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [legalModal, setLegalModal] = useState<{ open: boolean; type: "terms" | "privacy" }>({ open: false, type: "terms" });
 
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -631,7 +638,24 @@ export default function SignupPage() {
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel className="text-sm font-normal">
-                          I agree to the Terms of Service and Privacy Policy
+                          I agree to the{" "}
+                          <button
+                            type="button"
+                            className="text-primary underline hover:text-primary/80 font-medium"
+                            onClick={() => setLegalModal({ open: true, type: "terms" })}
+                            data-testid="link-terms-of-service"
+                          >
+                            Terms of Service
+                          </button>
+                          {" "}and{" "}
+                          <button
+                            type="button"
+                            className="text-primary underline hover:text-primary/80 font-medium"
+                            onClick={() => setLegalModal({ open: true, type: "privacy" })}
+                            data-testid="link-privacy-policy"
+                          >
+                            Privacy Policy
+                          </button>
                         </FormLabel>
                         <FormMessage />
                       </div>
@@ -674,6 +698,23 @@ export default function SignupPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={legalModal.open} onOpenChange={(open) => setLegalModal((prev) => ({ ...prev, open }))}>
+        <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle>
+              {legalModal.type === "terms" ? "Terms of Service" : "Privacy Policy"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 px-6 pb-6 min-h-0">
+            <iframe
+              src={legalModal.type === "terms" ? "/legal/terms-of-service.pdf" : "/legal/privacy-policy.pdf"}
+              className="w-full h-full rounded-md border"
+              title={legalModal.type === "terms" ? "Terms of Service" : "Privacy Policy"}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -231,6 +231,7 @@ model Firm {
   firmDeficiencies       FirmDeficiencyRecord[]        @relation("FirmDeficiencies")
   firmRemediationActions FirmRemediationAction[]       @relation("FirmRemediationActions")
   firmControlActivityLogs FirmControlActivityLog[]     @relation("FirmControlActivityLogs")
+  legalAcceptances        LegalAcceptance[]             @relation("FirmLegalAcceptances")
 }
 
 model Plan {
@@ -908,6 +909,7 @@ model User {
   firmDeficiencyOwned        FirmDeficiencyRecord[]     @relation("FirmDeficiencyOwner")
   firmRemediationAssigned    FirmRemediationAction[]    @relation("FirmRemediationAssignee")
   firmControlActivityLogs    FirmControlActivityLog[]   @relation("FirmControlActivityLogActor")
+  legalAcceptances           LegalAcceptance[]          @relation("UserLegalAcceptances")
 }
 
 model Session {
@@ -12990,4 +12992,26 @@ model FirmControlActivityLog {
   @@index([firmId, actorRole])
   @@index([actorUserId])
   @@index([createdAt])
+}
+
+model LegalAcceptance {
+  id                  String   @id @default(uuid())
+  firmId              String
+  acceptedByUserId    String
+  firmNameSnapshot    String
+  adminName           String
+  email               String
+  mobileNumber        String?
+  ipAddress           String?
+  termsVersion        String   @default("1.0")
+  privacyVersion      String   @default("1.0")
+  acceptedAt          DateTime @default(now())
+  createdAt           DateTime @default(now())
+
+  firm Firm @relation("FirmLegalAcceptances", fields: [firmId], references: [id], onDelete: Cascade)
+  user User @relation("UserLegalAcceptances", fields: [acceptedByUserId], references: [id])
+
+  @@index([firmId])
+  @@index([acceptedByUserId])
+  @@index([acceptedAt])
 }

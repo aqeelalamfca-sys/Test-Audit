@@ -1600,4 +1600,52 @@ router.patch("/feedback/:id/status", async (req: AuthenticatedRequest, res: Resp
   }
 });
 
+router.get("/legal-acceptances", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { search } = req.query;
+    const pageNum = Math.max(1, Math.min(1000, parseInt(req.query.page as string) || 1));
+    const take = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 20));
+    const skip = (pageNum - 1) * take;
+
+    const where: any = {};
+    if (search) {
+      where.OR = [
+        { firmNameSnapshot: { contains: search as string, mode: "insensitive" } },
+        { adminName: { contains: search as string, mode: "insensitive" } },
+        { email: { contains: search as string, mode: "insensitive" } },
+      ];
+    }
+
+    const [acceptances, total] = await Promise.all([
+      prisma.legalAcceptance.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { acceptedAt: "desc" },
+      }),
+      prisma.legalAcceptance.count({ where }),
+    ]);
+
+    res.json({ acceptances, total, page: pageNum, limit: take });
+  } catch (error) {
+    console.error("Error fetching legal acceptances:", error);
+    res.status(500).json({ error: "Failed to fetch legal acceptances" });
+  }
+});
+
+router.get("/legal-acceptances/:id", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const acceptance = await prisma.legalAcceptance.findUnique({
+      where: { id: req.params.id },
+    });
+    if (!acceptance) {
+      return res.status(404).json({ error: "Legal acceptance not found" });
+    }
+    res.json(acceptance);
+  } catch (error) {
+    console.error("Error fetching legal acceptance:", error);
+    res.status(500).json({ error: "Failed to fetch legal acceptance" });
+  }
+});
+
 export default router;

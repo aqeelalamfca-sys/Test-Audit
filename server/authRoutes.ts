@@ -548,6 +548,23 @@ router.post("/signup", async (req: AuthenticatedRequest, res: Response) => {
         },
       });
 
+      const clientIp = req.ip || req.socket?.remoteAddress || null;
+
+      await tx.legalAcceptance.create({
+        data: {
+          firmId: firm.id,
+          acceptedByUserId: adminUser.id,
+          firmNameSnapshot: data.firmLegalName,
+          adminName: data.adminFullName,
+          email: data.adminEmail,
+          mobileNumber: data.mobileNumber || null,
+          ipAddress: clientIp,
+          termsVersion: "1.0",
+          privacyVersion: "1.0",
+          acceptedAt: now,
+        },
+      });
+
       return { firm, adminUser, subscription };
     });
 

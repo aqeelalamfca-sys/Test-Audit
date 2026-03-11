@@ -290,6 +290,19 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
+                      isActive={location === "/platform/legal-acceptances"}
+                      data-testid="nav-platform-legal-acceptances"
+                      className={activeClasses}
+                    >
+                      <Link href="/platform/legal-acceptances">
+                        <FileText className={`h-4 w-4 ${iconClasses}`} />
+                        <span>Legal Acceptances</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
                       isActive={location === "/deployment-guide"}
                       data-testid="nav-deployment-guide"
                       className={activeClasses}
