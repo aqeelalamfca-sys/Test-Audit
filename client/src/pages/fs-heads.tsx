@@ -17,7 +17,7 @@ import {
   AlertTriangle, UserCheck, FileCheck, ClipboardList, TestTube2,
   Shield, MessageSquare, Plus, BarChart3, FilePen, TrendingUp, Calculator,
   Sparkles, Loader2, Brain, RefreshCw, Upload, Target, ShieldCheck, Lock,
-  Save, X, FileUp, StickyNote, ChevronRight, Info
+  Save, X, FileUp, StickyNote, ChevronRight, Info, Download, RotateCcw, Search
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { AICopilotToggle } from "@/components/ai-copilot-panel";
@@ -239,6 +239,7 @@ const WIZARD_STEPS = [
 
 function FSHeadsContent({ engagementId, saveRef }: { engagementId: string; saveRef: React.MutableRefObject<{ save: () => Promise<boolean>; isDirty: boolean } | null> }) {
   const [selectedFsHead, setSelectedFsHead] = useState<string | null>(null);
+  const [navSearchQuery, setNavSearchQuery] = useState("");
   const { toast } = useToast();
   const wizardSaveRef = useRef<{ save: () => Promise<boolean>; isDirty: boolean } | null>(null);
 
@@ -431,9 +432,24 @@ function FSHeadsContent({ engagementId, saveRef }: { engagementId: string; saveR
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0 max-h-[calc(100vh-300px)] overflow-y-auto">
+            <div className="px-3 py-2 border-b">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                <Input
+                  placeholder="Filter FS heads..."
+                  value={navSearchQuery}
+                  onChange={(e) => setNavSearchQuery(e.target.value)}
+                  className="h-7 pl-7 text-xs"
+                  data-testid="input-nav-search"
+                />
+              </div>
+            </div>
             <Accordion type="multiple" defaultValue={statementOrder} className="w-full">
               {statementOrder.map(statementType => {
-                const heads = groupedHeads[statementType];
+                const allHeads = groupedHeads[statementType];
+                const heads = navSearchQuery.trim()
+                  ? allHeads?.filter(h => h.name.toLowerCase().includes(navSearchQuery.toLowerCase()))
+                  : allHeads;
                 if (!heads || heads.length === 0) return null;
                 return (
                   <AccordionItem key={statementType} value={statementType} className="border-b last:border-b-0">
@@ -1076,6 +1092,19 @@ function FSHeadWizard({
     onError: () => { toast({ title: "Error", description: "Failed to save notes", variant: "destructive" }); }
   });
 
+  const resolveReviewPointMutation = useMutation({
+    mutationFn: async (data: { id: string; status: string; response: string }) => {
+      const res = await apiRequest("PATCH", `/api/engagements/${engagementId}/fs-heads/${fsHeadKey}/review-points/${data.id}`, { status: data.status, response: data.response });
+      if (!res.ok) throw new Error("Failed to resolve review point");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Review point resolved" });
+      queryClient.invalidateQueries({ queryKey: ['/api/engagements', engagementId, 'fs-heads', fsHeadKey] });
+    },
+    onError: () => { toast({ title: "Error", description: "Failed to resolve review point", variant: "destructive" }); }
+  });
+
   const addReviewPointMutation = useMutation({
     mutationFn: async (data: { description: string; severity: string }) => {
       const res = await apiRequest("POST", `/api/engagements/${engagementId}/fs-heads/${fsHeadKey}/review-points`, data);
@@ -1282,6 +1311,7 @@ function FSHeadWizard({
               handleSignOff={handleSignOff}
               statusTransitionMutation={statusTransitionMutation}
               addReviewPointMutation={addReviewPointMutation}
+              resolveReviewPointMutation={resolveReviewPointMutation}
               newReviewPoint={newReviewPoint}
               setNewReviewPoint={setNewReviewPoint}
               newReviewSeverity={newReviewSeverity}
@@ -1967,9 +1997,25 @@ function Step3Procedures({
                   <Button size="sm" variant="outline" onClick={() => setEditingTOC(null)} data-testid="btn-cancel-toc-new"><X className="h-3 w-3" /></Button>
                 </div>
               </div>
-              <div className="space-y-1 mt-3">
-                <Label className="text-xs">Description</Label>
-                <Textarea value={editingTOC.controlDescription || ''} onChange={(e) => setEditingTOC({ ...editingTOC, controlDescription: e.target.value })} placeholder="Describe the control..." rows={2} data-testid="input-description-toc-new" />
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Description</Label>
+                  <Textarea value={editingTOC.controlDescription || ''} onChange={(e) => setEditingTOC({ ...editingTOC, controlDescription: e.target.value })} placeholder="Describe the control..." rows={2} data-testid="input-description-toc-new" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Control Owner</Label>
+                  <Input value={editingTOC.controlOwner || ''} onChange={(e) => setEditingTOC({ ...editingTOC, controlOwner: e.target.value })} placeholder="e.g., Finance Manager" data-testid="input-owner-toc-new" />
+                  <Label className="text-xs mt-2">Result</Label>
+                  <Select value={editingTOC.result || 'NOT_TESTED'} onValueChange={(v: string) => setEditingTOC({ ...editingTOC, result: v })}>
+                    <SelectTrigger data-testid="select-result-toc-new"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NOT_TESTED">Not Tested</SelectItem>
+                      <SelectItem value="EFFECTIVE">Effective</SelectItem>
+                      <SelectItem value="INEFFECTIVE">Ineffective</SelectItem>
+                      <SelectItem value="DEVIATION">Deviation Found</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           )}
@@ -2024,9 +2070,25 @@ function Step3Procedures({
                           <Button size="sm" variant="outline" onClick={() => setEditingTOC(null)}><X className="h-3 w-3" /></Button>
                         </div>
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Description</Label>
-                        <Textarea value={editingTOC.controlDescription || ''} onChange={(e) => setEditingTOC({ ...editingTOC, controlDescription: e.target.value })} rows={2} data-testid="input-description-toc-inline" />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Description</Label>
+                          <Textarea value={editingTOC.controlDescription || ''} onChange={(e) => setEditingTOC({ ...editingTOC, controlDescription: e.target.value })} rows={2} data-testid="input-description-toc-inline" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Control Owner</Label>
+                          <Input value={editingTOC.controlOwner || ''} onChange={(e) => setEditingTOC({ ...editingTOC, controlOwner: e.target.value })} placeholder="e.g., Finance Manager" />
+                          <Label className="text-xs mt-2">Result</Label>
+                          <Select value={editingTOC.result || 'NOT_TESTED'} onValueChange={(v: string) => setEditingTOC({ ...editingTOC, result: v })}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="NOT_TESTED">Not Tested</SelectItem>
+                              <SelectItem value="EFFECTIVE">Effective</SelectItem>
+                              <SelectItem value="INEFFECTIVE">Ineffective</SelectItem>
+                              <SelectItem value="DEVIATION">Deviation Found</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -2042,7 +2104,7 @@ function Step3Procedures({
                       {getStatusBadge(toc.result)}
                       <div className="flex gap-1">
                         <Button size="icon" variant="ghost" onClick={() => setEditingTOC({ ...toc })} data-testid={`btn-edit-toc-${toc.id}`}><FilePen className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => deleteTOCMutation.mutate(toc.id)} data-testid={`btn-delete-toc-${toc.id}`}><X className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => { if (window.confirm('Delete this control test?')) deleteTOCMutation.mutate(toc.id); }} data-testid={`btn-delete-toc-${toc.id}`}><X className="h-4 w-4 text-red-500" /></Button>
                       </div>
                     </div>
                   )}
@@ -2111,6 +2173,28 @@ function Step3Procedures({
                 <Label className="text-xs">Description</Label>
                 <Textarea value={editingTOD.procedureDescription || ''} onChange={(e) => setEditingTOD({ ...editingTOD, procedureDescription: e.target.value })} placeholder="Describe the test..." rows={2} data-testid="input-description-tod-new" />
               </div>
+              <div className="grid grid-cols-4 gap-3 mt-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Population Size</Label>
+                  <Input value={editingTOD.populationCount || ''} onChange={(e) => setEditingTOD({ ...editingTOD, populationCount: parseInt(e.target.value) || 0 })} type="number" placeholder="e.g. 500" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Population Value</Label>
+                  <Input value={editingTOD.populationValue || ''} onChange={(e) => setEditingTOD({ ...editingTOD, populationValue: parseFloat(e.target.value) || 0 })} type="number" placeholder="e.g. 1000000" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Sample Size</Label>
+                  <Input value={editingTOD.sampleSize || ''} onChange={(e) => setEditingTOD({ ...editingTOD, sampleSize: parseInt(e.target.value) || 0 })} type="number" placeholder="e.g. 25" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Exceptions Found</Label>
+                  <Input value={editingTOD.exceptionsFound || ''} onChange={(e) => setEditingTOD({ ...editingTOD, exceptionsFound: parseInt(e.target.value) || 0 })} type="number" placeholder="0" />
+                </div>
+              </div>
+              <div className="space-y-1 mt-3">
+                <Label className="text-xs">Conclusion</Label>
+                <Textarea value={editingTOD.conclusion || ''} onChange={(e) => setEditingTOD({ ...editingTOD, conclusion: e.target.value })} placeholder="Conclusion of this test..." rows={2} />
+              </div>
             </div>
           )}
           {todItems.length === 0 && editingTOD?.id !== 'new' ? (
@@ -2163,21 +2247,60 @@ function Step3Procedures({
                         <Label className="text-xs">Description</Label>
                         <Textarea value={editingTOD.procedureDescription || ''} onChange={(e) => setEditingTOD({ ...editingTOD, procedureDescription: e.target.value })} rows={2} />
                       </div>
+                      <div className="grid grid-cols-4 gap-3 mt-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Population Size</Label>
+                          <Input value={editingTOD.populationCount || ''} onChange={(e) => setEditingTOD({ ...editingTOD, populationCount: parseInt(e.target.value) || 0 })} type="number" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Population Value</Label>
+                          <Input value={editingTOD.populationValue || ''} onChange={(e) => setEditingTOD({ ...editingTOD, populationValue: parseFloat(e.target.value) || 0 })} type="number" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Sample Size</Label>
+                          <Input value={editingTOD.sampleSize || ''} onChange={(e) => setEditingTOD({ ...editingTOD, sampleSize: parseInt(e.target.value) || 0 })} type="number" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Exceptions</Label>
+                          <Input value={editingTOD.exceptionsFound || ''} onChange={(e) => setEditingTOD({ ...editingTOD, exceptionsFound: parseInt(e.target.value) || 0 })} type="number" />
+                        </div>
+                      </div>
+                      <div className="space-y-1 mt-3">
+                        <Label className="text-xs">Conclusion</Label>
+                        <Textarea value={editingTOD.conclusion || ''} onChange={(e) => setEditingTOD({ ...editingTOD, conclusion: e.target.value })} rows={2} placeholder="Conclusion..." />
+                      </div>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-sm">{tod.todRef}</span>
-                          <Badge variant="outline" className="text-xs">{tod.samplingMethod || '-'}</Badge>
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm">{tod.todRef}</span>
+                            <Badge variant="outline" className="text-xs">{tod.samplingMethod || '-'}</Badge>
+                            {(tod.sampleSize || 0) > 0 && (
+                              <span className="text-[10px] text-muted-foreground">Sample: {tod.sampleSize}/{tod.populationCount || '?'}</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{tod.procedureDescription}</p>
                         </div>
-                        <p className="text-sm text-muted-foreground">{tod.procedureDescription}</p>
+                        {getStatusBadge(tod.result)}
+                        <div className="flex gap-1">
+                          <Button size="icon" variant="ghost" onClick={() => setEditingTOD({ ...tod })} data-testid={`btn-edit-tod-${tod.id}`}><FilePen className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="ghost" onClick={() => { if (window.confirm('Delete this test of detail?')) deleteTODMutation.mutate(tod.id); }} data-testid={`btn-delete-tod-${tod.id}`}><X className="h-4 w-4 text-red-500" /></Button>
+                        </div>
                       </div>
-                      {getStatusBadge(tod.result)}
-                      <div className="flex gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => setEditingTOD({ ...tod })} data-testid={`btn-edit-tod-${tod.id}`}><FilePen className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => deleteTODMutation.mutate(tod.id)} data-testid={`btn-delete-tod-${tod.id}`}><X className="h-4 w-4" /></Button>
-                      </div>
+                      {((tod.exceptionsFound || 0) > 0 || tod.conclusion) && (
+                        <div className="mt-2 pt-2 border-t flex items-start gap-4 text-xs">
+                          {(tod.exceptionsFound || 0) > 0 && (
+                            <span className="text-amber-600 flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              {tod.exceptionsFound} exception{(tod.exceptionsFound || 0) > 1 ? 's' : ''}
+                              {(tod.projectedMisstatement || 0) > 0 && ` (projected: ${formatAccounting(tod.projectedMisstatement || 0)})`}
+                            </span>
+                          )}
+                          {tod.conclusion && <span className="text-muted-foreground flex-1 truncate">{tod.conclusion}</span>}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2237,6 +2360,20 @@ function Step3Procedures({
                 <Label className="text-xs">Description</Label>
                 <Textarea value={editingAnalytics.description || ''} onChange={(e) => setEditingAnalytics({ ...editingAnalytics, description: e.target.value })} placeholder="Describe the procedure..." rows={2} data-testid="input-description-analytics-new" />
               </div>
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Current Year Value</Label>
+                  <Input value={editingAnalytics.currentYearValue || ''} onChange={(e) => setEditingAnalytics({ ...editingAnalytics, currentYearValue: parseFloat(e.target.value) || 0 })} type="number" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Prior Year Value</Label>
+                  <Input value={editingAnalytics.priorYearValue || ''} onChange={(e) => setEditingAnalytics({ ...editingAnalytics, priorYearValue: parseFloat(e.target.value) || 0 })} type="number" />
+                </div>
+              </div>
+              <div className="space-y-1 mt-3">
+                <Label className="text-xs">Conclusion</Label>
+                <Textarea value={editingAnalytics.conclusion || ''} onChange={(e) => setEditingAnalytics({ ...editingAnalytics, conclusion: e.target.value })} placeholder="Conclusion..." rows={2} />
+              </div>
             </div>
           )}
           {analyticsItems.length === 0 && editingAnalytics?.id !== 'new' ? (
@@ -2281,22 +2418,45 @@ function Step3Procedures({
                         <Label className="text-xs">Description</Label>
                         <Textarea value={editingAnalytics.description || ''} onChange={(e) => setEditingAnalytics({ ...editingAnalytics, description: e.target.value })} rows={2} />
                       </div>
+                      <div className="grid grid-cols-2 gap-3 mt-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Current Year Value</Label>
+                          <Input value={editingAnalytics.currentYearValue || ''} onChange={(e) => setEditingAnalytics({ ...editingAnalytics, currentYearValue: parseFloat(e.target.value) || 0 })} type="number" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Prior Year Value</Label>
+                          <Input value={editingAnalytics.priorYearValue || ''} onChange={(e) => setEditingAnalytics({ ...editingAnalytics, priorYearValue: parseFloat(e.target.value) || 0 })} type="number" />
+                        </div>
+                      </div>
+                      <div className="space-y-1 mt-3">
+                        <Label className="text-xs">Conclusion</Label>
+                        <Textarea value={editingAnalytics.conclusion || ''} onChange={(e) => setEditingAnalytics({ ...editingAnalytics, conclusion: e.target.value })} rows={2} placeholder="Conclusion of this analytical procedure..." />
+                      </div>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-sm">{ana.procedureRef}</span>
-                          <Badge variant="outline" className="text-xs">{ana.analyticalType}</Badge>
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm">{ana.procedureRef}</span>
+                            <Badge variant="outline" className="text-xs">{ana.analyticalType}</Badge>
+                            {(ana.variancePercentage !== undefined && ana.variancePercentage !== null) && (
+                              <span className={`text-[10px] font-medium ${Math.abs(ana.variancePercentage) > (ana.thresholdPercentage || 10) ? 'text-amber-600' : 'text-green-600'}`}>
+                                {ana.variancePercentage > 0 ? '▲' : '▼'}{Math.abs(ana.variancePercentage).toFixed(1)}%
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{ana.description}</p>
                         </div>
-                        <p className="text-sm text-muted-foreground">{ana.description}</p>
+                        {ana.conclusion ? <Badge variant="default" className="text-xs">Complete</Badge> : <Badge variant="outline" className="text-xs">Pending</Badge>}
+                        <div className="flex gap-1">
+                          <Button size="icon" variant="ghost" onClick={() => setEditingAnalytics({ ...ana })} data-testid={`btn-edit-analytics-${ana.id}`}><FilePen className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="ghost" onClick={() => { if (window.confirm('Delete this analytical procedure?')) deleteAnalyticsMutation.mutate(ana.id); }} data-testid={`btn-delete-analytics-${ana.id}`}><X className="h-4 w-4 text-red-500" /></Button>
+                        </div>
                       </div>
-                      {ana.conclusion ? <Badge variant="default" className="text-xs">Complete</Badge> : <Badge variant="outline" className="text-xs">Pending</Badge>}
-                      <div className="flex gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => setEditingAnalytics({ ...ana })} data-testid={`btn-edit-analytics-${ana.id}`}><FilePen className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => deleteAnalyticsMutation.mutate(ana.id)} data-testid={`btn-delete-analytics-${ana.id}`}><X className="h-4 w-4" /></Button>
-                      </div>
-                    </div>
+                      {ana.conclusion && (
+                        <div className="mt-2 pt-2 border-t text-xs text-muted-foreground truncate">{ana.conclusion}</div>
+                      )}
                   )}
                 </div>
               ))}
@@ -2313,6 +2473,7 @@ function Step4Evidence({ workingPaper, tocItems, todItems, engagementId, fsHeadK
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showSufficiencyPanel, setShowSufficiencyPanel] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const handleFileUpload = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -2339,9 +2500,27 @@ function Step4Evidence({ workingPaper, tocItems, todItems, engagementId, fsHeadK
       toast({ title: "Upload Failed", description: err.message, variant: "destructive" });
     } finally {
       setIsUploading(false);
+      setIsDragOver(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }, [engagementId, fsHeadKey, toast]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    handleFileUpload(e.dataTransfer.files);
+  }, [handleFileUpload]);
 
   const deleteAttachmentMutation = useMutation({
     mutationFn: async (attachmentId: string) => {
@@ -2449,31 +2628,41 @@ Format your response with clear sections for each area above.`
         </div>
       </div>
 
+      <div
+        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${isDragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/20 hover:border-primary/50'}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={triggerUpload}
+        data-testid="drop-zone"
+      >
+        {isUploading ? (
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm font-medium">Uploading...</p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2">
+            <Upload className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-medium">{isDragOver ? 'Drop files here' : 'Drag & drop files or click to upload'}</p>
+              <p className="text-xs text-muted-foreground mt-1">PDF, DOC, XLS, JPG, PNG, CSV (max 10MB each)</p>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">Attached Evidence</h3>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" className="gap-1" onClick={() => aiEvidenceMutation.mutate()} disabled={aiEvidenceMutation.isPending} data-testid="btn-ai-evidence">
-            {aiEvidenceMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Brain className="h-3 w-3" />}
-            AI Assess
-          </Button>
-          <Button size="sm" variant="outline" className="gap-1" onClick={triggerUpload} disabled={isUploading} data-testid="btn-upload-evidence">
-            {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileUp className="h-3 w-3" />}
-            {isUploading ? "Uploading..." : "Upload"}
-          </Button>
-        </div>
+        <h3 className="text-sm font-medium">Attached Evidence ({workingPaper.attachments?.length || 0})</h3>
+        <Button size="sm" variant="outline" className="gap-1" onClick={() => aiEvidenceMutation.mutate()} disabled={aiEvidenceMutation.isPending} data-testid="btn-ai-evidence">
+          {aiEvidenceMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Brain className="h-3 w-3" />}
+          AI Sufficiency Check
+        </Button>
       </div>
 
       {(workingPaper.attachments?.length || 0) === 0 ? (
-        <div className="text-center py-8 text-muted-foreground border rounded-lg border-dashed" data-testid="evidence-empty">
-          <Upload className="h-10 w-10 mx-auto mb-2 opacity-30" />
-          <p className="text-sm">No evidence attached yet</p>
-          <p className="text-xs mt-1 max-w-sm mx-auto">
-            Upload bank confirmations, invoices, contracts, and other supporting documents.
-          </p>
-          <Button size="sm" variant="outline" className="mt-4 gap-1" onClick={triggerUpload} disabled={isUploading} data-testid="btn-add-first-evidence">
-            {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
-            {isUploading ? "Uploading..." : "Add First Evidence"}
-          </Button>
+        <div className="text-center py-4 text-muted-foreground" data-testid="evidence-empty">
+          <p className="text-sm">No evidence attached yet. Upload supporting documents above.</p>
         </div>
       ) : (
         <Table data-testid="evidence-table">
@@ -2488,25 +2677,50 @@ Format your response with clear sections for each area above.`
             </TableRow>
           </TableHeader>
           <TableBody>
-            {workingPaper.attachments?.map((att: FSHeadAttachment) => (
-              <TableRow key={att.id} data-testid={`evidence-row-${att.id}`}>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{att.originalName || att.fileName}</span>
-                  </div>
-                </TableCell>
-                <TableCell><Badge variant="outline" className="text-xs">{att.mimeType?.split('/').pop() || att.fileType || 'file'}</Badge></TableCell>
-                <TableCell className="text-xs">{(att.fileSize / 1024).toFixed(1)} KB</TableCell>
-                <TableCell><Badge variant="outline" className="text-xs">External</Badge></TableCell>
-                <TableCell className="text-xs">{new Date(att.uploadedAt).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <Button size="icon" variant="ghost" onClick={() => deleteAttachmentMutation.mutate(att.id)} data-testid={`btn-delete-evidence-${att.id}`}>
-                    <X className="h-3 w-3" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {workingPaper.attachments?.map((att: FSHeadAttachment) => {
+              const fileExt = (att.mimeType?.split('/').pop() || att.fileType || att.originalName?.split('.').pop() || 'file').toUpperCase();
+              const sizeKB = att.fileSize / 1024;
+              const sizeDisplay = sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB.toFixed(1)} KB`;
+              return (
+                <TableRow key={att.id} data-testid={`evidence-row-${att.id}`}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className={`h-8 w-8 rounded flex items-center justify-center text-[9px] font-bold flex-shrink-0 ${
+                        fileExt === 'PDF' ? 'bg-red-100 text-red-700' :
+                        fileExt === 'XLSX' || fileExt === 'XLS' || fileExt === 'CSV' ? 'bg-green-100 text-green-700' :
+                        fileExt === 'DOCX' || fileExt === 'DOC' ? 'bg-blue-100 text-blue-700' :
+                        fileExt === 'PNG' || fileExt === 'JPG' || fileExt === 'JPEG' ? 'bg-purple-100 text-purple-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>{fileExt.substring(0, 4)}</div>
+                      <div className="min-w-0">
+                        <span className="font-medium text-sm truncate block max-w-[200px]">{att.originalName || att.fileName}</span>
+                        <span className="text-[10px] text-muted-foreground">{sizeDisplay}</span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell><Badge variant="outline" className="text-xs">{fileExt}</Badge></TableCell>
+                  <TableCell className="text-xs">{sizeDisplay}</TableCell>
+                  <TableCell><Badge variant="outline" className="text-xs">External</Badge></TableCell>
+                  <TableCell className="text-xs">{new Date(att.uploadedAt || att.createdAt || '').toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button size="icon" variant="ghost" onClick={() => {
+                        window.open(`/api/engagements/${engagementId}/fs-heads/${fsHeadKey}/attachments/${att.id}/download`, '_blank');
+                      }} title="Download" data-testid={`btn-download-evidence-${att.id}`}>
+                        <Download className="h-3 w-3" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => {
+                        if (window.confirm(`Delete "${att.originalName || att.fileName}"?`)) {
+                          deleteAttachmentMutation.mutate(att.id);
+                        }
+                      }} title="Delete" data-testid={`btn-delete-evidence-${att.id}`}>
+                        <X className="h-3 w-3 text-red-500" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       )}
@@ -2847,7 +3061,7 @@ Format clearly with sections. This is advisory only.`
 
 function Step6Review({
   workingPaper, complianceChecks, handleSignOff, statusTransitionMutation,
-  addReviewPointMutation, newReviewPoint, setNewReviewPoint,
+  addReviewPointMutation, resolveReviewPointMutation, newReviewPoint, setNewReviewPoint,
   newReviewSeverity, setNewReviewSeverity,
   hasProcedures, hasEvidence, hasConclusion, riskAreas, executionContext, getStatusBadge
 }: any) {
@@ -2967,24 +3181,39 @@ function Step6Review({
             <p className="text-sm">No review points raised</p>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Description</TableHead>
-                <TableHead className="w-20">Severity</TableHead>
-                <TableHead className="w-24">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {workingPaper.reviewPoints?.map((rp: FSHeadReviewPoint) => (
-                <TableRow key={rp.id} data-testid={`review-point-${rp.id}`}>
-                  <TableCell className="text-sm">{rp.description}</TableCell>
-                  <TableCell>{getStatusBadge(rp.severity)}</TableCell>
-                  <TableCell>{getStatusBadge(rp.status)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="space-y-2" data-testid="review-points-list">
+            {workingPaper.reviewPoints?.map((rp: FSHeadReviewPoint) => (
+              <div key={rp.id} className={`border rounded-lg p-3 ${rp.status === 'RESOLVED' || rp.status === 'CLOSED' ? 'bg-green-50/50 dark:bg-green-950/10 border-green-200' : 'bg-background'}`} data-testid={`review-point-${rp.id}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      {getStatusBadge(rp.severity)}
+                      {getStatusBadge(rp.status)}
+                    </div>
+                    <p className="text-sm">{rp.description}</p>
+                    {rp.response && (
+                      <div className="mt-2 p-2 bg-muted/50 rounded text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">Response: </span>{rp.response}
+                      </div>
+                    )}
+                  </div>
+                  {rp.status !== 'RESOLVED' && rp.status !== 'CLOSED' && (
+                    <div className="flex gap-1 flex-shrink-0">
+                      <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => {
+                        const response = window.prompt('Enter response to this review point:');
+                        if (response) {
+                          resolveReviewPointMutation.mutate({ id: rp.id, status: 'RESOLVED', response });
+                        }
+                      }} data-testid={`btn-resolve-rp-${rp.id}`}>
+                        <CheckCircle2 className="h-3 w-3" />
+                        Resolve
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
@@ -3030,29 +3259,47 @@ function Step6Review({
         </div>
 
         <div className="flex gap-2 justify-end">
+          {workingPaper.status === "PREPARED" && (
+            <Button size="sm" variant="outline" className="gap-1 text-amber-600 hover:text-amber-700" onClick={() => statusTransitionMutation.mutate("IN_PROGRESS")} disabled={statusTransitionMutation.isPending} data-testid="btn-return">
+              {statusTransitionMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />}
+              Return for Rework
+            </Button>
+          )}
+          {workingPaper.status === "REVIEWED" && (
+            <Button size="sm" variant="outline" className="gap-1 text-amber-600 hover:text-amber-700" onClick={() => statusTransitionMutation.mutate("PREPARED")} disabled={statusTransitionMutation.isPending} data-testid="btn-return-reviewed">
+              {statusTransitionMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />}
+              Return for Rework
+            </Button>
+          )}
           {workingPaper.status === "DRAFT" && (
             <Button size="sm" onClick={() => statusTransitionMutation.mutate("PREPARED")} disabled={statusTransitionMutation.isPending} data-testid="btn-prepare">
               {statusTransitionMutation.isPending && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
-              Mark Prepared
+              Mark as Prepared
             </Button>
           )}
           {workingPaper.status === "PREPARED" && (
             <Button size="sm" onClick={() => statusTransitionMutation.mutate("REVIEWED")} disabled={statusTransitionMutation.isPending} data-testid="btn-review">
               {statusTransitionMutation.isPending && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
-              Mark Reviewed
+              Mark as Reviewed
             </Button>
           )}
           {workingPaper.status === "REVIEWED" && (
-            <Button size="sm" onClick={() => statusTransitionMutation.mutate("APPROVED")} disabled={statusTransitionMutation.isPending} data-testid="btn-approve">
+            <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => statusTransitionMutation.mutate("APPROVED")} disabled={statusTransitionMutation.isPending} data-testid="btn-approve">
               {statusTransitionMutation.isPending && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
-              Approve
+              Approve Working Paper
             </Button>
           )}
           {workingPaper.status === "IN_PROGRESS" && (
             <Button size="sm" onClick={() => statusTransitionMutation.mutate("PREPARED")} disabled={statusTransitionMutation.isPending} data-testid="btn-prepare-from-progress">
               {statusTransitionMutation.isPending && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
-              Mark Prepared
+              Mark as Prepared
             </Button>
+          )}
+          {workingPaper.status === "APPROVED" && (
+            <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
+              <CheckCircle2 className="h-4 w-4" />
+              Working Paper Approved
+            </div>
           )}
         </div>
       </div>

@@ -262,20 +262,26 @@ The Execution module's FS Heads wizard has been upgraded into a fully linked, IS
 ### Wizard Steps (fs-heads.tsx)
 1. **Context** — Lead schedule with variance %, materiality comparison vs PM, planning flags (fraud/significant/going concern/ISA 540), weighted completion checklist (6 gates), linked risks
 2. **Assertions** — Assertion coverage matrix with visual per-assertion cards (risk count + procedure count), ROMM column, fraud/significant flags, linked audit program list
-3. **Procedures** — Planning audit program inheritance display, enhanced TOC/TOD/Analytics with linked risk info, exception counts
-4. **Evidence** — ISA 500 sufficiency assessment, AI evidence analysis
-5. **Conclusions** — Auto-filled work summary with procedure outcomes, completion progress bar, AI conclusion drafting
-6. **Review** — Weighted completion gates (ISA references per gate), sign-off workflow (DRAFT→PREPARED→REVIEWED→APPROVED)
+3. **Procedures** — Planning audit program inheritance display, enhanced TOC/TOD/Analytics with linked risk info. TOC forms: control ref, type, frequency, owner, description, result dropdown. TOD forms: population count/value, sample size, exceptions found, conclusion. Analytics forms: CY/PY values, conclusion. Delete confirmations on all procedure types.
+4. **Evidence** — Drag-and-drop upload zone, colored file type badges (PDF=red, XLS=green, DOC=blue, IMG=purple), download endpoint with file streaming, delete confirmation, ISA 500 sufficiency assessment, AI evidence analysis
+5. **Conclusions** — Auto-filled work summary with procedure outcomes, completion progress bar, ISA compliance checklist, AI conclusion drafting, structured conclusion form dialog, working notes
+6. **Review** — Review point cards with resolve/respond functionality (response text + status update), return-for-rework button (PREPARED→IN_PROGRESS, REVIEWED→PREPARED), weighted completion gates (ISA references per gate), sign-off workflow (DRAFT→PREPARED→REVIEWED→APPROVED), approved state display
 
 ### Execution Dashboard (execution.tsx)
 - Metrics ribbon: Total Procedures, Open Procedures, Review Points, Evidence Files, High Risk Pending, ISA Compliance %
+- Search/filter bar: text search + status filter (All/Not Started/In Progress/Approved) + risk filter (All/High/Medium/Low)
 - FS Head cards: fraud/significant badges, evidence count, open review points
+- FS Heads navigator sidebar: search/filter input for quick FS head finding
 - Rule-based completion: context(10%) + assertions(15%) + procedures(30%) + evidence(20%) + conclusion(15%) + review(10%)
 
 ### API Endpoints
 - `GET /api/engagements/:id/fs-heads/:key/execution-context` — Enhanced execution context with full cross-phase data
 - `GET /api/engagements/:id/execution-compliance-summary` — Aggregate metrics across all FS heads
 - `GET /api/engagements/:id/execution-summary` — High-level execution summary
+- `PATCH /api/engagements/:id/fs-heads/:key/review-points/:rpId` — Resolve/respond to review points (Zod-validated, ownership-scoped)
+- `GET /api/engagements/:id/fs-heads/:key/attachments/:attId/download` — File download with streaming
+- `POST /api/engagements/:id/fs-heads/:key/attachments` — Evidence file upload (multer)
+- `DELETE /api/engagements/:id/fs-heads/:key/attachments/:attId` — Evidence deletion
 
 ### Production Infrastructure
 

@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useEngagement } from "@/lib/workspace-context";
 import { useQuery } from "@tanstack/react-query";
@@ -7,10 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   CheckCircle2, Shield, Layers, ArrowRight,
   ClipboardList, AlertCircle, XCircle, AlertTriangle, FolderOpen,
-  FileText, Info
+  FileText, Info, Search, Filter
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { PageShell } from "@/components/page-shell";
@@ -155,6 +157,27 @@ export default function Execution() {
     return s !== "APPROVED" && (h.completionPercent > 0 || s === "PREPARED" || s === "REVIEWED" || s === "IN_REVIEW");
   }).length;
   const notStartedHeads = totalHeads - completedHeads - inProgressHeads;
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [riskFilter, setRiskFilter] = useState("all");
+
+  const filteredHeads = useMemo(() => {
+    let heads = fsHeadsSummary;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      heads = heads.filter(h => h.name.toLowerCase().includes(q) || h.fsHeadKey.toLowerCase().includes(q));
+    }
+    if (statusFilter !== "all") {
+      if (statusFilter === "approved") heads = heads.filter(h => h.status?.toUpperCase() === "APPROVED");
+      else if (statusFilter === "in-progress") heads = heads.filter(h => { const s = h.status?.toUpperCase() || ""; return s !== "APPROVED" && (h.completionPercent > 0 || s === "PREPARED" || s === "REVIEWED" || s === "IN_REVIEW" || s === "IN_PROGRESS" || s === "DRAFT"); });
+      else if (statusFilter === "not-started") heads = heads.filter(h => { const s = h.status?.toUpperCase() || ""; return (!s || s === "NOT_STARTED") && (h.completionPercent || 0) === 0; });
+    }
+    if (riskFilter !== "all") {
+      heads = heads.filter(h => h.riskLevel?.toLowerCase() === riskFilter);
+    }
+    return heads;
+  }, [fsHeadsSummary, searchQuery, statusFilter, riskFilter]);
 
   const buildExecutionPayload = useCallback(() => ({
     phaseStatus: allHeadsApproved ? "completed" : "in-progress",
@@ -389,6 +412,49 @@ export default function Execution() {
             </Button>
           </div>
 
+          {totalHeads > 0 && (
+            <div className="flex items-center gap-3 mb-3 flex-wrap" data-testid="fs-heads-filters">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Search FS heads..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 h-8 text-sm"
+                  data-testid="input-search-fs-heads"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[140px] h-8 text-xs" data-testid="select-status-filter">
+                  <Filter className="h-3 w-3 mr-1" />
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="not-started">Not Started</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={riskFilter} onValueChange={setRiskFilter}>
+                <SelectTrigger className="w-[130px] h-8 text-xs" data-testid="select-risk-filter">
+                  <SelectValue placeholder="Risk" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Risks</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+              {(searchQuery || statusFilter !== "all" || riskFilter !== "all") && (
+                <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setSearchQuery(""); setStatusFilter("all"); setRiskFilter("all"); }} data-testid="btn-clear-filters">
+                  Clear
+                </Button>
+              )}
+            </div>
+          )}
+
           {fsHeadsLoading ? (
             <div className="flex items-center justify-center py-12" data-testid="loading-fs-heads">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -414,7 +480,14 @@ export default function Execution() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" data-testid="fs-heads-card-grid">
-              {fsHeadsSummary.map((head) => {
+              {filteredHeads.length === 0 && (searchQuery || statusFilter !== "all" || riskFilter !== "all") ? (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  <Search className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">No FS heads match your filters</p>
+                  <Button size="sm" variant="ghost" className="mt-2" onClick={() => { setSearchQuery(""); setStatusFilter("all"); setRiskFilter("all"); }}>Clear Filters</Button>
+                </div>
+              ) : null}
+              {filteredHeads.map((head) => {
                 const headComp = perHead.find(p => p.fsHeadKey === head.fsHeadKey);
                 const trafficLight = headComp?.trafficLight || getHeadTrafficLight(head.status);
                 const TRAFFIC_COLORS = {

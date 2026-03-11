@@ -1104,6 +1104,8 @@ const tocSchema = z.object({
   testSteps: z.string().optional(),
   testSampleSize: z.number().optional(),
   testPopulation: z.string().optional(),
+  result: z.string().optional(),
+  tocRef: z.string().optional(),
 });
 
 router.get("/api/engagements/:engagementId/fs-heads/:fsHeadKey/toc", async (req: Request, res: Response) => {
@@ -2548,6 +2550,58 @@ router.post("/api/engagements/:engagementId/fs-heads/:fsHeadKey/review-points", 
   }
 });
 
+const reviewPointResolveSchema = z.object({
+  status: z.enum(["OPEN", "PENDING", "RESOLVED", "CLOSED", "CLEARED"]),
+  response: z.string().optional(),
+});
+
+router.patch("/api/engagements/:engagementId/fs-heads/:fsHeadKey/review-points/:reviewPointId", async (req: Request, res: Response) => {
+  try {
+    const { engagementId, fsHeadKey, reviewPointId } = req.params;
+    const userId = (req as any).session?.passport?.user || (req as any).user?.id || null;
+
+    const validation = reviewPointResolveSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error.errors[0]?.message || "Invalid input" });
+    }
+
+    const workingPaper = await db.fSHeadWorkingPaper.findUnique({
+      where: { engagementId_fsHeadKey: { engagementId, fsHeadKey } }
+    });
+    if (!workingPaper) {
+      return res.status(404).json({ error: "Working paper not found" });
+    }
+
+    const existing = await db.fSHeadReviewPoint.findFirst({
+      where: { id: reviewPointId, workingPaperId: workingPaper.id }
+    });
+    if (!existing) {
+      return res.status(404).json({ error: "Review point not found for this working paper" });
+    }
+
+    const updates: any = { status: validation.data.status };
+    if (validation.data.response !== undefined) updates.response = validation.data.response;
+    if (validation.data.status === 'RESOLVED' || validation.data.status === 'CLOSED' || validation.data.status === 'CLEARED') {
+      updates.clearedById = userId;
+      updates.clearedAt = new Date();
+    }
+
+    const reviewPoint = await db.fSHeadReviewPoint.update({
+      where: { id: reviewPointId },
+      data: updates,
+      include: {
+        raisedBy: { select: { fullName: true } },
+        clearedBy: { select: { fullName: true } },
+      }
+    });
+
+    res.json({ success: true, reviewPoint });
+  } catch (error) {
+    console.error("Error updating review point:", error);
+    res.status(500).json({ error: "Failed to update review point" });
+  }
+});
+
 const statusTransitionSchema = z.object({
   status: z.enum(["DRAFT", "IN_PROGRESS", "PREPARED", "REVIEWED", "APPROVED"]),
   reason: z.string().optional(),
@@ -2836,7 +2890,7 @@ router.get("/api/engagements/:engagementId/execution-summary", async (req: Reque
   }
 });
 
-router.post("/engagements/:engagementId/fs-heads/:fsHeadKey/attachments", evidenceUpload.single("file"), async (req: Request, res: Response) => {
+router.post("/api/engagements/:engagementId/fs-heads/:fsHeadKey/attachments", evidenceUpload.single("file"), async (req: Request, res: Response) => {
   try {
     const { engagementId, fsHeadKey } = req.params;
     const file = req.file;
@@ -2878,7 +2932,41 @@ router.post("/engagements/:engagementId/fs-heads/:fsHeadKey/attachments", eviden
   }
 });
 
-router.delete("/engagements/:engagementId/fs-heads/:fsHeadKey/attachments/:attachmentId", async (req: Request, res: Response) => {
+router.get("/api/engagements/:engagementId/fs-heads/:fsHeadKey/attachments/:attachmentId/download", async (req: Request, res: Response) => {
+  try {
+    const { engagementId, fsHeadKey, attachmentId } = req.params;
+
+    const workingPaper = await db.fSHeadWorkingPaper.findFirst({
+      where: { engagementId, fsHeadKey }
+    });
+    if (!workingPaper) {
+      return res.status(404).json({ error: "Working paper not found" });
+    }
+
+    const attachment = await db.fSHeadAttachment.findFirst({
+      where: { id: attachmentId, workingPaperId: workingPaper.id }
+    });
+    if (!attachment) {
+      return res.status(404).json({ error: "Attachment not found" });
+    }
+
+    if (!attachment.filePath || !fs.existsSync(attachment.filePath)) {
+      return res.status(404).json({ error: "File not found on disk" });
+    }
+
+    res.setHeader("Content-Disposition", `attachment; filename="${attachment.originalName || attachment.fileName}"`);
+    if (attachment.mimeType) {
+      res.setHeader("Content-Type", attachment.mimeType);
+    }
+    const fileStream = fs.createReadStream(attachment.filePath);
+    fileStream.pipe(res);
+  } catch (error) {
+    console.error("Error downloading attachment:", error);
+    res.status(500).json({ error: "Failed to download attachment" });
+  }
+});
+
+router.delete("/api/engagements/:engagementId/fs-heads/:fsHeadKey/attachments/:attachmentId", async (req: Request, res: Response) => {
   try {
     const { engagementId, fsHeadKey, attachmentId } = req.params;
 
