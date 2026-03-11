@@ -192,7 +192,12 @@ export default function Login() {
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
               <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
-            <DialogTitle className="text-lg font-bold">Notice to the User</DialogTitle>
+            <div>
+              <DialogTitle className="text-lg font-bold">Notice to the User</DialogTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {new Date().toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
+              </p>
+            </div>
           </div>
           <DialogDescription className="sr-only">Beta version notice and contact information</DialogDescription>
         </DialogHeader>
