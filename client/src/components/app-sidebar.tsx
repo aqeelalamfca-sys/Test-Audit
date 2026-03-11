@@ -103,26 +103,16 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
     <Sidebar className={`border-r ${sidebarClasses.border}`}>
       <SidebarHeader className={`border-b px-4 py-4 ${sidebarClasses.border} ${sidebarClasses.headerBg}`}>
         <Link href={homeLink} className="flex items-center gap-3" data-testid="link-home">
-          <div className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold text-lg ${theme.avatarBg} ${theme.avatarText}`}>
+          <div className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold text-lg flex-shrink-0 ${theme.avatarBg} ${theme.avatarText}`}>
             {headerInitials}
           </div>
-          <div className="flex items-center gap-2">
-            <div>
-              <h1 className={`text-lg font-semibold ${theme.iconColor} ${theme.iconColorDark}`}>
-                AuditWise
-              </h1>
-              <p className={`text-xs ${theme.iconColor} ${theme.iconColorDark}`}>
-                {headerSubtitle}
-              </p>
-            </div>
-            {firmLogoUrl && (
-              <img
-                src={firmLogoUrl}
-                alt="Firm logo"
-                className="max-h-[50px] w-auto object-contain"
-                data-testid="img-firm-logo-sidebar"
-              />
-            )}
+          <div className="min-w-0">
+            <h1 className={`text-lg font-semibold leading-tight ${theme.iconColor} ${theme.iconColorDark}`}>
+              AuditWise
+            </h1>
+            <p className={`text-xs leading-tight truncate ${theme.iconColor} ${theme.iconColorDark}`}>
+              {headerSubtitle}
+            </p>
           </div>
         </Link>
       </SidebarHeader>
