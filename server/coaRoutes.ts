@@ -592,4 +592,152 @@ router.post("/api/engagements/:engagementId/coa/ai-suggest", async (req: Request
   }
 });
 
+router.post("/api/engagements/:engagementId/coa/auto-map-prior", async (req: Request, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+    const engagement = await prisma.engagement.findUnique({
+      where: { id: engagementId },
+      select: { clientId: true },
+    });
+    if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
+    const priorEngagements = await prisma.engagement.findMany({
+      where: { clientId: engagement.clientId, id: { not: engagementId } },
+      orderBy: { periodEnd: "desc" },
+      take: 3,
+      select: { id: true },
+    });
+
+    if (priorEngagements.length === 0) {
+      return res.json({ applied: 0, message: "No prior engagements found for this client" });
+    }
+
+    const priorAccounts = await prisma.coAAccount.findMany({
+      where: {
+        engagementId: { in: priorEngagements.map((e) => e.id) },
+        fsLineItem: { not: null },
+      },
+      select: { accountCode: true, accountName: true, accountClass: true, accountSubclass: true, tbGroup: true, fsLineItem: true, notesDisclosureRef: true },
+    });
+
+    const priorMap = new Map<string, typeof priorAccounts[0]>();
+    for (const pa of priorAccounts) {
+      if (!priorMap.has(pa.accountCode)) {
+        priorMap.set(pa.accountCode, pa);
+      }
+    }
+
+    const currentAccounts = await prisma.coAAccount.findMany({
+      where: { engagementId },
+    });
+
+    const fsHeads = await prisma.fSHead.findMany({
+      where: { engagementId },
+      select: { id: true, code: true },
+    });
+    const fsHeadByCode = new Map(fsHeads.map((h) => [h.code, h.id]));
+
+    let applied = 0;
+    for (const account of currentAccounts) {
+      if (account.fsLineItem) continue;
+
+      const prior = priorMap.get(account.accountCode);
+      if (prior && prior.fsLineItem) {
+        await prisma.coAAccount.update({
+          where: { id: account.id },
+          data: {
+            accountClass: prior.accountClass || account.accountClass,
+            accountSubclass: prior.accountSubclass || account.accountSubclass,
+            tbGroup: prior.tbGroup || account.tbGroup,
+            fsLineItem: prior.fsLineItem,
+            notesDisclosureRef: prior.notesDisclosureRef || account.notesDisclosureRef,
+            aiSuggestedTBGroup: prior.tbGroup,
+            aiSuggestedFSLine: prior.fsLineItem,
+            aiConfidence: 0.98,
+            aiRationale: "Mapped from prior engagement for the same client",
+          },
+        });
+
+        const headId = fsHeadByCode.get(prior.fsLineItem);
+        if (headId) {
+          await prisma.mappingAllocation.upsert({
+            where: { engagementId_accountCode: { engagementId, accountCode: account.accountCode } },
+            create: {
+              engagementId,
+              accountCode: account.accountCode,
+              fsHeadId: headId,
+              allocationPct: 100,
+              status: "DRAFT",
+              aiSuggested: true,
+              aiConfidence: 0.98,
+              aiRationale: "Applied from prior engagement mapping",
+            },
+            update: {
+              fsHeadId: headId,
+              aiSuggested: true,
+              aiConfidence: 0.98,
+              aiRationale: "Applied from prior engagement mapping",
+            },
+          });
+        }
+
+        applied++;
+      }
+    }
+
+    res.json({
+      applied,
+      message: `Applied ${applied} mappings from prior engagements`,
+      priorEngagementsChecked: priorEngagements.length,
+    });
+  } catch (error) {
+    console.error("Error in auto-map-prior:", error);
+    res.status(500).json({ error: "Failed to apply prior mappings" });
+  }
+});
+
+router.get("/api/engagements/:engagementId/coa/mapping-stats", async (req: Request, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+    const accounts = await prisma.coAAccount.findMany({
+      where: { engagementId },
+      select: { id: true, accountCode: true, accountName: true, fsLineItem: true, closingBalance: true, nature: true },
+    });
+
+    const total = accounts.length;
+    const mapped = accounts.filter((a) => a.fsLineItem);
+    const unmapped = accounts.filter((a) => !a.fsLineItem);
+
+    const mappedAmount = mapped.reduce((s, a) => s + Math.abs(Number(a.closingBalance || 0)), 0);
+    const unmappedAmount = unmapped.reduce((s, a) => s + Math.abs(Number(a.closingBalance || 0)), 0);
+    const totalAmount = mappedAmount + unmappedAmount;
+
+    res.json({
+      totalAccounts: total,
+      mappedAccounts: mapped.length,
+      unmappedAccounts: unmapped.length,
+      mappedPct: total > 0 ? Math.round((mapped.length / total) * 100) : 0,
+      mappedAmount,
+      unmappedAmount,
+      totalAmount,
+      amountCoveragePct: totalAmount > 0 ? Math.round((mappedAmount / totalAmount) * 100) : 0,
+      unmappedList: unmapped.map((a) => ({
+        accountCode: a.accountCode,
+        accountName: a.accountName,
+        balance: Number(a.closingBalance || 0),
+        nature: a.nature,
+      })),
+    });
+  } catch (error) {
+    console.error("Error fetching mapping stats:", error);
+    res.status(500).json({ error: "Failed to fetch mapping stats" });
+  }
+});
+
 export default router;

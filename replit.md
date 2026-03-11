@@ -146,6 +146,25 @@ Signup captures legal acceptance with Terms of Service and Privacy Policy:
 - **Super Admin dashboard**: `/platform/legal-acceptances` page with search, pagination, and detail view
 - **API**: `GET /api/platform/legal-acceptances` and `GET /api/platform/legal-acceptances/:id` (super admin only)
 
+## Data Intake Module
+
+The Data Intake module provides a centralized, linked workflow for importing, validating, reconciling, and mapping financial data:
+
+### Backend Services & Routes
+- **`server/services/dataIntakeStatusService.ts`**: Centralized status service computing live status for all sub-modules (Import, TB, GL, AR, AP, Bank, Confirmations, FS Mapping, Draft FS). Returns completion %, exception counts, reconciliation gate statuses, and completion blockers.
+- **`server/dataIntakeRoutes.ts`**: API routes for `/api/engagements/:id/data-intake/status` (GET) and `/api/engagements/:id/data-intake/reconcile` (POST)
+- **`server/services/reconIssuesEngine.ts`**: Full reconciliation scan engine (TB balance, GL balance, TB↔GL tie-out, AP/AR/Bank control account reconciliation). Persists issues to `ReconIssue` table with blocking flags.
+- **`server/coaRoutes.ts`**: Includes `POST /api/engagements/:id/coa/auto-map-prior` (maps accounts using prior engagement data for the same client, writes to both CoAAccount and MappingAllocation), `GET /api/engagements/:id/coa/mapping-stats` (mapped/unmapped counts and amounts)
+- **`server/fsDraftRoutes.ts`**: Includes `GET /api/fs-draft/:id/validate` (integrity checks: mapping coverage, TB↔GL reconciliation, BS footing, retained earnings linkage, blocking exceptions)
+
+### Frontend Components
+- **`client/src/components/data-intake-progress-ribbon.tsx`**: Top ribbon showing per-module status, quality score, exception counts. Added to information-requisition, import-wizard, tb-review, and review-mapping pages.
+- **`client/src/components/data-intake-checks-panel.tsx`**: Three collapsible sections: Reconciliation Gates (9 gates with pass/fail), Draft FS Integrity Checks (6 validation checks with blocking indicators), Open Exceptions table (filterable, resolvable). Includes "Run Full Scan" button.
+- **FsMappingSection**: "Prior Year" button calls auto-map-prior to apply mappings from prior engagements
+
+### Auto-Reconciliation
+- After data import, `triggerPostImportReconciliation()` in `importRoutes.ts` automatically runs the full reconciliation scan, updating gate statuses and generating exception records.
+
 ## DevOps Control Center (devops/)
 
 Replit serves as the central DevOps controller for the entire deployment pipeline:

@@ -48,6 +48,7 @@ import {
 } from "./information-requisition/data";
 import { ReviewCoaSection } from "./information-requisition/ReviewCoaSection";
 import { formatAccounting } from '@/lib/formatters';
+import { DataIntakeProgressRibbon } from "@/components/data-intake-progress-ribbon";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 
 interface InformationRequest {
@@ -159,6 +160,7 @@ export default function InformationRequisition() {
     { id: 'confirmations', label: 'Confirmations' },
     { id: 'mapping', label: 'FS Mapping' },
     { id: 'draft-fs', label: 'Draft FS' },
+    { id: 'checks', label: 'Checks' },
   ];
 
   const [requests, setRequests] = useState<InformationRequest[]>([]);
@@ -3267,6 +3269,9 @@ export default function InformationRequisition() {
       activeTab={dataIntakeSubTab}
       onTabChange={setDataIntakeSubTab}
     >
+      {effectiveEngagementId && (
+        <DataIntakeProgressRibbon engagementId={effectiveEngagementId} />
+      )}
       <div className="w-full px-4 py-1 space-y-2">
 
 

@@ -20,6 +20,7 @@ import {
   FileCheck, AlertCircle, Eye, Database, Users, Loader2
 } from "lucide-react";
 import { formatAccounting } from '@/lib/formatters';
+import { DataIntakeProgressRibbon } from "@/components/data-intake-progress-ribbon";
 
 type ImportBatchStatus = 
   | "UPLOADED" 
@@ -248,6 +249,7 @@ export default function ImportWizard() {
       toast({ title: "Posted", description: "Data has been posted to final tables." });
       refetchBatches();
       queryClient.invalidateQueries({ queryKey: [`/api/import/${engagementId}/batches/${selectedBatchId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/engagements", engagementId, "data-intake-status"] });
     },
     onError: (err: any) => {
       toast({ title: "Post failed", description: err.message, variant: "destructive" });
@@ -419,6 +421,8 @@ export default function ImportWizard() {
   });
 
   return (
+    <div className="space-y-0">
+      {engagementId && <DataIntakeProgressRibbon engagementId={engagementId} />}
     <div className="p-4 md:p-4 space-y-4">
       <div className="flex items-center gap-4">
         <Link href={`/workspace/${engagementId}/planning`} data-testid="link-back">
@@ -885,6 +889,7 @@ export default function ImportWizard() {
           )}
         </TabsContent>
       </Tabs>
+    </div>
     </div>
   );
 }

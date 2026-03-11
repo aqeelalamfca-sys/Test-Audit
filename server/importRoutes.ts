@@ -11,6 +11,7 @@ import { generateBankConfirmationLetter, generateARAPConfirmationLetter, generat
 import { importInputWorkbook, rerunValidations, getSummaryRun, importSingleDataset } from "./services/inputWorkbookService";
 import { syncTbToFsMapping } from "./routes/reviewMappingRoutes";
 import { autoFixDeterministic } from "./services/reconIssuesEngine";
+import { triggerPostImportReconciliation } from "./services/dataIntakeStatusService";
 
 function handleSentinelError(error: unknown, res: Response, fallbackMessage: string) {
   if (error instanceof z.ZodError) {
@@ -3233,6 +3234,7 @@ router.post("/:engagementId/upload-dataset/:datasetType", requireAuth, upload.si
     if (datasetType === 'tb') {
       autoClassifyAndSync(engagementId, userId, userFirmId).catch(err => console.error("Auto classify/sync after dataset upload failed:", err));
     }
+    triggerPostImportReconciliation(engagementId, userId).catch(err => console.error("Post-import reconciliation failed:", err));
 
     res.json(result);
   } catch (error: any) {
@@ -3312,6 +3314,7 @@ router.post("/:engagementId/input-workbook", requireAuth, upload.single("file"),
     }
 
     autoClassifyAndSync(engagementId, userId, userFirmId).catch(err => console.error("Auto classify/sync after workbook upload failed:", err));
+    triggerPostImportReconciliation(engagementId, userId).catch(err => console.error("Post-import reconciliation failed:", err));
 
     res.json(result);
   } catch (error) {

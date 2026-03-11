@@ -70,6 +70,7 @@ import linkageMonitorRoutes from "./linkageMonitorRoutes";
 import chainIntegrityRoutes from "./chainIntegrityRoutes";
 import linkIntegrityRoutes from "./linkIntegrityRoutes";
 import reconIssuesRoutes from "./reconIssuesRoutes";
+import dataIntakeRoutes from "./dataIntakeRoutes";
 import hardControlsRoutes from "./hardControlsRoutes";
 import aiUtilityRoutes from "./routes/aiUtilityRoutes";
 import finalizationBoardRoutes from "./finalizationBoardRoutes";
@@ -225,6 +226,7 @@ export async function registerRoutes(
   app.use("/api/linkage-monitor", linkageMonitorRoutes);
   app.use("/api/link-integrity", linkIntegrityRoutes);
   app.use("/api", reconIssuesRoutes);
+  app.use("/api", dataIntakeRoutes);
   app.use(hardControlsRoutes);
   app.use("/api/compliance/checklists", regulatoryComplianceRoutes);
   app.use("/api/simulation", simulationRoutes);

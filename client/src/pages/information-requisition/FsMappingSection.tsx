@@ -666,6 +666,7 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
 
   const [isInitializing, setIsInitializing] = useState(false);
   const [isAutoMapping, setIsAutoMapping] = useState(false);
+  const [isPriorMapping, setIsPriorMapping] = useState(false);
   const [isRecomputing, setIsRecomputing] = useState(false);
   const [isLocking, setIsLocking] = useState(false);
   const [isPushing, setIsPushing] = useState(false);
@@ -837,6 +838,28 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
     } catch {
       toast({ title: "Error", description: "Failed to run auto-mapping", variant: "destructive" });
     } finally { setIsAutoMapping(false); }
+  };
+
+  const triggerPriorMap = async () => {
+    if (!engagementId) return;
+    setIsPriorMapping(true);
+    try {
+      const res = await fetchWithAuth(`/api/engagements/${engagementId}/coa/auto-map-prior`, {
+        method: "POST", headers,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toast({ title: "Prior Mapping Applied", description: data.message });
+        if (data.applied > 0) {
+          fetchData();
+        }
+      } else {
+        const err = await res.json();
+        toast({ title: "Error", description: err.error || "Failed to apply prior mappings", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to apply prior mappings", variant: "destructive" });
+    } finally { setIsPriorMapping(false); }
   };
 
   const triggerAiBatchMap = async () => {
@@ -1472,6 +1495,17 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
                 >
                   {isBatchAiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
                   AI Map All
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={triggerPriorMap}
+                  disabled={isPriorMapping || isLocked || (summary?.unmappedAccounts ?? 0) === 0 || noTbData}
+                  data-testid="button-prior-map"
+                >
+                  {isPriorMapping ? <Loader2 className="h-4 w-4 animate-spin" /> : <History className="h-4 w-4" />}
+                  Prior Year
                 </Button>
 
                 <Button

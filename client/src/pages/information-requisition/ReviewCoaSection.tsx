@@ -28,6 +28,7 @@ import { SummaryTab } from "./SummaryTab";
 import { FsMappingSection } from "./FsMappingSection";
 import { SubTabShell } from "./SubTabShell";
 import { DataTabSection } from "./DataTabSection";
+import { DataIntakeChecksPanel } from "@/components/data-intake-checks-panel";
 import { useLinkIntegrity } from "./use-link-integrity";
 import { FSDraftGenerator } from "@/components/fs-draft-generator";
 import type { DataSource, TabGate, LinkBreak, WorkflowTabKey } from "./workflow-spec";
@@ -2411,6 +2412,10 @@ export function ReviewCoaSection({
                   </CardContent>
                 </Card>
               </div>
+
+              {effectiveEngagementId && (
+                <DataIntakeChecksPanel engagementId={effectiveEngagementId} />
+              )}
             </div>
           </SubTabShell>
         );

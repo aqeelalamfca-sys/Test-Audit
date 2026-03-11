@@ -28,6 +28,7 @@ import { useTBReviewSaveBridge } from "@/hooks/use-tb-review-save-bridge";
 import { SourceDrilldownModal, GLSourceEntry, TBSourceEntry } from "@/components/source-drilldown-modal";
 import { AIAssistBanner, PHASE_AI_CONFIGS } from "@/components/ai-assist-banner";
 import { GLCodeReconciliation } from "@/components/glcode-reconciliation";
+import { DataIntakeProgressRibbon } from "@/components/data-intake-progress-ribbon";
 import { formatAccounting } from "@/lib/formatters";
 
 interface TBLineItem {
@@ -684,6 +685,7 @@ export default function TBReview() {
         </>
       }
     >
+    {engagementId && <DataIntakeProgressRibbon engagementId={engagementId} />}
     <div className="px-4 py-3 space-y-3">
       {engagementId && (
         <AIAssistBanner

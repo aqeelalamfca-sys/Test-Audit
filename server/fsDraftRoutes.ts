@@ -1005,4 +1005,106 @@ router.get("/:engagementId/drilldown/:fsLineItem", requireAuth, async (req: Auth
   }
 });
 
+router.get("/:engagementId/validate", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+
+    const [coaAccounts, importBalances, reconGate, openIssues, mappingVersion, draftSnapshot, mappingAllocations] = await Promise.all([
+      prisma.coAAccount.findMany({ where: { engagementId }, select: { id: true, fsLineItem: true, closingBalance: true, nature: true } }),
+      prisma.importAccountBalance.findMany({ where: { engagementId, balanceType: "CB" }, select: { accountCode: true, fsHeadKey: true, debitAmount: true, creditAmount: true } }),
+      prisma.reconGateStatus.findUnique({ where: { engagementId } }),
+      prisma.reconIssue.count({ where: { engagementId, status: "OPEN", blocking: true } }),
+      prisma.coAFSMappingVersion.findFirst({ where: { engagementId }, orderBy: { versionNumber: "desc" }, select: { status: true } }),
+      prisma.draftFSSnapshot.findFirst({ where: { engagementId }, orderBy: { generatedAt: "desc" }, select: { bsFootingPass: true } }),
+      prisma.mappingAllocation.count({ where: { engagementId } }).catch(() => 0),
+    ]);
+
+    const checks: Array<{ id: string; label: string; status: "PASS" | "FAIL" | "WARNING" | "NOT_RUN"; detail: string; blocking: boolean }> = [];
+
+    const useImportBalances = importBalances.length > 0;
+    const totalAccounts = useImportBalances ? new Set(importBalances.map(b => b.accountCode)).size : coaAccounts.length;
+    const mappedAccounts = useImportBalances
+      ? importBalances.filter((b) => b.fsHeadKey).length
+      : (mappingAllocations > 0 ? mappingAllocations : coaAccounts.filter((a) => a.fsLineItem).length);
+    const unmappedCount = totalAccounts - mappedAccounts;
+    const mappingPct = totalAccounts > 0 ? Math.round((mappedAccounts / totalAccounts) * 100) : 0;
+
+    checks.push({
+      id: "mapping_coverage",
+      label: "FS Mapping Coverage",
+      status: mappingPct === 100 ? "PASS" : mappingPct >= 90 ? "WARNING" : totalAccounts === 0 ? "NOT_RUN" : "FAIL",
+      detail: totalAccounts === 0 ? "No accounts found" : `${mappedAccounts}/${totalAccounts} accounts mapped (${mappingPct}%)${unmappedCount > 0 ? ` — ${unmappedCount} unmapped` : ""}`,
+      blocking: mappingPct < 100,
+    });
+
+    const isMappingApproved = mappingVersion?.status === "APPROVED" || mappingVersion?.status === "LOCKED";
+    checks.push({
+      id: "mapping_approved",
+      label: "Mapping Version Approved",
+      status: isMappingApproved ? "PASS" : mappingVersion ? "WARNING" : "NOT_RUN",
+      detail: isMappingApproved ? "Mapping version approved" : mappingVersion ? "Mapping version pending approval" : "No mapping version created",
+      blocking: false,
+    });
+
+    const tbGlStatus = reconGate?.tbGlTieOut as string || "NOT_RUN";
+    checks.push({
+      id: "tb_gl_reconciled",
+      label: "TB ↔ GL Reconciled",
+      status: tbGlStatus === "PASS" ? "PASS" : tbGlStatus === "WARNING" ? "WARNING" : tbGlStatus === "FAIL" ? "FAIL" : "NOT_RUN",
+      detail: tbGlStatus === "PASS" ? "Trial Balance and General Ledger reconciled" : tbGlStatus === "FAIL" ? "TB and GL have unresolved differences" : "Reconciliation not yet run",
+      blocking: tbGlStatus === "FAIL",
+    });
+
+    const bsFooting = reconGate?.bsFooting as string || (draftSnapshot?.bsFootingPass ? "PASS" : draftSnapshot ? "FAIL" : "NOT_RUN");
+    checks.push({
+      id: "bs_footing",
+      label: "Balance Sheet Footing",
+      status: bsFooting === "PASS" ? "PASS" : bsFooting === "FAIL" ? "FAIL" : "NOT_RUN",
+      detail: bsFooting === "PASS" ? "Total Assets = Total Equity & Liabilities" : bsFooting === "FAIL" ? "Balance sheet does not balance — check unmapped accounts or sign conventions" : "Generate Draft FS to check footing",
+      blocking: bsFooting === "FAIL",
+    });
+
+    const hasRetainedEarnings = coaAccounts.some((a) => {
+      const fsLine = a.fsLineItem?.toUpperCase() || "";
+      return fsLine.includes("RETAINED") || fsLine.includes("RESERVES") || fsLine.includes("SURPLUS") || fsLine.includes("ACCUMULATED");
+    });
+    checks.push({
+      id: "retained_earnings",
+      label: "Retained Earnings / Reserves Linked",
+      status: hasRetainedEarnings ? "PASS" : totalAccounts === 0 ? "NOT_RUN" : "WARNING",
+      detail: hasRetainedEarnings ? "Retained earnings/reserves linked in equity" : "No retained earnings account found in mapping — P&L roll-forward may not tie",
+      blocking: false,
+    });
+
+    checks.push({
+      id: "blocking_issues",
+      label: "No Blocking Exceptions",
+      status: openIssues === 0 ? "PASS" : "FAIL",
+      detail: openIssues === 0 ? "No blocking exceptions" : `${openIssues} blocking exception(s) require resolution`,
+      blocking: openIssues > 0,
+    });
+
+    const passCount = checks.filter((c) => c.status === "PASS").length;
+    const failCount = checks.filter((c) => c.status === "FAIL").length;
+    const blockingCount = checks.filter((c) => c.blocking && c.status !== "PASS").length;
+
+    res.json({
+      checks,
+      summary: {
+        total: checks.length,
+        passed: passCount,
+        failed: failCount,
+        warnings: checks.filter((c) => c.status === "WARNING").length,
+        notRun: checks.filter((c) => c.status === "NOT_RUN").length,
+        blockingCount,
+        canGenerate: blockingCount === 0 && totalAccounts > 0,
+        readinessPct: checks.length > 0 ? Math.round((passCount / checks.length) * 100) : 0,
+      },
+    });
+  } catch (error) {
+    console.error("Error validating FS draft:", error);
+    res.status(500).json({ error: "Failed to validate FS draft integrity" });
+  }
+});
+
 export default router;

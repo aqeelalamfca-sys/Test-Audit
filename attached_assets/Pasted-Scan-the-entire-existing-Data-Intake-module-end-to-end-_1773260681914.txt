@@ -1,0 +1,104 @@
+Scan the entire existing Data Intake module end-to-end and upgrade it into a fully linked, logical, practical, and automated workflow. Do not build disconnected screens. Treat Data Intake as one controlled process from import till output, where each tab reads from the same engagement data, updates status in real time, triggers validations automatically, and feeds the next stage without manual duplication.
+
+Review all existing pages, components, APIs, database tables, services, validations, mappings, calculations, status badges, exception logic, and completion logic related to Data Intake, including but not limited to Import, Trial Balance, General Ledger, Accounts Payable, Accounts Receivable, Bank, Confirmations, FS Mapping, Draft Financial Statements, Checks, and completion/readiness controls. Identify broken links, missing logic, stale data issues, manual refresh dependency, duplicate calculations, non-persistent values, weak validations, inconsistent totals, missing reconciliations, and any tab that is visually present but not functionally connected.
+
+Rebuild the module so the workflow follows this exact practical logic:
+
+1. Engagement context must be loaded first: firm, client, period, engagement id, fiscal year, and user role.
+2. Import must accept structured upload for TB, GL, AP, AR, Bank, and combined workbook formats.
+3. On upload, system must auto-validate mandatory columns, structure, duplicate rows, numeric integrity, dates, account codes, sheet names, sign conventions, and missing fields.
+4. Imported raw data must be saved immediately to database with versioning, upload timestamp, uploaded by, source file name, and engagement linkage.
+5. After save, system must auto-standardize and normalize data into internal format.
+6. Trial Balance must become the master summary layer and auto-calculate opening, movement, closing, debit, credit, class, category, and FS grouping references.
+7. GL must become the drilldown layer and auto-link each ledger line to TB account codes and totals.
+8. System must automatically compare TB against GL and show reconciled / unreconciled differences live.
+9. AP, AR, and Bank modules must work as sub-ledger control layers and auto-reconcile against their related GL/TB control accounts.
+10. If AP, AR, or Bank do not match control balances, exceptions must be generated automatically with exact variance and probable cause.
+11. Confirmations module must auto-pull eligible balances and party records from reconciled AP, AR, Bank, Legal, and Tax sources.
+12. FS Mapping must auto-read TB balances, unmapped accounts, prior mappings, similar account logic, AI suggestions, and user-approved mappings.
+13. Draft Financial Statements must generate only from mapped and validated balances, not from raw figures.
+14. Checks / Readiness screen must auto-read all module statuses and show actual live completion state without requiring logout, refresh, or manual sync.
+15. Final completion of Data Intake must only be allowed when critical validation thresholds are satisfied or properly overridden with audit trail.
+
+Apply the following development rules strictly:
+
+A. Real-time linked architecture
+Every tab must update all dependent tabs automatically after save/import/edit/delete. No screen should require logout/login to show current data. Use proper state invalidation, refetch strategy, cache refresh, websocket/live query/polling where suitable, and ensure frontend reflects backend changes instantly.
+
+B. One source of truth
+Remove scattered calculations from multiple screens. Centralize business logic for totals, reconciliations, mapping coverage, completion percentage, and readiness checks in reusable backend services so all screens show the same numbers.
+
+C. Practical import engine
+Support sample templates, drag-and-drop upload, upload progress, validation preview, row-level error logs, and import summaries. Allow users to see total rows processed, accepted, rejected, warnings, and corrected values. Do not silently fail. Every failed row must show reason.
+
+D. Strong reconciliation engine
+Build practical reconciliation logic for:
+- TB total debit vs total credit
+- GL debit vs GL credit
+- TB closing vs GL summarized closing
+- AP total vs AP control account
+- AR total vs AR control account
+- Bank total vs bank control account
+Show status as Passed / Warning / Failed with numerical difference and detailed drilldown.
+
+E. Exception-first design
+Any mismatch, missing mapping, duplicate import, invalid account code, blank control account, negative abnormal balance, or orphan sub-ledger must automatically create exception cards/tables with filter, export, and resolution action.
+
+F. Auto mapping intelligence
+FS Mapping must support auto-map by prior mapping, exact match, code family, keyword logic, and AI suggestion. Allow manual override with audit trail. Show mapped amount, unmapped amount, exception count, confidence score, and difference from TB total.
+
+G. Draft output integrity
+Draft FS must not just display data. It must validate if balance sheet balances, whether mapping coverage is sufficient, whether retained earnings/current year profit linkage is correct, and whether critical heads are empty. If issues exist, show blocking alerts and exact reasons.
+
+H. Practical status workflow
+Each module must have statuses such as Not Started, Uploaded, Validated, Reconciled, Mapped, Exception Pending, Ready, Completed. Overall Data Intake readiness must be derived from actual rules, not manual checkbox behavior.
+
+I. Full persistence
+Ensure all imported data, mappings, exceptions, reconciliations, settings, overrides, and confirmation selections persist after refresh, user change, browser close, and relogin. Fix any issue where data appears temporarily and disappears later.
+
+J. Audit trail and logs
+For every upload, edit, delete, mapping change, reconciliation override, and completion action, store who performed it, when, what changed, old value, new value, source, and reason. Make logs readable in admin view.
+
+K. Role-based control
+Ensure only authorized users can import, edit mappings, override checks, regenerate FS, or complete Data Intake. Review and fix permissions for Partner, Firm Admin, Manager, Senior, Staff, and Client user roles.
+
+L. Clean UX and linked navigation
+Make the module practical for real work. Add top progress ribbon showing current client, period, module completion %, open exceptions, last updated time, and data quality score. Each tab must show what is complete, what is pending, and what the next action is. Add direct navigation links like “View unmapped accounts”, “Open control differences”, “Go to Draft FS issues”, etc.
+
+M. Performance and stability
+Optimize imports, summaries, and large datasets. Use batching, pagination, indexed queries, background processing where appropriate, and safe retry logic. No freezing UI, no duplicate records, no timeout-based data loss.
+
+N. Production quality error handling
+Replace silent failures with structured errors, user-safe alerts, retry options, and logs. Ensure all APIs return consistent response structures. Catch and handle partial import failures safely.
+
+Now perform the work in this order automatically:
+
+1. Scan current frontend, backend, DB schema, API endpoints, and existing logic of the entire Data Intake module.
+2. Document all gaps, broken links, weak logic, and non-practical behavior.
+3. Refactor data flow so every tab is connected to a central intake workflow engine.
+4. Fix database relationships if required.
+5. Fix import pipelines and data persistence.
+6. Fix live refresh/state synchronization issues.
+7. Implement full reconciliation logic.
+8. Implement exception generation and resolution flow.
+9. Implement FS mapping improvements with auto and AI assist logic.
+10. Fix Draft FS generation and integrity checks.
+11. Fix readiness/completion engine.
+12. Add audit trail and role controls.
+13. Run end-to-end tests with realistic sample data.
+14. Auto-correct all broken behavior found during testing.
+15. Deliver the upgraded module in working condition.
+
+Mandatory deliverables:
+- updated linked and working Data Intake module
+- corrected DB/API/frontend integration
+- practical validations and reconciliations
+- real-time updates without logout/login
+- persistent saved data
+- clear exception handling
+- accurate mapping to Draft FS flow
+- readiness logic based on actual conditions
+- audit trail for all key actions
+- final summary of what was fixed, what was added, and what remains optional
+
+Do not stop at analysis only. Scan, fix, connect, validate, test, and update the existing module completely so Data Intake works as a professional production-ready audit workflow from import till output.
