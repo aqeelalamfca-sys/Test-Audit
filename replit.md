@@ -127,14 +127,24 @@ Replit serves as the central DevOps controller for the entire deployment pipelin
 Replit → GitHub → VPS (187.77.130.117) → Docker → auditwise.tech
 ```
 
+### Secrets Required
+
+| Secret | Controls |
+|--------|----------|
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | GitHub pushes, code sync, CI/CD trigger |
+| `VPS_SSH_KEY` | VPS access, Docker management, deployments, backups |
+| `VPS_HOST` | VPS IP (187.77.130.117) |
+| `VPS_USER` | VPS user (root) |
+
 ### Quick Commands
 
 ```bash
+bash devops/setup-ssh.sh             # Setup SSH key from secret (run once per session)
 bash devops/control.sh push          # Push code to GitHub
 bash devops/control.sh deploy        # Full deploy (push + build + restart)
 bash devops/control.sh deploy-quick  # Quick deploy (pull + restart backend)
-bash devops/control.sh health        # Full system health check
-bash devops/control.sh status        # Container status
+bash devops/control.sh health        # Full system health check (13 checks)
+bash devops/control.sh status        # Container status + resource usage
 bash devops/control.sh logs backend  # View backend logs
 bash devops/control.sh restart       # Restart all containers
 bash devops/control.sh backup        # Database backup
@@ -146,4 +156,6 @@ bash devops/control.sh autopush      # Start auto-push daemon (2 min interval)
 - VPS: Hostinger (187.77.130.117), Ubuntu 24.04, 8 CPU, 32GB RAM
 - Docker: 5 containers (backend, frontend, nginx, db, redis)
 - SSL: Let's Encrypt for auditwise.tech
+- Domain: https://auditwise.tech (live and verified)
 - CI/CD: GitHub Actions (.github/workflows/deploy.yml) auto-deploys on push to main
+- GitHub repo: aqeelalamfca-sys/Test-Audit (branch: main)
