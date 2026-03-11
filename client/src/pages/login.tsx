@@ -205,7 +205,7 @@ export default function Login() {
           <div className="rounded-lg bg-muted/50 border border-border/60 p-3 space-y-1.5">
             <p className="text-xs font-semibold text-foreground">For feedback or support:</p>
             <p className="text-xs">Aqeel Alam, FCA — +92 321 1112041</p>
-            <p className="text-xs">Muhammad Bin Qasim — +92 341 5001000</p>
+            <p className="text-xs">Muhammad Bin Qasim, FCA — +92 341 5001000</p>
           </div>
         </div>
         <DialogFooter className="pt-2">
