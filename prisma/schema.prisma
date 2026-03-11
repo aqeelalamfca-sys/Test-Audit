@@ -1355,9 +1355,12 @@ model Engagement {
 
   // Financial metrics for the engagement
   shareCapital        Float?
+  authorizedCapital   Float?
+  paidUpCapital       Float?
   numberOfEmployees   Int?
   lastYearRevenue     Float?
   previousYearRevenue Float?
+  companyCategory     String?
 
   // Previous auditor information
   priorAuditorEmail   String?

@@ -419,9 +419,12 @@ export async function registerRoutes(
     reportDeadline: nullableStr,
     budgetHours: nullableNum,
     shareCapital: nullableNum,
+    authorizedCapital: nullableNum,
+    paidUpCapital: nullableNum,
     numberOfEmployees: nullableNum,
     lastYearRevenue: nullableNum,
     previousYearRevenue: nullableNum,
+    companyCategory: nullableStr,
     priorAuditor: nullableStr,
     priorAuditorEmail: z.string().email().nullish().or(z.literal("")).transform(v => v || undefined),
     priorAuditorPhone: nullableStr,
@@ -491,9 +494,12 @@ export async function registerRoutes(
           reportDeadline: data.reportDeadline ? new Date(data.reportDeadline) : null,
           budgetHours: data.budgetHours,
           shareCapital: data.shareCapital,
+          authorizedCapital: data.authorizedCapital,
+          paidUpCapital: data.paidUpCapital,
           numberOfEmployees: data.numberOfEmployees,
           lastYearRevenue: data.lastYearRevenue,
           previousYearRevenue: data.previousYearRevenue,
+          companyCategory: data.companyCategory,
           priorAuditor: data.priorAuditor,
           priorAuditorEmail: data.priorAuditorEmail || null,
           priorAuditorPhone: data.priorAuditorPhone || null,
@@ -668,9 +674,12 @@ export async function registerRoutes(
         priorAuditOpinion: z.string().optional().nullable(),
         udin: z.string().optional().nullable(),
         shareCapital: z.number().optional().nullable(),
+        authorizedCapital: z.number().optional().nullable(),
+        paidUpCapital: z.number().optional().nullable(),
         numberOfEmployees: z.number().optional().nullable(),
         lastYearRevenue: z.number().optional().nullable(),
         previousYearRevenue: z.number().optional().nullable(),
+        companyCategory: z.string().optional().nullable(),
         eqcrRequired: z.boolean().optional(),
         engagementPartnerId: z.string().uuid().optional().nullable(),
         engagementManagerId: z.string().uuid().optional().nullable(),
@@ -703,9 +712,12 @@ export async function registerRoutes(
       if (data.priorAuditOpinion !== undefined) updateData.priorAuditOpinion = data.priorAuditOpinion;
       if (data.udin !== undefined) updateData.udin = data.udin;
       if (data.shareCapital !== undefined) updateData.shareCapital = data.shareCapital;
+      if (data.authorizedCapital !== undefined) updateData.authorizedCapital = data.authorizedCapital;
+      if (data.paidUpCapital !== undefined) updateData.paidUpCapital = data.paidUpCapital;
       if (data.numberOfEmployees !== undefined) updateData.numberOfEmployees = data.numberOfEmployees;
       if (data.lastYearRevenue !== undefined) updateData.lastYearRevenue = data.lastYearRevenue;
       if (data.previousYearRevenue !== undefined) updateData.previousYearRevenue = data.previousYearRevenue;
+      if (data.companyCategory !== undefined) updateData.companyCategory = data.companyCategory;
       if (data.eqcrRequired !== undefined) updateData.eqcrRequired = data.eqcrRequired;
       if (data.engagementPartnerId !== undefined) updateData.engagementPartnerId = data.engagementPartnerId;
       if (data.engagementManagerId !== undefined) updateData.engagementManagerId = data.engagementManagerId;

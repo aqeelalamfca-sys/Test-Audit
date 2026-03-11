@@ -107,16 +107,46 @@ const ENGAGEMENT_TYPES = [
   { value: "review_engagement", label: "Review Engagement" },
 ];
 
+const TAX_PERIODS = [
+  { value: "jan_dec", label: "January – December", start: "01-01", end: "12-31" },
+  { value: "apr_mar", label: "April – March", start: "04-01", end: "03-31" },
+  { value: "jul_jun", label: "July – June", start: "07-01", end: "06-30" },
+  { value: "oct_sep", label: "October – September", start: "10-01", end: "09-30" },
+  { value: "custom", label: "Custom Period", start: "", end: "" },
+];
+
+const COMPANY_CATEGORIES = [
+  { value: "listed", label: "Listed Company" },
+  { value: "public_interest", label: "Public Interest Company" },
+  { value: "public_unlisted", label: "Public Unlisted Company" },
+  { value: "large_sized", label: "Large Sized Company" },
+  { value: "medium_sized", label: "Medium Sized Company" },
+  { value: "small_sized", label: "Small Sized Company (SSC)" },
+  { value: "single_member", label: "Single Member Company" },
+  { value: "private_limited", label: "Private Limited Company" },
+  { value: "npo", label: "Not-for-Profit Organization (NPO)" },
+  { value: "trust", label: "Trust" },
+  { value: "cooperative", label: "Cooperative Society" },
+  { value: "association", label: "Association / Body of Persons" },
+  { value: "government", label: "Government Entity" },
+  { value: "statutory_body", label: "Statutory Body" },
+  { value: "other", label: "Other" },
+];
+
 const initialFormState = {
   engagementCode: "",
   clientId: "",
   engagementType: "statutory_audit",
-  shareCapital: "",
+  taxPeriod: "",
+  authorizedCapital: "",
+  paidUpCapital: "",
   numberOfEmployees: "",
   lastYearRevenue: "",
   previousYearRevenue: "",
   periodStart: "",
   periodEnd: "",
+  companyCategory: "",
+  companyCategoryOther: "",
   partnerId: "",
   managerId: "",
   seniorId: "",
@@ -188,8 +218,12 @@ export function EngagementDialog({
           engagementCode: engagement.engagementCode || "",
           clientId: engagement.clientId || "",
           engagementType: "statutory_audit",
-          shareCapital: engagement.shareCapital?.toString() || "",
+          taxPeriod: "",
+          authorizedCapital: (engagement as any).authorizedCapital?.toString() || "",
+          paidUpCapital: (engagement as any).paidUpCapital?.toString() || engagement.shareCapital?.toString() || "",
           numberOfEmployees: engagement.numberOfEmployees?.toString() || "",
+          companyCategory: (engagement as any).companyCategory || "",
+          companyCategoryOther: (engagement as any).companyCategoryOther || "",
           lastYearRevenue: engagement.lastYearRevenue?.toString() || "",
           previousYearRevenue: engagement.previousYearRevenue?.toString() || "",
           periodStart: engagement.periodStart?.split("T")[0] || "",
@@ -291,10 +325,13 @@ export function EngagementDialog({
         fiscalYearEnd: formData.periodEnd,
         periodStart: formData.periodStart,
         periodEnd: formData.periodEnd,
-        shareCapital: formData.shareCapital ? parseFloat(formData.shareCapital) : undefined,
+        shareCapital: formData.paidUpCapital ? parseFloat(formData.paidUpCapital) : undefined,
+        authorizedCapital: formData.authorizedCapital ? parseFloat(formData.authorizedCapital) : undefined,
+        paidUpCapital: formData.paidUpCapital ? parseFloat(formData.paidUpCapital) : undefined,
         numberOfEmployees: formData.numberOfEmployees ? parseInt(formData.numberOfEmployees) : undefined,
         lastYearRevenue: formData.lastYearRevenue ? parseFloat(formData.lastYearRevenue) : undefined,
         previousYearRevenue: formData.previousYearRevenue ? parseFloat(formData.previousYearRevenue) : undefined,
+        companyCategory: formData.companyCategory === "other" ? formData.companyCategoryOther : formData.companyCategory || undefined,
         priorAuditor: formData.previousAuditorName || undefined,
         priorAuditorEmail: formData.previousAuditorEmail || undefined,
         priorAuditorPhone: formData.previousAuditorPhone || undefined,
@@ -479,7 +516,46 @@ export function EngagementDialog({
                 </div>
               )}
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="taxPeriod" className="text-xs">Tax Period</Label>
+                  <Select
+                    value={formData.taxPeriod}
+                    onValueChange={(v) => {
+                      const tp = TAX_PERIODS.find(t => t.value === v);
+                      if (tp && tp.start && tp.end) {
+                        const currentYear = new Date().getFullYear();
+                        let startYear = currentYear;
+                        let endYear = currentYear;
+                        if (v === "jul_jun" || v === "apr_mar" || v === "oct_sep") {
+                          const startMonth = parseInt(tp.start.split("-")[0]);
+                          if (startMonth > 6) {
+                            endYear = currentYear + 1;
+                          } else {
+                            startYear = currentYear - 1;
+                          }
+                        }
+                        setFormData({
+                          ...formData,
+                          taxPeriod: v,
+                          periodStart: `${startYear}-${tp.start}`,
+                          periodEnd: `${endYear}-${tp.end}`,
+                        });
+                      } else {
+                        setFormData({ ...formData, taxPeriod: v });
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="taxPeriod" data-testid="select-tax-period" className="h-8 text-sm">
+                      <SelectValue placeholder="Select tax period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TAX_PERIODS.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-1">
                   <Label htmlFor="periodStart" className="text-xs">Period Start *</Label>
                   <Input
@@ -502,20 +578,37 @@ export function EngagementDialog({
                     className="h-8 text-sm"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="shareCapital" className="text-xs">Share Capital</Label>
+                  <Label htmlFor="authorizedCapital" className="text-xs">Authorized Capital</Label>
                   <Input
-                    id="shareCapital"
-                    data-testid="input-share-capital"
+                    id="authorizedCapital"
+                    data-testid="input-authorized-capital"
                     type="number"
                     min="0"
-                    value={formData.shareCapital}
-                    onChange={(e) => setFormData({ ...formData, shareCapital: e.target.value })}
+                    placeholder="PKR"
+                    value={formData.authorizedCapital}
+                    onChange={(e) => setFormData({ ...formData, authorizedCapital: e.target.value })}
                     className="h-8 text-sm"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="numberOfEmployees" className="text-xs">Employees</Label>
+                  <Label htmlFor="paidUpCapital" className="text-xs">Paid-up Capital</Label>
+                  <Input
+                    id="paidUpCapital"
+                    data-testid="input-paid-up-capital"
+                    type="number"
+                    min="0"
+                    placeholder="PKR"
+                    value={formData.paidUpCapital}
+                    onChange={(e) => setFormData({ ...formData, paidUpCapital: e.target.value })}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="numberOfEmployees" className="text-xs">No. of Employees</Label>
                   <Input
                     id="numberOfEmployees"
                     data-testid="input-employees"
@@ -526,28 +619,60 @@ export function EngagementDialog({
                     className="h-8 text-sm"
                   />
                 </div>
+                <div className="space-y-1">
+                  <Label htmlFor="companyCategory" className="text-xs">Category of Company</Label>
+                  <Select
+                    value={formData.companyCategory}
+                    onValueChange={(v) => setFormData({ ...formData, companyCategory: v, companyCategoryOther: v !== "other" ? "" : formData.companyCategoryOther })}
+                  >
+                    <SelectTrigger id="companyCategory" data-testid="select-company-category" className="h-8 text-sm">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COMPANY_CATEGORIES.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
+              {formData.companyCategory === "other" && (
+                <div className="space-y-1">
+                  <Label htmlFor="companyCategoryOther" className="text-xs">Specify Category</Label>
+                  <Input
+                    id="companyCategoryOther"
+                    data-testid="input-company-category-other"
+                    placeholder="Enter company category"
+                    value={formData.companyCategoryOther}
+                    onChange={(e) => setFormData({ ...formData, companyCategoryOther: e.target.value })}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="lastYearRevenue" className="text-xs">Last Year Revenue</Label>
+                  <Label htmlFor="lastYearRevenue" className="text-xs">Revenue (Last Year)</Label>
                   <Input
                     id="lastYearRevenue"
                     data-testid="input-last-year-revenue"
                     type="number"
                     min="0"
+                    placeholder="PKR"
                     value={formData.lastYearRevenue}
                     onChange={(e) => setFormData({ ...formData, lastYearRevenue: e.target.value })}
                     className="h-8 text-sm"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="previousYearRevenue" className="text-xs">Prior Year Revenue</Label>
+                  <Label htmlFor="previousYearRevenue" className="text-xs">Revenue (Year Before Last)</Label>
                   <Input
                     id="previousYearRevenue"
                     data-testid="input-previous-year-revenue"
                     type="number"
                     min="0"
+                    placeholder="PKR"
                     value={formData.previousYearRevenue}
                     onChange={(e) => setFormData({ ...formData, previousYearRevenue: e.target.value })}
                     className="h-8 text-sm"
