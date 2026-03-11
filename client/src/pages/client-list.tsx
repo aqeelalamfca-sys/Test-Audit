@@ -11,10 +11,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Building2, Search, Eye, Edit, FolderOpen, Loader2 } from "lucide-react";
+import { Building2, Search, Eye, Edit, FolderOpen, Loader2, Download } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
 import { CreateClientDialog } from "@/components/create-client-dialog";
+import * as XLSX from "xlsx";
 
 interface Client {
   id: string;
@@ -75,6 +76,33 @@ export default function ClientList() {
     queryKey: ["/api/clients"],
   });
 
+  const exportToExcel = () => {
+    if (!filteredClients.length) return;
+    const rows = filteredClients.map((c) => ({
+      "Client Code": c.clientCode || "",
+      "Client Name": c.name || "",
+      "Trade Name": c.tradingName || "",
+      "NTN / CNIC": c.ntn || "",
+      "SECP No.": c.secpNo || "",
+      "Entity Type": c.entityType?.replace(/_/g, " ") || "",
+      "Industry": c.industry?.replace(/_/g, " ") || "",
+      "Incorporation Date": c.dateOfIncorporation ? new Date(c.dateOfIncorporation).toLocaleDateString() : "",
+      "City": c.city || "",
+      "Address": c.address || "",
+      "Country": c.country || "",
+      "Email": c.email || "",
+      "Phone": c.phone || "",
+      "Focal Person": c.focalPersonName || "",
+      "Focal Mobile": c.focalPersonMobile || "",
+      "Focal Email": c.focalPersonEmail || "",
+      "Status": c.acceptanceStatus || c.status || "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Clients");
+    XLSX.writeFile(wb, `Clients_${new Date().toISOString().split("T")[0]}.xlsx`);
+  };
+
   const filteredClients = clients?.filter(
     (client) =>
       (client.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -97,7 +125,13 @@ export default function ClientList() {
             </p>
           </div>
         </div>
-        <CreateClientDialog />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={exportToExcel} disabled={!filteredClients.length}>
+            <Download className="h-4 w-4 mr-2" />
+            Export List
+          </Button>
+          <CreateClientDialog />
+        </div>
       </div>
 
       <div className="flex items-center gap-4">

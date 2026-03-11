@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Search, Eye, Edit, Filter, Loader2, Play } from "lucide-react";
+import { FileText, Search, Eye, Edit, Filter, Loader2, Play, Download } from "lucide-react";
 import { Link, useLocation, useSearch } from "wouter";
 import { EngagementLink } from "@/components/engagement-link";
 import { CreateEngagementDialog, EditEngagementDialog } from "@/components/create-engagement-dialog";
@@ -28,6 +28,7 @@ import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { getSmartWorkspaceRoute, getButtonLabel, type PhaseProgress } from "@/lib/navigation";
 import { apiRequest } from "@/lib/queryClient";
+import * as XLSX from "xlsx";
 
 interface Engagement {
   id: string;
@@ -227,6 +228,40 @@ export default function Engagements() {
     return senior?.user?.fullName || "-";
   };
 
+  const exportToExcel = () => {
+    if (!filteredEngagements.length) return;
+    const rows = filteredEngagements.map((e) => ({
+      "Engagement Code": e.engagementCode || "",
+      "Client": e.client?.name || "",
+      "Type": e.engagementType?.replace(/_/g, " ") || "",
+      "FY End": formatDate(e.fiscalYearEnd),
+      "Period Start": formatDate(e.periodStart),
+      "Period End": formatDate(e.periodEnd),
+      "Company Category": e.companyCategory ? (COMPANY_CATEGORY_LABELS[e.companyCategory] || e.companyCategory) : "",
+      "Authorized Capital": e.authorizedCapital ?? "",
+      "Paid-up Capital": e.paidUpCapital ?? "",
+      "Revenue (Last Year)": e.lastYearRevenue ?? "",
+      "Revenue (Year Before)": e.previousYearRevenue ?? "",
+      "No. of Employees": e.numberOfEmployees ?? "",
+      "Partner": getPartner(e.team),
+      "Manager": getManager(e.team),
+      "Senior": getSenior(e.team),
+      "Prior Auditor": e.priorAuditor || "",
+      "Auditor Email": e.priorAuditorEmail || "",
+      "Auditor Phone": e.priorAuditorPhone || "",
+      "Prior Audit Opinion": e.priorAuditOpinion?.replace(/_/g, " ") || "",
+      "Auditor Address": e.priorAuditorAddress || "",
+      "UDIN": e.udin || "",
+      "EQCR Required": e.eqcrRequired ? "Yes" : "No",
+      "Phase": e.currentPhase?.replace(/_/g, " ") || "",
+      "Status": e.status || "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Engagements");
+    XLSX.writeFile(wb, `Engagements_${new Date().toISOString().split("T")[0]}.xlsx`);
+  };
+
   return (
     <div className="px-4 py-3 space-y-3">
       <div className="flex items-center justify-between">
@@ -240,6 +275,10 @@ export default function Engagements() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={exportToExcel} disabled={!filteredEngagements.length}>
+            <Download className="h-4 w-4 mr-2" />
+            Export List
+          </Button>
           {isAdmin && (
             <CreateEngagementDialog onSuccess={() => refetch()} />
           )}
