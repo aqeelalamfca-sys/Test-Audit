@@ -18,6 +18,7 @@ import { CreateClientDialog } from "@/components/create-client-dialog";
 
 interface Client {
   id: string;
+  clientCode?: string;
   name: string;
   tradingName?: string;
   ntn?: string;
@@ -117,6 +118,7 @@ export default function ClientList() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="whitespace-nowrap">Client Code</TableHead>
                 <TableHead className="whitespace-nowrap">Client Name</TableHead>
                 <TableHead className="whitespace-nowrap">Trade Name</TableHead>
                 <TableHead className="whitespace-nowrap">NTN / CNIC</TableHead>
@@ -139,7 +141,7 @@ export default function ClientList() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={17} className="text-center py-8">
+                  <TableCell colSpan={18} className="text-center py-8">
                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Loading clients...
@@ -148,13 +150,14 @@ export default function ClientList() {
                 </TableRow>
               ) : filteredClients.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={17} className="text-center py-8 text-muted-foreground" data-testid="text-no-clients">
+                  <TableCell colSpan={18} className="text-center py-8 text-muted-foreground" data-testid="text-no-clients">
                     {searchQuery ? "No clients match your search." : 'No clients found. Click "Add Client" to create one.'}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredClients.map((client) => (
                   <TableRow key={client.id} data-testid={`row-client-${client.id}`}>
+                    <TableCell className="whitespace-nowrap font-mono text-sm">{client.clientCode || "-"}</TableCell>
                     <TableCell className="whitespace-nowrap">
                       <span className="font-medium" data-testid={`text-client-name-${client.id}`}>{client.name}</span>
                     </TableCell>

@@ -1203,6 +1203,7 @@ model ClientChangeLog {
 model Client {
   id                  String    @id @default(uuid())
   firmId              String
+  clientCode          String?
   name                String
   tradingName         String?
   secpNo              String?

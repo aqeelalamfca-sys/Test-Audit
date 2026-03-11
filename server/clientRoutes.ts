@@ -297,9 +297,24 @@ router.post("/", requireAuth, requireMinRole("MANAGER"), async (req: Authenticat
 
       const riskAssessment = calculateRiskScore(clientData);
 
+      const year = new Date().getFullYear();
+      const prefix = `CLT-${year}-`;
+      const lastClient = await tx.client.findFirst({
+        where: { firmId, clientCode: { startsWith: prefix } },
+        orderBy: { clientCode: "desc" },
+        select: { clientCode: true },
+      });
+      let nextSeq = 1;
+      if (lastClient?.clientCode) {
+        const lastSeq = parseInt(lastClient.clientCode.replace(prefix, ""), 10);
+        if (!isNaN(lastSeq)) nextSeq = lastSeq + 1;
+      }
+      const clientCode = `${prefix}${String(nextSeq).padStart(4, '0')}`;
+
       const client = await tx.client.create({
         data: {
           firmId,
+          clientCode,
           ...clientData,
           dateOfIncorporation: clientData.dateOfIncorporation ? new Date(clientData.dateOfIncorporation) : null,
           email: clientData.email || null,
@@ -788,5 +803,33 @@ This memorandum is prepared in compliance with:
 
   return memo;
 }
+
+async function backfillClientCodes() {
+  try {
+    const clients = await prisma.client.findMany({
+      where: { clientCode: null },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, firmId: true },
+    });
+    if (clients.length === 0) return;
+    const year = new Date().getFullYear();
+    const firmCounts: Record<string, number> = {};
+    for (const client of clients) {
+      const existing = await prisma.client.count({
+        where: { firmId: client.firmId, clientCode: { not: null } },
+      });
+      firmCounts[client.firmId] = (firmCounts[client.firmId] ?? existing) + 1;
+      const seq = String(firmCounts[client.firmId]).padStart(4, "0");
+      await prisma.client.update({
+        where: { id: client.id },
+        data: { clientCode: `CLT-${year}-${seq}` },
+      });
+    }
+    console.log(`[ClientRoutes] Backfilled ${clients.length} client codes`);
+  } catch (e) {
+    console.error("[ClientRoutes] Client code backfill error:", e);
+  }
+}
+backfillClientCodes();
 
 export default router;
