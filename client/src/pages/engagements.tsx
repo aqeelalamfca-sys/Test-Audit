@@ -47,6 +47,18 @@ interface Engagement {
     name: string;
   };
   fiscalYearEnd?: string;
+  periodStart?: string;
+  periodEnd?: string;
+  authorizedCapital?: number;
+  paidUpCapital?: number;
+  shareCapital?: number;
+  numberOfEmployees?: number;
+  lastYearRevenue?: number;
+  previousYearRevenue?: number;
+  companyCategory?: string;
+  priorAuditor?: string;
+  udin?: string;
+  eqcrRequired?: boolean;
   team?: Array<{
     role: string;
     user?: {
@@ -55,6 +67,38 @@ interface Engagement {
   }>;
   phases?: PhaseProgress[];
 }
+
+const COMPANY_CATEGORY_LABELS: Record<string, string> = {
+  listed: "Listed Company",
+  public_interest: "Public Interest Company",
+  public_unlisted: "Public Unlisted Company",
+  large_sized: "Large Sized Company",
+  medium_sized: "Medium Sized Company",
+  small_sized: "Small Sized Company (SSC)",
+  single_member: "Single Member Company",
+  private_limited: "Private Limited Company",
+  npo: "NPO",
+  trust: "Trust",
+  cooperative: "Cooperative Society",
+  association: "Association / Body of Persons",
+  government: "Government Entity",
+  statutory_body: "Statutory Body",
+  other: "Other",
+};
+
+const formatCurrency = (val?: number | null) => {
+  if (val == null) return "-";
+  return new Intl.NumberFormat("en-PK").format(val);
+};
+
+const formatDate = (dateStr?: string | null) => {
+  if (!dateStr) return "-";
+  try {
+    return new Date(dateStr).toLocaleDateString();
+  } catch {
+    return "-";
+  }
+};
 
 export default function Engagements() {
   const searchString = useSearch();
@@ -174,6 +218,11 @@ export default function Engagements() {
     return manager?.user?.fullName || "-";
   };
 
+  const getSenior = (team?: Engagement["team"]) => {
+    const senior = team?.find(t => t.role === "Senior" || t.role === "Team Lead");
+    return senior?.user?.fullName || "-";
+  };
+
   return (
     <div className="px-4 py-3 space-y-3">
       <div className="flex items-center justify-between">
@@ -219,85 +268,117 @@ export default function Engagements() {
       </div>
 
       <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Engagement Code</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>FY End</TableHead>
-              <TableHead>Partner</TableHead>
-              <TableHead>Manager</TableHead>
-              <TableHead>Phase</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredEngagements.length === 0 ? (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-4 text-muted-foreground">
-                  No engagements found.
-                </TableCell>
+                <TableHead className="whitespace-nowrap">Engagement Code</TableHead>
+                <TableHead className="whitespace-nowrap">Client</TableHead>
+                <TableHead className="whitespace-nowrap">Type</TableHead>
+                <TableHead className="whitespace-nowrap">FY End</TableHead>
+                <TableHead className="whitespace-nowrap">Period Start</TableHead>
+                <TableHead className="whitespace-nowrap">Period End</TableHead>
+                <TableHead className="whitespace-nowrap">Company Category</TableHead>
+                <TableHead className="whitespace-nowrap text-right">Authorized Capital</TableHead>
+                <TableHead className="whitespace-nowrap text-right">Paid-up Capital</TableHead>
+                <TableHead className="whitespace-nowrap text-right">Revenue (Last Year)</TableHead>
+                <TableHead className="whitespace-nowrap text-right">Revenue (Year Before)</TableHead>
+                <TableHead className="whitespace-nowrap text-right">No. of Employees</TableHead>
+                <TableHead className="whitespace-nowrap">Partner</TableHead>
+                <TableHead className="whitespace-nowrap">Manager</TableHead>
+                <TableHead className="whitespace-nowrap">Senior</TableHead>
+                <TableHead className="whitespace-nowrap">Prior Auditor</TableHead>
+                <TableHead className="whitespace-nowrap">UDIN</TableHead>
+                <TableHead className="whitespace-nowrap">EQCR</TableHead>
+                <TableHead className="whitespace-nowrap">Phase</TableHead>
+                <TableHead className="whitespace-nowrap">Status</TableHead>
+                <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
               </TableRow>
-            ) : (
-              filteredEngagements.map((eng) => (
-                <TableRow key={eng.id}>
-                  <TableCell className="font-mono">
-                    <div className="flex items-center gap-2">
-                      <EngagementLink
-                        engagementId={eng.id}
-                        engagementCode={eng.engagementCode}
-                        clientId={eng.clientId || eng.client?.id}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-medium">{eng.client?.name || "-"}</TableCell>
-                  <TableCell>{eng.engagementType?.replace("_", " ") || "-"}</TableCell>
-                  <TableCell>{eng.fiscalYearEnd ? new Date(eng.fiscalYearEnd).toLocaleDateString() : "-"}</TableCell>
-                  <TableCell>{getPartner(eng.team)}</TableCell>
-                  <TableCell>{getManager(eng.team)}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{eng.currentPhase?.replace("_", " ") || "-"}</Badge>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(eng.status)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button 
-                        size="sm" 
-                        title={getButtonLabel(eng).tooltip}
-                        className="gap-1"
-                        onClick={() => handleStartEngagement(eng)}
-                        disabled={startingEngagement === eng.id}
-                      >
-                        {startingEngagement === eng.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Play className="h-3.5 w-3.5" />
-                        )}
-                        {getButtonLabel(eng).label}
-                      </Button>
-                      <Link href={`/engagement/${eng.id}`}>
-                        <Button variant="ghost" size="sm" title="View Details">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <EditEngagementDialog 
-                        engagementId={eng.id} 
-                        onSuccess={() => refetch()}
-                        trigger={
-                          <Button variant="ghost" size="sm" title="Edit Engagement">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        }
-                      />
-                    </div>
+            </TableHeader>
+            <TableBody>
+              {filteredEngagements.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={21} className="text-center py-4 text-muted-foreground">
+                    No engagements found.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                filteredEngagements.map((eng) => (
+                  <TableRow key={eng.id}>
+                    <TableCell className="font-mono whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <EngagementLink
+                          engagementId={eng.id}
+                          engagementCode={eng.engagementCode}
+                          clientId={eng.clientId || eng.client?.id}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium whitespace-nowrap">{eng.client?.name || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{eng.engagementType?.replace(/_/g, " ") || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{formatDate(eng.fiscalYearEnd)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{formatDate(eng.periodStart)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{formatDate(eng.periodEnd)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{eng.companyCategory ? (COMPANY_CATEGORY_LABELS[eng.companyCategory] || eng.companyCategory) : "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap text-right">{formatCurrency(eng.authorizedCapital)}</TableCell>
+                    <TableCell className="whitespace-nowrap text-right">{formatCurrency(eng.paidUpCapital)}</TableCell>
+                    <TableCell className="whitespace-nowrap text-right">{formatCurrency(eng.lastYearRevenue)}</TableCell>
+                    <TableCell className="whitespace-nowrap text-right">{formatCurrency(eng.previousYearRevenue)}</TableCell>
+                    <TableCell className="whitespace-nowrap text-right">{eng.numberOfEmployees != null ? eng.numberOfEmployees.toLocaleString() : "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{getPartner(eng.team)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{getManager(eng.team)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{getSenior(eng.team)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{eng.priorAuditor || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap font-mono text-sm">{eng.udin || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {eng.eqcrRequired ? (
+                        <Badge className="bg-blue-100 text-blue-700 border-0">Yes</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">No</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <Badge variant="outline">{eng.currentPhase?.replace(/_/g, " ") || "-"}</Badge>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">{getStatusBadge(eng.status)}</TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button 
+                          size="sm" 
+                          title={getButtonLabel(eng).tooltip}
+                          className="gap-1"
+                          onClick={() => handleStartEngagement(eng)}
+                          disabled={startingEngagement === eng.id}
+                        >
+                          {startingEngagement === eng.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Play className="h-3.5 w-3.5" />
+                          )}
+                          {getButtonLabel(eng).label}
+                        </Button>
+                        <Link href={`/engagement/${eng.id}`}>
+                          <Button variant="ghost" size="sm" title="View Details">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <EditEngagementDialog 
+                          engagementId={eng.id} 
+                          onSuccess={() => refetch()}
+                          trigger={
+                            <Button variant="ghost" size="sm" title="Edit Engagement">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </Card>
     </div>
   );

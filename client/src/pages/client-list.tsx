@@ -21,9 +21,18 @@ interface Client {
   name: string;
   tradingName?: string;
   ntn?: string;
+  secpNo?: string;
   entityType?: string;
   industry?: string;
   city?: string;
+  address?: string;
+  country?: string;
+  phone?: string;
+  email?: string;
+  dateOfIncorporation?: string;
+  focalPersonName?: string;
+  focalPersonMobile?: string;
+  focalPersonEmail?: string;
   sizeClassification?: string;
   lifecycleStatus?: string;
   acceptanceStatus?: string;
@@ -45,6 +54,15 @@ const statusBadge = (client: Client) => {
       return <Badge className="bg-amber-100 text-amber-700 border-0" data-testid={`badge-status-${client.id}`}>Pending</Badge>;
     default:
       return <Badge variant="secondary" data-testid={`badge-status-${client.id}`}>{status}</Badge>;
+  }
+};
+
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return "-";
+  try {
+    return new Date(dateStr).toLocaleDateString();
+  } catch {
+    return "-";
   }
 };
 
@@ -95,82 +113,98 @@ export default function ClientList() {
       </div>
 
       <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Client Name</TableHead>
-              <TableHead>NTN</TableHead>
-              <TableHead>Entity Type</TableHead>
-              <TableHead>Industry</TableHead>
-              <TableHead>Size</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
-                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading clients...
-                  </div>
-                </TableCell>
+                <TableHead className="whitespace-nowrap">Client Name</TableHead>
+                <TableHead className="whitespace-nowrap">Trade Name</TableHead>
+                <TableHead className="whitespace-nowrap">NTN / CNIC</TableHead>
+                <TableHead className="whitespace-nowrap">SECP No.</TableHead>
+                <TableHead className="whitespace-nowrap">Entity Type</TableHead>
+                <TableHead className="whitespace-nowrap">Industry</TableHead>
+                <TableHead className="whitespace-nowrap">Incorporation Date</TableHead>
+                <TableHead className="whitespace-nowrap">City</TableHead>
+                <TableHead className="whitespace-nowrap">Address</TableHead>
+                <TableHead className="whitespace-nowrap">Country</TableHead>
+                <TableHead className="whitespace-nowrap">Email</TableHead>
+                <TableHead className="whitespace-nowrap">Phone</TableHead>
+                <TableHead className="whitespace-nowrap">Focal Person</TableHead>
+                <TableHead className="whitespace-nowrap">Focal Mobile</TableHead>
+                <TableHead className="whitespace-nowrap">Focal Email</TableHead>
+                <TableHead className="whitespace-nowrap">Status</TableHead>
+                <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
               </TableRow>
-            ) : filteredClients.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground" data-testid="text-no-clients">
-
-                  {searchQuery ? "No clients match your search." : 'No clients found. Click "Add Client" to create one.'}
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredClients.map((client) => (
-                <TableRow key={client.id} data-testid={`row-client-${client.id}`}>
-                  <TableCell>
-                    <div>
-                      <span className="font-medium" data-testid={`text-client-name-${client.id}`}>{client.name}</span>
-                      {client.tradingName && client.tradingName !== client.name && (
-                        <span className="text-xs text-muted-foreground ml-1">({client.tradingName})</span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-mono text-sm" data-testid={`text-client-ntn-${client.id}`}>{client.ntn || "-"}</TableCell>
-                  <TableCell>{client.entityType?.replace(/_/g, " ") || "-"}</TableCell>
-                  <TableCell>{client.industry?.replace(/_/g, " ") || "-"}</TableCell>
-                  <TableCell>{client.sizeClassification?.replace(/_/g, " ") || "-"}</TableCell>
-                  <TableCell>{statusBadge(client)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Link href={`/clients/${client.id}`}>
-                        <Button variant="ghost" size="sm" title="View Details" data-testid={`button-view-client-${client.id}`}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Link href={`/clients/${client.id}/edit`}>
-                        <Button variant="ghost" size="sm" title="Edit Client" data-testid={`button-edit-client-${client.id}`}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        title="View Engagements"
-                        data-testid={`button-engagements-client-${client.id}`}
-                        onClick={() => setLocation(`/engagements?client=${client.id}`)}
-                      >
-                        <FolderOpen className="h-4 w-4" />
-                        {client._count?.engagements ? (
-                          <span className="ml-1 text-xs">{client._count.engagements}</span>
-                        ) : null}
-                      </Button>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={17} className="text-center py-8">
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading clients...
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : filteredClients.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={17} className="text-center py-8 text-muted-foreground" data-testid="text-no-clients">
+                    {searchQuery ? "No clients match your search." : 'No clients found. Click "Add Client" to create one.'}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredClients.map((client) => (
+                  <TableRow key={client.id} data-testid={`row-client-${client.id}`}>
+                    <TableCell className="whitespace-nowrap">
+                      <span className="font-medium" data-testid={`text-client-name-${client.id}`}>{client.name}</span>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">{client.tradingName || "-"}</TableCell>
+                    <TableCell className="font-mono text-sm whitespace-nowrap" data-testid={`text-client-ntn-${client.id}`}>{client.ntn || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{client.secpNo || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{client.entityType?.replace(/_/g, " ") || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{client.industry?.replace(/_/g, " ") || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{formatDate(client.dateOfIncorporation)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{client.city || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap max-w-[200px] truncate" title={client.address || ""}>{client.address || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{client.country || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{client.email || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{client.phone || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{client.focalPersonName || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{client.focalPersonMobile || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{client.focalPersonEmail || "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{statusBadge(client)}</TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1">
+                        <Link href={`/clients/${client.id}`}>
+                          <Button variant="ghost" size="sm" title="View Details" data-testid={`button-view-client-${client.id}`}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Link href={`/clients/${client.id}/edit`}>
+                          <Button variant="ghost" size="sm" title="Edit Client" data-testid={`button-edit-client-${client.id}`}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="View Engagements"
+                          data-testid={`button-engagements-client-${client.id}`}
+                          onClick={() => setLocation(`/engagements?client=${client.id}`)}
+                        >
+                          <FolderOpen className="h-4 w-4" />
+                          {client._count?.engagements ? (
+                            <span className="ml-1 text-xs">{client._count.engagements}</span>
+                          ) : null}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </Card>
     </div>
   );
