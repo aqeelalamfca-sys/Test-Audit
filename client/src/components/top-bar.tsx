@@ -139,8 +139,8 @@ export function TopBar({}: TopBarProps) {
     <header className="h-12 border-b border-border/60 bg-background/95 backdrop-blur-sm flex items-center px-4 gap-3">
       <SidebarTrigger data-testid="button-sidebar-toggle" />
 
-      <Badge data-testid="badge-alpha-version" variant="outline" className="bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-[10px] font-semibold tracking-wider uppercase px-1.5 py-0 h-5 flex-shrink-0">
-        Alpha
+      <Badge data-testid="badge-beta-version" variant="outline" className="bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-[10px] font-semibold tracking-wider uppercase px-1.5 py-0 h-5 flex-shrink-0">
+        Beta
       </Badge>
       
       <Separator orientation="vertical" className="h-6" />
