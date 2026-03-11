@@ -158,8 +158,10 @@ The Data Intake module provides a centralized, linked workflow for importing, va
 - **`server/fsDraftRoutes.ts`**: Includes `GET /api/fs-draft/:id/validate` (integrity checks: mapping coverage, TB↔GL reconciliation, BS footing, retained earnings linkage, blocking exceptions)
 
 ### Frontend Components
-- **`client/src/components/data-intake-progress-ribbon.tsx`**: Top ribbon showing per-module status, quality score, exception counts. Added to information-requisition, import-wizard, tb-review, and review-mapping pages.
-- **`client/src/components/data-intake-checks-panel.tsx`**: Three collapsible sections: Reconciliation Gates (9 gates with pass/fail), Draft FS Integrity Checks (6 validation checks with blocking indicators), Open Exceptions table (filterable, resolvable). Includes "Run Full Scan" button.
+- **`client/src/components/data-intake-progress-ribbon.tsx`**: Top ribbon showing per-module status with record counts, quality score, exception counts, and labeled reconciliation gate icons. Added to information-requisition, import-wizard, tb-review, and review-mapping pages.
+- **`client/src/components/data-intake-checks-panel.tsx`**: Overall readiness summary card (readiness %, gates passed, open/blocking issues), plus three collapsible sections: Reconciliation Gates (9 gates with pass/fail), Draft FS Integrity Checks (6 validation checks with blocking indicators), Open Exceptions table (filterable, resolvable). Includes "Run Full Scan" button.
+- **`client/src/pages/information-requisition/DataTabSection.tsx`**: Enhanced with empty states showing contextual guidance and "Go to Upload" navigation for each data type (TB, GL, AP, AR, Bank). Summary metrics use vertical layout with uppercase labels.
+- **`client/src/pages/information-requisition/ReviewCoaSection.tsx`**: Sub-tab navigation enhanced with icons per tab (Upload, TB, GL, AP, AR, Bank, Confirmations, FS Mapping, Draft FS, Checks), horizontal scroll on narrow screens, and improved styling.
 - **FsMappingSection**: "Prior Year" button calls auto-map-prior to apply mappings from prior engagements
 
 ### Auto-Reconciliation

@@ -198,16 +198,19 @@ export function DataIntakeProgressRibbon({ engagementId }: { engagementId: strin
             </div>
           </div>
 
-          <div className="flex items-center gap-1 mt-1.5 overflow-x-auto pb-0.5">
+          <div className="flex items-center gap-1.5 mt-1.5 overflow-x-auto pb-0.5">
             {modules.map(([key, mod]) => (
               <Tooltip key={key}>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/40 hover:bg-muted/70 transition-colors cursor-default shrink-0">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/40 hover:bg-muted/70 transition-colors cursor-default shrink-0 border border-transparent hover:border-border/50">
                     {moduleIcons[key] || <FileText className="h-3.5 w-3.5" />}
+                    <span className="text-[11px] font-medium truncate max-w-[70px]">{mod.label}</span>
                     <StatusIcon status={mod.status} />
-                    <span className="text-[10px] font-medium truncate max-w-[60px]">{mod.label}</span>
+                    {mod.recordCount > 0 && (
+                      <span className="text-[10px] text-muted-foreground tabular-nums">{mod.recordCount.toLocaleString()}</span>
+                    )}
                     {mod.exceptions > 0 && (
-                      <span className="text-[9px] bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 px-1 rounded-full">{mod.exceptions}</span>
+                      <span className="text-[9px] bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 px-1 rounded-full font-medium">{mod.exceptions}</span>
                     )}
                   </div>
                 </TooltipTrigger>
@@ -227,13 +230,14 @@ export function DataIntakeProgressRibbon({ engagementId }: { engagementId: strin
               </Tooltip>
             ))}
 
-            <span className="text-muted-foreground/30 mx-1">|</span>
+            {reconEntries.length > 0 && <span className="text-muted-foreground/30 mx-0.5">|</span>}
 
             {reconEntries.map(([key, val]) => (
               <Tooltip key={key}>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-0.5 px-1 py-0.5 cursor-default shrink-0">
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 cursor-default shrink-0 rounded hover:bg-muted/40 transition-colors">
                     {gateIcon(val)}
+                    <span className="text-[10px] text-muted-foreground font-medium">{reconLabels[key] || key}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">

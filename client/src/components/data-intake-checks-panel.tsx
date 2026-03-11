@@ -8,9 +8,7 @@ import {
   Loader2,
   ChevronDown,
   ChevronRight,
-  FileText,
   Filter,
-  Download,
 } from "lucide-react";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -122,6 +120,17 @@ export function DataIntakeChecksPanel({ engagementId }: { engagementId: string }
     enabled: !!engagementId,
   });
 
+  const { data: allOpenIssues } = useQuery<ReconIssue[]>({
+    queryKey: ["/api/engagements", engagementId, "recon-issues-all-open"],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.set("status", "OPEN");
+      const res = await apiRequest("GET", `/api/engagements/${engagementId}/recon/issues?${params}`);
+      return res.json();
+    },
+    enabled: !!engagementId,
+  });
+
   const { data: issues, isLoading: issuesLoading, refetch: refetchIssues } = useQuery<ReconIssue[]>({
     queryKey: ["/api/engagements", engagementId, "recon-issues", issueFilter, severityFilter],
     queryFn: async () => {
@@ -148,6 +157,7 @@ export function DataIntakeChecksPanel({ engagementId }: { engagementId: string }
       refetchGates();
       refetchIssues();
       refetchFsValidation();
+      queryClient.invalidateQueries({ queryKey: ["/api/engagements", engagementId, "recon-issues-all-open"] });
       queryClient.invalidateQueries({ queryKey: ["/api/engagements", engagementId, "data-intake-status"] });
     },
     onError: () => {
@@ -164,6 +174,7 @@ export function DataIntakeChecksPanel({ engagementId }: { engagementId: string }
       toast({ title: "Issue resolved" });
       refetchIssues();
       refetchGates();
+      queryClient.invalidateQueries({ queryKey: ["/api/engagements", engagementId, "recon-issues-all-open"] });
     },
   });
 
@@ -184,9 +195,15 @@ export function DataIntakeChecksPanel({ engagementId }: { engagementId: string }
   const totalGates = gateEntries.length;
   const gateCompletionPct = totalGates > 0 ? Math.round((passCount / totalGates) * 100) : 0;
 
+  const openIssueCount = allOpenIssues?.length ?? 0;
+  const blockingIssueCount = allOpenIssues?.filter(i => i.blocking)?.length ?? 0;
+  const fsReadinessPct = fsValidation?.summary?.readinessPct ?? 0;
+  const overallReadyPct = totalGates > 0 ? Math.round(((gateCompletionPct + fsReadinessPct) / 2)) : 0;
+  const isFullyReady = gateCompletionPct === 100 && fsReadinessPct === 100 && blockingIssueCount === 0;
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h3 className="text-lg font-semibold">Data Intake Checks & Readiness</h3>
           <p className="text-sm text-muted-foreground">
@@ -205,6 +222,43 @@ export function DataIntakeChecksPanel({ engagementId }: { engagementId: string }
           )}
           Run Full Scan
         </Button>
+      </div>
+
+      <div className={`rounded-lg border-2 p-4 ${isFullyReady ? 'border-green-300 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20' : blockingIssueCount > 0 ? 'border-red-200 bg-red-50/30 dark:border-red-900 dark:bg-red-950/10' : 'border-border bg-muted/20'}`}>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold tabular-nums">{overallReadyPct}%</div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Readiness</div>
+            </div>
+            <div className="h-10 w-px bg-border" />
+            <div className="flex gap-5">
+              <div className="text-center">
+                <div className="text-lg font-semibold tabular-nums">{passCount}<span className="text-muted-foreground font-normal text-sm">/{totalGates}</span></div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Gates Pass</div>
+              </div>
+              <div className="text-center">
+                <div className={`text-lg font-semibold tabular-nums ${openIssueCount > 0 ? 'text-amber-600' : 'text-green-600'}`}>{openIssueCount}</div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Open Issues</div>
+              </div>
+              {blockingIssueCount > 0 && (
+                <div className="text-center">
+                  <div className="text-lg font-semibold tabular-nums text-red-600">{blockingIssueCount}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Blocking</div>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {isFullyReady && (
+              <Badge className="bg-green-600 text-white">
+                <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                Ready to Proceed
+              </Badge>
+            )}
+            <Progress value={overallReadyPct} className="w-24 h-2" />
+          </div>
+        </div>
       </div>
 
       <Collapsible

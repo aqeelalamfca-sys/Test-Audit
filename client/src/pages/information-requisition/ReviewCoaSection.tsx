@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Plus, Download, Trash2, AlertTriangle, AlertCircle, ChevronDown, ChevronRight, Database, FileSpreadsheet, Target, Calculator, Users, Building2, Check, X, Info, FileDown, Scale, FileText, Camera, CheckCircle2, XCircle, Shield, ClipboardCheck, ArrowRight } from "lucide-react";
+import { Loader2, Plus, Download, Trash2, AlertTriangle, AlertCircle, ChevronDown, ChevronRight, Database, FileSpreadsheet, Target, Calculator, Users, Building2, Check, X, Info, FileDown, Scale, FileText, Camera, CheckCircle2, XCircle, Shield, ClipboardCheck, ArrowRight, Upload, Layers, Mail, Map, ListChecks, Landmark } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -1586,48 +1586,53 @@ export function ReviewCoaSection({
 
   return (
     <div className="space-y-2 max-w-full overflow-x-hidden">
-      <div className="sticky top-0 z-10 bg-background flex items-center gap-1 border-b border-border pb-1.5 mb-2 flex-wrap" data-testid="review-coa-subtabs">
-        {[
-          { key: 'upload', label: 'Upload' },
-          { key: 'tb', label: 'Trial Balance' },
-          { key: 'gl', label: 'GL' },
-          { key: 'ap', label: 'AP' },
-          { key: 'ar', label: 'AR' },
-          { key: 'bank', label: 'Bank' },
-          { key: 'confirmations', label: 'Confirmations' },
-          { key: 'mapping', label: 'FS Mapping' },
-          { key: 'draft-fs', label: 'Draft FS' },
-          { key: 'checks', label: 'Checks' },
-        ].map((tab) => {
-          const reconCount = reconIssueSummary?.byTab?.[reconTabKeyMap[tab.key]]?.total ?? 0;
-          const reconHigh = reconIssueSummary?.byTab?.[reconTabKeyMap[tab.key]]?.high ?? 0;
-          const totalIssues = reconCount;
-          const hasHighSeverity = reconHigh > 0;
+      <div className="sticky top-0 z-10 bg-background border-b border-border pb-1 mb-2" data-testid="review-coa-subtabs">
+        <div className="flex items-center gap-0.5 overflow-x-auto pb-0.5 flex-nowrap">
+          {[
+            { key: 'upload', label: 'Upload', icon: <Upload className="h-3.5 w-3.5" /> },
+            { key: 'tb', label: 'Trial Balance', icon: <FileSpreadsheet className="h-3.5 w-3.5" /> },
+            { key: 'gl', label: 'GL', icon: <Layers className="h-3.5 w-3.5" /> },
+            { key: 'ap', label: 'AP', icon: <Building2 className="h-3.5 w-3.5" /> },
+            { key: 'ar', label: 'AR', icon: <Users className="h-3.5 w-3.5" /> },
+            { key: 'bank', label: 'Bank', icon: <Landmark className="h-3.5 w-3.5" /> },
+            { key: 'confirmations', label: 'Confirmations', icon: <Mail className="h-3.5 w-3.5" /> },
+            { key: 'mapping', label: 'FS Mapping', icon: <Map className="h-3.5 w-3.5" /> },
+            { key: 'draft-fs', label: 'Draft FS', icon: <FileText className="h-3.5 w-3.5" /> },
+            { key: 'checks', label: 'Checks', icon: <ListChecks className="h-3.5 w-3.5" /> },
+          ].map((tab) => {
+            const reconCount = reconIssueSummary?.byTab?.[reconTabKeyMap[tab.key]]?.total ?? 0;
+            const reconHigh = reconIssueSummary?.byTab?.[reconTabKeyMap[tab.key]]?.high ?? 0;
+            const totalIssues = reconCount;
+            const hasHighSeverity = reconHigh > 0;
+            const isActive = reviewCoaSubTab === tab.key;
 
-          return (
-            <Button
-              key={tab.key}
-              variant={reviewCoaSubTab === tab.key ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => handleSubTabChange(tab.key as typeof reviewCoaSubTab)}
-              data-testid={`tab-review-${tab.key}`}
-            >
-              {tab.label}
-              {totalIssues > 0 && (
-                <Badge variant={hasHighSeverity ? 'destructive' : 'secondary'} className="ml-1 text-xs" data-testid={`badge-recon-${tab.key}`}>
-                  {totalIssues}
-                </Badge>
-              )}
-            </Button>
-          );
-        })}
-        <div className="ml-auto flex items-center gap-2">
-          {loadingReconSummary && (
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Loading data...</span>
-            </div>
-          )}
+            return (
+              <Button
+                key={tab.key}
+                variant={isActive ? 'default' : 'ghost'}
+                size="sm"
+                className={`shrink-0 gap-1.5 ${isActive ? '' : 'text-muted-foreground hover:text-foreground'}`}
+                onClick={() => handleSubTabChange(tab.key as typeof reviewCoaSubTab)}
+                data-testid={`tab-review-${tab.key}`}
+              >
+                {tab.icon}
+                {tab.label}
+                {totalIssues > 0 && (
+                  <Badge variant={hasHighSeverity ? 'destructive' : 'secondary'} className="ml-0.5 text-[10px] h-4 min-w-[18px] px-1" data-testid={`badge-recon-${tab.key}`}>
+                    {totalIssues}
+                  </Badge>
+                )}
+              </Button>
+            );
+          })}
+          <div className="ml-auto flex items-center gap-2 shrink-0 pl-2">
+            {loadingReconSummary && (
+              <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Loading...</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1652,6 +1657,7 @@ export function ReviewCoaSection({
             description="Review and edit imported Trial Balance rows"
             icon={<FileSpreadsheet className="h-4 w-4" />}
             columns={TB_COLUMNS}
+            onNavigateToUpload={() => handleSubTabChange('upload')}
             summaryMetrics={tbSummary && tbSummary.accountCount > 0 ? [
               { label: 'OB Debit', value: tbSummary.totalOpeningDebit, testId: 'text-opening-debit' },
               { label: 'OB Credit', value: tbSummary.totalOpeningCredit, testId: 'text-opening-credit' },
@@ -1682,6 +1688,7 @@ export function ReviewCoaSection({
             description="Review and edit imported General Ledger entries"
             icon={<Database className="h-4 w-4" />}
             columns={GL_COLUMNS}
+            onNavigateToUpload={() => handleSubTabChange('upload')}
             summaryMetrics={glSummary && glSummary.entryCount > 0 ? [
               { label: 'Entries', value: glSummary.entryCount, testId: 'text-gl-entry-count' },
               { label: 'Total Debit', value: glSummary.totalDebit, testId: 'text-gl-total-debit' },
@@ -1713,6 +1720,7 @@ export function ReviewCoaSection({
             icon={<Building2 className="h-4 w-4" />}
             columns={PARTY_COLUMNS}
             additionalFilters={{ partyType: 'VENDOR' }}
+            onNavigateToUpload={() => handleSubTabChange('upload')}
             enableSelection={true}
             selectedIds={apSelectedIds}
             onSelectionChange={(ids) => setApSelectedIds(ids)}
@@ -1751,6 +1759,7 @@ export function ReviewCoaSection({
             icon={<Users className="h-4 w-4" />}
             columns={PARTY_COLUMNS}
             additionalFilters={{ partyType: 'CUSTOMER' }}
+            onNavigateToUpload={() => handleSubTabChange('upload')}
             enableSelection={true}
             selectedIds={arSelectedIds}
             onSelectionChange={(ids) => setArSelectedIds(ids)}
@@ -1788,6 +1797,7 @@ export function ReviewCoaSection({
             description="Review bank account master data"
             icon={<Calculator className="h-4 w-4" />}
             columns={BANK_COLUMNS}
+            onNavigateToUpload={() => handleSubTabChange('upload')}
             enableSelection={true}
             selectedIds={bankSelectedIds}
             onSelectionChange={(ids) => setBankSelectedIds(ids)}
