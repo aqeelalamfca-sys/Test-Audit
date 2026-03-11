@@ -700,18 +700,111 @@ export default function SignupPage() {
       </div>
 
       <Dialog open={legalModal.open} onOpenChange={(open) => setLegalModal((prev) => ({ ...prev, open }))}>
-        <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0">
-          <DialogHeader className="px-6 pt-6 pb-2">
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
             <DialogTitle>
               {legalModal.type === "terms" ? "Terms of Service" : "Privacy Policy"}
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 px-6 pb-6 min-h-0">
-            <iframe
-              src={legalModal.type === "terms" ? "/legal/terms-of-service.pdf" : "/legal/privacy-policy.pdf"}
-              className="w-full h-full rounded-md border"
-              title={legalModal.type === "terms" ? "Terms of Service" : "Privacy Policy"}
-            />
+          <div className="flex-1 overflow-y-auto pr-2 text-sm text-muted-foreground leading-relaxed space-y-4">
+            {legalModal.type === "terms" ? (
+              <>
+                <p className="text-xs text-muted-foreground">Last Updated: March 2026 | Version 1.0</p>
+                <h3 className="font-semibold text-foreground text-base">1. Acceptance of Terms</h3>
+                <p>By accessing or using AuditWise ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree, you may not use the Platform. These terms constitute a legally binding agreement between you ("User", "you") and AuditWise ("we", "us", "our").</p>
+
+                <h3 className="font-semibold text-foreground text-base">2. Description of Service</h3>
+                <p>AuditWise is a cloud-based statutory audit management platform designed for audit firms in Pakistan. The Platform provides tools for engagement management, audit planning, execution, quality control, compliance tracking (ISA 200–720, ISQM-1), team collaboration, AI-assisted features, and document management.</p>
+
+                <h3 className="font-semibold text-foreground text-base">3. Account Registration</h3>
+                <p>You must provide accurate, complete, and current information during registration. You are responsible for maintaining the confidentiality of your login credentials. Each user account is personal and non-transferable. Firm administrators are responsible for managing user access within their firm.</p>
+
+                <h3 className="font-semibold text-foreground text-base">4. Acceptable Use</h3>
+                <p>You agree not to: (a) use the Platform for any unlawful purpose; (b) attempt to gain unauthorized access to other users' data or firm records; (c) reverse-engineer, decompile, or disassemble the Platform; (d) upload malicious code, viruses, or harmful content; (e) share login credentials with unauthorized persons; (f) use the Platform to store data unrelated to audit engagements.</p>
+
+                <h3 className="font-semibold text-foreground text-base">5. Data Ownership</h3>
+                <p>All data you upload or create on the Platform ("User Data") remains your property. We do not claim ownership over your audit workpapers, client records, or engagement files. You grant us a limited license to process, store, and transmit your data solely for the purpose of providing the Service.</p>
+
+                <h3 className="font-semibold text-foreground text-base">6. Service Availability</h3>
+                <p>We strive to maintain 99.9% uptime but do not guarantee uninterrupted service. Scheduled maintenance windows will be communicated in advance. We are not liable for outages caused by force majeure events, third-party service failures, or internet connectivity issues.</p>
+
+                <h3 className="font-semibold text-foreground text-base">7. Subscription & Billing</h3>
+                <p>Access to the Platform requires a valid subscription. Free trial periods may be offered at our discretion. Pricing is subject to change with 30 days' prior notice. No refunds are provided for partial billing periods unless required by applicable law.</p>
+
+                <h3 className="font-semibold text-foreground text-base">8. Intellectual Property</h3>
+                <p>The Platform, including its design, code, features, templates, and documentation, is the intellectual property of AuditWise. You may not copy, modify, distribute, or create derivative works from the Platform without our written consent.</p>
+
+                <h3 className="font-semibold text-foreground text-base">9. Limitation of Liability</h3>
+                <p>To the maximum extent permitted by law, AuditWise shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the Platform. Our total liability shall not exceed the fees paid by you in the 12 months preceding the claim.</p>
+
+                <h3 className="font-semibold text-foreground text-base">10. Termination</h3>
+                <p>We may suspend or terminate your account if you violate these Terms. Upon termination, your right to use the Platform ceases immediately. You may request a data export within 30 days of termination, after which your data may be permanently deleted.</p>
+
+                <h3 className="font-semibold text-foreground text-base">11. Governing Law</h3>
+                <p>These Terms shall be governed by and construed in accordance with the laws of Pakistan. Any disputes arising shall be subject to the exclusive jurisdiction of the courts located in Karachi, Pakistan.</p>
+
+                <h3 className="font-semibold text-foreground text-base">12. Changes to Terms</h3>
+                <p>We reserve the right to update these Terms at any time. Continued use of the Platform after changes constitutes acceptance of the revised Terms. Material changes will be communicated via email or in-app notification.</p>
+
+                <h3 className="font-semibold text-foreground text-base">13. Contact</h3>
+                <p>For questions regarding these Terms, contact us at:</p>
+                <div className="rounded-md bg-muted/50 border p-3 text-xs space-y-1">
+                  <p>Aqeel Alam, FCA — +92 321 1112041</p>
+                  <p>Muhammad Bin Qasim, FCA — +92 341 5001000</p>
+                  <p>Email: support@auditwise.tech</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground">Last Updated: March 2026 | Version 1.0</p>
+                <h3 className="font-semibold text-foreground text-base">1. Introduction</h3>
+                <p>AuditWise ("we", "us", "our") is committed to protecting the privacy and security of your personal and professional information. This Privacy Policy explains how we collect, use, disclose, and safeguard your data when you use our platform.</p>
+
+                <h3 className="font-semibold text-foreground text-base">2. Information We Collect</h3>
+                <p><strong>Account Information:</strong> Name, email address, phone number, firm name, NTN, SECP registration number, and professional credentials provided during registration.</p>
+                <p><strong>Usage Data:</strong> IP address, browser type, device information, pages visited, features used, and session duration collected automatically.</p>
+                <p><strong>Audit Data:</strong> Engagement records, workpapers, client information, financial data, and documents you upload or create on the Platform.</p>
+                <p><strong>Communication Data:</strong> Messages, review notes, and correspondence within the Platform.</p>
+
+                <h3 className="font-semibold text-foreground text-base">3. How We Use Your Information</h3>
+                <p>We use your information to: (a) provide and maintain the Platform services; (b) authenticate your identity and manage access; (c) process subscriptions and billing; (d) send service-related communications and updates; (e) improve Platform features and user experience; (f) comply with legal and regulatory obligations; (g) provide AI-assisted audit features (with anonymized data).</p>
+
+                <h3 className="font-semibold text-foreground text-base">4. Data Security</h3>
+                <p>We implement industry-standard security measures including: encryption in transit (TLS/SSL) and at rest; role-based access controls; regular security audits and penetration testing; secure data centers with physical access controls; automated backup and disaster recovery systems. An independent Australia-based IT security company has been engaged for cybersecurity review and E2E validation.</p>
+
+                <h3 className="font-semibold text-foreground text-base">5. Data Sharing</h3>
+                <p>We do not sell your personal information. We may share data with: (a) service providers who assist in Platform operations (hosting, analytics); (b) legal authorities when required by law or court order; (c) professional advisors for audit and compliance purposes. All third-party service providers are bound by confidentiality agreements.</p>
+
+                <h3 className="font-semibold text-foreground text-base">6. Data Retention</h3>
+                <p>We retain your data for as long as your account is active or as needed to provide services. After account termination, data is retained for 30 days to allow export, then permanently deleted. Certain data may be retained longer if required by law or for legitimate business purposes (e.g., billing records).</p>
+
+                <h3 className="font-semibold text-foreground text-base">7. Your Rights</h3>
+                <p>You have the right to: (a) access your personal data; (b) correct inaccurate information; (c) request deletion of your data (subject to legal requirements); (d) export your data in a standard format; (e) withdraw consent for optional data processing; (f) lodge a complaint with the relevant data protection authority.</p>
+
+                <h3 className="font-semibold text-foreground text-base">8. Cookies & Tracking</h3>
+                <p>We use essential cookies for authentication and session management. We may use analytics cookies to understand Platform usage patterns. You can control cookie settings through your browser preferences.</p>
+
+                <h3 className="font-semibold text-foreground text-base">9. AI Features</h3>
+                <p>Our AI-assisted features process audit data to provide suggestions and analysis. AI processing is performed using anonymized or aggregated data where possible. You can opt out of AI features through your account settings. No audit data is used to train external AI models.</p>
+
+                <h3 className="font-semibold text-foreground text-base">10. Children's Privacy</h3>
+                <p>The Platform is not intended for use by individuals under the age of 18. We do not knowingly collect personal information from minors.</p>
+
+                <h3 className="font-semibold text-foreground text-base">11. International Data Transfers</h3>
+                <p>Your data may be processed and stored on servers located outside Pakistan. We ensure appropriate safeguards are in place for any international data transfers in compliance with applicable data protection laws.</p>
+
+                <h3 className="font-semibold text-foreground text-base">12. Changes to This Policy</h3>
+                <p>We may update this Privacy Policy from time to time. Changes will be communicated via email or in-app notification. Continued use of the Platform after changes constitutes acceptance of the updated policy.</p>
+
+                <h3 className="font-semibold text-foreground text-base">13. Contact</h3>
+                <p>For privacy-related inquiries, contact us at:</p>
+                <div className="rounded-md bg-muted/50 border p-3 text-xs space-y-1">
+                  <p>Aqeel Alam, FCA — +92 321 1112041</p>
+                  <p>Muhammad Bin Qasim, FCA — +92 341 5001000</p>
+                  <p>Email: support@auditwise.tech</p>
+                </div>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
