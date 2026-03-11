@@ -57,6 +57,10 @@ interface Engagement {
   previousYearRevenue?: number;
   companyCategory?: string;
   priorAuditor?: string;
+  priorAuditorEmail?: string;
+  priorAuditorPhone?: string;
+  priorAuditorAddress?: string;
+  priorAuditOpinion?: string;
   udin?: string;
   eqcrRequired?: boolean;
   team?: Array<{
