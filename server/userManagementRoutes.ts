@@ -401,6 +401,73 @@ router.post("/:id/toggle-status", requireAuth, requireRoles("FIRM_ADMIN", "PARTN
   }
 });
 
+router.post("/:id/set-status", requireAuth, requireRoles("FIRM_ADMIN"), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ["ACTIVE", "SUSPENDED", "BLOCKED"];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({ error: "Invalid status. Must be ACTIVE, SUSPENDED, or BLOCKED" });
+    }
+
+    const existing = await prisma.user.findUnique({
+      where: { id: req.params.id },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (existing.firmId !== req.user!.firmId) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    if (req.params.id === req.user!.id) {
+      return res.status(400).json({ error: "Cannot change your own status" });
+    }
+
+    if (existing.role === "FIRM_ADMIN") {
+      return res.status(400).json({ error: "Cannot change status of a Firm Admin" });
+    }
+
+    const isActive = status === "ACTIVE";
+
+    const user = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { status, isActive },
+      select: {
+        id: true,
+        fullName: true,
+        status: true,
+        isActive: true,
+      },
+    });
+
+    if (!isActive) {
+      await prisma.session.deleteMany({
+        where: { userId: req.params.id },
+      });
+    }
+
+    await logAuditTrail(
+      req.user!.id,
+      `USER_STATUS_${status}`,
+      "user",
+      user.id,
+      { status: existing.status, isActive: existing.isActive },
+      { status: user.status, isActive: user.isActive },
+      undefined,
+      `User ${user.fullName} status changed to ${status}`,
+      req.ip,
+      req.get("user-agent")
+    );
+
+    res.json(user);
+  } catch (error) {
+    console.error("Set user status error:", error);
+    res.status(500).json({ error: "Failed to set user status" });
+  }
+});
+
 router.get("/:id/activity", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER", "MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = await prisma.user.findUnique({

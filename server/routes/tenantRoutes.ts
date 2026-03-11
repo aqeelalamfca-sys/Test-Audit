@@ -228,6 +228,47 @@ router.post("/users/:id/activate", requirePlatformOrFirmAdmin, async (req: Authe
   }
 });
 
+router.post("/users/:id/set-status", requirePlatformOrFirmAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ["ACTIVE", "SUSPENDED", "BLOCKED"];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({ error: "Invalid status. Must be ACTIVE, SUSPENDED, or BLOCKED" });
+    }
+
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(403).json({ error: "No firm context" });
+
+    const targetUser = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!targetUser || targetUser.firmId !== firmId) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    if (targetUser.role === "SUPER_ADMIN" || targetUser.role === "FIRM_ADMIN") {
+      return res.status(403).json({ error: "Cannot change status of this user" });
+    }
+    if (req.params.id === req.user!.id) {
+      return res.status(400).json({ error: "Cannot change your own status" });
+    }
+
+    const isActive = status === "ACTIVE";
+    const { ip, userAgent } = extractRequestMeta(req);
+    const updated = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { status, isActive },
+    });
+
+    if (!isActive) {
+      await prisma.session.deleteMany({ where: { userId: req.params.id } });
+    }
+
+    await logPlatformAction(req.user!.id, `USER_STATUS_${status}`, "user", updated.id, firmId, ip, userAgent);
+    res.json({ success: true, status: updated.status });
+  } catch (error) {
+    console.error("Set user status error:", error);
+    res.status(500).json({ error: "Failed to set user status" });
+  }
+});
+
 // ========== FIRM SETTINGS ==========
 
 router.get("/settings", requirePlatformOrFirmAdmin, async (req: AuthenticatedRequest, res: Response) => {

@@ -367,9 +367,24 @@ function UsersTab() {
 
   const statusColor: Record<string, string> = {
     ACTIVE: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-    SUSPENDED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+    SUSPENDED: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+    BLOCKED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
     DELETED: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300",
   };
+
+  const setStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const res = await apiRequest("POST", `/api/tenant/users/${id}/set-status`, { status });
+      return res.json();
+    },
+    onSuccess: (_data, variables) => {
+      toast({ title: "Status Updated", description: `User status changed to ${variables.status}` });
+      queryClient.invalidateQueries({ queryKey: ["/api/tenant/users"] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
 
   return (
     <div className="space-y-4" data-testid="tab-users">
@@ -449,7 +464,41 @@ function UsersTab() {
                     {user.lastLoginAt && ` · Last login: ${new Date(user.lastLoginAt).toLocaleDateString()}`}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                  {user.role !== "FIRM_ADMIN" && (
+                    <Select
+                      value={user.status || "ACTIVE"}
+                      onValueChange={(newStatus) => {
+                        if (newStatus !== user.status) {
+                          setStatusMutation.mutate({ id: user.id, status: newStatus });
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-[130px] h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ACTIVE">
+                          <span className="flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-green-500" />
+                            Active
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="SUSPENDED">
+                          <span className="flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-yellow-500" />
+                            Suspended
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="BLOCKED">
+                          <span className="flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-red-500" />
+                            Blocked
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                   <Button
                     variant="outline" size="sm"
                     data-testid={`button-edit-user-${user.id}`}
@@ -457,24 +506,6 @@ function UsersTab() {
                   >
                     <Pencil className="h-3 w-3 mr-1" /> Edit
                   </Button>
-                  {user.status === "ACTIVE" && user.role !== "FIRM_ADMIN" && (
-                    <Button
-                      variant="outline" size="sm"
-                      data-testid={`button-suspend-user-${user.id}`}
-                      onClick={() => toggleStatusMutation.mutate({ id: user.id, action: "suspend" })}
-                    >
-                      <Ban className="h-3 w-3 mr-1" /> Suspend
-                    </Button>
-                  )}
-                  {user.status === "SUSPENDED" && (
-                    <Button
-                      variant="outline" size="sm"
-                      data-testid={`button-activate-user-${user.id}`}
-                      onClick={() => toggleStatusMutation.mutate({ id: user.id, action: "activate" })}
-                    >
-                      <CheckCircle className="h-3 w-3 mr-1" /> Activate
-                    </Button>
-                  )}
                 </div>
               </CardContent>
             </Card>

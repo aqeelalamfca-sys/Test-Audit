@@ -233,6 +233,10 @@ router.post("/login", loginRateLimit(), async (req: AuthenticatedRequest, res: R
       return res.status(403).json({ error: "Your account has been suspended. Please contact your administrator." });
     }
 
+    if (user.status === "BLOCKED") {
+      return res.status(403).json({ error: "Your account has been blocked. Please contact your administrator." });
+    }
+
     if (user.role === "SUPER_ADMIN") {
       const ipCheck = checkSuperAdminIpAtLogin(clientIp);
       if (!ipCheck.allowed) {
