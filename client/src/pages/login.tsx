@@ -8,6 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -37,6 +45,7 @@ import {
   AlertTriangle,
   BookOpen,
   Layers,
+  Info,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -79,6 +88,7 @@ export default function Login() {
   const [showPortalPassword, setShowPortalPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginType, setLoginType] = useState<"firm" | "portal">("firm");
+  const [showBetaNotice, setShowBetaNotice] = useState(true);
   const isSuperAdmin = isSuperAdminAccess();
 
   const form = useForm<LoginFormData>({
@@ -174,9 +184,43 @@ export default function Login() {
     />
   );
 
+  const BetaNoticeDialog = () => (
+    <Dialog open={showBetaNotice} onOpenChange={setShowBetaNotice}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+              <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <DialogTitle className="text-lg font-bold">Notice to the User</DialogTitle>
+          </div>
+          <DialogDescription className="sr-only">Beta version notice and contact information</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 text-sm text-muted-foreground leading-relaxed pt-2">
+          <p className="font-medium text-foreground">Welcome to the AI-Enabled Audit Software.</p>
+          <p>
+            This platform is currently running in <span className="font-semibold text-foreground">Beta Version</span>. An independent Australia-based IT security company has been engaged to perform cybersecurity review, penetration testing, and end-to-end (E2E) system validation to ensure platform stability and protection against cyber threats.
+          </p>
+          <p>Your feedback will help us further improve the system.</p>
+          <div className="rounded-lg bg-muted/50 border border-border/60 p-3 space-y-1.5">
+            <p className="text-xs font-semibold text-foreground">For feedback or support:</p>
+            <p className="text-xs">Aqeel Alam, FCA — +92 321 1112041</p>
+            <p className="text-xs">Muhammad Bin Qasim — +92 341 5001000</p>
+          </div>
+        </div>
+        <DialogFooter className="pt-2">
+          <Button onClick={() => setShowBetaNotice(false)} className="w-full sm:w-auto">
+            Acknowledge
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (isSuperAdmin) {
     return (
       <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+        <BetaNoticeDialog />
         <div className="absolute top-3 right-3 z-50">
           <ThemeToggle />
         </div>
@@ -290,6 +334,7 @@ export default function Login() {
 
   return (
     <div className="h-screen flex bg-background overflow-hidden">
+      <BetaNoticeDialog />
       <div className="absolute top-3 right-3 z-50">
         <ThemeToggle />
       </div>
