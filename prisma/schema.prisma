@@ -1227,6 +1227,10 @@ model Client {
   parentCompany            String?
   subsidiaries             String[]
 
+  focalPersonName   String?
+  focalPersonMobile String?
+  focalPersonEmail  String?
+
   ceoName      String?
   ceoContact   String?
   cfoName      String?

@@ -81,6 +81,9 @@ const initialFormState = {
   country: "Pakistan",
   entityType: "private_limited",
   industry: "general",
+  focalPersonName: "",
+  focalPersonMobile: "",
+  focalPersonEmail: "",
 };
 
 interface CreateClientDialogProps {
@@ -97,8 +100,14 @@ export function CreateClientDialog({ onSuccess, trigger }: CreateClientDialogPro
   const [, navigate] = useLocation();
 
   const handleSubmit = async () => {
-    if (!formData.clientLegalName.trim()) {
-      toast({ title: "Validation Error", description: "Legal Name is required", variant: "destructive" });
+    const missing: string[] = [];
+    if (!formData.clientLegalName.trim()) missing.push("Legal Name");
+    if (!formData.ntn.trim()) missing.push("NTN/CNIC");
+    if (!formData.focalPersonName.trim()) missing.push("Focal Person Name");
+    if (!formData.focalPersonMobile.trim()) missing.push("Focal Person Mobile");
+    if (!formData.focalPersonEmail.trim()) missing.push("Focal Person Email");
+    if (missing.length > 0) {
+      toast({ title: "Validation Error", description: `Required: ${missing.join(", ")}`, variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -106,7 +115,7 @@ export function CreateClientDialog({ onSuccess, trigger }: CreateClientDialogPro
       const payload = {
         name: formData.clientLegalName.trim(),
         tradingName: formData.tradeName || "",
-        ntn: formData.ntn || "",
+        ntn: formData.ntn.trim(),
         secpNo: formData.secpNo || "",
         dateOfIncorporation: formData.dateOfIncorporation || undefined,
         address: formData.registeredAddress || "",
@@ -116,6 +125,9 @@ export function CreateClientDialog({ onSuccess, trigger }: CreateClientDialogPro
         phone: formData.contactPhone || "",
         entityType: formData.entityType || "private_limited",
         industry: formData.industry || "general",
+        focalPersonName: formData.focalPersonName.trim(),
+        focalPersonMobile: formData.focalPersonMobile.trim(),
+        focalPersonEmail: formData.focalPersonEmail.trim(),
       };
       const response = await fetchWithAuth("/api/clients", {
         method: "POST",
@@ -190,11 +202,11 @@ export function CreateClientDialog({ onSuccess, trigger }: CreateClientDialogPro
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="cc-ntn" className="text-xs">NTN</Label>
+              <Label htmlFor="cc-ntn" className="text-xs">NTN/CNIC <span className="text-destructive">*</span></Label>
               <Input
                 id="cc-ntn"
                 data-testid="input-cc-ntn"
-                placeholder="7 digits"
+                placeholder="NTN or CNIC number"
                 value={formData.ntn}
                 onChange={(e) => setFormData({ ...formData, ntn: e.target.value })}
                 className="h-8 text-sm"
@@ -233,6 +245,46 @@ export function CreateClientDialog({ onSuccess, trigger }: CreateClientDialogPro
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset className="border rounded-lg p-4 space-y-3">
+          <legend className="text-xs font-medium text-muted-foreground px-1">Focal Person</legend>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="cc-focal-name" className="text-xs">Person Name <span className="text-destructive">*</span></Label>
+              <Input
+                id="cc-focal-name"
+                data-testid="input-cc-focal-name"
+                placeholder="e.g., Ali Khan"
+                value={formData.focalPersonName}
+                onChange={(e) => setFormData({ ...formData, focalPersonName: e.target.value })}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="cc-focal-mobile" className="text-xs">Mobile Number <span className="text-destructive">*</span></Label>
+              <Input
+                id="cc-focal-mobile"
+                data-testid="input-cc-focal-mobile"
+                placeholder="e.g., +92 300 1234567"
+                value={formData.focalPersonMobile}
+                onChange={(e) => setFormData({ ...formData, focalPersonMobile: e.target.value })}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="cc-focal-email" className="text-xs">Email <span className="text-destructive">*</span></Label>
+              <Input
+                id="cc-focal-email"
+                data-testid="input-cc-focal-email"
+                type="email"
+                placeholder="e.g., ali@company.com"
+                value={formData.focalPersonEmail}
+                onChange={(e) => setFormData({ ...formData, focalPersonEmail: e.target.value })}
+                className="h-8 text-sm"
+              />
             </div>
           </div>
         </fieldset>
@@ -322,7 +374,7 @@ export function CreateClientDialog({ onSuccess, trigger }: CreateClientDialogPro
           <Button
             size="sm"
             onClick={handleSubmit}
-            disabled={loading || !formData.clientLegalName.trim()}
+            disabled={loading || !formData.clientLegalName.trim() || !formData.ntn.trim() || !formData.focalPersonName.trim() || !formData.focalPersonMobile.trim() || !formData.focalPersonEmail.trim()}
             data-testid="button-save-create-client"
           >
             {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
