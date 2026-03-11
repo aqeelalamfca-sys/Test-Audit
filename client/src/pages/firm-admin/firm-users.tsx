@@ -13,9 +13,10 @@ import { SimpleTabNavigation } from "@/components/numbered-tab-navigation";
 import { Separator } from "@/components/ui/separator";
 import {
   Users, Plus, Search, Ban, CheckCircle, Pencil, Loader2,
-  Shield, Grid3X3, ChevronDown, ChevronRight, Info,
+  Shield, Grid3X3, ChevronDown, ChevronRight, Info, Save,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 const ROLES = [
   { value: "STAFF", label: "Staff / Associate" },
@@ -53,7 +54,7 @@ const VIEW_TABS = [
   { id: "role-matrix", label: "Role Matrix", icon: <Grid3X3 className="w-3.5 h-3.5" /> },
 ];
 
-function RoleMatrixTab() {
+function RoleMatrixTab({ onClose }: { onClose: () => void }) {
   const { toast } = useToast();
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(["SYSTEM", "ENGAGEMENT"]));
 
@@ -243,17 +244,23 @@ function RoleMatrixTab() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4 text-xs text-muted-foreground px-1">
-        <div className="flex items-center gap-1.5">
-          <Checkbox checked disabled className="h-3 w-3" />
-          <span>Granted</span>
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <Checkbox checked disabled className="h-3 w-3" />
+            <span>Granted</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Checkbox checked={false} disabled className="h-3 w-3" />
+            <span>Not granted</span>
+          </div>
+          <Separator orientation="vertical" className="h-3" />
+          <span>FIRM_ADMIN always has all permissions</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <Checkbox checked={false} disabled className="h-3 w-3" />
-          <span>Not granted</span>
-        </div>
-        <Separator orientation="vertical" className="h-3" />
-        <span>FIRM_ADMIN always has all permissions</span>
+        <Button onClick={onClose} className="gap-2">
+          <Save className="h-4 w-4" />
+          Save & Close
+        </Button>
       </div>
     </div>
   );
@@ -544,6 +551,13 @@ function UsersTab() {
 
 export default function FirmUsers() {
   const [activeTab, setActiveTab] = useState("users");
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+
+  const handleSaveAndClose = () => {
+    toast({ title: "Permissions saved", description: "All changes have been saved successfully." });
+    navigate("/");
+  };
 
   return (
     <div className="p-6 space-y-5 max-w-6xl mx-auto" data-testid="firm-users-page">
@@ -559,7 +573,7 @@ export default function FirmUsers() {
       />
 
       {activeTab === "users" && <UsersTab />}
-      {activeTab === "role-matrix" && <RoleMatrixTab />}
+      {activeTab === "role-matrix" && <RoleMatrixTab onClose={handleSaveAndClose} />}
     </div>
   );
 }
