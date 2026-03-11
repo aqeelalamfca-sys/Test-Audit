@@ -11,9 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Building2, Plus, Search, Eye, Edit, FolderOpen, Loader2 } from "lucide-react";
+import { Building2, Search, Eye, Edit, FolderOpen, Loader2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
+import { CreateClientDialog } from "@/components/create-client-dialog";
 
 interface Client {
   id: string;
@@ -77,12 +78,7 @@ export default function ClientList() {
             </p>
           </div>
         </div>
-        <Link href="/clients/new">
-          <Button data-testid="button-add-client">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Client
-          </Button>
-        </Link>
+        <CreateClientDialog />
       </div>
 
       <div className="flex items-center gap-4">

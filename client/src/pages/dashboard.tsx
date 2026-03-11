@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { EngagementLink } from "@/components/engagement-link";
+import { CreateClientDialog } from "@/components/create-client-dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -355,20 +356,22 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {isAdmin && (
-          <Link href="/clients/new">
-            <Card className="cursor-pointer hover:shadow-md transition-all duration-200 border border-border h-full">
-              <CardContent className="flex items-center gap-4 py-4">
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-2.5 rounded-xl">
-                  <Plus className="h-6 w-6 text-blue-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold">Add Client</h3>
-                  <p className="text-sm text-muted-foreground">Create new client record</p>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </CardContent>
-            </Card>
-          </Link>
+          <CreateClientDialog
+            trigger={
+              <Card className="cursor-pointer hover:shadow-md transition-all duration-200 border border-border h-full">
+                <CardContent className="flex items-center gap-4 py-4">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-2.5 rounded-xl">
+                    <Plus className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold">Add Client</h3>
+                    <p className="text-sm text-muted-foreground">Create new client record</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </CardContent>
+              </Card>
+            }
+          />
         )}
 
         {isManager && (
