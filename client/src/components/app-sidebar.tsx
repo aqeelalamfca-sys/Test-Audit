@@ -1,4 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import {
   Sidebar,
   SidebarContent,
@@ -92,6 +94,18 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
   const activeClasses = getRoleActiveItemClasses(theme);
   const iconClasses = getRoleIconClasses(theme);
   const badgeClasses = getRoleBadgeClasses(theme);
+
+  const { data: reviewNoteStats } = useQuery({
+    queryKey: ["/api/review-notes-v2/stats/summary"],
+    queryFn: async () => {
+      const res = await fetchWithAuth("/api/review-notes-v2/stats/summary");
+      if (!res.ok) return null;
+      return res.json();
+    },
+    refetchInterval: 60000,
+    enabled: !isSuperAdmin,
+  });
+  const pendingReviewNotes = (reviewNoteStats?.myOpen || 0) + (reviewNoteStats?.createdOpen || 0);
 
   const sectionLabel = isSuperAdmin ? "Platform Admin" : isFirmAdmin ? "Firm Administration" : "";
   const headerSubtitle = isSuperAdmin ? "Platform Control" : isFirmAdmin ? "Firm Administration" : "Statutory Audit";
@@ -370,6 +384,11 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
                       <Link href="/review-notes">
                         <MessageSquare className="h-4 w-4" />
                         <span>Review Notes</span>
+                        {pendingReviewNotes > 0 && (
+                          <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                            {pendingReviewNotes > 99 ? "99+" : pendingReviewNotes}
+                          </span>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
