@@ -2457,6 +2457,7 @@ function Step3Procedures({
                       {ana.conclusion && (
                         <div className="mt-2 pt-2 border-t text-xs text-muted-foreground truncate">{ana.conclusion}</div>
                       )}
+                    </div>
                   )}
                 </div>
               ))}
