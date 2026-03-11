@@ -87,6 +87,13 @@ export default function Execution() {
       overallCompletion: number;
       canProceedToFinalization: boolean;
       finalizationBlockers: string[];
+      totalProcedures: number;
+      completedProcedures: number;
+      openProcedures: number;
+      totalReviewPoints: number;
+      openReviewPoints: number;
+      totalEvidence: number;
+      highRiskPending: number;
       isaCompliance: {
         allHeadsHaveEvidence: boolean;
         allRisksLinked: boolean;
@@ -101,10 +108,17 @@ export default function Execution() {
       completionPercent: number;
       trafficLight: 'green' | 'amber' | 'red';
       procedureCount: number;
+      completedProcedures: number;
+      openProcedures: number;
       hasEvidence: boolean;
+      evidenceCount: number;
       hasConclusion: boolean;
       openReviewPoints: number;
+      totalReviewPoints: number;
       riskLevel: string;
+      hasFraudRisk: boolean;
+      hasSignificantRisk: boolean;
+      linkedRiskCount: number;
     }[];
   }>({
     queryKey: ['/api/engagements', engagementId, 'execution-compliance-summary'],
@@ -222,6 +236,17 @@ export default function Execution() {
             </div>
           </CardContent>
         </Card>
+
+        {complianceSummary && totalHeads > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3" data-testid="execution-metrics-ribbon">
+            <MetricCard label="Total Procedures" value={complianceSummary.totalProcedures ?? 0} sub={`${complianceSummary.completedProcedures ?? 0} done`} color="blue" />
+            <MetricCard label="Open Procedures" value={complianceSummary.openProcedures ?? 0} sub="pending" color={complianceSummary.openProcedures > 0 ? "amber" : "green"} />
+            <MetricCard label="Review Points" value={complianceSummary.openReviewPoints ?? 0} sub={`of ${complianceSummary.totalReviewPoints ?? 0}`} color={complianceSummary.openReviewPoints > 0 ? "red" : "green"} />
+            <MetricCard label="Evidence Files" value={complianceSummary.totalEvidence ?? 0} sub="attached" color="blue" />
+            <MetricCard label="High Risk Pending" value={complianceSummary.highRiskPending ?? 0} sub="FS heads" color={complianceSummary.highRiskPending > 0 ? "red" : "green"} />
+            <MetricCard label="ISA Compliance" value={`${complianceSummary.overallCompletion ?? 0}%`} sub={complianceSummary.canProceedToFinalization ? "Ready" : "In progress"} color={complianceSummary.canProceedToFinalization ? "green" : "amber"} />
+          </div>
+        )}
 
         {!canProceedToFinalization && totalHeads > 0 && (
           <Alert variant="destructive" data-testid="alert-finalization-blocked">
@@ -466,14 +491,26 @@ export default function Execution() {
                         <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
                           {headComp && (
                             <>
+                              {headComp.hasFraudRisk && (
+                                <Badge variant="destructive" className="text-[8px] h-4 px-1">Fraud</Badge>
+                              )}
+                              {headComp.hasSignificantRisk && !headComp.hasFraudRisk && (
+                                <Badge variant="secondary" className="text-[8px] h-4 px-1 bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-200">Sig</Badge>
+                              )}
                               <span className={cn("flex items-center gap-0.5", headComp.hasEvidence ? "text-emerald-600" : "")} data-testid={`status-evidence-${head.fsHeadKey}`}>
                                 <FileText className="h-3 w-3" />
-                                {headComp.hasEvidence ? "Evidence" : "No evidence"}
+                                {headComp.evidenceCount > 0 ? `${headComp.evidenceCount} files` : "No evidence"}
                               </span>
                               <span className={cn("flex items-center gap-0.5", headComp.hasConclusion ? "text-emerald-600" : "")} data-testid={`status-conclusion-${head.fsHeadKey}`}>
                                 <CheckCircle2 className="h-3 w-3" />
                                 {headComp.hasConclusion ? "Concluded" : "No conclusion"}
                               </span>
+                              {headComp.openReviewPoints > 0 && (
+                                <span className="flex items-center gap-0.5 text-red-600">
+                                  <AlertCircle className="h-3 w-3" />
+                                  {headComp.openReviewPoints} open
+                                </span>
+                              )}
                             </>
                           )}
                         </div>
@@ -533,6 +570,33 @@ export default function Execution() {
         )}
       </div>
     </PageShell>
+  );
+}
+
+function MetricCard({ label, value, sub, color }: {
+  label: string;
+  value: string | number;
+  sub: string;
+  color: "blue" | "green" | "amber" | "red";
+}) {
+  const colorMap = {
+    blue: "bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800",
+    green: "bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800",
+    amber: "bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800",
+    red: "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800",
+  };
+  const textColorMap = {
+    blue: "text-blue-700 dark:text-blue-300",
+    green: "text-green-700 dark:text-green-300",
+    amber: "text-amber-700 dark:text-amber-300",
+    red: "text-red-700 dark:text-red-300",
+  };
+  return (
+    <div className={`p-3 rounded-lg border ${colorMap[color]}`}>
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</p>
+      <p className={`text-lg font-bold ${textColorMap[color]}`}>{value}</p>
+      <p className="text-[10px] text-muted-foreground">{sub}</p>
+    </div>
   );
 }
 

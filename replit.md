@@ -250,6 +250,33 @@ bash devops/control.sh backup        # Database backup
 bash devops/control.sh autopush      # Start auto-push daemon (2 min interval)
 ```
 
+## Execution Module — Enhanced Working Paper Engine
+
+The Execution module's FS Heads wizard has been upgraded into a fully linked, ISA-based working paper engine:
+
+### Key Services
+- **`server/services/fsHeadExecutionService.ts`** — Centralized aggregation service that pulls Data Intake (TB balances, sub-line items) + Planning (risks, assertions, audit programs, materiality) data per FS head. Returns enriched `ExecutionContext` with materiality, linked risks, assertion matrix, audit program, planning flags, team assignment, completion %, procedure/evidence/issue/review summaries.
+- **`server/services/fsHeadEnforcement.ts`** — ISA enforcement rules per FS head template
+- **`server/services/fsHeadProcedureTemplates.ts`** — Procedure templates with ISA references
+
+### Wizard Steps (fs-heads.tsx)
+1. **Context** — Lead schedule with variance %, materiality comparison vs PM, planning flags (fraud/significant/going concern/ISA 540), weighted completion checklist (6 gates), linked risks
+2. **Assertions** — Assertion coverage matrix with visual per-assertion cards (risk count + procedure count), ROMM column, fraud/significant flags, linked audit program list
+3. **Procedures** — Planning audit program inheritance display, enhanced TOC/TOD/Analytics with linked risk info, exception counts
+4. **Evidence** — ISA 500 sufficiency assessment, AI evidence analysis
+5. **Conclusions** — Auto-filled work summary with procedure outcomes, completion progress bar, AI conclusion drafting
+6. **Review** — Weighted completion gates (ISA references per gate), sign-off workflow (DRAFT→PREPARED→REVIEWED→APPROVED)
+
+### Execution Dashboard (execution.tsx)
+- Metrics ribbon: Total Procedures, Open Procedures, Review Points, Evidence Files, High Risk Pending, ISA Compliance %
+- FS Head cards: fraud/significant badges, evidence count, open review points
+- Rule-based completion: context(10%) + assertions(15%) + procedures(30%) + evidence(20%) + conclusion(15%) + review(10%)
+
+### API Endpoints
+- `GET /api/engagements/:id/fs-heads/:key/execution-context` — Enhanced execution context with full cross-phase data
+- `GET /api/engagements/:id/execution-compliance-summary` — Aggregate metrics across all FS heads
+- `GET /api/engagements/:id/execution-summary` — High-level execution summary
+
 ### Production Infrastructure
 
 - VPS: Hostinger (187.77.130.117), Ubuntu 24.04, 8 CPU, 32GB RAM

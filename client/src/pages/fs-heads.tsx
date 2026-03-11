@@ -1233,6 +1233,7 @@ function FSHeadWizard({
               generateTODMutation={generateTODMutation}
               generateAnalyticsMutation={generateAnalyticsMutation}
               procedureTemplate={procedureTemplate}
+              executionContext={executionContext}
               isLoading={isLoading}
               workingPaper={workingPaper}
               getStatusBadge={getStatusBadge}
@@ -1263,6 +1264,7 @@ function FSHeadWizard({
               showConclusionForm={showConclusionForm}
               setShowConclusionForm={setShowConclusionForm}
               complianceChecks={complianceChecks}
+              executionContext={executionContext}
               tocItems={tocItems}
               todItems={todItems}
               analyticsItems={analyticsItems}
@@ -1288,6 +1290,7 @@ function FSHeadWizard({
               hasEvidence={hasEvidence}
               hasConclusion={hasConclusion}
               riskAreas={riskAreas}
+              executionContext={executionContext}
               getStatusBadge={getStatusBadge}
             />
           )}
@@ -1312,26 +1315,46 @@ function FSHeadWizard({
 }
 
 function Step1Context({ workingPaper, fsHeadName, fsHeadType, fsHeadAccounts, clientName, fiscalYear, executionContext, riskAreas, adjustmentItems, adjustmentTotals, getStatusBadge, formatAccounting: fmt }: any) {
+  const ctx = executionContext || {};
+  const mat = ctx.materiality || {};
+  const fin = ctx.financials || {};
+  const flags = ctx.planningFlags || {};
+  const completion = ctx.completion || {};
+  const procSummary = ctx.procedureSummary || {};
+  const evSummary = ctx.evidenceSummary || {};
+  const team = ctx.teamAssignment || {};
+  const tpl = ctx.template || {};
+  const subItems = ctx.subLineItems || [];
+
   return (
     <div className="space-y-4" data-testid="step-1-context">
       <div className="border rounded-lg p-4 bg-muted/30">
         <div className="flex items-center gap-2 mb-3">
           <FileText className="h-5 w-5 text-primary" />
           <h3 className="text-sm font-semibold tracking-tight">FS Head Working Paper</h3>
+          {completion.overallPercent !== undefined && (
+            <Badge variant={completion.overallPercent === 100 ? "default" : "secondary"} className="ml-auto">
+              {completion.overallPercent}% Complete
+            </Badge>
+          )}
         </div>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Client:</span>
-              <span className="font-medium" data-testid="wp-client-name">{clientName}</span>
+              <span className="font-medium" data-testid="wp-client-name">{ctx.engagement?.clientName || clientName}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Year:</span>
-              <span className="font-medium" data-testid="wp-fiscal-year">{fiscalYear}</span>
+              <span className="font-medium" data-testid="wp-fiscal-year">{ctx.engagement?.fiscalYear || fiscalYear}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">FS Head:</span>
               <span className="font-medium" data-testid="wp-fs-head">{fsHeadName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Framework:</span>
+              <span className="font-medium">{ctx.engagement?.reportingFramework || "IFRS"}</span>
             </div>
           </div>
           <div className="space-y-2">
@@ -1340,23 +1363,39 @@ function Step1Context({ workingPaper, fsHeadName, fsHeadType, fsHeadAccounts, cl
               <Badge variant="outline" data-testid="wp-fs-type">{fsHeadType === "Balance Sheet" ? "BS" : "PL"}</Badge>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Prepared by:</span>
-              <span className="font-medium">{workingPaper.preparedByName || "—"}</span>
+              <span className="text-muted-foreground">Preparer:</span>
+              <span className="font-medium">{team.preparer || workingPaper.preparedByName || "—"}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Reviewed by:</span>
-              <span className="font-medium">{workingPaper.reviewedByName || "—"}</span>
+              <span className="text-muted-foreground">Reviewer:</span>
+              <span className="font-medium">{team.reviewer || workingPaper.reviewedByName || "—"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Partner:</span>
+              <span className="font-medium">{team.partner || "—"}</span>
             </div>
           </div>
         </div>
       </div>
 
+      {(flags.hasFraudRisk || flags.hasSignificantRisk || flags.hasGoingConcernRisk || flags.hasRelatedPartyIssues || flags.isa540Triggered || fin.isSignificant) && (
+        <div className="flex flex-wrap gap-2">
+          {fin.isSignificant && <Badge variant="default" className="bg-blue-600">Significant Account</Badge>}
+          {flags.hasFraudRisk && <Badge variant="destructive">Fraud Risk (ISA 240)</Badge>}
+          {flags.hasSignificantRisk && <Badge variant="destructive" className="bg-orange-600">Significant Risk</Badge>}
+          {flags.hasGoingConcernRisk && <Badge variant="destructive" className="bg-purple-600">Going Concern (ISA 570)</Badge>}
+          {flags.hasRelatedPartyIssues && <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">Related Parties (ISA 550)</Badge>}
+          {flags.isa540Triggered && <Badge variant="secondary">ISA 540 Estimates</Badge>}
+          {flags.hasLegalComplianceIssues && <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200">Legal/Compliance Issues</Badge>}
+        </div>
+      )}
+
       <div className="border rounded-lg p-4">
         <div className="flex items-center gap-2 mb-3">
           <TrendingUp className="h-4 w-4 text-primary" />
-          <h4 className="text-sm font-semibold">Financial Summary</h4>
+          <h4 className="text-sm font-semibold">Lead Schedule</h4>
           <Badge variant="secondary" className="ml-2">Auto-Extracted from TB</Badge>
-          <Badge variant="outline" className="ml-1">{fsHeadAccounts.length} Sub-Items</Badge>
+          <Badge variant="outline" className="ml-1">{subItems.length || fsHeadAccounts.length} Sub-Items</Badge>
         </div>
         <div className="overflow-x-auto">
           <Table>
@@ -1371,67 +1410,79 @@ function Step1Context({ workingPaper, fsHeadName, fsHeadType, fsHeadAccounts, cl
                   </>
                 )}
                 <TableHead className="text-right min-w-[90px]">CY</TableHead>
+                <TableHead className="text-right min-w-[70px]">Var%</TableHead>
                 <TableHead className="text-right min-w-[90px]">Adj</TableHead>
-                <TableHead className="min-w-[120px]">Remarks</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {fsHeadAccounts.length > 0 ? (
+              {(subItems.length > 0 ? subItems : fsHeadAccounts).length > 0 ? (
                 <>
-                  {fsHeadAccounts.map((account: FSHeadAccount, idx: number) => {
-                    const py = account.openingBalance || 0;
-                    const cy = account.closingBalance || 0;
-                    const changePercent = py !== 0 ? ((cy - py) / Math.abs(py)) * 100 : (cy !== 0 ? 100 : 0);
+                  {(subItems.length > 0 ? subItems : fsHeadAccounts).map((item: any, idx: number) => {
+                    const code = item.code || item.accountCode || "";
+                    const name = item.name || item.accountName || "";
+                    const py = item.priorYear ?? item.openingBalance ?? 0;
+                    const cy = item.closingBalance ?? 0;
+                    const dr = item.debit ?? item.debits ?? 0;
+                    const cr = item.credit ?? item.credits ?? 0;
+                    const varPct = item.variancePercent ?? (py !== 0 ? ((cy - py) / Math.abs(py)) * 100 : (cy !== 0 ? 100 : 0));
                     const accountAdj = adjustmentItems.filter((adj: AdjustmentItem) =>
-                      adj.debitAccountCode === account.code || adj.creditAccountCode === account.code
+                      adj.debitAccountCode === code || adj.creditAccountCode === code
                     );
                     const totalAdj = accountAdj.reduce((sum: number, adj: AdjustmentItem) => {
                       let net = 0;
-                      if (adj.debitAccountCode === account.code) net += adj.debitAmount || 0;
-                      if (adj.creditAccountCode === account.code) net -= adj.creditAmount || 0;
+                      if (adj.debitAccountCode === code) net += adj.debitAmount || 0;
+                      if (adj.creditAccountCode === code) net -= adj.creditAmount || 0;
                       return sum + net;
                     }, 0);
                     return (
-                      <TableRow key={account.code || idx} data-testid={`fs-summary-row-${idx}`}>
+                      <TableRow key={code || idx} data-testid={`fs-summary-row-${idx}`}>
                         <TableCell className="font-medium">
                           <div className="flex flex-col">
-                            <span className="text-xs text-muted-foreground font-mono">{account.code}</span>
-                            <span className="truncate max-w-[220px]">{account.name}</span>
+                            <span className="text-xs text-muted-foreground font-mono">{code}</span>
+                            <span className="truncate max-w-[220px]">{name}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-mono text-sm">{fmt(py)}</TableCell>
                         {(fsHeadType !== "Income" && fsHeadType !== "Expenses") && (
                           <>
-                            <TableCell className="text-right font-mono text-sm">{fmt(account.debits)}</TableCell>
-                            <TableCell className="text-right font-mono text-sm">{fmt(account.credits)}</TableCell>
+                            <TableCell className="text-right font-mono text-sm">{fmt(dr)}</TableCell>
+                            <TableCell className="text-right font-mono text-sm">{fmt(cr)}</TableCell>
                           </>
                         )}
                         <TableCell className="text-right font-mono text-sm">{fmt(cy)}</TableCell>
+                        <TableCell className="text-right text-xs">
+                          {Math.abs(varPct) > 20 ? (
+                            <span className={varPct > 0 ? "text-amber-600 font-semibold" : "text-red-600 font-semibold"}>
+                              {varPct > 0 ? "▲" : "▼"}{Math.abs(varPct).toFixed(0)}%
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">{Math.abs(varPct).toFixed(0)}%</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-right font-mono text-sm">
                           {totalAdj !== 0 ? <span className={totalAdj > 0 ? "text-green-600" : "text-red-600"}>{fmt(totalAdj)}</span> : <span className="text-muted-foreground">—</span>}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {account.remarks || (Math.abs(changePercent) > 20 ? (
-                            <span className={changePercent > 0 ? "text-amber-600" : "text-red-600"}>
-                              {changePercent > 0 ? '▲' : '▼'} {Math.abs(changePercent).toFixed(0)}% variance
-                            </span>
-                          ) : '—')}
                         </TableCell>
                       </TableRow>
                     );
                   })}
                   <TableRow className="bg-muted/50 font-medium border-t-2">
                     <TableCell className="font-semibold">Total ({fsHeadName})</TableCell>
-                    <TableCell className="text-right font-mono font-semibold">{fmt(fsHeadAccounts.reduce((s: number, a: FSHeadAccount) => s + (a.openingBalance || 0), 0))}</TableCell>
+                    <TableCell className="text-right font-mono font-semibold">{fmt(fin.priorYearBalance ?? fsHeadAccounts.reduce((s: number, a: FSHeadAccount) => s + (a.openingBalance || 0), 0))}</TableCell>
                     {(fsHeadType !== "Income" && fsHeadType !== "Expenses") && (
                       <>
-                        <TableCell className="text-right font-mono font-semibold">{fmt(fsHeadAccounts.reduce((s: number, a: FSHeadAccount) => s + (a.debits || 0), 0))}</TableCell>
-                        <TableCell className="text-right font-mono font-semibold">{fmt(fsHeadAccounts.reduce((s: number, a: FSHeadAccount) => s + (a.credits || 0), 0))}</TableCell>
+                        <TableCell className="text-right font-mono font-semibold">{fmt(subItems.length > 0 ? subItems.reduce((s: number, i: any) => s + (i.debit || 0), 0) : fsHeadAccounts.reduce((s: number, a: FSHeadAccount) => s + (a.debits || 0), 0))}</TableCell>
+                        <TableCell className="text-right font-mono font-semibold">{fmt(subItems.length > 0 ? subItems.reduce((s: number, i: any) => s + (i.credit || 0), 0) : fsHeadAccounts.reduce((s: number, a: FSHeadAccount) => s + (a.credits || 0), 0))}</TableCell>
                       </>
                     )}
-                    <TableCell className="text-right font-mono font-semibold">{fmt(fsHeadAccounts.reduce((s: number, a: FSHeadAccount) => s + (a.closingBalance || 0), 0))}</TableCell>
+                    <TableCell className="text-right font-mono font-semibold">{fmt(fin.currentYearBalance ?? fsHeadAccounts.reduce((s: number, a: FSHeadAccount) => s + (a.closingBalance || 0), 0))}</TableCell>
+                    <TableCell className="text-right text-xs font-semibold">
+                      {fin.movementPercent ? (
+                        <span className={fin.movementPercent > 0 ? "text-amber-600" : "text-red-600"}>
+                          {fin.movementPercent > 0 ? "▲" : "▼"}{Math.abs(fin.movementPercent).toFixed(0)}%
+                        </span>
+                      ) : ""}
+                    </TableCell>
                     <TableCell className="text-right font-mono font-semibold">{fmt(adjustmentTotals.totalNetImpact || 0)}</TableCell>
-                    <TableCell></TableCell>
                   </TableRow>
                 </>
               ) : (
@@ -1442,49 +1493,101 @@ function Step1Context({ workingPaper, fsHeadName, fsHeadType, fsHeadAccounts, cl
         </div>
       </div>
 
-      <div className="border rounded-lg p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Calculator className="h-4 w-4 text-primary" />
-          <h4 className="text-sm font-semibold">Materiality (ISA 320)</h4>
-        </div>
-        <div className="grid grid-cols-3 gap-4 text-sm">
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
-            <div className="text-muted-foreground text-xs mb-1">Overall Materiality</div>
-            <div className="font-semibold" data-testid="wp-overall-mat">{fmt(executionContext?.materiality?.overall || workingPaper.overallMateriality)}</div>
-          </div>
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
-            <div className="text-muted-foreground text-xs mb-1">Performance Materiality</div>
-            <div className="font-semibold" data-testid="wp-perf-mat">{fmt(executionContext?.materiality?.performance || workingPaper.performanceMateriality)}</div>
-          </div>
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
-            <div className="text-muted-foreground text-xs mb-1">FS Head Significance</div>
-            <div data-testid="wp-risk-level">{getStatusBadge(workingPaper.riskLevel || "MEDIUM")}</div>
-          </div>
-        </div>
-      </div>
-
-      {riskAreas.length > 0 && (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="h-4 w-4 text-primary" />
-            <h4 className="text-sm font-semibold">Risk Summary (ISA 315)</h4>
-            <Badge variant="outline">{riskAreas.length} risks</Badge>
+            <Calculator className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold">Materiality Comparison (ISA 320)</h4>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Overall Materiality</span>
+              <span className="font-semibold" data-testid="wp-overall-mat">{fmt(mat.overall || workingPaper.overallMateriality)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Performance Materiality</span>
+              <span className="font-semibold" data-testid="wp-perf-mat">{fmt(mat.performance || workingPaper.performanceMateriality)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Trivial Threshold</span>
+              <span className="font-semibold">{fmt(mat.trivial || workingPaper.trivialThreshold)}</span>
+            </div>
+            <div className="border-t pt-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">FS Head Balance</span>
+                <span className="font-bold">{fmt(fin.currentYearBalance ?? workingPaper.currentYearBalance)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm mt-1">
+                <span className="text-muted-foreground">vs PM</span>
+                <span className={`font-semibold ${fin.isSignificant ? "text-red-600" : "text-green-600"}`}>
+                  {fin.isSignificant ? "Exceeds PM — Significant" : "Below PM"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Shield className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold">Completion Status</h4>
           </div>
           <div className="space-y-2">
-            {riskAreas.slice(0, 4).map((risk: RiskArea) => (
-              <div key={risk.id} className="flex items-center gap-2 text-sm">
-                <div className={`h-2 w-2 rounded-full ${risk.riskLevel === 'HIGH' ? 'bg-red-500' : risk.riskLevel === 'MEDIUM' ? 'bg-amber-500' : 'bg-green-500'}`} />
-                <span className="flex-1 truncate">{risk.riskTitle}</span>
-                <div className="flex gap-1">
-                  {risk.assertions?.slice(0, 3).map((a: string) => (
-                    <Badge key={a} variant="outline" className="text-xs h-5">{a}</Badge>
-                  ))}
-                </div>
-                {getStatusBadge(risk.riskLevel)}
+            {[
+              { label: "Context Loaded", done: completion.contextComplete, weight: "10%" },
+              { label: "Assertions Confirmed", done: completion.assertionsComplete, weight: "15%" },
+              { label: "Procedures Performed", done: completion.proceduresComplete, weight: "30%" },
+              { label: "Evidence Attached", done: completion.evidenceComplete, weight: "20%" },
+              { label: "Conclusion Written", done: completion.conclusionComplete, weight: "15%" },
+              { label: "Review Approved", done: completion.reviewComplete, weight: "10%" },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2 text-xs">
+                {item.done ? (
+                  <CheckCircle2 className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
+                ) : (
+                  <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30 flex-shrink-0" />
+                )}
+                <span className={item.done ? "text-foreground" : "text-muted-foreground"}>{item.label}</span>
+                <span className="text-muted-foreground ml-auto">{item.weight}</span>
               </div>
             ))}
           </div>
         </div>
+      </div>
+
+      {(riskAreas.length > 0 || (ctx.linkedRisks || []).length > 0) && (
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold">Linked Risks (ISA 315)</h4>
+            <Badge variant="outline">{(ctx.linkedRisks || riskAreas).length} risks</Badge>
+          </div>
+          <div className="space-y-2">
+            {(ctx.linkedRisks || riskAreas).slice(0, 5).map((risk: any) => (
+              <div key={risk.id} className="flex items-center gap-2 text-sm">
+                <div className={`h-2 w-2 rounded-full flex-shrink-0 ${(risk.romm || risk.riskLevel || risk.inherentRisk) === 'HIGH' ? 'bg-red-500' : (risk.romm || risk.riskLevel || risk.inherentRisk) === 'MODERATE' ? 'bg-amber-500' : 'bg-green-500'}`} />
+                <span className="flex-1 truncate text-xs">{risk.riskDescription || risk.riskTitle}</span>
+                <div className="flex gap-1 flex-shrink-0">
+                  {risk.isFraudRisk && <Badge variant="destructive" className="text-[9px] h-4">Fraud</Badge>}
+                  {risk.isSignificantRisk && <Badge variant="secondary" className="text-[9px] h-4 bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-200">Significant</Badge>}
+                </div>
+                {getStatusBadge(risk.romm || risk.riskLevel || risk.inherentRisk)}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tpl.specialEnforcement?.length > 0 && (
+        <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950 dark:border-amber-800">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-700 dark:text-amber-300 text-xs">
+            <strong>Special Enforcement ({tpl.displayName}):</strong>
+            <ul className="mt-1 space-y-0.5 list-disc list-inside">
+              {tpl.specialEnforcement.map((e: string, i: number) => <li key={i}>{e}</li>)}
+            </ul>
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );
@@ -1492,26 +1595,36 @@ function Step1Context({ workingPaper, fsHeadName, fsHeadType, fsHeadAccounts, cl
 
 function Step2Assertions({ riskAreas, executionContext, procedureTemplate, editingRisk, setEditingRisk, saveRiskMutation, generateRisksMutation, fsHeadName, getStatusBadge }: any) {
   const ASSERTIONS = [
-    { id: "existence", label: "Existence / Occurrence", abbr: "E/O" },
-    { id: "completeness", label: "Completeness", abbr: "C" },
-    { id: "accuracy", label: "Accuracy", abbr: "A" },
-    { id: "valuation", label: "Valuation / Allocation", abbr: "V/A" },
-    { id: "rights", label: "Rights & Obligations", abbr: "R&O" },
-    { id: "presentation", label: "Presentation & Disclosure", abbr: "P&D" },
-    { id: "cutoff", label: "Cutoff", abbr: "CO" },
-    { id: "classification", label: "Classification", abbr: "CL" }
+    { id: "Existence", label: "Existence / Occurrence", abbr: "E/O", alt: ["existence", "EXISTENCE", "Occurrence"] },
+    { id: "Completeness", label: "Completeness", abbr: "C", alt: ["completeness", "COMPLETENESS"] },
+    { id: "Accuracy", label: "Accuracy", abbr: "A", alt: ["accuracy", "ACCURACY"] },
+    { id: "Valuation", label: "Valuation / Allocation", abbr: "V/A", alt: ["valuation", "VALUATION"] },
+    { id: "Rights & Obligations", label: "Rights & Obligations", abbr: "R&O", alt: ["rights", "RIGHTS_AND_OBLIGATIONS", "Rights"] },
+    { id: "Presentation & Disclosure", label: "Presentation & Disclosure", abbr: "P&D", alt: ["presentation", "PRESENTATION", "Presentation"] },
+    { id: "Cut-off", label: "Cut-off", abbr: "CO", alt: ["cutoff", "CUT_OFF", "Cut-off"] },
+    { id: "Classification", label: "Classification", abbr: "CL", alt: ["classification", "CLASSIFICATION"] },
   ];
 
-  const linkedRisks = executionContext?.linkedRisks || [];
-  const assertionMatrix = executionContext?.assertionMatrix || {};
+  const ctx = executionContext || {};
+  const linkedRisks = ctx.linkedRisks || [];
+  const assertionMatrix = ctx.assertionMatrix || {};
+  const auditProgram = ctx.auditProgram || [];
   const allRisks = [...riskAreas, ...linkedRisks.filter((lr: any) => !riskAreas.some((ra: RiskArea) => ra.id === lr.id))];
+
+  const getAssertionCoverage = (assertionId: string, alts: string[]) => {
+    const matrixEntry = assertionMatrix[assertionId] || assertionMatrix[alts.find((a: string) => assertionMatrix[a])] || {};
+    const riskCount = matrixEntry.risks?.length || 0;
+    const procCount = matrixEntry.procedures?.length || 0;
+    const isSelected = matrixEntry.selected || riskCount > 0;
+    return { riskCount, procCount, isSelected };
+  };
 
   return (
     <div className="space-y-4" data-testid="step-2-assertions">
       <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
         <Target className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-700 dark:text-blue-300 text-xs">
-          ISA 315: Map identified risks to financial statement assertions. Ensure every significant risk has a linked audit response.
+          ISA 315/330: Assertion matrix auto-built from Planning risks. Each assertion with linked risks requires at least one audit procedure response.
         </AlertDescription>
       </Alert>
 
@@ -1519,7 +1632,7 @@ function Step2Assertions({ riskAreas, executionContext, procedureTemplate, editi
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-semibold flex items-center gap-2">
             <Shield className="h-4 w-4" />
-            Assertion Coverage Matrix (CAVR-EC)
+            Assertion Coverage Matrix
           </h4>
           {procedureTemplate && (
             <div className="flex gap-1">
@@ -1529,6 +1642,27 @@ function Step2Assertions({ riskAreas, executionContext, procedureTemplate, editi
             </div>
           )}
         </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+          {ASSERTIONS.map(a => {
+            const cov = getAssertionCoverage(a.id, a.alt);
+            return (
+              <div key={a.id} className={`p-2 rounded-lg border text-center ${cov.isSelected ? "bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800" : "bg-muted/30"}`}>
+                <div className="text-xs font-semibold">{a.abbr}</div>
+                <div className="text-[10px] text-muted-foreground truncate">{a.label}</div>
+                {cov.isSelected ? (
+                  <div className="flex items-center justify-center gap-2 mt-1">
+                    <span className="text-[10px] text-green-700 dark:text-green-300">{cov.riskCount} risk{cov.riskCount !== 1 ? "s" : ""}</span>
+                    <span className="text-[10px] text-blue-700 dark:text-blue-300">{cov.procCount} proc</span>
+                  </div>
+                ) : (
+                  <div className="text-[10px] text-muted-foreground mt-1">Not covered</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -1537,30 +1671,43 @@ function Step2Assertions({ riskAreas, executionContext, procedureTemplate, editi
                 {ASSERTIONS.map(a => (
                   <TableHead key={a.id} className="text-center w-12 text-xs">{a.abbr}</TableHead>
                 ))}
-                <TableHead className="w-20">Level</TableHead>
+                <TableHead className="w-20">ROMM</TableHead>
+                <TableHead className="w-16">Flags</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {allRisks.length > 0 ? allRisks.map((risk: any) => (
-                <TableRow key={risk.id} data-testid={`assertion-row-${risk.id}`}>
-                  <TableCell className="text-sm">{risk.riskTitle || risk.riskDescription || "Untitled Risk"}</TableCell>
-                  {ASSERTIONS.map(a => {
-                    const covered = risk.assertions?.includes(a.id) || risk.assertions?.includes(a.abbr) || risk.assertions?.includes(a.label);
-                    return (
-                      <TableCell key={a.id} className="text-center">
-                        {covered ? (
-                          <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                    );
-                  })}
-                  <TableCell>{getStatusBadge(risk.riskLevel || risk.inherentRisk || "MEDIUM")}</TableCell>
-                </TableRow>
-              )) : (
+              {allRisks.length > 0 ? allRisks.map((risk: any) => {
+                const rawAssertions = risk.assertions || risk.assertionImpacts || [];
+                const riskAssertions = Array.isArray(rawAssertions) ? rawAssertions : typeof rawAssertions === 'string' ? rawAssertions.split(',').map((s: string) => s.trim()) : [];
+                return (
+                  <TableRow key={risk.id} data-testid={`assertion-row-${risk.id}`}>
+                    <TableCell className="text-xs">{risk.riskTitle || risk.riskDescription || "Untitled Risk"}</TableCell>
+                    {ASSERTIONS.map(a => {
+                      const covered = riskAssertions.some((ra: string) =>
+                        ra === a.id || ra === a.abbr || ra === a.label || a.alt.includes(ra)
+                      );
+                      return (
+                        <TableCell key={a.id} className="text-center">
+                          {covered ? (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-600 mx-auto" />
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell>{getStatusBadge(risk.romm || risk.riskLevel || risk.inherentRisk || "MEDIUM")}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-0.5">
+                        {risk.isFraudRisk && <Badge variant="destructive" className="text-[8px] h-4 px-1">F</Badge>}
+                        {risk.isSignificantRisk && <Badge variant="secondary" className="text-[8px] h-4 px-1 bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-200">S</Badge>}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              }) : (
                 <TableRow>
-                  <TableCell colSpan={ASSERTIONS.length + 2} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={ASSERTIONS.length + 3} className="text-center py-6 text-muted-foreground">
                     No risks identified. Generate risks or add manually.
                   </TableCell>
                 </TableRow>
@@ -1570,11 +1717,37 @@ function Step2Assertions({ riskAreas, executionContext, procedureTemplate, editi
         </div>
       </div>
 
+      {auditProgram.length > 0 && (
+        <div className="border rounded-lg p-4">
+          <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <ClipboardList className="h-4 w-4" />
+            Linked Audit Program ({auditProgram.length} procedures from Planning)
+          </h4>
+          <div className="space-y-1.5">
+            {auditProgram.slice(0, 6).map((proc: any) => (
+              <div key={proc.id} className="flex items-center gap-2 text-xs p-1.5 rounded bg-muted/30">
+                <span className="font-mono text-muted-foreground w-16 flex-shrink-0">{proc.workpaperRef}</span>
+                <span className="flex-1 truncate">{proc.title || proc.description}</span>
+                <div className="flex gap-1 flex-shrink-0">
+                  {proc.assertions?.slice(0, 2).map((a: string) => (
+                    <Badge key={a} variant="outline" className="text-[9px] h-4">{a}</Badge>
+                  ))}
+                </div>
+                <Badge variant={proc.status === "COMPLETED" ? "default" : "secondary"} className="text-[9px] h-4">{proc.status}</Badge>
+              </div>
+            ))}
+            {auditProgram.length > 6 && (
+              <p className="text-xs text-muted-foreground text-center">+ {auditProgram.length - 6} more procedures</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {procedureTemplate && (
         <div className="border rounded-lg p-4">
           <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
             <Info className="h-4 w-4" />
-            Template Key Risks
+            Template Key Risks ({procedureTemplate.displayName || fsHeadName})
           </h4>
           <div className="space-y-2">
             {procedureTemplate.keyRisks?.map((r: any, i: number) => (
@@ -1585,12 +1758,11 @@ function Step2Assertions({ riskAreas, executionContext, procedureTemplate, editi
               </div>
             ))}
           </div>
-          {procedureTemplate.fraudRiskPresumed && (
-            <Badge variant="destructive" className="mt-2">ISA 240 Fraud Risk Presumed</Badge>
-          )}
-          {procedureTemplate.isa540Triggered && (
-            <Badge variant="secondary" className="mt-2 ml-2">ISA 540 Estimates</Badge>
-          )}
+          <div className="flex gap-2 mt-2">
+            {procedureTemplate.fraudRiskPresumed && <Badge variant="destructive">ISA 240 Fraud Risk Presumed</Badge>}
+            {procedureTemplate.isa540Triggered && <Badge variant="secondary">ISA 540 Estimates</Badge>}
+            {procedureTemplate.riskLocked && <Badge variant="outline" className="gap-1"><Lock className="h-3 w-3" />Risk Level Locked</Badge>}
+          </div>
         </div>
       )}
 
@@ -1641,18 +1813,56 @@ function Step3Procedures({
   updateTOCMutation, updateTODMutation, updateAnalyticsMutation,
   deleteTOCMutation, deleteTODMutation, deleteAnalyticsMutation,
   generateTOCMutation, generateTODMutation, generateAnalyticsMutation,
-  procedureTemplate, isLoading, workingPaper, getStatusBadge
+  procedureTemplate, executionContext, isLoading, workingPaper, getStatusBadge
 }: any) {
   const [activeSection, setActiveSection] = useState<'toc' | 'tod' | 'analytics'>('toc');
+  const ctx = executionContext || {};
+  const auditProgram = ctx.auditProgram || [];
+  const procSummary = ctx.procedureSummary || {};
+  const flags = ctx.planningFlags || {};
+
+  const totalPerformed = tocItems.filter((t: TOCItem) => t.result && t.result !== "NOT_TESTED" && t.result !== "PENDING").length +
+    todItems.filter((t: TODItem) => t.result && t.result !== "NOT_TESTED" && t.result !== "PENDING").length +
+    analyticsItems.filter((a: AnalyticalItem) => a.conclusion).length;
+  const totalProcedures = tocItems.length + todItems.length + analyticsItems.length;
 
   return (
     <div className="space-y-4" data-testid="step-3-procedures">
       <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
         <ClipboardList className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-700 dark:text-blue-300 text-xs">
-          ISA 330: Execute audit procedures to respond to assessed risks. Complete Test of Controls, Test of Details, and Analytical Procedures.
+          ISA 330: Execute audit procedures responding to assessed risks. Procedures auto-inherited from Planning audit programs.
+          {flags.hasFraudRisk && " ISA 240 fraud procedures are mandatory."}
+          {flags.hasSignificantRisk && " Enhanced procedures required for significant risks."}
         </AlertDescription>
       </Alert>
+
+      {auditProgram.length > 0 && (
+        <div className="border rounded-lg p-3 bg-muted/20">
+          <div className="flex items-center gap-2 mb-2">
+            <ClipboardList className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs font-semibold">Planning Audit Program ({auditProgram.length} procedures linked)</span>
+            <Badge variant="outline" className="text-[9px] h-4 ml-auto">{totalPerformed}/{totalProcedures} performed</Badge>
+          </div>
+          <div className="space-y-1">
+            {auditProgram.slice(0, 4).map((proc: any) => (
+              <div key={proc.id} className="flex items-center gap-2 text-[10px] p-1 rounded bg-background/50">
+                <span className="font-mono text-muted-foreground w-14 flex-shrink-0">{proc.workpaperRef}</span>
+                <span className="flex-1 truncate">{proc.title || proc.description}</span>
+                <div className="flex gap-0.5 flex-shrink-0">
+                  {proc.assertions?.slice(0, 2).map((a: string) => (
+                    <Badge key={a} variant="outline" className="text-[8px] h-3.5 px-1">{a}</Badge>
+                  ))}
+                </div>
+                <Badge variant={proc.status === "COMPLETED" ? "default" : "secondary"} className="text-[8px] h-3.5">{proc.status}</Badge>
+              </div>
+            ))}
+            {auditProgram.length > 4 && (
+              <p className="text-[10px] text-muted-foreground text-center">+ {auditProgram.length - 4} more</p>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-3 mb-4">
         <button
@@ -1665,7 +1875,12 @@ function Step3Procedures({
             <span className="font-medium text-sm">Test of Controls</span>
           </div>
           <div className="text-2xl font-bold">{tocItems.length}</div>
-          <div className="text-xs text-muted-foreground">{tocItems.filter((t: TOCItem) => t.result === "EFFECTIVE").length} effective</div>
+          <div className="text-xs text-muted-foreground">
+            {tocItems.filter((t: TOCItem) => t.result === "EFFECTIVE").length} effective
+            {tocItems.filter((t: TOCItem) => t.result === "NOT_EFFECTIVE").length > 0 && (
+              <span className="text-red-600 ml-1">• {tocItems.filter((t: TOCItem) => t.result === "NOT_EFFECTIVE").length} failed</span>
+            )}
+          </div>
         </button>
         <button
           onClick={() => setActiveSection('tod')}
@@ -1677,7 +1892,12 @@ function Step3Procedures({
             <span className="font-medium text-sm">Test of Details</span>
           </div>
           <div className="text-2xl font-bold">{todItems.length}</div>
-          <div className="text-xs text-muted-foreground">{todItems.filter((t: TODItem) => t.result === "SATISFACTORY").length} satisfactory</div>
+          <div className="text-xs text-muted-foreground">
+            {todItems.filter((t: TODItem) => t.result === "SATISFACTORY").length} satisfactory
+            {todItems.filter((t: TODItem) => (t.exceptionsFound || 0) > 0).length > 0 && (
+              <span className="text-amber-600 ml-1">• {todItems.filter((t: TODItem) => (t.exceptionsFound || 0) > 0).length} exceptions</span>
+            )}
+          </div>
         </button>
         <button
           onClick={() => setActiveSection('analytics')}
@@ -2353,7 +2573,7 @@ function Step5Conclusions({
   workingPaper, conclusion, setConclusion, notes, setNotes,
   saveConclusionMutation, saveNotesMutation, generateConclusionMutation,
   showConclusionForm, setShowConclusionForm, complianceChecks,
-  tocItems, todItems, analyticsItems, adjustmentItems, fsHeadName,
+  executionContext, tocItems, todItems, analyticsItems, adjustmentItems, fsHeadName,
   engagementId, fsHeadKey
 }: any) {
   const { toast } = useToast();
@@ -2409,24 +2629,42 @@ Format clearly with sections. This is advisory only.`
         </AlertDescription>
       </Alert>
 
-      <div className="grid grid-cols-4 gap-3 p-3 bg-muted/50 rounded-lg">
-        <div className="text-center">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-muted/50 rounded-lg">
+        <div className="text-center p-2 rounded border bg-background">
           <div className="text-xl font-bold text-primary">{tocItems.length}</div>
           <div className="text-xs text-muted-foreground">Controls Tested</div>
+          <div className="text-[10px] text-green-600">{tocItems.filter((t: TOCItem) => t.result === "EFFECTIVE").length} effective</div>
         </div>
-        <div className="text-center">
+        <div className="text-center p-2 rounded border bg-background">
           <div className="text-xl font-bold text-primary">{todItems.length}</div>
           <div className="text-xs text-muted-foreground">Details Tested</div>
+          <div className="text-[10px]">
+            <span className="text-green-600">{todItems.filter((t: TODItem) => t.result === "SATISFACTORY").length} pass</span>
+            {todItems.filter((t: TODItem) => (t.exceptionsFound || 0) > 0).length > 0 && (
+              <span className="text-amber-600 ml-1">• {todItems.filter((t: TODItem) => (t.exceptionsFound || 0) > 0).length} exc</span>
+            )}
+          </div>
         </div>
-        <div className="text-center">
+        <div className="text-center p-2 rounded border bg-background">
           <div className="text-xl font-bold text-primary">{analyticsItems.length}</div>
           <div className="text-xs text-muted-foreground">Analytics</div>
+          <div className="text-[10px] text-green-600">{analyticsItems.filter((a: AnalyticalItem) => a.conclusion).length} concluded</div>
         </div>
-        <div className="text-center">
+        <div className="text-center p-2 rounded border bg-background">
           <div className="text-xl font-bold text-primary">{workingPaper.attachments?.length || 0}</div>
           <div className="text-xs text-muted-foreground">Evidence Items</div>
+          <div className="text-[10px] text-muted-foreground">{adjustmentItems.length} adjustments</div>
         </div>
       </div>
+
+      {executionContext?.completion && (
+        <div className="flex items-center gap-3 p-2 bg-muted/30 rounded-lg text-xs">
+          <span className="text-muted-foreground">Overall Completion:</span>
+          <Progress value={executionContext.completion.overallPercent || 0} className="flex-1 h-2" />
+          <span className="font-semibold">{executionContext.completion.overallPercent || 0}%</span>
+          {executionContext.completion.overallPercent === 100 && <CheckCircle2 className="h-4 w-4 text-green-600" />}
+        </div>
+      )}
 
       {complianceChecks && (
         <div className="border rounded-lg p-3">
@@ -2611,46 +2849,77 @@ function Step6Review({
   workingPaper, complianceChecks, handleSignOff, statusTransitionMutation,
   addReviewPointMutation, newReviewPoint, setNewReviewPoint,
   newReviewSeverity, setNewReviewSeverity,
-  hasProcedures, hasEvidence, hasConclusion, riskAreas, getStatusBadge
+  hasProcedures, hasEvidence, hasConclusion, riskAreas, executionContext, getStatusBadge
 }: any) {
   const risksAddressed = riskAreas.length === 0 || riskAreas.every((r: RiskArea) => r.status === "MITIGATED" || r.status === "ADDRESSED");
   const allReviewPointsResolved = !workingPaper.reviewPoints?.length || workingPaper.reviewPoints.every((rp: FSHeadReviewPoint) => rp.status === "RESOLVED" || rp.status === "CLOSED");
+  const ctx = executionContext || {};
+  const completion = ctx.completion || {};
+  const flags = ctx.planningFlags || {};
+
+  const gates = [
+    { label: "Context & Data Loaded", done: completion.contextComplete ?? true, weight: "10%", isa: "ISA 230" },
+    { label: "Assertions Confirmed", done: completion.assertionsComplete ?? false, weight: "15%", isa: "ISA 315" },
+    { label: "Procedures Performed", done: completion.proceduresComplete ?? hasProcedures, weight: "30%", isa: "ISA 330" },
+    { label: "Evidence Sufficient & Appropriate", done: completion.evidenceComplete ?? hasEvidence, weight: "20%", isa: "ISA 500" },
+    { label: "Conclusion Documented", done: completion.conclusionComplete ?? hasConclusion, weight: "15%", isa: "ISA 230" },
+    { label: "Review Approved", done: completion.reviewComplete ?? false, weight: "10%", isa: "ISQM-1" },
+  ];
+  const gatesPassed = gates.filter(g => g.done).length;
 
   return (
     <div className="space-y-4" data-testid="step-6-review">
       <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
         <UserCheck className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-700 dark:text-blue-300 text-xs">
-          Review and sign-off workflow: Draft → Prepared → Reviewed → Approved. Each transition is audit-trail logged.
+          Review and sign-off workflow: Draft → Prepared → Reviewed → Approved. Each transition is audit-trail logged per ISQM-1.
         </AlertDescription>
       </Alert>
+
+      {completion.overallPercent !== undefined && (
+        <div className="flex items-center gap-3 p-2 bg-muted/30 rounded-lg text-xs">
+          <span className="text-muted-foreground">Completion:</span>
+          <Progress value={completion.overallPercent} className="flex-1 h-2" />
+          <span className="font-semibold">{completion.overallPercent}%</span>
+          <Badge variant={gatesPassed === gates.length ? "default" : "secondary"} className="text-[9px]">{gatesPassed}/{gates.length} gates</Badge>
+        </div>
+      )}
 
       <div className="border rounded-lg p-4 bg-muted/20">
         <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 text-primary" />
-          Completion Checklist
+          Completion Gates (Weighted)
         </h4>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex items-center gap-2">
-            <input type="checkbox" checked={hasProcedures} readOnly className="h-4 w-4" data-testid="check-procedures" />
-            <span className="text-sm">Procedures executed</span>
+        <div className="space-y-2">
+          {gates.map((gate, i) => (
+            <div key={i} className="flex items-center gap-2 text-xs">
+              {gate.done ? (
+                <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
+              ) : (
+                <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30 flex-shrink-0" />
+              )}
+              <span className={gate.done ? "text-foreground flex-1" : "text-muted-foreground flex-1"}>{gate.label}</span>
+              <Badge variant="outline" className="text-[9px] h-4">{gate.isa}</Badge>
+              <span className="text-muted-foreground w-8 text-right">{gate.weight}</span>
+            </div>
+          ))}
+        </div>
+        {(flags.hasFraudRisk || flags.hasSignificantRisk) && (
+          <div className="mt-2 pt-2 border-t flex gap-2 text-xs">
+            {flags.hasFraudRisk && <Badge variant="destructive" className="text-[9px]">ISA 240 Fraud procedures required</Badge>}
+            {flags.hasSignificantRisk && <Badge variant="secondary" className="text-[9px] bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-200">Significant risk — enhanced review</Badge>}
           </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" checked={risksAddressed} readOnly className="h-4 w-4" data-testid="check-risks" />
-            <span className="text-sm">Risks addressed</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" checked={hasEvidence} readOnly className="h-4 w-4" data-testid="check-evidence" />
-            <span className="text-sm">Evidence uploaded</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" checked={hasConclusion} readOnly className="h-4 w-4" data-testid="check-conclusion" />
-            <span className="text-sm">Conclusion drafted</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" checked={allReviewPointsResolved} readOnly className="h-4 w-4" data-testid="check-review-resolved" />
-            <span className="text-sm">Review points resolved</span>
-          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 text-xs">
+        <div className="flex items-center gap-2 p-2 rounded border bg-background">
+          {risksAddressed ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> : <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />}
+          <span>All risks addressed</span>
+        </div>
+        <div className="flex items-center gap-2 p-2 rounded border bg-background">
+          {allReviewPointsResolved ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> : <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />}
+          <span>Review points resolved ({workingPaper.reviewPoints?.filter((rp: FSHeadReviewPoint) => rp.status === "RESOLVED" || rp.status === "CLOSED").length || 0}/{workingPaper.reviewPoints?.length || 0})</span>
         </div>
       </div>
 

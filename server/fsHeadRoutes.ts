@@ -5,6 +5,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { nanoid } from "nanoid";
+import { getEnhancedExecutionContext, getEngagementExecutionSummary } from "./services/fsHeadExecutionService";
 
 const db = prisma as any;
 
@@ -2365,117 +2366,8 @@ router.post("/api/engagements/:engagementId/fs-heads/generate", async (req: Requ
 router.get("/api/engagements/:engagementId/fs-heads/:fsHeadKey/execution-context", async (req: Request, res: Response) => {
   try {
     const { engagementId, fsHeadKey } = req.params;
-
-    const workingPaper = await db.fSHeadWorkingPaper.findUnique({
-      where: { engagementId_fsHeadKey: { engagementId, fsHeadKey } }
-    });
-
-    const coaAccounts = await prisma.coAAccount.findMany({
-      where: { engagementId, fsLineItem: { not: null } },
-      select: { fsLineItem: true, accountCode: true, id: true }
-    });
-    const matchingAccounts = coaAccounts.filter((a: any) =>
-      a.fsLineItem?.toLowerCase().replace(/[^a-z0-9]/g, '-') === fsHeadKey
-    );
-    const fsLineItem = matchingAccounts[0]?.fsLineItem || '';
-    const matchingAccountIds = matchingAccounts.map((a: any) => a.id);
-
-    const linkedRisks = await prisma.riskAssessment.findMany({
-      where: {
-        engagementId,
-        OR: [
-          ...(fsLineItem ? [{ accountOrClass: { contains: fsLineItem.split(' ')[0], mode: 'insensitive' as const } }] : []),
-        ]
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    const risks = linkedRisks.map((r: any) => ({
-      id: r.id,
-      accountOrClass: r.accountOrClass,
-      riskDescription: r.riskDescription,
-      inherentRisk: r.inherentRisk,
-      controlRisk: r.controlRisk,
-      riskOfMaterialMisstatement: r.riskOfMaterialMisstatement,
-      assertion: r.assertion,
-      assertionImpacts: r.assertionImpacts || [],
-      isSignificantRisk: r.isSignificantRisk,
-      isFraudRisk: r.isFraudRisk,
-      plannedResponse: r.plannedResponse
-    }));
-
-    let materiality = {
-      overallMateriality: workingPaper?.overallMateriality ? Number(workingPaper.overallMateriality) : null,
-      performanceMateriality: workingPaper?.performanceMateriality ? Number(workingPaper.performanceMateriality) : null,
-      trivialThreshold: workingPaper?.trivialThreshold ? Number(workingPaper.trivialThreshold) : null,
-    };
-
-    if (!materiality.overallMateriality) {
-      const matAssessment = await prisma.materialityAssessment.findFirst({
-        where: { engagementId },
-        orderBy: { createdAt: 'desc' }
-      });
-      if (matAssessment) {
-        materiality = {
-          overallMateriality: matAssessment.overallMateriality,
-          performanceMateriality: matAssessment.performanceMateriality,
-          trivialThreshold: matAssessment.amptThreshold,
-        };
-      }
-    }
-
-    const samplingFrames = await prisma.samplingRun.findMany({
-      where: { engagementId },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-      select: {
-        id: true,
-        runNumber: true,
-        runName: true,
-        samplingMethod: true,
-        populationCount: true,
-        populationValue: true,
-        sampleSize: true,
-        sampleValue: true,
-        coveragePercentage: true,
-        status: true,
-      }
-    });
-
-    const assertionLabels = ['EXISTENCE', 'COMPLETENESS', 'ACCURACY', 'VALUATION', 'RIGHTS_AND_OBLIGATIONS', 'CLASSIFICATION', 'CUT_OFF', 'PRESENTATION'];
-    const assertionMatrix = assertionLabels.map(a => {
-      const matchingRisks = risks.filter((r: any) =>
-        r.assertion === a || (r.assertionImpacts && r.assertionImpacts.includes(a))
-      );
-      return {
-        assertion: a,
-        riskCount: matchingRisks.length,
-        highestRisk: matchingRisks.length > 0 ?
-          matchingRisks.reduce((max: string, r: any) => {
-            const order: Record<string, number> = { LOW: 1, MODERATE: 2, HIGH: 3, SIGNIFICANT: 4 };
-            return (order[r.inherentRisk] || 0) > (order[max] || 0) ? r.inherentRisk : max;
-          }, 'LOW') : null,
-        covered: matchingRisks.length > 0,
-      };
-    });
-
-    const priorPeriodData = {
-      currentYearBalance: workingPaper?.currentYearBalance ? Number(workingPaper.currentYearBalance) : null,
-      priorYearBalance: workingPaper?.priorYearBalance ? Number(workingPaper.priorYearBalance) : null,
-      movement: workingPaper?.movement ? Number(workingPaper.movement) : null,
-      movementPercentage: workingPaper?.movementPercentage ? Number(workingPaper.movementPercentage) : null,
-    };
-
-    res.json({
-      success: true,
-      linkedRisks: risks,
-      materiality,
-      samplingFrames,
-      assertionMatrix,
-      priorPeriodData,
-      fsHeadName: fsLineItem || fsHeadKey,
-      workingPaperStatus: workingPaper?.status || 'NOT_STARTED',
-    });
+    const context = await getEnhancedExecutionContext(engagementId, fsHeadKey);
+    res.json({ success: true, ...context });
   } catch (error) {
     console.error("Error fetching execution context:", error);
     res.status(500).json({ error: "Failed to fetch execution context" });
@@ -2797,21 +2689,50 @@ router.get("/api/engagements/:engagementId/execution-compliance-summary", async 
       }
     });
 
+    const riskAssessments = await prisma.riskAssessment.findMany({
+      where: { engagementId },
+      select: { id: true, accountOrClass: true, riskOfMaterialMisstatement: true, isFraudRisk: true, isSignificantRisk: true, inherentRisk: true }
+    });
+
     const perHead = allWPs.map((wp: any) => {
       const tocCount = wp.testOfControls?.length || 0;
       const todCount = wp.testOfDetails?.length || 0;
       const analyticsCount = wp.analyticalProcedures?.length || 0;
       const totalProcedures = tocCount + todCount + analyticsCount;
+      const completedTOC = (wp.testOfControls || []).filter((t: any) => t.result === "SATISFACTORY" || t.result === "COMPLETED").length;
+      const completedTOD = (wp.testOfDetails || []).filter((t: any) => t.result === "SATISFACTORY" || t.result === "COMPLETED").length;
+      const completedAnalytics = (wp.analyticalProcedures || []).filter((a: any) => a.auditorConclusion?.trim()?.length > 0 || a.conclusion?.trim()?.length > 0).length;
+      const completedProcedures = completedTOC + completedTOD + completedAnalytics;
       const hasEvidence = (wp.attachments || []).length > 0;
-      const hasConclusion = !!wp.conclusion && wp.conclusion.trim().length > 0;
-      const openReviewPoints = (wp.reviewPoints || []).filter((rp: any) => rp.status === 'OPEN').length;
+      const evidenceCount = (wp.attachments || []).length;
+      const hasConclusion = !!wp.conclusion && wp.conclusion.trim().length >= 50;
+      const openReviewPoints = (wp.reviewPoints || []).filter((rp: any) => rp.status === 'OPEN' || rp.status === 'PENDING').length;
+      const totalReviewPoints = (wp.reviewPoints || []).length;
 
-      let completionPercent = 0;
-      if (wp.status === 'APPROVED') completionPercent = 100;
-      else if (wp.status === 'REVIEWED') completionPercent = 80;
-      else if (wp.status === 'PREPARED') completionPercent = 60;
-      else if (wp.status === 'IN_PROGRESS') completionPercent = 40;
-      else if (totalProcedures > 0) completionPercent = 20;
+      const wpName = (wp.fsHeadName || "").toLowerCase();
+      const linkedRisks = riskAssessments.filter(r => {
+        const acc = (r.accountOrClass || "").toLowerCase();
+        return acc.includes(wpName.split(" ")[0]) || wpName.includes(acc.split(" ")[0]);
+      });
+      const hasFraudRisk = linkedRisks.some(r => r.isFraudRisk);
+      const hasSignificantRisk = linkedRisks.some(r => r.isSignificantRisk || r.inherentRisk === "HIGH");
+
+      const contextComplete = true;
+      const assertionsLinked = linkedRisks.length > 0;
+      const proceduresAdequate = totalProcedures > 0 && completedProcedures > 0;
+      const evidenceAdequate = hasEvidence;
+      const conclusionWritten = hasConclusion;
+      const reviewDone = wp.status === "APPROVED";
+
+      const weights = { context: 10, assertions: 15, procedures: 30, evidence: 20, conclusion: 15, review: 10 };
+      let completionPercent =
+        (contextComplete ? weights.context : 0) +
+        (assertionsLinked ? weights.assertions : 0) +
+        (totalProcedures > 0 ? Math.round(weights.procedures * (completedProcedures / Math.max(totalProcedures, 1))) : 0) +
+        (evidenceAdequate ? weights.evidence : evidenceCount > 0 ? Math.round(weights.evidence * 0.5) : 0) +
+        (conclusionWritten ? weights.conclusion : 0) +
+        (reviewDone ? weights.review : 0);
+      if (wp.status === "APPROVED") completionPercent = 100;
 
       const hasSignOff = !!wp.preparedById;
       const isa500Pass = totalProcedures > 0 && hasEvidence;
@@ -2829,10 +2750,17 @@ router.get("/api/engagements/:engagementId/execution-compliance-summary", async 
         completionPercent,
         trafficLight,
         procedureCount: totalProcedures,
+        completedProcedures,
+        openProcedures: totalProcedures - completedProcedures,
         hasEvidence,
+        evidenceCount,
         hasConclusion,
         openReviewPoints,
+        totalReviewPoints,
         riskLevel: wp.riskLevel || 'MEDIUM',
+        hasFraudRisk,
+        hasSignificantRisk,
+        linkedRiskCount: linkedRisks.length,
         isaCompliance: {
           isa500: isa500Pass,
           isa230: isa230Pass,
@@ -2854,11 +2782,18 @@ router.get("/api/engagements/:engagementId/execution-compliance-summary", async 
 
     const canProceedToFinalization = allApproved;
 
+    const totalProcedures = perHead.reduce((s: number, h: any) => s + h.procedureCount, 0);
+    const totalCompletedProcedures = perHead.reduce((s: number, h: any) => s + h.completedProcedures, 0);
+    const totalOpenReviewPoints = perHead.reduce((s: number, h: any) => s + h.openReviewPoints, 0);
+    const totalEvidenceCount = perHead.reduce((s: number, h: any) => s + h.evidenceCount, 0);
+    const highRiskPending = perHead.filter((h: any) => (h.riskLevel === 'HIGH' || h.hasFraudRisk) && h.status !== 'APPROVED').length;
+
     const finalizationBlockers: string[] = [];
     if (!allApproved) finalizationBlockers.push(`${totalHeads - approvedHeads} FS Head(s) not yet approved`);
     if (!allHaveEvidence) finalizationBlockers.push('Some FS Heads lack evidence attachments');
     if (!allHaveConclusions) finalizationBlockers.push('Some FS Heads lack written conclusions');
     if (!noOpenReviewPoints) finalizationBlockers.push('Open review points remain');
+    if (highRiskPending > 0) finalizationBlockers.push(`${highRiskPending} high-risk FS Head(s) pending completion`);
 
     res.json({
       success: true,
@@ -2868,6 +2803,13 @@ router.get("/api/engagements/:engagementId/execution-compliance-summary", async 
         overallCompletion,
         canProceedToFinalization,
         finalizationBlockers,
+        totalProcedures,
+        completedProcedures: totalCompletedProcedures,
+        openProcedures: totalProcedures - totalCompletedProcedures,
+        totalReviewPoints: perHead.reduce((s: number, h: any) => s + h.totalReviewPoints, 0),
+        openReviewPoints: totalOpenReviewPoints,
+        totalEvidence: totalEvidenceCount,
+        highRiskPending,
         isaCompliance: {
           allHeadsHaveEvidence: allHaveEvidence,
           allRisksLinked: true,
@@ -2880,6 +2822,17 @@ router.get("/api/engagements/:engagementId/execution-compliance-summary", async 
   } catch (error) {
     console.error("Error fetching execution compliance summary:", error);
     res.status(500).json({ error: "Failed to fetch execution compliance summary" });
+  }
+});
+
+router.get("/api/engagements/:engagementId/execution-summary", async (req: Request, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const summary = await getEngagementExecutionSummary(engagementId);
+    res.json({ success: true, ...summary });
+  } catch (error) {
+    console.error("Error fetching execution summary:", error);
+    res.status(500).json({ error: "Failed to fetch execution summary" });
   }
 });
 
