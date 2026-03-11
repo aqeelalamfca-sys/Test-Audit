@@ -78,6 +78,7 @@ import firmWideControlsRoutes from "./firmWideControlsRoutes";
 import regulatoryComplianceRoutes from "./routes/regulatoryComplianceRoutes";
 import simulationRoutes from "./routes/simulationRoutes";
 import complianceExportRoutes from "./routes/complianceExportRoutes";
+import planningDashboardRoutes from "./planningDashboardRoutes";
 import reviewNoteRoutes from "./routes/reviewNoteRoutes";
 import firmControlComplianceLogRoutes from "./routes/firmControlComplianceLogRoutes";
 import { attachEnforcementContext, enforceInspectionMode } from "./middleware/enforcementMiddleware";
@@ -156,6 +157,7 @@ export async function registerRoutes(
   });
   app.use("/api/ethics", ethicsRoutes);
   app.use("/api/planning", planningRoutes);
+  app.use("/api/planning-dashboard", planningDashboardRoutes);
   app.use("/api/controls", controlsRoutes);
   app.use("/api/substantive", substantiveRoutes);
   app.use("/api/analytical", analyticalRoutes);

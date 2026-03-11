@@ -167,6 +167,57 @@ The Data Intake module provides a centralized, linked workflow for importing, va
 ### Auto-Reconciliation
 - After data import, `triggerPostImportReconciliation()` in `importRoutes.ts` automatically runs the full reconciliation scan, updating gate statuses and generating exception records.
 
+## Planning Module (ISA-Linked A-P Tabs)
+
+The Planning module (`/planning/:engagementId`) is restructured into 16 ISA-linked tabs (A-P):
+
+### Tab Structure
+- **A**: Planning Dashboard — readiness overview, intake status, risk signals, next actions
+- **B**: Financial Statements — FS review and analysis
+- **C**: Entity Controls — entity understanding sections
+- **D**: Analytical Procedures — ratio analysis, trends
+- **E**: Materiality — ISA 320 materiality calculations
+- **F**: Significant Accounts — auto-identified from TB/FS data
+- **G**: Risk Assessment — ISA 315 risk identification
+- **H**: Fraud Risk — ISA 240 fraud risk assessment with brainstorming
+- **I**: Internal Controls — process understanding and walkthroughs
+- **J**: Related Parties — ISA 550 related party identification
+- **K**: Laws & Regulations — ISA 250 compliance planning
+- **L**: Going Concern — ISA 570 assessment with auto-computed indicators
+- **M**: Team Planning — budget, timelines, team allocation
+- **N**: Strategy & Approach — ISA 300 audit strategy
+- **O**: Audit Program — program generation
+- **P**: Planning Memo — final approval and sign-off
+
+### Backend API
+- **Route prefix**: `/api/planning-dashboard`
+- **File**: `server/planningDashboardRoutes.ts`
+- **Endpoints** (all GET, all require auth + firmId verification):
+  - `/:engagementId/readiness` — intake status, risk signals, completion gates
+  - `/:engagementId/significant-accounts` — auto-identified from TB balances
+  - `/:engagementId/analytical-review` — TB trend analysis with change %
+  - `/:engagementId/fraud-indicators` — ISA 240 fraud risks
+  - `/:engagementId/control-cycles` — control cycle groupings from TB
+  - `/:engagementId/going-concern-indicators` — financial ratio indicators
+  - `/:engagementId/planning-completion` — section completion status
+
+### Frontend Components
+- `client/src/components/planning/planning-dashboard.tsx` — Tab A dashboard
+- `client/src/components/planning/planning-progress-ribbon.tsx` — top-of-page status bar
+- `client/src/components/planning/significant-accounts-panel.tsx` — Tab F
+- `client/src/components/planning/fraud-risk-panel.tsx` — Tab H
+- `client/src/components/planning/internal-controls-panel.tsx` — Tab I
+- `client/src/components/planning/laws-regulations-panel.tsx` — Tab K
+- `client/src/components/planning/going-concern-panel.tsx` — Tab L
+- `client/src/components/planning/team-planning-panel.tsx` — Tab M
+- `client/src/components/planning/planning-memo-panel.tsx` — Tab P
+
+### Data Flow
+- New tab components use `extendedPlanningData` state for persistence
+- `handleExtendedFieldChange(field, value)` writes to extended data and signals save bridge
+- On load, unknown keys from persisted data are hydrated into `extendedPlanningData`
+- Dashboard/Ribbon components fetch live data from planning-dashboard API endpoints
+
 ## DevOps Control Center (devops/)
 
 Replit serves as the central DevOps controller for the entire deployment pipeline:

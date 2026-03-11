@@ -71,6 +71,15 @@ import { FSSoCF } from "@/components/planning/fs-socf";
 import { FSSoCE } from "@/components/planning/fs-soce";
 import { FSNotes } from "@/components/planning/fs-notes";
 import type { CoAAccountData } from "@/components/planning/fs-types";
+import { PlanningDashboard } from "@/components/planning/planning-dashboard";
+import { PlanningProgressRibbon } from "@/components/planning/planning-progress-ribbon";
+import { SignificantAccountsPanel } from "@/components/planning/significant-accounts-panel";
+import { FraudRiskPanel } from "@/components/planning/fraud-risk-panel";
+import { InternalControlsPanel } from "@/components/planning/internal-controls-panel";
+import { LawsRegulationsPanel } from "@/components/planning/laws-regulations-panel";
+import { GoingConcernPanel } from "@/components/planning/going-concern-panel";
+import { TeamPlanningPanel } from "@/components/planning/team-planning-panel";
+import { PlanningMemoPanel } from "@/components/planning/planning-memo-panel";
 import {
   Dialog,
   DialogContent,
@@ -154,13 +163,22 @@ export default function Planning() {
       return "strategy-approach";
     }
     if (saved === "related-parties" || saved === "accounting-estimates" || saved === "group-audits" || saved === "experts") {
-      return "specialized-areas";
+      return "related-parties";
+    }
+    if (saved === "specialized-areas") {
+      return "related-parties";
     }
     if (saved === "quality" || saved === "documentation" || saved === "signoff" || saved === "initiation" || saved === "qc-checklist" || saved === "checklists") {
-      return "quality-control";
+      return "planning-memo";
     }
-    const validTabs = ["financial-statements", "entity-controls", "risk-assessment", "analytical-procedures", "materiality", "strategy-approach", "sampling", "audit-program", "specialized-areas", "tcwg-communication", "quality-control"];
-    return validTabs.includes(saved || "") ? (saved as string) : "financial-statements";
+    if (saved === "sampling") {
+      return "audit-program";
+    }
+    if (saved === "tcwg-communication" || saved === "team-quality") {
+      return "team-planning";
+    }
+    const validTabs = ["planning-dashboard", "financial-statements", "entity-controls", "analytical-procedures", "materiality", "significant-accounts", "risk-assessment", "fraud-risk", "internal-controls", "related-parties", "laws-regulations", "going-concern", "team-planning", "strategy-approach", "audit-program", "planning-memo"];
+    return validTabs.includes(saved || "") ? (saved as string) : "planning-dashboard";
   });
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -2671,6 +2689,8 @@ export default function Planning() {
   const progress = calculateProgress();
   const isReadyForExecution = progress === 100;
 
+  const [extendedPlanningData, setExtendedPlanningData] = useState<Record<string, any>>({});
+
   const buildPlanningPayload = useCallback(() => ({
     trialBalance,
     planningInitiation,
@@ -2711,7 +2731,8 @@ export default function Planning() {
     isa530Checklist,
     isa570Checklist,
     isa220Checklist,
-    transitionChecklist
+    transitionChecklist,
+    ...extendedPlanningData,
   }), [
     trialBalance, planningInitiation, taskAllocation, entityUnderstandingSections, walkthroughs,
     riskAssessment, fsLevelRisks, assertionLevelRisks, procedureMatrix, materiality, analyticalProcedures,
@@ -2721,10 +2742,15 @@ export default function Planning() {
     sampling, isa300Checklist, icapEthicsChecklist, isa315Checklist,
     companiesAct2017Checklist, isa240Checklist, isa315RiskChecklist, isa320Checklist,
     isa330Checklist, isa520Checklist, isa530Checklist, isa570Checklist, isa220Checklist,
-    transitionChecklist
+    transitionChecklist, extendedPlanningData
   ]);
 
   const saveEngine = usePlanningSaveBridge(engagementId, buildPlanningPayload);
+
+  const handleExtendedFieldChange = useCallback((field: string, value: any) => {
+    setExtendedPlanningData(prev => ({ ...prev, [field]: value }));
+    saveEngine.signalChange();
+  }, [saveEngine]);
 
   const handleDownloadTBTemplate = useCallback(async (format: 'xlsx' | 'csv' = 'xlsx') => {
     try {
@@ -3027,6 +3053,27 @@ export default function Planning() {
             if (data.isa570Checklist) setIsa570Checklist(data.isa570Checklist);
             if (data.isa220Checklist) setIsa220Checklist(data.isa220Checklist);
             if (data.transitionChecklist) setTransitionChecklist(data.transitionChecklist);
+
+            const knownKeys = new Set([
+              'trialBalance', 'planningInitiation', 'taskAllocation', 'entityUnderstandingSections',
+              'walkthroughs', 'riskAssessment', 'fsLevelRisks', 'assertionLevelRisks', 'procedureMatrix',
+              'materiality', 'analyticalProcedures', 'ratioAnalysis', 'riskResponses', 'auditPrograms',
+              'auditStrategy', 'teamData', 'goingConcern', 'financialIndicators', 'operatingIndicators',
+              'externalIndicators', 'relatedParties', 'subsequentEvents', 'qualityControl', 'documentation',
+              'communication', 'signOffs', 'sampling', 'isa300Checklist', 'icapEthicsChecklist',
+              'isa315Checklist', 'companiesAct2017Checklist', 'isa240Checklist', 'isa315RiskChecklist',
+              'isa320Checklist', 'isa330Checklist', 'isa520Checklist', 'isa530Checklist', 'isa570Checklist',
+              'isa220Checklist', 'transitionChecklist'
+            ]);
+            const extKeys: Record<string, any> = {};
+            for (const key of Object.keys(data)) {
+              if (!knownKeys.has(key)) {
+                extKeys[key] = data[key];
+              }
+            }
+            if (Object.keys(extKeys).length > 0) {
+              setExtendedPlanningData(extKeys);
+            }
             
             setTimeout(() => {
               saveEngine.initializeBaseline();
@@ -3050,18 +3097,22 @@ export default function Planning() {
   }, [saveEngine, engagementId]);
 
   const tabs = [
-    { id: "financial-statements", label: "Financial Statements", icon: FileSpreadsheet },
-    { id: "entity-controls", label: "Understanding Entity & Internal Controls (ISA 315)", icon: Building2 },
-    { id: "risk-assessment", label: "Risk Assessment (ISA 315 & 240)", icon: AlertTriangle },
-    { id: "analytical-procedures", label: "Analytical Procedures (ISA 520)", icon: Activity },
-    { id: "materiality", label: "Materiality (ISA 320)", icon: Calculator },
-    { id: "strategy-approach", label: "Audit Strategy & Approach (ISA 300)", icon: Target },
-    { id: "team-quality", label: "Team & Quality Management (ISA 220/ISQM 1)", icon: Users },
-    { id: "sampling", label: "Sampling (ISA 530)", icon: BarChart3 },
-    { id: "audit-program", label: "Audit Program (ISA 300)", icon: ClipboardList },
-    { id: "specialized-areas", label: "Specialized Planning Areas", icon: Layers },
-    { id: "tcwg-communication", label: "Communication with TCWG (ISA 260)", icon: MessageSquare },
-    { id: "quality-control", label: "Quality Control & Planning Review (ISA 220 / ISQM 1 & 2)", icon: Shield }
+    { id: "planning-dashboard", label: "A. Dashboard / Readiness", icon: Activity },
+    { id: "financial-statements", label: "B. Financial Statements", icon: FileSpreadsheet },
+    { id: "entity-controls", label: "C. Entity & Environment (ISA 315)", icon: Building2 },
+    { id: "analytical-procedures", label: "D. Analytical Review (ISA 520)", icon: TrendingUp },
+    { id: "materiality", label: "E. Materiality (ISA 320)", icon: Calculator },
+    { id: "significant-accounts", label: "F. Significant Accounts", icon: Target },
+    { id: "risk-assessment", label: "G. Risk Assessment (ISA 315)", icon: AlertTriangle },
+    { id: "fraud-risk", label: "H. Fraud Risk (ISA 240)", icon: Shield },
+    { id: "internal-controls", label: "I. Internal Controls", icon: Lock },
+    { id: "related-parties", label: "J. Related Parties (ISA 550)", icon: Users },
+    { id: "laws-regulations", label: "K. Laws & Regulations (ISA 250)", icon: Scale },
+    { id: "going-concern", label: "L. Going Concern (ISA 570)", icon: Activity },
+    { id: "team-planning", label: "M. Team / Budget / Timelines", icon: Calendar },
+    { id: "strategy-approach", label: "N. Audit Strategy (ISA 300)", icon: Briefcase },
+    { id: "audit-program", label: "O. Audit Programs", icon: ClipboardList },
+    { id: "planning-memo", label: "P. Planning Memo / Approval", icon: FileCheck },
   ];
 
 
@@ -3147,6 +3198,8 @@ export default function Planning() {
       )}
 
 
+      {engagementId && <PlanningProgressRibbon engagementId={engagementId} />}
+
       <Tabs value={activeTab} onValueChange={handleTabSwitch}>
         <SimpleTabNavigation
           activeTab={activeTab}
@@ -3155,7 +3208,17 @@ export default function Planning() {
           ariaLabel="Planning Steps"
         />
 
-        {/* Tab 1: Financial Statements (FS) */}
+        {/* Tab A: Planning Dashboard / Readiness Summary */}
+        <TabsContent value="planning-dashboard" className="space-y-4 mt-3" data-testid="tab-content-planning-dashboard">
+          {engagementId && (
+            <PlanningDashboard
+              engagementId={engagementId}
+              onNavigateToTab={(tabId) => handleTabSwitch(tabId)}
+            />
+          )}
+        </TabsContent>
+
+        {/* Tab B: Financial Statements (FS) */}
         <TabsContent value="financial-statements" className="space-y-4 mt-3" data-testid="tab-content-financial-statements">
           <Card>
             <CardHeader>
@@ -7635,7 +7698,114 @@ export default function Planning() {
 
         </TabsContent>
 
-        {/* Tab 9: Specialized Planning Areas */}
+        {/* Tab F: Significant Accounts, Classes of Transactions & Disclosures */}
+        <TabsContent value="significant-accounts" className="space-y-4 mt-3" data-testid="tab-content-significant-accounts">
+          {engagementId && (
+            <SignificantAccountsPanel engagementId={engagementId} readOnly={planningReadOnly} />
+          )}
+        </TabsContent>
+
+        {/* Tab H: Fraud Risk Assessment (ISA 240) */}
+        <TabsContent value="fraud-risk" className="space-y-4 mt-3" data-testid="tab-content-fraud-risk">
+          {engagementId && (
+            <FraudRiskPanel
+              engagementId={engagementId}
+              readOnly={planningReadOnly}
+              onFieldChange={handleExtendedFieldChange}
+              planningData={extendedPlanningData}
+            />
+          )}
+        </TabsContent>
+
+        {/* Tab I: Internal Control / Process Understanding / Walkthroughs */}
+        <TabsContent value="internal-controls" className="space-y-4 mt-3" data-testid="tab-content-internal-controls">
+          {engagementId && (
+            <InternalControlsPanel
+              engagementId={engagementId}
+              readOnly={planningReadOnly}
+              onFieldChange={handleExtendedFieldChange}
+              planningData={extendedPlanningData}
+            />
+          )}
+        </TabsContent>
+
+        {/* Tab J: Related Parties (ISA 550) */}
+        <TabsContent value="related-parties" className="space-y-4 mt-3" data-testid="tab-content-related-parties">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Related Parties (ISA 550)
+                  </CardTitle>
+                  <CardDescription>Identification and assessment of risks related to related party relationships and transactions</CardDescription>
+                </div>
+                <Badge variant="outline">ISA 550</Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                {["Inquire management about related parties", "Review prior period working papers for known related parties", "Review entity's procedures for identifying related parties", "Identify transactions outside normal course of business", "Evaluate related party disclosures in financial statements", "Assess risk of fraud through related party relationships"].map((item, idx) => (
+                  <label key={idx} className="flex items-start gap-3 p-2 rounded-md hover-elevate cursor-pointer">
+                    <input type="checkbox" className="mt-1 h-4 w-4 rounded border-muted-foreground" />
+                    <span className="text-sm">{item}</span>
+                  </label>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab K: Laws & Regulations (ISA 250) */}
+        <TabsContent value="laws-regulations" className="space-y-4 mt-3" data-testid="tab-content-laws-regulations">
+          {engagementId && (
+            <LawsRegulationsPanel
+              engagementId={engagementId}
+              readOnly={planningReadOnly}
+              onFieldChange={handleExtendedFieldChange}
+              planningData={extendedPlanningData}
+            />
+          )}
+        </TabsContent>
+
+        {/* Tab L: Going Concern & Subsequent Events (ISA 570) */}
+        <TabsContent value="going-concern" className="space-y-4 mt-3" data-testid="tab-content-going-concern">
+          {engagementId && (
+            <GoingConcernPanel
+              engagementId={engagementId}
+              readOnly={planningReadOnly}
+              onFieldChange={handleExtendedFieldChange}
+              planningData={extendedPlanningData}
+            />
+          )}
+        </TabsContent>
+
+        {/* Tab M: Team Planning / Budget / Timelines */}
+        <TabsContent value="team-planning" className="space-y-4 mt-3" data-testid="tab-content-team-planning">
+          {engagementId && (
+            <TeamPlanningPanel
+              engagementId={engagementId}
+              readOnly={planningReadOnly}
+              onFieldChange={handleExtendedFieldChange}
+              planningData={extendedPlanningData}
+            />
+          )}
+        </TabsContent>
+
+        {/* Tab P: Planning Memo / Final Approval */}
+        <TabsContent value="planning-memo" className="space-y-4 mt-3" data-testid="tab-content-planning-memo">
+          {engagementId && (
+            <PlanningMemoPanel
+              engagementId={engagementId}
+              readOnly={planningReadOnly}
+              onFieldChange={handleExtendedFieldChange}
+              planningData={extendedPlanningData}
+            />
+          )}
+        </TabsContent>
+
+        {/* Legacy: Specialized Planning Areas (hidden - content promoted to individual tabs) */}
         <TabsContent value="specialized-areas" className="space-y-4 mt-3" data-testid="tab-content-specialized-areas">
           <Card>
             <CardHeader>
