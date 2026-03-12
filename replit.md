@@ -134,14 +134,6 @@ Enhanced engagement creation/edit dialog (`client/src/components/create-engageme
 - No. of Employees, Company Category dropdown (Pakistani categories)
 - DB columns: `authorizedCapital`, `paidUpCapital`, `companyCategory` on Engagement model
 
-## Finalization Phase — Trial Balance & COA Mapping Tabs
-
-The Finalization page (`client/src/pages/finalization.tsx`) includes two data-driven tabs:
-- **Trial Balance**: Fetches real TB data from `/api/trial-balance/:engagementId`, displays all line items with Opening Bal, Debits, Credits, Closing Bal, and FS Mapping status. Supports search and mapped/unmapped filtering. Summary cards show Total Accounts, Total Debits, Total Credits, and Difference.
-- **COA Mapping**: Fetches COA data from `/api/engagements/:engagementId/coa`, shows finalized Chart of Accounts with Code, Name, Class, Nature (DR/CR), TB Group, FS Line Item, Notes Ref, and balance columns. Summary cards show totals by category (Assets, Liabilities, Equity, Revenue, Expenses). Supports search and FS Line Item filtering.
-- These tabs feed into the Adj. F.S tab (Balance Sheet, P&L, SoCF, SoCE, Notes) which uses Draft FS data from `/api/fs-draft/:engagementId`.
-- Nature handling supports both `DR`/`CR` and `debit`/`credit` formats via `isDebitNature()` helper.
-
 ## AI Opinion Engine (Finalization)
 
 The AI Opinion Engine is a sub-tab in the Finalization phase between "Going Concern" and "Reports" tabs.
