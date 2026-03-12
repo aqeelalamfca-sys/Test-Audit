@@ -61,12 +61,6 @@ export function DocumentUploadButton({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    console.log("[CLIENT UPLOAD] File selected:", {
-      name: file.name,
-      type: file.type,
-      size: file.size
-    });
-
     const allowedTypes = [
       "application/pdf",
       "image/jpeg",
@@ -78,7 +72,6 @@ export function DocumentUploadButton({
     ];
 
     if (!allowedTypes.includes(file.type)) {
-      console.log("[CLIENT UPLOAD ERROR] Invalid file type:", file.type);
       toast({
         title: "Invalid file type",
         description: "Please upload PDF, Word, Excel, or image files only.",
@@ -97,7 +90,6 @@ export function DocumentUploadButton({
     }
 
     setIsUploading(true);
-    console.log("[CLIENT UPLOAD] Starting upload...");
 
     try {
       const formData = new FormData();
@@ -105,21 +97,13 @@ export function DocumentUploadButton({
       formData.append("documentType", documentType);
       formData.append("engagementId", engagementId);
 
-      console.log("[CLIENT UPLOAD] FormData prepared:", {
-        documentType,
-        engagementId
-      });
-
       const response = await fetchWithAuth("/api/documents/upload", {
         method: "POST",
         body: formData,
       });
 
-      console.log("[CLIENT UPLOAD] Response status:", response.status);
-
       if (response.ok) {
         const result = await response.json();
-        console.log("[CLIENT UPLOAD] Upload successful:", result);
         const newDoc: UploadedDocument = {
           id: result.document.id,
           fileName: file.name,
@@ -181,61 +165,28 @@ export function DocumentUploadButton({
   const handleDownload = async () => {
     if (!uploadedFile) return;
     
-    console.log("[CLIENT DOWNLOAD] Starting download for:", uploadedFile);
-    
     try {
       const downloadUrl = `/api/documents/download/${uploadedFile.id}`;
-      
-      console.log("[CLIENT DOWNLOAD] Download URL:", downloadUrl);
-      
       const response = await fetchWithAuth(downloadUrl);
-      
-      console.log("[CLIENT DOWNLOAD] Response status:", response.status);
-      console.log("[CLIENT DOWNLOAD] Response headers:", {
-        contentType: response.headers.get('content-type'),
-        contentLength: response.headers.get('content-length'),
-        contentDisposition: response.headers.get('content-disposition')
-      });
-      
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("[CLIENT DOWNLOAD ERROR] Response:", errorText);
         throw new Error("Download failed");
       }
-      
-      // Get the blob directly from response with proper handling
+
       const blob = await response.blob();
-      console.log("[CLIENT DOWNLOAD] Blob created from response:", {
-        size: blob.size,
-        type: blob.type,
-        responseContentType: response.headers.get('content-type'),
-        responseContentLength: response.headers.get('content-length')
-      });
-      
-      // If blob type is empty or generic, use the content-type from headers
       const finalBlob = blob.type && blob.type !== 'application/octet-stream' 
         ? blob 
         : new Blob([blob], { type: response.headers.get('content-type') || 'application/octet-stream' });
-      
-      console.log("[CLIENT DOWNLOAD] Final blob:", {
-        size: finalBlob.size,
-        type: finalBlob.type
-      });
-      
+
       const url = window.URL.createObjectURL(finalBlob);
-      console.log("[CLIENT DOWNLOAD] Object URL created:", url);
-      
       const a = document.createElement('a');
       a.href = url;
       a.download = uploadedFile.fileName;
       a.style.display = 'none';
       document.body.appendChild(a);
-      console.log("[CLIENT DOWNLOAD] Triggering download for:", uploadedFile.fileName);
       a.click();
-      
-      // Cleanup
+
       setTimeout(() => {
-        console.log("[CLIENT DOWNLOAD] Cleanup complete");
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       }, 100);

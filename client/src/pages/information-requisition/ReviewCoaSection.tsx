@@ -1000,8 +1000,7 @@ export function ReviewCoaSection({
 
       if (response.ok) {
         const result = await response.json();
-        console.log("AI Suggest result:", result);
-        
+
         const updatedResponse = await fetchWithAuth(`/api/engagements/${effectiveEngagementId}/coa`);
         
         if (updatedResponse.ok) {

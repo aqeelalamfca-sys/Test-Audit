@@ -355,11 +355,7 @@ export default function InformationRequisition() {
         description: result.message || `${count} accounts successfully processed.`,
       });
 
-      if (result.data) {
-        console.log(`${moduleLabel} push result:`, result.data);
-      }
     } catch (error) {
-      console.error(`Push to ${moduleLabel} failed:`, error);
       toast({
         title: "Push Failed",
         description: error instanceof Error ? error.message : `Failed to push to ${moduleLabel}.`,
@@ -2843,8 +2839,7 @@ export default function InformationRequisition() {
 
       if (response.ok) {
         const result = await response.json();
-        console.log("AI Suggest result:", result);
-        
+
         // Refetch accounts to get the updated data from backend
         const updatedResponse = await fetchWithAuth(`/api/engagements/${effectiveEngagementId}/coa`);
         
