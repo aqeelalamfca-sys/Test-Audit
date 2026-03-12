@@ -162,6 +162,7 @@ export function WorkspaceRibbon() {
   const isPhaseGated = (phaseKey: string): boolean => {
     const idx = PHASE_ORDER.indexOf(phaseKey);
     if (idx <= 0) return false;
+    if (phaseKey === "requisition") return false;
     const prev = PHASE_ORDER[idx - 1];
     const prevTraffic = getPhaseTraffic(prev);
     return prevTraffic === "red" || prevTraffic === "gray";
