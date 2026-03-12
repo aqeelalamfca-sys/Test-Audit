@@ -43,6 +43,7 @@ const FirmWideControlsLazy = lazy(() => retryImport(() => import("@/pages/firm-w
 const InformationRequisition = lazy(() => retryImport(() => import("@/pages/information-requisition")));
 const FSHeadsPage = lazy(() => retryImport(() => import("@/pages/fs-heads")));
 const Finalization = lazy(() => retryImport(() => import("@/pages/finalization")));
+const ComplianceChecklists = lazy(() => retryImport(() => import("@/pages/compliance-checklists")));
 const Execution = lazy(() => retryImport(() => import("@/pages/execution")));
 const ImportWizard = lazy(() => retryImport(() => import("@/pages/import-wizard")));
 const NewEngagement = lazy(() => retryImport(() => import("@/pages/new-engagement")));
@@ -265,6 +266,7 @@ const GuardedPlanning = createGuardedComponent(Planning, "Planning", true);
 const GuardedExecution = createGuardedComponent(Execution, "Execution", true);
 const GuardedFSHeadsPage = createGuardedComponent(FSHeadsPage, "FSHeadsPage", true);
 const GuardedFinalization = createGuardedComponent(Finalization, "Finalization", true);
+const GuardedComplianceChecklists = createGuardedComponent(ComplianceChecklists, "Checklists", true);
 const GuardedPrintView = createGuardedComponent(PrintView, "PrintView", true);
 const GuardedEQCR = createGuardedComponent(EQCR, "EQCR", true);
 const GuardedEvidenceVault = createGuardedComponent(EvidenceVault, "EvidenceVault", true);
@@ -340,6 +342,7 @@ function Router() {
       <Route path="/workspace/:engagementId/planning" component={GuardedPlanning} />
       <Route path="/workspace/:engagementId/execution" component={GuardedExecution} />
       <Route path="/workspace/:engagementId/fs-heads" component={GuardedFSHeadsPage} />
+      <Route path="/workspace/:engagementId/checklists" component={GuardedComplianceChecklists} />
       <Route path="/workspace/:engagementId/finalization" component={GuardedFinalization} />
       <Route path="/workspace/:engagementId/deliverables" component={GuardedPrintView} />
       <Route path="/workspace/:engagementId/eqcr" component={GuardedEQCR} />

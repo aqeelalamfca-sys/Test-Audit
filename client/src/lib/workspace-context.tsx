@@ -161,6 +161,7 @@ export const WORKSPACE_PHASES: WorkspacePhase[] = [
   { key: "execution", label: "Execution", group: "Audit Lifecycle" },
   { key: "fs-heads", label: "FS Heads", group: "Audit Lifecycle" },
   { key: "evidence", label: "Evidence", group: "Audit Lifecycle" },
+  { key: "checklists", label: "Checklists", group: "Audit Lifecycle" },
   { key: "finalization", label: "Finalization", group: "Audit Lifecycle" },
   { key: "deliverables", label: "Deliverables", group: "Audit Lifecycle" },
   { key: "eqcr", label: "QR", group: "Audit Lifecycle" },

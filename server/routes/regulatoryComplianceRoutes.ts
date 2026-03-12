@@ -11,6 +11,12 @@ const checklistItemSchema = z.object({
   status: z.enum(["PENDING", "IN_PROGRESS", "COMPLETED", "NOT_APPLICABLE"]).default("PENDING"),
   notes: z.string().optional(),
   evidence: z.string().optional(),
+  lawRegulation: z.string().optional(),
+  sectionRule: z.string().optional(),
+  applicability: z.string().optional(),
+  complianceRequirement: z.string().optional(),
+  complianceStatus: z.string().optional(),
+  remarks: z.string().optional(),
 });
 
 const ALLOWED_CHECKLIST_TYPES = [
