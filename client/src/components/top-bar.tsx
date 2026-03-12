@@ -1,5 +1,4 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -470,8 +469,6 @@ export function TopBar({}: TopBarProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-
-        <ThemeToggle />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
