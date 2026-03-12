@@ -151,18 +151,32 @@ const ENGAGEMENT_CHECKLIST_QUESTIONS: ChecklistQuestion[] = [
   },
 ];
 
+interface FeeDetails {
+  auditFee: string;
+  outOfPocketExpenses: string;
+  taxTreatment: "exclusive" | "inclusive";
+}
+
 interface DocumentRecord {
   date: string;
   generatedAt: string | null;
   attachedFile: { name: string; url: string; uploadedAt: string } | null;
   notes: string;
+  feeDetails?: FeeDetails;
 }
+
+const emptyFeeDetails = (): FeeDetails => ({
+  auditFee: "",
+  outOfPocketExpenses: "",
+  taxTreatment: "exclusive",
+});
 
 const emptyDocRecord = (): DocumentRecord => ({
   date: new Date().toISOString().split("T")[0],
   generatedAt: null,
   attachedFile: null,
   notes: "",
+  feeDetails: emptyFeeDetails(),
 });
 
 const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
@@ -565,7 +579,20 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
 
             heading("Fee Arrangement"),
             p("Our fees, which will be billed as work progresses, are based on the time required by the individuals assigned to the engagement in addition to direct out-of-pocket expenses and all applicable taxes. Out of pocket expenses include conveyance, communication, photocopy charges, outstation visit expenses and other expenses incurred for the purpose of audit."),
-            p("Our fee for this engagement will be mutually agreed / Rs. ________________ exclusive of federal / provincial sales taxes."),
+            p((() => {
+              const fee = engRecord.feeDetails;
+              const amt = fee?.auditFee?.trim();
+              const taxLabel = fee?.taxTreatment === "inclusive" ? "inclusive" : "exclusive";
+              return amt
+                ? `Our fee for this engagement will be Rs. ${amt} ${taxLabel} of federal / provincial sales taxes.`
+                : "Our fee for this engagement will be mutually agreed / Rs. ________________ exclusive of federal / provincial sales taxes.";
+            })()),
+            ...(() => {
+              const oopExp = engRecord.feeDetails?.outOfPocketExpenses?.trim();
+              return oopExp
+                ? [p(`Out-of-pocket expenses: ${oopExp}`)]
+                : [];
+            })(),
             p("We would expect to agree the payment of our fees, including payments on account, before each year's audit and performance of other professional services. Our fee notes are payable within 15 days."),
 
             heading("Effectiveness"),
@@ -847,6 +874,60 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
             className="w-48 bg-white"
           />
         </div>
+
+        {type === "engagement" && (
+          <div className="space-y-3 p-3 bg-white rounded-lg border">
+            <Label className="text-sm font-semibold text-gray-700">Fee Details</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Audit Fee (PKR)</Label>
+                <Input
+                  type="text"
+                  placeholder="e.g. 500,000"
+                  value={record.feeDetails?.auditFee || ""}
+                  onChange={e => setRecord(prev => ({
+                    ...prev,
+                    feeDetails: { ...(prev.feeDetails || emptyFeeDetails()), auditFee: e.target.value }
+                  }))}
+                  className="bg-white"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Tax Treatment</Label>
+                <div className="flex gap-1">
+                  {(["exclusive", "inclusive"] as const).map(opt => (
+                    <Button
+                      key={opt}
+                      type="button"
+                      variant={(record.feeDetails?.taxTreatment || "exclusive") === opt ? "default" : "outline"}
+                      size="sm"
+                      className="flex-1 capitalize"
+                      onClick={() => setRecord(prev => ({
+                        ...prev,
+                        feeDetails: { ...(prev.feeDetails || emptyFeeDetails()), taxTreatment: opt }
+                      }))}
+                    >
+                      {opt} of Tax
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Out-of-Pocket Expenses</Label>
+              <Input
+                type="text"
+                placeholder="e.g. Conveyance, travel, communication at actual cost"
+                value={record.feeDetails?.outOfPocketExpenses || ""}
+                onChange={e => setRecord(prev => ({
+                  ...prev,
+                  feeDetails: { ...(prev.feeDetails || emptyFeeDetails()), outOfPocketExpenses: e.target.value }
+                }))}
+                className="bg-white"
+              />
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-2">
           <Button
