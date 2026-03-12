@@ -251,6 +251,16 @@ Replit → GitHub → VPS (187.77.130.117) → Docker → auditwise.tech
 | `VPS_HOST` | VPS IP (187.77.130.117) |
 | `VPS_USER` | VPS user (root) |
 
+### Critical Project Rules
+
+- **Prisma generate** times out on Replit due to 13k+ line schema — use `npx prisma db push --skip-generate` instead
+- **Never change primary key ID column types** in the database
+- **logAuditTrail** in `server/auth.ts` uses raw Prisma — never call it inside `withTenantContext` transactions
+- Demo users all use password `Test@123`. SuperAdmin: `aqeelalam2010@gmail.com`
+- **SSH deploy key**: The key file at `/tmp/vps_deploy_key` is the correctly formatted key. Use `cp /tmp/vps_deploy_key /tmp/deploy_key && chmod 600 /tmp/deploy_key` before SSH commands
+- **GitHub push**: `git push "https://x-access-token:${GITHUB_PERSONAL_ACCESS_TOKEN}@github.com/aqeelalamfca-sys/Test-Audit.git" main`
+- **VPS deploy**: Write key to `/tmp/deploy_key`, chmod 600, then `ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no root@187.77.130.117`
+
 ### Quick Commands
 
 ```bash
