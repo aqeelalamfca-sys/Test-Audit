@@ -43,6 +43,7 @@ import {
   HardDrive,
   FileJson,
   Lock,
+  Building2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
@@ -359,6 +360,109 @@ function SubscriptionBillingTab({ settings, settingsLoading, subscription, subLo
         )}
       </div>
     </div>
+  );
+}
+
+function FirmProfileTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [saving, setSaving] = useState(false);
+  const [firmData, setFirmData] = useState({ name: "", licenseNo: "", address: "", phone: "", email: "" });
+
+  const { data: firm, isLoading } = useQuery({
+    queryKey: ["/api/firms/current"],
+    queryFn: async () => {
+      const res = await fetchWithAuth("/api/firms/current");
+      if (!res.ok) throw new Error("Failed to fetch firm");
+      return res.json();
+    },
+  });
+
+  useEffect(() => {
+    if (firm) {
+      setFirmData({
+        name: firm.name || "",
+        licenseNo: firm.licenseNo || "",
+        address: firm.address || "",
+        phone: firm.phone || "",
+        email: firm.email || "",
+      });
+    }
+  }, [firm]);
+
+  const handleSaveFirm = async () => {
+    if (!firmData.name.trim()) {
+      toast({ title: "Validation Error", description: "Firm name is required", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetchWithAuth(`/api/firms/${firm.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(firmData),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to update firm");
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/firms/current"] });
+      toast({ title: "Firm Updated", description: "Firm profile has been saved successfully" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to update firm";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="py-8 flex justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Firm Profile</CardTitle>
+        <CardDescription>Manage your firm's basic information</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="firmName">Firm Name *</Label>
+            <Input id="firmName" value={firmData.name} onChange={(e) => setFirmData({ ...firmData, name: e.target.value })} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="licenseNo">License / Registration No</Label>
+            <Input id="licenseNo" value={firmData.licenseNo} onChange={(e) => setFirmData({ ...firmData, licenseNo: e.target.value })} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="firmEmail">Email</Label>
+            <Input id="firmEmail" type="email" value={firmData.email} onChange={(e) => setFirmData({ ...firmData, email: e.target.value })} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="firmPhone">Phone</Label>
+            <Input id="firmPhone" value={firmData.phone} onChange={(e) => setFirmData({ ...firmData, phone: e.target.value })} />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="firmAddress">Address</Label>
+          <Input id="firmAddress" value={firmData.address} onChange={(e) => setFirmData({ ...firmData, address: e.target.value })} />
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={handleSaveFirm} disabled={saving}>
+            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+            {saving ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -814,9 +918,13 @@ export default function FirmSettingsPage() {
             <Shield className="h-4 w-4 mr-1.5" />
             Subscription
           </TabsTrigger>
+          <TabsTrigger value="firm-profile" data-testid="tab-firm-profile">
+            <Building2 className="h-4 w-4 mr-1.5" />
+            Firm Profile
+          </TabsTrigger>
           <TabsTrigger value="profile" data-testid="tab-profile">
             <User className="h-4 w-4 mr-1.5" />
-            Profile
+            My Profile
           </TabsTrigger>
           <TabsTrigger value="notifications" data-testid="tab-notifications">
             <Bell className="h-4 w-4 mr-1.5" />
@@ -846,6 +954,10 @@ export default function FirmSettingsPage() {
             setAiKeyForm={setAiKeyForm}
             setAiKeyMutation={setAiKeyMutation}
           />
+        </TabsContent>
+
+        <TabsContent value="firm-profile">
+          <FirmProfileTab />
         </TabsContent>
 
         <TabsContent value="profile">

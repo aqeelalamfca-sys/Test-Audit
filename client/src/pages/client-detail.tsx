@@ -144,10 +144,13 @@ export default function ClientDetail() {
   const [editFormData, setEditFormData] = useState<Partial<Client>>({});
   const [docDialogOpen, setDocDialogOpen] = useState(false);
   const [deleteDocId, setDeleteDocId] = useState<string | null>(null);
+  const [deleteClientOpen, setDeleteClientOpen] = useState(false);
+  const [deletingClient, setDeletingClient] = useState(false);
   const [newDoc, setNewDoc] = useState({ documentType: "", documentName: "", documentNumber: "" });
   const [saving, setSaving] = useState(false);
 
   const isManager = ["FIRM_ADMIN", "PARTNER", "MANAGER"].includes(user?.role || "");
+  const isPartner = ["FIRM_ADMIN", "PARTNER"].includes(user?.role || "");
 
   const { data: client, isLoading, error } = useQuery<Client>({
     queryKey: [`/api/clients/${clientId}`],
@@ -215,6 +218,29 @@ export default function ClientDetail() {
       toast({ title: "Error", description: "Failed to update client", variant: "destructive" });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteClient = async () => {
+    setDeletingClient(true);
+    try {
+      const res = await fetchWithAuth(`/api/clients/${clientId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        toast({ title: "Success", description: "Client deleted successfully" });
+        queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+        navigate("/clients");
+      } else {
+        const err = await res.json();
+        toast({ title: "Error", description: err.error || "Failed to delete client", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to delete client", variant: "destructive" });
+    } finally {
+      setDeletingClient(false);
+      setDeleteClientOpen(false);
     }
   };
 
@@ -334,6 +360,16 @@ export default function ClientDetail() {
           </Badge>
           {client.riskCategory && (
             <Badge variant="outline">{client.riskCategory} Risk</Badge>
+          )}
+          {isPartner && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              onClick={() => setDeleteClientOpen(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           )}
         </div>
       </div>
@@ -837,6 +873,28 @@ export default function ClientDetail() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteDocument} className="bg-red-600 hover:bg-red-700">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteClientOpen} onOpenChange={setDeleteClientOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Client</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{client.name}"? This action cannot be undone. Clients with existing engagements cannot be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingClient}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteClient}
+              disabled={deletingClient}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deletingClient && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Delete Client
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

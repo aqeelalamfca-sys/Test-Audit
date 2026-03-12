@@ -531,6 +531,59 @@ router.patch("/:id", requireAuth, requireMinRole("SENIOR"), async (req: Authenti
   }
 });
 
+router.delete("/:id", requireAuth, requireMinRole("PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const firmId = req.user!.firmId;
+    if (!firmId) {
+      return res.status(400).json({ error: "User not associated with a firm" });
+    }
+
+    const existing = await withTenantContext(firmId, (tx) =>
+      tx.client.findUnique({
+        where: { id: req.params.id },
+        include: { _count: { select: { engagements: true } } },
+      })
+    );
+
+    if (!existing) {
+      return res.status(404).json({ error: "Client not found" });
+    }
+
+    if (existing.firmId !== firmId) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    if (existing._count.engagements > 0) {
+      return res.status(400).json({
+        error: "Cannot delete client with existing engagements. Archive or reassign engagements first.",
+      });
+    }
+
+    await withTenantContext(firmId, async (tx) => {
+      await tx.clientPortalContact.deleteMany({ where: { clientId: req.params.id } });
+      await tx.client.delete({ where: { id: req.params.id } });
+    });
+
+    logAuditTrail(
+      req.user!.id,
+      "CLIENT_DELETED",
+      "client",
+      req.params.id,
+      { name: existing.name },
+      null,
+      undefined,
+      "Client deleted",
+      req.ip,
+      req.get("user-agent")
+    ).catch(err => console.error("Audit trail log error:", err));
+
+    res.json({ success: true, message: "Client deleted successfully" });
+  } catch (error) {
+    console.error("Delete client error:", error);
+    res.status(500).json({ error: "Failed to delete client" });
+  }
+});
+
 router.post("/:id/screening", requireAuth, requireMinRole("SENIOR"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const firmId = req.user!.firmId;
