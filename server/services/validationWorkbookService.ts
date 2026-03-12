@@ -512,8 +512,10 @@ function buildControlSummary(
   ];
   for (const link of sheetLinks) {
     const linkRow = ws.addRow({ check: link.name, value: link.desc, status: "", notes: "" });
-    linkRow.getCell("check").value = { text: link.name, hyperlink: `#'${link.name}'!A1` } as any;
-    linkRow.getCell("check").font = { color: { argb: "FF0070C0" }, underline: true };
+    const cell = linkRow.getCell("check");
+    const hyperlinkValue: ExcelJS.CellHyperlinkValue = { text: link.name, hyperlink: `#'${link.name}'!A1` };
+    cell.value = hyperlinkValue;
+    cell.font = { color: { argb: "FF0070C0" }, underline: true };
   }
   ws.addRow({});
 
