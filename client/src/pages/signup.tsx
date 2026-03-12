@@ -741,7 +741,7 @@ export default function SignupPage() {
                 <p>We may suspend or terminate your account if you violate these Terms. Upon termination, your right to use the Platform ceases immediately. You may request a data export within 30 days of termination, after which your data may be permanently deleted.</p>
 
                 <h3 className="font-semibold text-foreground text-base">11. Governing Law</h3>
-                <p>These Terms shall be governed by and construed in accordance with the laws of Pakistan. Any disputes arising shall be subject to the exclusive jurisdiction of the courts located in Karachi, Pakistan.</p>
+                <p>These Terms shall be governed by and construed in accordance with the laws of Pakistan. Any disputes arising shall be subject to the exclusive jurisdiction of the courts located in Lahore, Pakistan.</p>
 
                 <h3 className="font-semibold text-foreground text-base">12. Changes to Terms</h3>
                 <p>We reserve the right to update these Terms at any time. Continued use of the Platform after changes constitutes acceptance of the revised Terms. Material changes will be communicated via email or in-app notification.</p>
