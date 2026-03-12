@@ -20,11 +20,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import {
   Banknote,
@@ -265,56 +260,59 @@ function FirmBillingRow({ firm }: { firm: FirmRow }) {
           onClose={() => setDispatchingInvoice(null)}
         />
       )}
-      <Collapsible open={expanded} onOpenChange={setExpanded}>
-        <CollapsibleTrigger asChild>
           <TableRow
             className="cursor-pointer hover:bg-muted/40"
             data-testid={`row-firm-${firm.id}`}
+            onClick={() => setExpanded(!expanded)}
+            role="button"
+            tabIndex={0}
+            aria-expanded={expanded}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(!expanded); } }}
           >
-            <TableCell className="py-2">
-              <div className="flex items-center gap-1.5">
-                {expanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
-                <div>
-                  <p className="text-sm font-medium" data-testid={`text-firm-name-${firm.id}`}>{firmLabel}</p>
-                  <p className="text-[11px] text-muted-foreground">{firm.email}</p>
+            <TableCell className="py-1.5">
+              <div className="flex items-center gap-1.5 min-w-0">
+                {expanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate" data-testid={`text-firm-name-${firm.id}`}>{firmLabel}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{firm.email}</p>
                 </div>
               </div>
             </TableCell>
-            <TableCell className="py-2">
+            <TableCell className="py-1.5">
               {plan ? (
                 <div>
-                  <p className="text-sm font-medium">{plan.name}</p>
-                  <p className="text-[11px] text-muted-foreground">PKR {formatPkr(plan.monthlyPrice)}/mo</p>
+                  <p className="text-sm font-medium whitespace-nowrap">{plan.name}</p>
+                  <p className="text-[11px] text-muted-foreground whitespace-nowrap">PKR {formatPkr(plan.monthlyPrice)}/mo</p>
                 </div>
               ) : <span className="text-muted-foreground text-sm">—</span>}
             </TableCell>
-            <TableCell className="py-2">
+            <TableCell className="py-1.5">
               {sub ? subStatusBadge(sub.status) : <span className="text-muted-foreground text-sm">—</span>}
             </TableCell>
-            <TableCell className="py-2">
+            <TableCell className="py-1.5">
               {isTrial && trialEnd ? (
                 <div>
-                  <p className="text-sm">{fmt(sub?.trialEnd)}</p>
-                  <p className={`text-[11px] ${trialExpired ? "text-red-500" : "text-muted-foreground"}`}>
+                  <p className="text-sm whitespace-nowrap">{fmt(sub?.trialEnd)}</p>
+                  <p className={`text-[11px] whitespace-nowrap ${trialExpired ? "text-red-500" : "text-muted-foreground"}`}>
                     {trialExpired ? "Expired" : `Ends ${formatDistanceToNow(trialEnd, { addSuffix: true })}`}
                   </p>
                 </div>
               ) : <span className="text-muted-foreground text-sm">—</span>}
             </TableCell>
-            <TableCell className="py-2">
+            <TableCell className="py-1.5">
               {latestInvoice ? (
                 <div className="space-y-0.5">
                   {invStatusBadge(latestInvoice.status)}
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground whitespace-nowrap">
                     PKR {formatPkr(latestInvoice.amount)}
                   </p>
                 </div>
               ) : <span className="text-xs text-muted-foreground">No invoice</span>}
             </TableCell>
-            <TableCell className="py-2">
+            <TableCell className="py-1.5 whitespace-nowrap">
               <p className="text-sm">{fmt(latestInvoice?.issuedAt)}</p>
             </TableCell>
-            <TableCell className="py-2">
+            <TableCell className="py-1.5 whitespace-nowrap">
               {latestInvoice?.dueAt ? (
                 <div>
                   <p className="text-sm">{fmt(latestInvoice.dueAt)}</p>
@@ -324,13 +322,13 @@ function FirmBillingRow({ firm }: { firm: FirmRow }) {
                 </div>
               ) : <span className="text-sm text-muted-foreground">—</span>}
             </TableCell>
-            <TableCell className="py-2">
-              <div className="flex gap-1 flex-wrap">
+            <TableCell className="py-1.5">
+              <div className="flex gap-1 whitespace-nowrap">
                 {canGenerate && (
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 text-[11px] px-2"
+                    className="h-6 text-[11px] px-2"
                     disabled={generateMutation.isPending}
                     onClick={(e) => { e.stopPropagation(); generateMutation.mutate(); }}
                     data-testid={`button-generate-invoice-${firm.id}`}
@@ -342,7 +340,7 @@ function FirmBillingRow({ firm }: { firm: FirmRow }) {
                 {canDispatch && (
                   <Button
                     size="sm"
-                    className="h-7 text-[11px] px-2 bg-blue-600 hover:bg-blue-700 text-white"
+                    className="h-6 text-[11px] px-2 bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={(e) => { e.stopPropagation(); setDispatchingInvoice(latestInvoice); }}
                     data-testid={`button-dispatch-invoice-${firm.id}`}
                   >
@@ -354,7 +352,7 @@ function FirmBillingRow({ firm }: { firm: FirmRow }) {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 text-[11px] px-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                    className="h-6 text-[11px] px-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
                     disabled={markPaidMutation.isPending}
                     onClick={(e) => { e.stopPropagation(); markPaidMutation.mutate(latestInvoice!.id); }}
                     data-testid={`button-mark-paid-${firm.id}`}
@@ -366,8 +364,7 @@ function FirmBillingRow({ firm }: { firm: FirmRow }) {
               </div>
             </TableCell>
           </TableRow>
-        </CollapsibleTrigger>
-        <CollapsibleContent asChild>
+      {expanded && (
           <TableRow className="bg-muted/20">
             <TableCell colSpan={8} className="py-3 px-6">
               <div className="space-y-2">
@@ -376,23 +373,23 @@ function FirmBillingRow({ firm }: { firm: FirmRow }) {
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="text-muted-foreground">
-                        <th className="text-left pb-1">Invoice No</th>
-                        <th className="text-left pb-1">Amount</th>
-                        <th className="text-left pb-1">Status</th>
-                        <th className="text-left pb-1">Dispatch Date</th>
-                        <th className="text-left pb-1">Due Date</th>
-                        <th className="text-left pb-1">Paid Date</th>
+                        <th className="text-left pb-1 pr-4">Invoice No</th>
+                        <th className="text-left pb-1 pr-4">Amount</th>
+                        <th className="text-left pb-1 pr-4">Status</th>
+                        <th className="text-left pb-1 pr-4 whitespace-nowrap">Dispatch Date</th>
+                        <th className="text-left pb-1 pr-4 whitespace-nowrap">Due Date</th>
+                        <th className="text-left pb-1 whitespace-nowrap">Paid Date</th>
                       </tr>
                     </thead>
                     <tbody>
                       {sub.invoices.map((inv) => (
                         <tr key={inv.id} className="border-t border-border/30">
-                          <td className="py-1">{inv.invoiceNo || <span className="text-muted-foreground">Draft</span>}</td>
-                          <td className="py-1">PKR {formatPkr(inv.amount)}</td>
-                          <td className="py-1">{invStatusBadge(inv.status)}</td>
-                          <td className="py-1">{fmt(inv.issuedAt)}</td>
-                          <td className="py-1">{fmt(inv.dueAt)}</td>
-                          <td className="py-1">{fmt(inv.paidAt)}</td>
+                          <td className="py-1 pr-4">{inv.invoiceNo || <span className="text-muted-foreground">Draft</span>}</td>
+                          <td className="py-1 pr-4 whitespace-nowrap">PKR {formatPkr(inv.amount)}</td>
+                          <td className="py-1 pr-4">{invStatusBadge(inv.status)}</td>
+                          <td className="py-1 pr-4 whitespace-nowrap">{fmt(inv.issuedAt)}</td>
+                          <td className="py-1 pr-4 whitespace-nowrap">{fmt(inv.dueAt)}</td>
+                          <td className="py-1 whitespace-nowrap">{fmt(inv.paidAt)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -419,8 +416,7 @@ function FirmBillingRow({ firm }: { firm: FirmRow }) {
               </div>
             </TableCell>
           </TableRow>
-        </CollapsibleContent>
-      </Collapsible>
+      )}
     </>
   );
 }
@@ -561,24 +557,24 @@ export default function BillingManagement() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-12 text-muted-foreground">
               <RefreshCw className="h-5 w-5 animate-spin mr-2" />
               Loading billing data...
             </div>
           ) : (
-            <Table>
+            <Table className="min-w-[900px] table-fixed">
               <TableHeader>
                 <TableRow className="text-[11px]">
-                  <TableHead className="py-2">Firm</TableHead>
-                  <TableHead className="py-2">Plan</TableHead>
-                  <TableHead className="py-2">Status</TableHead>
-                  <TableHead className="py-2 flex items-center gap-1"><Calendar className="h-3 w-3" />Trial End</TableHead>
-                  <TableHead className="py-2">Latest Invoice</TableHead>
-                  <TableHead className="py-2">Dispatch Date</TableHead>
-                  <TableHead className="py-2">Due Date</TableHead>
-                  <TableHead className="py-2">Actions</TableHead>
+                  <TableHead className="py-2 w-[22%]">Firm</TableHead>
+                  <TableHead className="py-2 w-[13%]">Plan</TableHead>
+                  <TableHead className="py-2 w-[9%]">Status</TableHead>
+                  <TableHead className="py-2 w-[12%]"><span className="flex items-center gap-1"><Calendar className="h-3 w-3" />Trial End</span></TableHead>
+                  <TableHead className="py-2 w-[12%]">Latest Invoice</TableHead>
+                  <TableHead className="py-2 w-[10%]">Dispatch Date</TableHead>
+                  <TableHead className="py-2 w-[10%]">Due Date</TableHead>
+                  <TableHead className="py-2 w-[12%]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
