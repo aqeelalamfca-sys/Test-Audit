@@ -1,0 +1,626 @@
+Build and integrate a complete “AI Opinion Engine” into the existing AuditWise statutory audit platform. The engine must automatically convert imported audit data into structured, review-ready, standards-linked opinion support outputs for statutory audit engagements. It must work as an AI-assisted audit conclusion module, but must never replace auditor judgment. All conclusions must be presented as advisory, reviewable, override-enabled, evidence-linked, and partner-controlled.
+
+The AI Opinion Engine must be fully integrated with the existing modules and database, especially Upload, Trial Balance, GL, AP, AR, Bank, Confirmations, FS Mapping, Draft FS, Checks, Planning, Execution, Working Papers, and final reporting. It must pull data automatically from all linked modules and generate a centralized opinion-support workflow from data intake to final audit conclusion.
+
+Core objective:
+Create an end-to-end AI-driven audit opinion support system that:
+1. reads and validates imported client data,
+2. analyzes financial statement structure and balances,
+3. identifies risks of material misstatement,
+4. links findings to assertions and audit areas,
+5. checks sufficiency and consistency of audit evidence,
+6. evaluates unresolved matters, misstatements, disclosures, estimates, going concern, confirmations, and statutory compliance,
+7. produces a structured “Opinion Support Memorandum”,
+8. recommends whether the evidence appears to support an unmodified opinion, qualified opinion, adverse opinion, or disclaimer, subject always to human review and approval,
+9. stores all findings in database tables with full audit trail,
+10. shows all results in a user-friendly dashboard and downloadable working paper format.
+
+General design principles:
+- Keep the system practical, logical, and easy to use for auditors.
+- Make all AI outputs structured, professional, neutral, standards-linked, and evidence-based.
+- Never allow AI to issue a final opinion automatically.
+- Require reviewer acceptance, override, edit, and sign-off at every critical stage.
+- Every AI conclusion must show: source data used, assumptions, reasoning summary, risk level, affected assertion, amount involved, materiality comparison, audit implication, suggested procedures, reviewer status.
+- All pages must be linked, real-time updated, and persistent after refresh/logout.
+- Add save, draft, refresh, regenerate AI, export, reviewer comment, partner conclusion, and lock-for-finalization actions.
+- Use role-based access control. Only authorized roles can approve opinion-level conclusions.
+- All outputs must be tenant-isolated, firm-specific, engagement-specific, and period-specific.
+
+Technology and coding requirements:
+- Scan the existing codebase first and reuse current architecture, patterns, UI components, database models, auth structure, and tenant model.
+- Do not break existing modules.
+- Use existing stack conventions in the project.
+- If any schema/table/model/API/UI flow is missing, create it properly and connect it end-to-end.
+- Ensure production-safe error handling, validation, audit logs, loading states, fallback states, and retry-safe background operations if already supported.
+- Ensure secure multi-tenant isolation on every route, query, model, and service.
+- Use centralized service layer for AI analysis and opinion scoring logic.
+- Keep code modular, maintainable, and standards-oriented.
+
+Create the AI Opinion Engine in the following architecture:
+
+1. OPINION ENGINE MASTER MODULE
+Create a new top-level module/tab named:
+“AI Opinion Engine”
+
+Inside it create these sub-tabs / sections:
+- Engagement Context
+- Data Reliability
+- FS Structural Review
+- Analytical Intelligence
+- Risk Identification
+- Assertion Analysis
+- Transaction Anomalies
+- Account Balance Review
+- Confirmation Intelligence
+- Estimates and Judgments
+- Fraud Indicators
+- Regulatory and Disclosure Compliance
+- Going Concern
+- Subsequent Events
+- Misstatement Evaluation
+- Evidence Sufficiency
+- FS Consistency
+- Outstanding Matters
+- Opinion Risk Scoring
+- Draft Opinion Support
+- Partner Review
+- Final Conclusion Memo
+- Exports and Working Papers
+
+Each section must auto-populate from linked data and also permit manual reviewer notes.
+
+2. DATA INGESTION AND LINKING LOGIC
+The engine must automatically collect data from:
+- Upload import logs
+- TB mapped balances
+- GL entries and journal anomalies
+- AR ageing, balances, recovery trends, confirmations
+- AP ageing, cut-off indicators, subsequent payments
+- Bank reconciliations, reconciling items, confirmation results
+- FS mappings and unmapped accounts
+- Draft financial statements and note disclosures
+- Checks module exceptions
+- Planning risk assessments
+- Execution testing results
+- Working papers and unresolved review points
+- Materiality settings
+- Prior year comparatives if available
+
+The system must detect whether data is complete, partial, or missing and show a reliability label:
+- High reliability
+- Moderate reliability
+- Limited reliability
+- Insufficient for conclusion support
+
+3. DATABASE DESIGN
+Create all required database tables/models for the full AI Opinion Engine. Include at minimum:
+- opinion_engines
+- opinion_sections
+- opinion_findings
+- opinion_risk_scores
+- opinion_assertion_scores
+- opinion_evidence_status
+- opinion_misstatements
+- opinion_outstanding_matters
+- opinion_reviewer_notes
+- opinion_partner_conclusions
+- opinion_exports
+- opinion_ai_runs
+- opinion_source_links
+- opinion_materiality_snapshots
+- opinion_disclosure_checks
+- opinion_gc_assessments
+- opinion_estimate_reviews
+- opinion_confirmation_summaries
+- opinion_fs_consistency_checks
+
+Each table must include:
+- id
+- firmId / tenantId
+- engagementId
+- clientId if relevant
+- financialYear / period
+- createdBy
+- updatedBy
+- createdAt
+- updatedAt
+- status
+- version
+- aiRunId if relevant
+- reviewerStatus
+- partnerStatus
+- lock status for finalized file
+- source references
+- notes / comments / overrides
+
+Add proper foreign keys, indexes, enum statuses, and row-level tenant security patterns already used in the app.
+
+4. AI ANALYSIS OUTPUT FORMAT
+Every AI finding must follow a standardized structure:
+- Finding ID
+- Section name
+- Audit area
+- Financial statement caption
+- Account / transaction / disclosure reference
+- Objective of review
+- Data source used
+- AI finding narrative
+- Amount involved
+- Materiality impact
+- Risk level
+- Assertion affected
+- Potential implication on the financial statements
+- Suggested audit response
+- Relevant ISA / IFRS / local compliance linkage
+- Confidence level
+- Evidence link / drill-down
+- Reviewer note
+- Reviewer decision
+- Final status
+
+AI language must remain professional and cautious, such as:
+- may indicate
+- appears inconsistent
+- requires investigation
+- suggests possible risk
+- subject to auditor corroboration
+Do not use conclusive language unless reviewer confirms.
+
+5. ENGAGEMENT CONTEXT SECTION
+Generate a summary page showing:
+- client name
+- entity type
+- reporting framework
+- reporting period
+- industry
+- materiality
+- performance materiality
+- trivial threshold
+- key dates
+- partner / manager / senior assignments
+- components / branches if relevant
+- scope limitations flagged from other modules
+
+6. DATA RELIABILITY SECTION
+Automatically evaluate:
+- import completeness
+- missing schedules
+- duplicate records
+- unmapped accounts
+- inconsistent dates
+- unbalanced TB
+- incomplete bank / AR / AP populations
+- mismatch between TB and supporting schedules
+- whether AI output can be relied on fully or only partially
+
+Add a reliability score and a narrative explaining the basis.
+
+7. FS STRUCTURAL REVIEW SECTION
+Automatically check:
+- TB balancing
+- assets vs liabilities + equity
+- opening and closing balances
+- mapped vs unmapped balances
+- statement linkage
+- comparative figures presence
+- account grouping consistency
+- note references structure if available
+
+8. ANALYTICAL INTELLIGENCE SECTION
+Generate:
+- horizontal analysis
+- vertical analysis
+- prior-year variances
+- trend movements
+- ratio analysis
+- threshold-based unusual movements
+- balance relationships
+- revenue vs receivables
+- payables vs purchases
+- inventory vs cost of sales
+- finance cost vs borrowings
+- payroll vs headcount if data available
+
+Each variance must be flagged as low/medium/high risk and linked to assertions.
+
+9. RISK IDENTIFICATION SECTION
+Build a rules-plus-AI system that identifies:
+- significant risks
+- fraud risks
+- estimation risks
+- cut-off risks
+- valuation risks
+- existence risks
+- completeness risks
+- presentation/disclosure risks
+
+Create a risk heatmap by FS area and assertion.
+Allow linkage to planning risk register.
+
+10. ASSERTION ANALYSIS SECTION
+For each major caption and audit area, create assertion-level status for:
+- existence
+- completeness
+- accuracy
+- valuation
+- rights and obligations
+- cut-off
+- classification and presentation
+
+Show score, risk level, evidence coverage, open issues, and conclusion support level.
+
+11. TRANSACTION ANOMALIES SECTION
+From GL and journals automatically detect:
+- manual journals
+- round-value entries
+- weekend / after-hours postings
+- last-minute year-end adjustments
+- vague narrations
+- unusual debit-credit combinations
+- postings to suspense / retained earnings / misc accounts
+- reversals after year-end
+- same preparer / approver risk if user data exists
+
+Create exception tables and drill-down links.
+
+12. ACCOUNT BALANCE REVIEW SECTION
+Create separate AI analysis cards for:
+- cash and bank
+- trade receivables
+- inventories
+- prepayments
+- fixed assets
+- investments
+- payables
+- accruals
+- loans / borrowings
+- tax balances
+- revenue
+- direct costs
+- operating expenses
+- equity / reserves
+
+Each card must show:
+- balance
+- prior year
+- movement
+- key risk
+- linked procedures completed
+- unresolved matters
+- opinion impact
+
+13. CONFIRMATION INTELLIGENCE SECTION
+Track:
+- confirmations prepared
+- sent
+- received
+- exceptions
+- no response
+- alternative procedures
+- unresolved differences
+- response adequacy
+
+Auto-link confirmations to account balances and evidence sufficiency.
+
+14. ESTIMATES AND JUDGMENTS SECTION
+Evaluate:
+- ECL / impairment
+- provisions
+- depreciation / useful lives
+- NRV
+- contingencies
+- fair values if applicable
+- management assumptions
+- sensitivity concerns
+- potential bias indicators
+
+15. FRAUD INDICATORS SECTION
+Create a dedicated fraud-risk page showing:
+- management override indicators
+- unusual journal activity
+- related party anomalies
+- year-end earnings management indicators
+- suspicious timing of transactions
+- high-risk manual adjustments
+- unsupported postings
+
+16. REGULATORY AND DISCLOSURE COMPLIANCE SECTION
+Check the draft FS and mappings against:
+- accounting framework disclosures
+- statutory disclosures
+- related party disclosures
+- contingencies
+- going concern disclosures
+- directors / management disclosures if configured
+- note completeness
+- note cross-referencing
+- classification compliance
+
+Design this so rules can be configured for Pakistan and other jurisdictions later. Keep framework-driven and scalable.
+
+17. GOING CONCERN SECTION
+Generate a structured going concern review using:
+- liquidity indicators
+- current ratio
+- cash losses
+- overdraft / borrowing dependency
+- negative operating cash flows
+- debt maturity pressures
+- post-year-end stress signals
+- management mitigation plans if entered manually
+
+Output:
+- low concern
+- moderate concern
+- significant concern
+- material uncertainty indicators
+
+18. SUBSEQUENT EVENTS SECTION
+Review events after reporting date using available data:
+- major receipts/payments
+- post-year-end credit notes
+- asset disposals
+- borrowings
+- legal matters
+- board-approved adjustments
+- material events noted in working papers
+
+19. MISSTATEMENT EVALUATION SECTION
+Create a full misstatement summary with:
+- proposed adjustments
+- factual misstatements
+- judgmental misstatements
+- projected misstatements
+- adjusted items
+- unadjusted items
+- aggregate unadjusted differences
+- impact on PBT, assets, liabilities, equity
+- materiality comparison
+- qualitative materiality flags
+
+20. EVIDENCE SUFFICIENCY SECTION
+This is critical. The engine must evaluate whether enough evidence exists by account and assertion using linked procedures from execution and working papers.
+Show:
+- evidence obtained
+- evidence pending
+- evidence weak / contradictory
+- confirmation coverage
+- alternate procedure coverage
+- unresolved review notes
+- dependency on management representation
+
+Create an “Evidence Sufficiency Index” with explanation.
+
+21. FS CONSISTENCY SECTION
+Perform automated checks for:
+- TB to FS agreement
+- statement-to-note agreement
+- profit to equity linkage
+- cash flow consistency
+- tax expense linkage
+- comparative consistency
+- rounding consistency
+- note references and numbering
+- subtotal and total calculations
+
+22. OUTSTANDING MATTERS SECTION
+Compile all unresolved items across the system:
+- pending confirmations
+- pending explanations
+- pending support documents
+- review notes unresolved
+- missing procedures
+- open misstatements
+- legal / tax / going concern pending items
+
+This page must clearly state impact on opinion readiness.
+
+23. OPINION RISK SCORING SECTION
+Build a configurable scoring engine using weighted factors including:
+- significant risks
+- unresolved matters
+- misstatements
+- disclosure gaps
+- insufficient evidence
+- going concern issues
+- fraud indicators
+- data reliability weakness
+
+Show:
+- score out of 100
+- interpretation band
+- top drivers of score
+- trend if rerun after review
+
+This score is advisory only.
+
+24. DRAFT OPINION SUPPORT SECTION
+Generate a structured opinion support summary with:
+- basis of conclusion
+- major issues identified
+- adjusted / unadjusted matters
+- evidence sufficiency summary
+- disclosure status
+- going concern status
+- other emphasis or modification triggers
+- AI advisory view on likely opinion category:
+  - likely supports unmodified opinion
+  - may require qualified opinion consideration
+  - may require adverse opinion consideration
+  - evidence insufficient, disclaimer may need consideration
+
+Add a mandatory label:
+“AI advisory only. Final audit opinion must be determined by the engagement partner.”
+
+25. PARTNER REVIEW SECTION
+Create a partner-only review screen with:
+- summary dashboard
+- all high-risk findings
+- all unresolved matters
+- all material misstatements
+- evidence sufficiency weaknesses
+- going concern alerts
+- disclosure non-compliance
+- opinion category consideration
+- partner comment box
+- partner decision status
+- lock / unlock conclusion
+- final sign-off markers
+
+26. FINAL CONCLUSION MEMO
+Auto-generate a working-paper style memorandum titled:
+“AI Opinion Support Memorandum”
+
+Suggested structure:
+- engagement details
+- objective
+- data sources reviewed
+- summary of procedures-linked evidence reviewed
+- significant findings
+- misstatements summary
+- outstanding matters
+- going concern conclusion
+- disclosure conclusion
+- evidence sufficiency conclusion
+- AI advisory opinion support
+- reviewer conclusion
+- partner final conclusion
+- final note that professional judgment prevails
+
+Make it exportable to PDF, Word, and internal working paper format.
+
+27. EXPORTS
+Provide export buttons for:
+- section-wise reports
+- full opinion support memo
+- misstatement summary
+- evidence sufficiency report
+- unresolved matters list
+- partner dashboard snapshot
+- audit completion summary
+
+Ensure exported files include firm name, client name, engagement, period, version, timestamp, preparer/reviewer, and status.
+
+28. UI / UX REQUIREMENTS
+Build a clean, simple, professional interface.
+For each section include:
+- top summary cards
+- AI narrative box
+- findings table
+- filters
+- risk badges
+- materiality indicators
+- source links
+- notes panel
+- regenerate AI button
+- reviewer action buttons
+- export button
+
+Use colors logically:
+- green = low risk / complete
+- amber = review needed
+- red = high risk / unresolved
+- grey = not available / not run
+
+Make navigation easy for auditors and partners.
+Keep screens fast and readable.
+Avoid clutter.
+
+29. WORKFLOW LOGIC
+The engine must work in this logical order:
+- verify data completeness
+- build engagement context
+- analyze FS structure
+- run analytical review
+- identify risks
+- assess assertions
+- scan transactions
+- evaluate balances
+- compile confirmations
+- review estimates
+- review fraud indicators
+- check disclosures and compliance
+- assess going concern
+- assess subsequent events
+- summarize misstatements
+- evaluate evidence sufficiency
+- check FS consistency
+- compile outstanding matters
+- compute opinion risk score
+- generate draft opinion support
+- send for reviewer / partner review
+- finalize and export
+
+Make reruns incremental and efficient. Do not destroy reviewer comments when AI reruns. Preserve version history.
+
+30. HUMAN REVIEW CONTROL
+This is mandatory:
+- AI can suggest, not conclude finally.
+- Reviewer can accept, revise, reject, or override AI findings.
+- Partner can finalize conclusion.
+- Maintain full history of AI output versus human override.
+- Show “AI suggested” and “Reviewer final” separately where relevant.
+
+31. AUDIT TRAIL AND GOVERNANCE
+Log all actions:
+- AI run initiated
+- sources used
+- model/version used
+- prompts/system logic version
+- findings generated
+- reviewer edits
+- partner overrides
+- exports generated
+- locking/finalization actions
+
+32. API / SERVICES
+Create all backend services and API endpoints necessary for:
+- run opinion engine
+- rerun specific section
+- fetch summary
+- fetch findings by section
+- update reviewer note
+- update reviewer decision
+- update partner conclusion
+- compute scores
+- generate memo
+- export reports
+- lock final memo
+
+Ensure all endpoints are protected by auth, role, and tenant checks.
+
+33. AUTO-DETECTION OF MISSING MODULES
+If existing modules do not yet expose the required data cleanly, create missing adapters/services so the Opinion Engine can still function automatically. Do not leave broken dependencies.
+
+34. TESTING
+Fully test:
+- data flow from all source modules
+- tenant isolation
+- score calculations
+- exports
+- reviewer and partner workflow
+- persistence after refresh/logout
+- rerun stability
+- error handling
+- partial data scenarios
+- high-volume data scenarios
+
+35. FINAL DELIVERABLE
+At the end of the build, provide:
+- complete working AI Opinion Engine integrated in app
+- database migrations / schema updates
+- all backend APIs
+- all UI screens
+- scoring logic
+- export logic
+- seeded demo data if safe
+- sample AI output records
+- no broken imports
+- no placeholder dead buttons
+- no fake data in production paths
+- clear comments where configuration is needed
+
+36. IMPORTANT CONTENT RULES FOR AI OUTPUT
+Every output must support statutory audit documentation quality. Keep language suitable for working papers, partner review, and regulatory inspection. All findings must be traceable to source data or linked working papers. The system must be capable of generating documentation that supports audit opinion formation but must clearly state that final responsibility remains with the auditor.
+
+Now scan the current codebase, identify what already exists, identify gaps, then implement this complete AI Opinion Engine automatically with proper schema, services, APIs, UI, workflows, role controls, data linkage, audit trail, exports, and review/partner approval functionality. Reuse existing project styles and architecture wherever possible, fix broken dependencies, and deliver a fully functional integrated module ready for testing.

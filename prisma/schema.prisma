@@ -233,6 +233,7 @@ model Firm {
   firmRemediationActions FirmRemediationAction[]       @relation("FirmRemediationActions")
   firmControlActivityLogs FirmControlActivityLog[]     @relation("FirmControlActivityLogs")
   legalAcceptances        LegalAcceptance[]             @relation("FirmLegalAcceptances")
+  opinionEngines          OpinionEngine[]               @relation("FirmOpinionEngines")
 }
 
 model Plan {
@@ -1627,6 +1628,7 @@ model Engagement {
   notesReferenceDocuments NotesReferenceDocument[] @relation("EngagementNotesRefDocs")
   generatedNotes         GeneratedNote[]           @relation("EngagementGeneratedNotes")
   finalizationBoards     FinalizationBoard[]       @relation("EngagementFinalizationBoards")
+  opinionEngines         OpinionEngine[]           @relation("EngagementOpinionEngines")
   @@index([firmId])
   @@index([clientId])
   @@index([firmId, status])
@@ -13023,4 +13025,137 @@ model LegalAcceptance {
   @@index([firmId])
   @@index([acceptedByUserId])
   @@index([acceptedAt])
+}
+
+enum OpinionEngineStatus {
+  DRAFT
+  IN_PROGRESS
+  REVIEW_PENDING
+  REVIEWED
+  PARTNER_REVIEW
+  FINALIZED
+  LOCKED
+}
+
+enum OpinionCategory {
+  UNMODIFIED
+  QUALIFIED
+  ADVERSE
+  DISCLAIMER
+  UNDETERMINED
+}
+
+enum FindingRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ReviewerDecision {
+  PENDING
+  ACCEPTED
+  REVISED
+  REJECTED
+  OVERRIDDEN
+}
+
+enum DataReliability {
+  HIGH
+  MODERATE
+  LIMITED
+  INSUFFICIENT
+}
+
+model OpinionEngine {
+  id                String               @id @default(uuid())
+  firmId            String
+  engagementId      String
+  version           Int                  @default(1)
+  status            OpinionEngineStatus  @default(DRAFT)
+  overallScore      Int?
+  aiCategory        OpinionCategory      @default(UNDETERMINED)
+  partnerCategory   OpinionCategory?
+  partnerConclusion String?
+  partnerSignedAt   DateTime?
+  partnerSignedBy   String?
+  reviewerNotes     String?
+  reviewerSignedAt  DateTime?
+  reviewerSignedBy  String?
+  dataReliability   DataReliability      @default(MODERATE)
+  reliabilityNotes  String?
+  sectionsData      Json                 @default("{}")
+  findingsData      Json                 @default("[]")
+  scoresData        Json                 @default("{}")
+  memoData          Json?
+  lastAiRunAt       DateTime?
+  lastAiRunBy       String?
+  lockedAt          DateTime?
+  lockedBy          String?
+  createdBy         String?
+  updatedBy         String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  firm       Firm       @relation("FirmOpinionEngines", fields: [firmId], references: [id], onDelete: Cascade)
+  engagement Engagement @relation("EngagementOpinionEngines", fields: [engagementId], references: [id], onDelete: Cascade)
+
+  findings  OpinionFinding[]   @relation("OpinionEngineFindings")
+  aiRuns    OpinionAiRun[]     @relation("OpinionEngineAiRuns")
+
+  @@unique([engagementId, version])
+  @@index([firmId])
+  @@index([engagementId])
+  @@index([status])
+}
+
+model OpinionFinding {
+  id                String          @id @default(uuid())
+  opinionEngineId   String
+  sectionKey        String
+  auditArea         String?
+  fsCaption         String?
+  accountRef        String?
+  objective         String?
+  dataSource        String?
+  narrative         String
+  amountInvolved    Decimal?
+  materialityImpact String?
+  riskLevel         FindingRiskLevel @default(MEDIUM)
+  assertionAffected String?
+  implication       String?
+  suggestedResponse String?
+  isaReference      String?
+  confidenceLevel   String?
+  evidenceLink      String?
+  reviewerNote      String?
+  reviewerDecision  ReviewerDecision @default(PENDING)
+  reviewerBy        String?
+  reviewerAt        DateTime?
+  finalStatus       String           @default("open")
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  opinionEngine OpinionEngine @relation("OpinionEngineFindings", fields: [opinionEngineId], references: [id], onDelete: Cascade)
+
+  @@index([opinionEngineId])
+  @@index([sectionKey])
+  @@index([riskLevel])
+}
+
+model OpinionAiRun {
+  id              String   @id @default(uuid())
+  opinionEngineId String
+  sectionKey      String?
+  runType         String   @default("full")
+  sourcesUsed     Json     @default("[]")
+  findingsCount   Int      @default(0)
+  duration        Int?
+  initiatedBy     String?
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+
+  opinionEngine OpinionEngine @relation("OpinionEngineAiRuns", fields: [opinionEngineId], references: [id], onDelete: Cascade)
+
+  @@index([opinionEngineId])
 }
