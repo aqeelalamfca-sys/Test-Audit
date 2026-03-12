@@ -59,6 +59,7 @@ import reconciliationRoutes from "./reconciliationRoutes";
 import reviewMappingRoutes from "./routes/reviewMappingRoutes";
 import dataHubRoutes from "./dataHubRoutes";
 import observationRoutes from "./observationRoutes";
+import auditAdjustmentRoutes from "./auditAdjustmentRoutes";
 import glCodeRoutes from "./glCodeRoutes";
 import controlPackRoutes from "./controlPackRoutes";
 import aiRiskAssessmentRoutes from "./aiRiskAssessmentRoutes";
@@ -219,6 +220,7 @@ export async function registerRoutes(
   app.use("/api", reconciliationRoutes);
   app.use("/api/data-hub", dataHubRoutes);
   app.use("/api/observations", observationRoutes);
+  app.use("/api/audit-adjustments", auditAdjustmentRoutes);
   app.use("/api/engagements", glCodeRoutes);
   app.use("/api/engagements", controlPackRoutes);
   app.use("/api/ai-risk-assessment", aiRateLimit, aiRiskAssessmentRoutes);

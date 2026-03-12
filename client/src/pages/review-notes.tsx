@@ -54,6 +54,9 @@ import {
   Eye,
   Paperclip,
   X,
+  ChevronDown,
+  BookOpen,
+  Scale,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
@@ -448,6 +451,34 @@ export default function ReviewNotesPage() {
   const [replyAttachments, setReplyAttachments] = useState<File[]>([]);
   const isManager = MANAGER_ROLES.includes(user?.role || "");
 
+  const [adjustingEntryOpen, setAdjustingEntryOpen] = useState(false);
+  const [adjustingForm, setAdjustingForm] = useState({
+    engagementId: "",
+    adjustmentType: "CORRECTED" as string,
+    description: "",
+    reason: "",
+    debitAccountCode: "",
+    debitAccountName: "",
+    debitAmount: "",
+    creditAccountCode: "",
+    creditAccountName: "",
+    creditAmount: "",
+  });
+
+  const [observationOpen, setObservationOpen] = useState(false);
+  const [observationForm, setObservationForm] = useState({
+    engagementId: "",
+    type: "MISSTATEMENT" as string,
+    severity: "MEDIUM" as string,
+    condition: "",
+    criteria: "",
+    cause: "",
+    effect: "",
+    effectAmount: "",
+    proposedAction: "",
+    isaReference: "",
+  });
+
   const statsQuery = useQuery<Stats>({
     queryKey: ["/api/review-notes-v2/stats/summary"],
   });
@@ -469,7 +500,7 @@ export default function ReviewNotesPage() {
 
   const engagementsQuery = useQuery<EngagementOption[]>({
     queryKey: ["/api/engagements"],
-    enabled: createOpen,
+    enabled: createOpen || adjustingEntryOpen || observationOpen,
   });
 
   const usersQuery = useQuery<UserOption[]>({
@@ -504,6 +535,57 @@ export default function ReviewNotesPage() {
     },
     onError: (err: any) => {
       toast({ title: "Error", description: err.message || "Failed to create note", variant: "destructive" });
+    },
+  });
+
+  const adjustingMutation = useMutation({
+    mutationFn: async (data: typeof adjustingForm) => {
+      const res = await apiRequest("POST", `/api/audit-adjustments`, {
+        engagementId: data.engagementId,
+        adjustmentType: data.adjustmentType,
+        description: data.description,
+        reason: data.reason,
+        debitAccountCode: data.debitAccountCode || undefined,
+        debitAccountName: data.debitAccountName || undefined,
+        debitAmount: data.debitAmount ? parseFloat(data.debitAmount) : undefined,
+        creditAccountCode: data.creditAccountCode || undefined,
+        creditAccountName: data.creditAccountName || undefined,
+        creditAmount: data.creditAmount ? parseFloat(data.creditAmount) : undefined,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Adjusting entry created successfully" });
+      setAdjustingEntryOpen(false);
+      setAdjustingForm({ engagementId: "", adjustmentType: "CORRECTED", description: "", reason: "", debitAccountCode: "", debitAccountName: "", debitAmount: "", creditAccountCode: "", creditAccountName: "", creditAmount: "" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to create adjusting entry", variant: "destructive" });
+    },
+  });
+
+  const observationMutation = useMutation({
+    mutationFn: async (data: typeof observationForm) => {
+      const res = await apiRequest("POST", `/api/observations/${data.engagementId}`, {
+        type: data.type,
+        severity: data.severity,
+        condition: data.condition,
+        criteria: data.criteria || undefined,
+        cause: data.cause || undefined,
+        effect: data.effect || undefined,
+        effectAmount: data.effectAmount ? parseFloat(data.effectAmount) : undefined,
+        proposedAction: data.proposedAction || undefined,
+        isaReference: data.isaReference || undefined,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Observation created successfully" });
+      setObservationOpen(false);
+      setObservationForm({ engagementId: "", type: "MISSTATEMENT", severity: "MEDIUM", condition: "", criteria: "", cause: "", effect: "", effectAmount: "", proposedAction: "", isaReference: "" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to create observation", variant: "destructive" });
     },
   });
 
@@ -629,14 +711,29 @@ export default function ReviewNotesPage() {
               Track and manage review observations across all engagements
             </p>
           </div>
-          <Button
-            onClick={() => setCreateOpen(true)}
-            className="gap-1.5"
-            data-testid="button-create-note"
-          >
-            <Plus className="h-4 w-4" />
-            Create Note
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="gap-1.5" data-testid="button-create-actions">
+                <Plus className="h-4 w-4" />
+                Create
+                <ChevronDown className="h-3.5 w-3.5 ml-0.5 opacity-70" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => setCreateOpen(true)} className="gap-2 cursor-pointer">
+                <MessageSquare className="h-4 w-4" />
+                Review Note
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setAdjustingEntryOpen(true)} className="gap-2 cursor-pointer">
+                <Scale className="h-4 w-4" />
+                Adjusting Entry
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setObservationOpen(true)} className="gap-2 cursor-pointer">
+                <BookOpen className="h-4 w-4" />
+                Observation
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -976,6 +1073,319 @@ export default function ReviewNotesPage() {
                 <Send className="h-4 w-4 mr-2" />
               )}
               Send
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={adjustingEntryOpen} onOpenChange={setAdjustingEntryOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Scale className="h-5 w-5" />
+              Proposed Adjusting Entry
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Engagement</Label>
+                <Select
+                  value={adjustingForm.engagementId}
+                  onValueChange={(v) => setAdjustingForm({ ...adjustingForm, engagementId: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select engagement..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeEngagements.map((eng) => (
+                      <SelectItem key={eng.id} value={eng.id}>
+                        {eng.client?.name ? `${eng.client.name} — ` : ""}{eng.engagementCode}
+                      </SelectItem>
+                    ))}
+                    {activeEngagements.length === 0 && (
+                      <SelectItem value="__none" disabled>No active engagements</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Type</Label>
+                <Select
+                  value={adjustingForm.adjustmentType}
+                  onValueChange={(v) => setAdjustingForm({ ...adjustingForm, adjustmentType: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CORRECTED">Corrected</SelectItem>
+                    <SelectItem value="UNCORRECTED">Uncorrected</SelectItem>
+                    <SelectItem value="RECLASSIFICATION">Reclassification</SelectItem>
+                    <SelectItem value="DISCLOSURE">Disclosure</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Description</Label>
+              <Textarea
+                placeholder="Describe the proposed adjusting entry..."
+                value={adjustingForm.description}
+                onChange={(e) => setAdjustingForm({ ...adjustingForm, description: e.target.value })}
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Reason / Basis</Label>
+              <Input
+                placeholder="Reason for the adjustment..."
+                value={adjustingForm.reason}
+                onChange={(e) => setAdjustingForm({ ...adjustingForm, reason: e.target.value })}
+              />
+            </div>
+
+            <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+              <p className="text-sm font-medium text-muted-foreground">Debit Side</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Account Code</Label>
+                  <Input
+                    placeholder="e.g. 4100"
+                    value={adjustingForm.debitAccountCode}
+                    onChange={(e) => setAdjustingForm({ ...adjustingForm, debitAccountCode: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Account Name</Label>
+                  <Input
+                    placeholder="e.g. Trade Receivables"
+                    value={adjustingForm.debitAccountName}
+                    onChange={(e) => setAdjustingForm({ ...adjustingForm, debitAccountName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Amount (PKR)</Label>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={adjustingForm.debitAmount}
+                    onChange={(e) => setAdjustingForm({ ...adjustingForm, debitAmount: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+              <p className="text-sm font-medium text-muted-foreground">Credit Side</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Account Code</Label>
+                  <Input
+                    placeholder="e.g. 5200"
+                    value={adjustingForm.creditAccountCode}
+                    onChange={(e) => setAdjustingForm({ ...adjustingForm, creditAccountCode: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Account Name</Label>
+                  <Input
+                    placeholder="e.g. Revenue"
+                    value={adjustingForm.creditAccountName}
+                    onChange={(e) => setAdjustingForm({ ...adjustingForm, creditAccountName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Amount (PKR)</Label>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={adjustingForm.creditAmount}
+                    onChange={(e) => setAdjustingForm({ ...adjustingForm, creditAmount: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setAdjustingEntryOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => adjustingMutation.mutate(adjustingForm)}
+              disabled={!adjustingForm.engagementId || !adjustingForm.description.trim() || adjustingMutation.isPending}
+            >
+              {adjustingMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
+              Create Entry
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={observationOpen} onOpenChange={setObservationOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Create Observation
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Engagement</Label>
+                <Select
+                  value={observationForm.engagementId}
+                  onValueChange={(v) => setObservationForm({ ...observationForm, engagementId: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select engagement..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeEngagements.map((eng) => (
+                      <SelectItem key={eng.id} value={eng.id}>
+                        {eng.client?.name ? `${eng.client.name} — ` : ""}{eng.engagementCode}
+                      </SelectItem>
+                    ))}
+                    {activeEngagements.length === 0 && (
+                      <SelectItem value="__none" disabled>No active engagements</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>ISA Reference</Label>
+                <Input
+                  placeholder="e.g. ISA 240, ISA 540..."
+                  value={observationForm.isaReference}
+                  onChange={(e) => setObservationForm({ ...observationForm, isaReference: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Type</Label>
+                <Select
+                  value={observationForm.type}
+                  onValueChange={(v) => setObservationForm({ ...observationForm, type: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MISSTATEMENT">Misstatement</SelectItem>
+                    <SelectItem value="CONTROL_DEFICIENCY">Control Deficiency</SelectItem>
+                    <SelectItem value="MATERIAL_WEAKNESS">Material Weakness</SelectItem>
+                    <SelectItem value="SIGNIFICANT_DEFICIENCY">Significant Deficiency</SelectItem>
+                    <SelectItem value="OTHER">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Severity</Label>
+                <Select
+                  value={observationForm.severity}
+                  onValueChange={(v) => setObservationForm({ ...observationForm, severity: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="LOW">Low</SelectItem>
+                    <SelectItem value="MEDIUM">Medium</SelectItem>
+                    <SelectItem value="HIGH">High</SelectItem>
+                    <SelectItem value="CRITICAL">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Condition (What was found)</Label>
+              <Textarea
+                placeholder="Describe the condition or finding observed..."
+                value={observationForm.condition}
+                onChange={(e) => setObservationForm({ ...observationForm, condition: e.target.value })}
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Criteria (What should be)</Label>
+              <Input
+                placeholder="Applicable standard, policy, or benchmark..."
+                value={observationForm.criteria}
+                onChange={(e) => setObservationForm({ ...observationForm, criteria: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Cause</Label>
+                <Input
+                  placeholder="Root cause of the finding..."
+                  value={observationForm.cause}
+                  onChange={(e) => setObservationForm({ ...observationForm, cause: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Effect / Impact Amount</Label>
+                <Input
+                  type="number"
+                  placeholder="PKR amount (if quantifiable)"
+                  value={observationForm.effectAmount}
+                  onChange={(e) => setObservationForm({ ...observationForm, effectAmount: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Effect (Description)</Label>
+              <Input
+                placeholder="Describe the impact or consequence..."
+                value={observationForm.effect}
+                onChange={(e) => setObservationForm({ ...observationForm, effect: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Proposed Action / Recommendation</Label>
+              <Textarea
+                placeholder="Recommended corrective action..."
+                value={observationForm.proposedAction}
+                onChange={(e) => setObservationForm({ ...observationForm, proposedAction: e.target.value })}
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setObservationOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => observationMutation.mutate(observationForm)}
+              disabled={!observationForm.engagementId || !observationForm.condition.trim() || observationMutation.isPending}
+            >
+              {observationMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
+              Create Observation
             </Button>
           </DialogFooter>
         </DialogContent>
