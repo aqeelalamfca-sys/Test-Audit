@@ -36,9 +36,10 @@ export async function fetchWithAuth(
       signal: controller.signal,
     });
 
-    if (res.status === 401 && !init?.skipAuthRedirect) {
+    if (!init?.skipAuthRedirect) {
       const url = typeof input === "string" ? input : "";
-      if (!url.includes("/auth/ping") && !url.includes("/auth/refresh") && !url.includes("/auth/login")) {
+      const isAuthEndpoint = url.includes("/auth/ping") || url.includes("/auth/refresh") || url.includes("/auth/login");
+      if (res.status === 401 && !isAuthEndpoint) {
         localStorage.removeItem("auditwise_token");
         window.location.href = "/";
       }
