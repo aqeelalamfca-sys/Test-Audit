@@ -1,5 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { getAuthToken, refreshAccessToken } from "./auth";
+import { toast } from "@/hooks/use-toast";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -107,6 +108,48 @@ export function flushDraftSave(
   }
 }
 
+function handleGlobalError(error: unknown) {
+  const msg = error instanceof Error ? error.message : String(error);
+
+  if (msg.startsWith("401:")) {
+    toast({
+      title: "Session Expired",
+      description: "Your session has expired. Please sign in again.",
+      variant: "destructive",
+    });
+    localStorage.removeItem("auditwise_token");
+    setTimeout(() => { window.location.href = "/"; }, 1500);
+    return;
+  }
+
+  if (msg.startsWith("403:")) {
+    toast({
+      title: "Access Denied",
+      description: "You don't have permission to perform this action.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
+    toast({
+      title: "Connection Error",
+      description: "Unable to reach the server. Please check your connection.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  if (msg.includes("non-JSON response")) {
+    toast({
+      title: "Server Restarting",
+      description: "The server is restarting. Please wait a moment and try again.",
+      variant: "destructive",
+    });
+    return;
+  }
+}
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -118,12 +161,14 @@ export const queryClient = new QueryClient({
       retry: (failureCount, error) => {
         if (failureCount >= 2) return false;
         const msg = error instanceof Error ? error.message : "";
+        if (msg.startsWith("401:") || msg.startsWith("403:")) return false;
         return msg.includes("non-JSON response") || msg.includes("Failed to fetch");
       },
       retryDelay: 2000,
     },
     mutations: {
       retry: false,
+      onError: handleGlobalError,
     },
   },
 });

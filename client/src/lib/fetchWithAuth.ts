@@ -2,6 +2,7 @@ import { getAuthToken } from "./auth";
 
 export interface FetchWithAuthOptions extends RequestInit {
   timeout?: number;
+  skipAuthRedirect?: boolean;
 }
 
 export async function fetchWithAuth(
@@ -23,7 +24,7 @@ export async function fetchWithAuth(
     // ignore storage access errors
   }
 
-  const timeout = init?.timeout ?? 10000; // Default 10 second timeout
+  const timeout = init?.timeout ?? 10000;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -34,6 +35,15 @@ export async function fetchWithAuth(
       credentials: "include",
       signal: controller.signal,
     });
+
+    if (res.status === 401 && !init?.skipAuthRedirect) {
+      const url = typeof input === "string" ? input : "";
+      if (!url.includes("/auth/ping") && !url.includes("/auth/refresh") && !url.includes("/auth/login")) {
+        localStorage.removeItem("auditwise_token");
+        window.location.href = "/";
+      }
+    }
+
     return res;
   } finally {
     clearTimeout(timeoutId);
