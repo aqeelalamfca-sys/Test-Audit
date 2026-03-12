@@ -98,9 +98,9 @@ function addSectionRow(ws: ExcelJS.Worksheet, text: string, colCount: number) {
 
 function statusFill(status: string): ExcelJS.Fill {
   if (status === "PASS") return PASS_FILL;
-  if (status === "FAIL" || status === "CRITICAL") return FAIL_FILL;
-  if (status === "WARN" || status === "WARNING") return WARN_FILL;
-  if (status === "INFO") return INFO_FILL;
+  if (status === "FAIL" || status === "CRITICAL" || status === "High") return FAIL_FILL;
+  if (status === "WARN" || status === "WARNING" || status === "Medium") return WARN_FILL;
+  if (status === "INFO" || status === "Low") return INFO_FILL;
   return { type: "pattern", pattern: "none" };
 }
 
@@ -490,6 +490,33 @@ function buildControlSummary(
   addCheck("Bank accounts loaded", bankRows.length, "", "");
   ws.addRow({});
 
+  addSectionRow(ws, "OVERALL RECONCILIATION STATUS", 4);
+  const tbBalOk = obBalance <= tolerance && cbBalance <= tolerance;
+  const glReconOk = netMovDiff <= tolerance;
+  const subReconOk = subReconFailCount === 0;
+  const dataQualOk = duplicateTbCodes.length === 0 && duplicateGlTransactions.length === 0;
+  const overallStatus = tbBalOk && glReconOk && subReconOk && dataQualOk ? "PASS" : (glReconOk && tbBalOk ? "WARN" : "FAIL");
+  addCheck("TB Balances", tbBalOk ? "Balanced" : "Unbalanced", tbBalOk ? "PASS" : "FAIL", "");
+  addCheck("GL-TB Reconciliation", glReconOk ? "Reconciled" : "Unreconciled", glReconOk ? "PASS" : "FAIL", "");
+  addCheck("Subledger Reconciliation", subReconOk ? "All reconciled" : `${subReconFailCount} unreconciled`, subReconOk ? "PASS" : "FAIL", "");
+  addCheck("Data Integrity", dataQualOk ? "No duplicates" : "Issues found", dataQualOk ? "PASS" : "WARN", "");
+  addCheck("OVERALL STATUS", overallStatus, overallStatus, overallStatus === "PASS" ? "All checks passed" : "Review exceptions");
+  ws.addRow({});
+
+  addSectionRow(ws, "NAVIGATION", 4);
+  const sheetLinks = [
+    { name: "TB_Validation", desc: "Trial Balance detail validation" },
+    { name: "GL_vs_TB_Validation", desc: "GL vs TB reconciliation detail" },
+    { name: "Subledger_Validation", desc: "Subledger & Bank reconciliation" },
+    { name: "Exceptions_Report", desc: "All exceptions and findings" },
+  ];
+  for (const link of sheetLinks) {
+    const linkRow = ws.addRow({ check: link.name, value: link.desc, status: "", notes: "" });
+    linkRow.getCell("check").value = { text: link.name, hyperlink: `#'${link.name}'!A1` } as any;
+    linkRow.getCell("check").font = { color: { argb: "FF0070C0" }, underline: true };
+  }
+  ws.addRow({});
+
   addSectionRow(ws, "TOTALS REFERENCE", 4);
   addCheck("TB Opening Debit Total", tbTotalOBDr.toFixed(2), "", "");
   addCheck("TB Opening Credit Total", tbTotalOBCr.toFixed(2), "", "");
@@ -542,9 +569,7 @@ function buildTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map<str
       if (liabLike && tb.cbNet > 1) unusualSign = true;
     }
 
-    const glRow = glAgg.get(tb.accountCode);
-    const glNetMov = glRow?.glNetMovement ?? 0;
-    const crossCastExpected = tb.obNet + glNetMov;
+    const crossCastExpected = tb.obNet + tb.tbNetMovement;
     const crossCastDiff = Math.abs(crossCastExpected - tb.cbNet);
     const crossCastPass = crossCastDiff < 1;
 
@@ -726,6 +751,36 @@ function buildGLvsTBValidation(
     if (gl?.hasBlankNarration) row.getCell("blankNarr").fill = WARN_FILL;
     if (dupCount > 0) row.getCell("dupTxn").fill = WARN_FILL;
     if (invDateCount > 0) row.getCell("invDate").fill = WARN_FILL;
+  }
+
+  const matchCount = sortedCodes.filter(c => tbMap.has(c) && glAgg.has(c) && Math.abs((tbMap.get(c)!.tbNetMovement) - (glAgg.get(c)!.glNetMovement)) < 1).length;
+  const mismatchCount = sortedCodes.filter(c => tbMap.has(c) && glAgg.has(c) && Math.abs((tbMap.get(c)!.tbNetMovement) - (glAgg.get(c)!.glNetMovement)) >= 1).length;
+  const glOnlyCount = sortedCodes.filter(c => !tbMap.has(c)).length;
+  const tbOnlyCount = sortedCodes.filter(c => !glAgg.has(c)).length;
+  ws.addRow({});
+  const sumRow = ws.addRow({
+    code: "SUMMARY",
+    tbName: `Total: ${sortedCodes.length} codes`,
+    glName: "",
+    nameMatch: "",
+    tbNetMov: tbRows.reduce((s, r) => s + r.tbNetMovement, 0),
+    glNetMov: Array.from(glAgg.values()).reduce((s, r) => s + r.glNetMovement, 0),
+    netDiff: tbRows.reduce((s, r) => s + r.tbNetMovement, 0) - Array.from(glAgg.values()).reduce((s, r) => s + r.glNetMovement, 0),
+    glDr: Array.from(glAgg.values()).reduce((s, r) => s + r.totalDebit, 0),
+    glCr: Array.from(glAgg.values()).reduce((s, r) => s + r.totalCredit, 0),
+    entries: Array.from(glAgg.values()).reduce((s, r) => s + r.entryCount, 0),
+    blankNarr: "",
+    earlyDate: "",
+    lateDate: "",
+    inTb: "",
+    inGl: "",
+    dupTxn: "",
+    invDate: "",
+    match: `${matchCount}M/${mismatchCount}X/${glOnlyCount}GL/${tbOnlyCount}TB`,
+  });
+  sumRow.font = { bold: true };
+  for (let c = 5; c <= 9; c++) {
+    sumRow.getCell(c).numFmt = NUMBER_FMT;
   }
 
   addConditionalFormatting(ws, "R", ws.rowCount);
@@ -932,21 +987,21 @@ function buildExceptionsReport(
   const tbTotalCBDr = tbRows.reduce((s, r) => s + r.closingDebit, 0);
   const tbTotalCBCr = tbRows.reduce((s, r) => s + r.closingCredit, 0);
   if (Math.abs(tbTotalOBDr - tbTotalOBCr) >= 1) {
-    addException("TB", "TB Balance", "CRITICAL", "", "", `TB Opening Balance doesn't balance: DR ${tbTotalOBDr.toFixed(2)} vs CR ${tbTotalOBCr.toFixed(2)}`, "DR = CR", `Diff: ${(tbTotalOBDr - tbTotalOBCr).toFixed(2)}`, Math.abs(tbTotalOBDr - tbTotalOBCr).toFixed(2));
+    addException("TB", "TB Balance", "High", "", "", `TB Opening Balance doesn't balance: DR ${tbTotalOBDr.toFixed(2)} vs CR ${tbTotalOBCr.toFixed(2)}`, "DR = CR", `Diff: ${(tbTotalOBDr - tbTotalOBCr).toFixed(2)}`, Math.abs(tbTotalOBDr - tbTotalOBCr).toFixed(2));
   }
   if (Math.abs(tbTotalCBDr - tbTotalCBCr) >= 1) {
-    addException("TB", "TB Balance", "CRITICAL", "", "", `TB Closing Balance doesn't balance: DR ${tbTotalCBDr.toFixed(2)} vs CR ${tbTotalCBCr.toFixed(2)}`, "DR = CR", `Diff: ${(tbTotalCBDr - tbTotalCBCr).toFixed(2)}`, Math.abs(tbTotalCBDr - tbTotalCBCr).toFixed(2));
+    addException("TB", "TB Balance", "High", "", "", `TB Closing Balance doesn't balance: DR ${tbTotalCBDr.toFixed(2)} vs CR ${tbTotalCBCr.toFixed(2)}`, "DR = CR", `Diff: ${(tbTotalCBDr - tbTotalCBCr).toFixed(2)}`, Math.abs(tbTotalCBDr - tbTotalCBCr).toFixed(2));
   }
 
   for (const [code, gl] of glAgg) {
     if (!tbMap.has(code)) {
-      addException("GL", "GL Code Mismatch", "WARNING", code, gl.accountName ?? "", `GL code exists in GL (${gl.entryCount} entries) but not in TB`, "Present in TB", "Missing", "");
+      addException("GL", "GL Code Mismatch", "Medium", code, gl.accountName ?? "", `GL code exists in GL (${gl.entryCount} entries) but not in TB`, "Present in TB", "Missing", "");
     }
   }
 
   for (const tb of tbRows) {
     if (!glAgg.has(tb.accountCode) && Math.abs(tb.tbNetMovement) > 0) {
-      addException("TB", "GL Code Mismatch", "WARNING", tb.accountCode, tb.accountName ?? "", `TB code has net movement (${tb.tbNetMovement.toFixed(2)}) but no GL entries`, "GL entries present", "No GL entries", "");
+      addException("TB", "GL Code Mismatch", "Medium", tb.accountCode, tb.accountName ?? "", `TB code has net movement (${tb.tbNetMovement.toFixed(2)}) but no GL entries`, "GL entries present", "No GL entries", "");
     }
   }
 
@@ -956,7 +1011,7 @@ function buildExceptionsReport(
       const gl = glAgg.get(code)!;
       const netDiff = tb.tbNetMovement - gl.glNetMovement;
       if (Math.abs(netDiff) >= 1) {
-        addException("RECON", "TB-GL Net Movement Mismatch", "ERROR", code, tb.accountName ?? "", `TB net movement doesn't match GL net movement`, `TB Net: ${tb.tbNetMovement.toFixed(2)}`, `GL Net: ${gl.glNetMovement.toFixed(2)}`, netDiff.toFixed(2));
+        addException("RECON", "TB-GL Net Movement Mismatch", "High", code, tb.accountName ?? "", `TB net movement doesn't match GL net movement`, `TB Net: ${tb.tbNetMovement.toFixed(2)}`, `GL Net: ${gl.glNetMovement.toFixed(2)}`, netDiff.toFixed(2));
       }
     }
   }
@@ -968,26 +1023,26 @@ function buildExceptionsReport(
       const tbName = (tb.accountName ?? "").toLowerCase().trim();
       const glName = (gl.accountName ?? "").toLowerCase().trim();
       if (glName && tbName && glName !== tbName) {
-        addException("RECON", "Account Name Mismatch", "INFO", code, "", `TB name "${tb.accountName}" differs from GL name "${gl.accountName}"`, tb.accountName ?? "", gl.accountName ?? "", "");
+        addException("RECON", "Account Name Mismatch", "Low", code, "", `TB name "${tb.accountName}" differs from GL name "${gl.accountName}"`, tb.accountName ?? "", gl.accountName ?? "", "");
       }
     }
   }
 
   for (const tb of tbRows) {
     if (tb.closingDebit > 0 && tb.closingCredit > 0) {
-      addException("TB", "Dual Balance", "INFO", tb.accountCode, tb.accountName ?? "", `Account has both DR (${tb.closingDebit.toFixed(2)}) and CR (${tb.closingCredit.toFixed(2)}) closing balances`, "Single-sided", `DR: ${tb.closingDebit.toFixed(2)}, CR: ${tb.closingCredit.toFixed(2)}`, "");
+      addException("TB", "Dual Balance", "Low", tb.accountCode, tb.accountName ?? "", `Account has both DR (${tb.closingDebit.toFixed(2)}) and CR (${tb.closingCredit.toFixed(2)}) closing balances`, "Single-sided", `DR: ${tb.closingDebit.toFixed(2)}, CR: ${tb.closingCredit.toFixed(2)}`, "");
     }
   }
 
   for (const tb of tbRows) {
     if (!tb.accountName || tb.accountName.trim() === "") {
-      addException("TB", "Data Quality", "WARNING", tb.accountCode, "", `Account has a blank name`, "Account name present", "Blank", "");
+      addException("TB", "Data Quality", "Medium", tb.accountCode, "", `Account has a blank name`, "Account name present", "Blank", "");
     }
   }
 
   for (const tb of tbRows) {
     if (!tb.fsHeadKey) {
-      addException("TB", "FS Mapping", "INFO", tb.accountCode, tb.accountName ?? "", `Account is not mapped to an FS head/line item`, "FS head mapped", "Unmapped", "");
+      addException("TB", "FS Mapping", "Low", tb.accountCode, tb.accountName ?? "", `Account is not mapped to an FS head/line item`, "FS head mapped", "Unmapped", "");
     }
   }
 
@@ -995,18 +1050,18 @@ function buildExceptionsReport(
     if (tb.accountClass) {
       const assetLike = ["ASSET", "EXPENSE"].includes(tb.accountClass.toUpperCase());
       if (assetLike && tb.cbNet < -1) {
-        addException("TB", "Unusual Sign", "WARNING", tb.accountCode, tb.accountName ?? "", `${tb.accountClass} account has negative net closing balance (${tb.cbNet.toFixed(2)})`, "Positive (DR) balance", `Net: ${tb.cbNet.toFixed(2)}`, "");
+        addException("TB", "Unusual Sign", "Medium", tb.accountCode, tb.accountName ?? "", `${tb.accountClass} account has negative net closing balance (${tb.cbNet.toFixed(2)})`, "Positive (DR) balance", `Net: ${tb.cbNet.toFixed(2)}`, "");
       }
       const liabLike = ["LIABILITY", "EQUITY", "INCOME", "REVENUE"].includes(tb.accountClass.toUpperCase());
       if (liabLike && tb.cbNet > 1) {
-        addException("TB", "Unusual Sign", "WARNING", tb.accountCode, tb.accountName ?? "", `${tb.accountClass} account has positive net closing balance (${tb.cbNet.toFixed(2)})`, "Negative (CR) balance", `Net: ${tb.cbNet.toFixed(2)}`, "");
+        addException("TB", "Unusual Sign", "Medium", tb.accountCode, tb.accountName ?? "", `${tb.accountClass} account has positive net closing balance (${tb.cbNet.toFixed(2)})`, "Negative (CR) balance", `Net: ${tb.cbNet.toFixed(2)}`, "");
       }
     }
   }
 
   for (const gl of glAgg.values()) {
     if (gl.hasBlankNarration) {
-      addException("GL", "Data Quality", "WARNING", gl.accountCode, gl.accountName ?? "", `GL entries found with blank narration/description`, "Narration present", "Blank narration(s)", "");
+      addException("GL", "Data Quality", "Medium", gl.accountCode, gl.accountName ?? "", `GL entries found with blank narration/description`, "Narration present", "Blank narration(s)", "");
     }
   }
 
@@ -1020,7 +1075,7 @@ function buildExceptionsReport(
     const tbNet = tb ? tb.cbNet : 0;
     const diff = subTotal - tbNet;
     if (Math.abs(diff) >= 1) {
-      addException("SUBLEDGER", "Subledger Recon", "ERROR", ctrl, tb?.accountName ?? "", `Subledger total (${subTotal.toFixed(2)}) doesn't match TB net (${tbNet.toFixed(2)})`, `TB Net: ${tbNet.toFixed(2)}`, `Sub Total: ${subTotal.toFixed(2)}`, diff.toFixed(2));
+      addException("SUBLEDGER", "Subledger Recon", "High", ctrl, tb?.accountName ?? "", `Subledger total (${subTotal.toFixed(2)}) doesn't match TB net (${tbNet.toFixed(2)})`, `TB Net: ${tbNet.toFixed(2)}`, `Sub Total: ${subTotal.toFixed(2)}`, diff.toFixed(2));
     }
   }
 
@@ -1030,16 +1085,16 @@ function buildExceptionsReport(
     const signedBal = b.drcr === "DR" ? b.closingBalance : -b.closingBalance;
     const diff = signedBal - tbNet;
     if (Math.abs(diff) >= 1) {
-      addException("BANK", "Bank Recon", "ERROR", b.glCode, `${b.bankName} - ${b.accountTitle}`, `Bank balance (${signedBal.toFixed(2)}) doesn't match TB net (${tbNet.toFixed(2)})`, `TB Net: ${tbNet.toFixed(2)}`, `Bank: ${signedBal.toFixed(2)}`, diff.toFixed(2));
+      addException("BANK", "Bank Recon", "High", b.glCode, `${b.bankName} - ${b.accountTitle}`, `Bank balance (${signedBal.toFixed(2)}) doesn't match TB net (${tbNet.toFixed(2)})`, `TB Net: ${tbNet.toFixed(2)}`, `Bank: ${signedBal.toFixed(2)}`, diff.toFixed(2));
     }
   }
 
   for (const dupCode of duplicateTbCodes) {
-    addException("TB", "Duplicate GL Code", "ERROR", dupCode, "", `Duplicate GL code detected in TB data after trimming: ${dupCode}`, "Unique codes", "Duplicate", "");
+    addException("TB", "Duplicate GL Code", "High", dupCode, "", `Duplicate GL code detected in TB data after trimming: ${dupCode}`, "Unique codes", "Duplicate", "");
   }
 
   for (const dup of duplicateGlTransactions) {
-    addException("GL", "Duplicate Transaction", "WARNING", dup.accountCode, "", `Potential duplicate GL transaction: voucher ${dup.voucherNo || "N/A"}, account ${dup.accountCode} appears ${dup.count} times with same amounts`, "Unique entries", `${dup.count} duplicates`, "");
+    addException("GL", "Duplicate Transaction", "Medium", dup.accountCode, "", `Potential duplicate GL transaction: voucher ${dup.voucherNo || "N/A"}, account ${dup.accountCode} appears ${dup.count} times with same amounts`, "Unique entries", `${dup.count} duplicates`, "");
   }
 
   const invDateGrouped = new Map<string, string[]>();
@@ -1050,7 +1105,7 @@ function buildExceptionsReport(
   }
   for (const [code, dates] of invDateGrouped) {
     const tb = tbMap.get(code);
-    addException("GL", "Invalid Date", "WARNING", code, tb?.accountName ?? "", `GL entries with dates outside engagement period: ${dates.join(", ")}${invDateGrouped.get(code)!.length >= 3 ? " ..." : ""}`, `Within ${meta.periodEnd || "period"}`, "Outside period", "");
+    addException("GL", "Invalid Date", "Medium", code, tb?.accountName ?? "", `GL entries with dates outside engagement period: ${dates.join(", ")}${invDateGrouped.get(code)!.length >= 3 ? " ..." : ""}`, `Within ${meta.periodEnd || "period"}`, "Outside period", "");
   }
 
   if (seq === 0) {
@@ -1069,6 +1124,27 @@ function buildExceptionsReport(
       reviewer: "",
       mgmt: "",
       resolution: "",
+    });
+  }
+
+  if (seq > 0) {
+    ws.getColumn("status").eachCell((cell, rowNum) => {
+      if (rowNum > 1) {
+        cell.dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: ['"OPEN,IN PROGRESS,RESOLVED,CLOSED,N/A"'],
+        };
+      }
+    });
+    ws.getColumn("severity").eachCell((cell, rowNum) => {
+      if (rowNum > 1) {
+        cell.dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: ['"High,Medium,Low"'],
+        };
+      }
     });
   }
 
