@@ -45,6 +45,7 @@ interface Engagement {
   id: string;
   engagementCode: string;
   clientId: string;
+  engagementType?: string;
   shareCapital?: number;
   authorizedCapital?: number;
   paidUpCapital?: number;
@@ -198,7 +199,7 @@ export function EngagementDialog({
         setFormData({
           engagementCode: engagement.engagementCode || "",
           clientId: engagement.clientId || "",
-          engagementType: "statutory_audit",
+          engagementType: engagement.engagementType || "statutory_audit",
           taxPeriod: "",
           authorizedCapital: engagement.authorizedCapital?.toString() || "",
           paidUpCapital: engagement.paidUpCapital?.toString() || engagement.shareCapital?.toString() || "",

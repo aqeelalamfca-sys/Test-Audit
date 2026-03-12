@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +71,7 @@ const formatDate = (dateStr?: string) => {
 export default function ClientList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
 
   const { data: clients, isLoading } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
@@ -125,7 +126,7 @@ export default function ClientList() {
             <Download className="h-3.5 w-3.5" />
             Export
           </Button>
-          <CreateClientDialog />
+          <CreateClientDialog onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/clients"] })} />
         </div>
       </div>
 
