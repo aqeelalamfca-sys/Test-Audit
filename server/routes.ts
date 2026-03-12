@@ -615,24 +615,24 @@ export async function registerRoutes(
           }
         }
 
-        await logAuditTrail(
-          req.user!.id,
-          "ENGAGEMENT_CREATED",
-          "engagement",
-          engagement.id,
-          null,
-          engagement,
-          engagement.id,
-          "New engagement created",
-          req.ip,
-          req.get("user-agent")
-        );
-
         return tx.engagement.findUnique({
           where: { id: engagement.id },
           include: { client: true, phases: true, team: { include: { user: true } } },
         });
       });
+
+      logAuditTrail(
+        req.user!.id,
+        "ENGAGEMENT_CREATED",
+        "engagement",
+        fullEngagement!.id,
+        null,
+        fullEngagement,
+        fullEngagement!.id,
+        "New engagement created",
+        req.ip,
+        req.get("user-agent")
+      ).catch(err => console.error("Audit trail log error:", err));
 
       res.status(201).json(fullEngagement);
     } catch (error: any) {
