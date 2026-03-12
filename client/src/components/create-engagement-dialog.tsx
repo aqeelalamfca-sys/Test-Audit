@@ -164,9 +164,9 @@ export function EngagementDialog({
     queryKey: ["/api/users"],
   });
 
-  const partners = users?.filter(u => u.role === "PARTNER" || u.role === "EQCR") || [];
-  const managers = users?.filter(u => ["MANAGER", "PARTNER"].includes(u.role)) || [];
-  const seniors = users?.filter(u => ["SENIOR", "MANAGER", "PARTNER"].includes(u.role)) || [];
+  const partners = users?.filter(u => u.role === "PARTNER") || [];
+  const managers = users?.filter(u => u.role === "MANAGER") || [];
+  const seniors = users?.filter(u => u.role === "SENIOR") || [];
 
   useEffect(() => {
     if (dialogOpen) {

@@ -186,8 +186,8 @@ export default function NewEngagement() {
     },
   });
 
-  const partners = firmUsers.filter(u => ["PARTNER", "EQCR"].includes(u.role));
-  const managers = firmUsers.filter(u => ["MANAGER", "PARTNER"].includes(u.role));
+  const partners = firmUsers.filter(u => u.role === "PARTNER");
+  const managers = firmUsers.filter(u => u.role === "MANAGER");
   const eqcrPartners = firmUsers.filter(u => ["EQCR", "PARTNER"].includes(u.role));
 
   const form = useForm<EngagementFormData>({
