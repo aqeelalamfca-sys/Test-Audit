@@ -9,6 +9,7 @@ import { withTenantContext } from "./middleware/tenantDbContext";
 import { classifyAccount, getDefaultClassificationForCode } from "./services/accountClassificationService";
 import { generateBankConfirmationLetter, generateARAPConfirmationLetter, generateLegalAdvisorConfirmationLetter, generateTaxAdvisorConfirmationLetter, generateAllConfirmationLetters } from "./services/confirmationLetterService";
 import { importInputWorkbook, rerunValidations, getSummaryRun, importSingleDataset } from "./services/inputWorkbookService";
+import { generateValidationWorkbook } from "./services/validationWorkbookService";
 import { syncTbToFsMapping } from "./routes/reviewMappingRoutes";
 import { autoFixDeterministic } from "./services/reconIssuesEngine";
 import { triggerPostImportReconciliation } from "./services/dataIntakeStatusService";
@@ -3473,6 +3474,35 @@ router.get("/:engagementId/summary/export", requireAuth, async (req: Request, re
   } catch (error) {
     console.error("Error exporting summary:", error);
     res.status(500).json({ error: "Failed to export summary" });
+  }
+});
+
+router.get("/:engagementId/validation-workbook", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const userFirmId = (req as AuthenticatedRequest).user!.firmId;
+    if (!userFirmId) return res.status(400).json({ error: "User not associated with a firm" });
+
+    const engagement = await withTenantContext(userFirmId, async (tx) => {
+      return tx.engagement.findUnique({
+        where: { id: engagementId },
+        select: { id: true },
+      });
+    });
+
+    if (!engagement) {
+      return res.status(404).json({ error: "Engagement not found" });
+    }
+
+    const buffer = await generateValidationWorkbook(engagementId, userFirmId);
+
+    const filename = `AuditWise_Data_Validation_Workbook_${new Date().toISOString().split("T")[0]}.xlsx`;
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(buffer);
+  } catch (error) {
+    console.error("Error generating validation workbook:", error);
+    res.status(500).json({ error: "Failed to generate validation workbook" });
   }
 });
 

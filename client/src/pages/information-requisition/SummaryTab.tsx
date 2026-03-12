@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, CheckCircle, XCircle, AlertTriangle, CircleDashed, Upload, RefreshCw, Download, FileSpreadsheet, Database, Users, Building2, Scale, FileText, ChevronRight, X, ArrowRight, Shield } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, AlertTriangle, CircleDashed, Upload, RefreshCw, Download, FileSpreadsheet, Database, Users, Building2, Scale, FileText, ChevronRight, X, ArrowRight, Shield, ClipboardCheck } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { getAuthToken } from "@/lib/auth";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
@@ -214,6 +214,7 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
   const [validationErrors, setValidationErrors] = useState<ImportValidationError[] | null>(null);
   const [validationBlocked, setValidationBlocked] = useState<ValidationBlockedResult | null>(null);
   const [isDownloadingReport, setIsDownloadingReport] = useState(false);
+  const [isGeneratingWorkbook, setIsGeneratingWorkbook] = useState(false);
   const xhrRef = useRef<XMLHttpRequest | null>(null);
 
   const { data: summaryData, isLoading, error, refetch } = useQuery<SummaryRunData>({
@@ -453,6 +454,50 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to export output file.";
       toast({ title: "Export Failed", description: message, variant: "destructive" });
+    }
+  }, [engagementId, toast]);
+
+  const handleGenerateValidationWorkbook = useCallback(async () => {
+    if (!engagementId) {
+      toast({ title: "Generation Failed", description: "Engagement ID is required.", variant: "destructive" });
+      return;
+    }
+    setIsGeneratingWorkbook(true);
+    try {
+      const response = await fetchWithAuth(`/api/import/${engagementId}/validation-workbook`, {
+        timeout: 120000,
+      });
+
+      if (!response.ok) {
+        let errorMessage = "Generation failed";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+          errorMessage = `Generation failed with status ${response.status}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const blob = await response.blob();
+      if (!blob || blob.size === 0) {
+        throw new Error("No data received");
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `AuditWise_Data_Validation_Workbook_${new Date().toISOString().split("T")[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: "Workbook Generated", description: "Validation workbook downloaded successfully." });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to generate validation workbook.";
+      toast({ title: "Generation Failed", description: message, variant: "destructive" });
+    } finally {
+      setIsGeneratingWorkbook(false);
     }
   }, [engagementId, toast]);
 
@@ -736,6 +781,20 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
                   >
                     <Download className="h-4 w-4" />
                     Export Output.xlsx
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateValidationWorkbook}
+                    disabled={isGeneratingWorkbook}
+                    data-testid="button-validation-workbook"
+                  >
+                    {isGeneratingWorkbook ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <ClipboardCheck className="h-4 w-4" />
+                    )}
+                    {isGeneratingWorkbook ? "Generating..." : "Validation Workbook"}
                   </Button>
                 </div>
               </div>

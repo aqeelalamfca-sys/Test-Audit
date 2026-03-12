@@ -175,6 +175,11 @@ The Data Intake module provides a centralized, linked workflow for importing, va
 - **`client/src/pages/information-requisition/ReviewCoaSection.tsx`**: Sub-tab navigation enhanced with icons per tab (Upload, TB, GL, AP, AR, Bank, Confirmations, FS Mapping, Draft FS, Checks), horizontal scroll on narrow screens, and improved styling.
 - **FsMappingSection**: "Prior Year" button calls auto-map-prior to apply mappings from prior engagements
 
+### Validation Workbook Export
+- **`server/services/validationWorkbookService.ts`**: Generates `AuditWise_Data_Validation_Workbook.xlsx` with 5 sheets: Control_Summary, TB_Validation, GL_vs_TB_Validation, Subledger_Validation, Exceptions_Report. Queries ImportAccountBalance (OB/CB), ImportJournalLine (GL), ImportPartyBalance (AR/AP), ImportBankAccount/ImportBankBalance. Uses net movement comparison `(CB_net - OB_net) vs (GL_DR - GL_CR)` for accurate TB↔GL tie-out.
+- **API**: `GET /api/import/:engagementId/validation-workbook` in `importRoutes.ts`
+- **Frontend**: "Validation Workbook" button in SummaryTab next to "Export Output.xlsx", visible when `hasSummary` is true
+
 ### Auto-Reconciliation
 - After data import, `triggerPostImportReconciliation()` in `importRoutes.ts` automatically runs the full reconciliation scan, updating gate statuses and generating exception records.
 
