@@ -120,6 +120,7 @@ const PHASE_ROUTES_ALL: Record<string, string> = {
   "execution": "EXECUTION",
   "fs-heads": "EXECUTION",
   "observations": "EXECUTION",
+  "checklists": "EXECUTION",
   "finalization": "FINALIZATION",
   "deliverables": "REPORTING",
   "outputs": "REPORTING",
@@ -131,6 +132,11 @@ const PHASE_ROUTES_ALL: Record<string, string> = {
   "evidence": "EXECUTION",
   "audit-health": "EXECUTION",
   "information-requisition": "REQUISITION",
+  "workflow-health": "EXECUTION",
+  "post-upload-workflow": "REQUISITION",
+  "standards-matrix": "EXECUTION",
+  "compliance-simulation": "EXECUTION",
+  "qcr-dashboard": "INSPECTION",
 };
 
 const PHASE_ORDER = ["ONBOARDING", "PRE_PLANNING", "REQUISITION", "PLANNING", "EXECUTION", "FINALIZATION", "REPORTING", "EQCR", "INSPECTION"]; // Note: REQUISITION (Data Intake) comes after PRE_PLANNING in UI but enforcement order preserved
