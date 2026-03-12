@@ -402,19 +402,7 @@ export default function ClientDetail() {
               {engagements.length === 0 ? (
                 <div className="text-center py-4">
                   <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground mb-4">No engagements found for this client.</p>
-                  {isManager && (
-                    <CreateEngagementDialog 
-                      preselectedClientId={clientId} 
-                      onSuccess={() => queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/engagements`] })}
-                      trigger={
-                        <Button>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Create First Engagement
-                        </Button>
-                      }
-                    />
-                  )}
+                  <p className="text-muted-foreground">No engagements found for this client. Use the "New Engagement" button above to create one.</p>
                 </div>
               ) : (
                 <Table>
