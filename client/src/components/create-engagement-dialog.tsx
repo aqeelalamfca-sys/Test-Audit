@@ -46,6 +46,8 @@ interface Engagement {
   engagementCode: string;
   clientId: string;
   shareCapital?: number;
+  authorizedCapital?: number;
+  paidUpCapital?: number;
   numberOfEmployees?: number;
   lastYearRevenue?: number;
   previousYearRevenue?: number;
@@ -59,6 +61,8 @@ interface Engagement {
   priorAuditOpinion?: string;
   udin?: string;
   eqcrRequired?: boolean;
+  companyCategory?: string;
+  companyCategoryOther?: string;
   engagementPartnerId?: string;
   engagementManagerId?: string;
   teamLeadId?: string;
@@ -196,11 +200,11 @@ export function EngagementDialog({
           clientId: engagement.clientId || "",
           engagementType: "statutory_audit",
           taxPeriod: "",
-          authorizedCapital: (engagement as any).authorizedCapital?.toString() || "",
-          paidUpCapital: (engagement as any).paidUpCapital?.toString() || engagement.shareCapital?.toString() || "",
+          authorizedCapital: engagement.authorizedCapital?.toString() || "",
+          paidUpCapital: engagement.paidUpCapital?.toString() || engagement.shareCapital?.toString() || "",
           numberOfEmployees: engagement.numberOfEmployees?.toString() || "",
-          companyCategory: (engagement as any).companyCategory || "",
-          companyCategoryOther: (engagement as any).companyCategoryOther || "",
+          companyCategory: engagement.companyCategory || "",
+          companyCategoryOther: engagement.companyCategoryOther || "",
           lastYearRevenue: engagement.lastYearRevenue?.toString() || "",
           previousYearRevenue: engagement.previousYearRevenue?.toString() || "",
           periodStart: engagement.periodStart?.split("T")[0] || "",

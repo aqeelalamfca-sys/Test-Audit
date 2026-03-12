@@ -266,8 +266,8 @@ export default function EngagementEdit() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="IFRS">IFRS</SelectItem>
+                  <SelectItem value="IFRS_SME">IFRS for SMEs</SelectItem>
                   <SelectItem value="LOCAL_GAAP">Local GAAP</SelectItem>
-                  <SelectItem value="US_GAAP">US GAAP</SelectItem>
                   <SelectItem value="OTHER">Other</SelectItem>
                 </SelectContent>
               </Select>
