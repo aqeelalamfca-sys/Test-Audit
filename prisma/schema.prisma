@@ -6165,25 +6165,36 @@ model AISettings {
   preferredProvider String   @default("openai")
   providerPriority  String[] @default(["openai", "gemini", "deepseek", "anthropic"])
 
-  openaiApiKey     String?
-  openaiEnabled    Boolean   @default(true)
-  openaiLastTested DateTime?
-  openaiTestStatus String?
+  openaiApiKey          String?
+  openaiAccountName    String?
+  openaiAccountEmail   String?
+  openaiOrganizationId String?
+  openaiEnabled        Boolean   @default(true)
+  openaiLastTested     DateTime?
+  openaiTestStatus     String?
 
-  geminiApiKey     String?
-  geminiEnabled    Boolean   @default(false)
-  geminiLastTested DateTime?
-  geminiTestStatus String?
+  geminiApiKey          String?
+  geminiAccountName    String?
+  geminiAccountEmail   String?
+  geminiProjectId      String?
+  geminiEnabled        Boolean   @default(false)
+  geminiLastTested     DateTime?
+  geminiTestStatus     String?
 
-  deepseekApiKey     String?
-  deepseekEnabled    Boolean   @default(false)
-  deepseekLastTested DateTime?
-  deepseekTestStatus String?
+  deepseekApiKey          String?
+  deepseekAccountName    String?
+  deepseekAccountEmail   String?
+  deepseekEnabled        Boolean   @default(false)
+  deepseekLastTested     DateTime?
+  deepseekTestStatus     String?
 
-  anthropicApiKey     String?
-  anthropicEnabled    Boolean   @default(false)
-  anthropicLastTested DateTime?
-  anthropicTestStatus String?
+  anthropicApiKey          String?
+  anthropicAccountName    String?
+  anthropicAccountEmail   String?
+  anthropicOrganizationId String?
+  anthropicEnabled        Boolean   @default(false)
+  anthropicLastTested     DateTime?
+  anthropicTestStatus     String?
 
   maxTokensPerResponse   Int     @default(2000)
   autoSuggestionsEnabled Boolean @default(false)

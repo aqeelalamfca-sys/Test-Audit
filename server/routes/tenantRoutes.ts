@@ -390,27 +390,23 @@ router.get("/ai-settings", requirePlatformOrFirmAdmin, async (req: Authenticated
 
     const settings = await prisma.aISettings.findUnique({ where: { firmId } });
 
+    const defaultProviderFields = {
+      openaiEnabled: true, openaiConfigured: false, openaiLastTested: null, openaiTestStatus: null,
+      openaiAccountName: null, openaiAccountEmail: null, openaiOrganizationId: null,
+      geminiEnabled: false, geminiConfigured: false, geminiLastTested: null, geminiTestStatus: null,
+      geminiAccountName: null, geminiAccountEmail: null, geminiProjectId: null,
+      deepseekEnabled: false, deepseekConfigured: false, deepseekLastTested: null, deepseekTestStatus: null,
+      deepseekAccountName: null, deepseekAccountEmail: null,
+      anthropicEnabled: false, anthropicConfigured: false, anthropicLastTested: null, anthropicTestStatus: null,
+      anthropicAccountName: null, anthropicAccountEmail: null, anthropicOrganizationId: null,
+    };
+
     if (!settings) {
       return res.json({
         aiEnabled: false,
         preferredProvider: "openai",
         providerPriority: ["openai", "gemini", "deepseek", "anthropic"],
-        openaiEnabled: true,
-        openaiConfigured: false,
-        openaiLastTested: null,
-        openaiTestStatus: null,
-        geminiEnabled: false,
-        geminiConfigured: false,
-        geminiLastTested: null,
-        geminiTestStatus: null,
-        deepseekEnabled: false,
-        deepseekConfigured: false,
-        deepseekLastTested: null,
-        deepseekTestStatus: null,
-        anthropicEnabled: false,
-        anthropicConfigured: false,
-        anthropicLastTested: null,
-        anthropicTestStatus: null,
+        ...defaultProviderFields,
         maxTokensPerResponse: 2000,
         autoSuggestionsEnabled: false,
         manualTriggerOnly: true,
@@ -427,18 +423,29 @@ router.get("/ai-settings", requirePlatformOrFirmAdmin, async (req: Authenticated
       openaiConfigured: !!settings.openaiApiKey,
       openaiLastTested: settings.openaiLastTested,
       openaiTestStatus: settings.openaiTestStatus,
+      openaiAccountName: settings.openaiAccountName,
+      openaiAccountEmail: settings.openaiAccountEmail,
+      openaiOrganizationId: settings.openaiOrganizationId,
       geminiEnabled: settings.geminiEnabled,
       geminiConfigured: !!settings.geminiApiKey,
       geminiLastTested: settings.geminiLastTested,
       geminiTestStatus: settings.geminiTestStatus,
+      geminiAccountName: settings.geminiAccountName,
+      geminiAccountEmail: settings.geminiAccountEmail,
+      geminiProjectId: settings.geminiProjectId,
       deepseekEnabled: settings.deepseekEnabled,
       deepseekConfigured: !!settings.deepseekApiKey,
       deepseekLastTested: settings.deepseekLastTested,
       deepseekTestStatus: settings.deepseekTestStatus,
+      deepseekAccountName: settings.deepseekAccountName,
+      deepseekAccountEmail: settings.deepseekAccountEmail,
       anthropicEnabled: settings.anthropicEnabled,
       anthropicConfigured: !!settings.anthropicApiKey,
       anthropicLastTested: settings.anthropicLastTested,
       anthropicTestStatus: settings.anthropicTestStatus,
+      anthropicAccountName: settings.anthropicAccountName,
+      anthropicAccountEmail: settings.anthropicAccountEmail,
+      anthropicOrganizationId: settings.anthropicOrganizationId,
       maxTokensPerResponse: settings.maxTokensPerResponse,
       autoSuggestionsEnabled: settings.autoSuggestionsEnabled,
       manualTriggerOnly: settings.manualTriggerOnly,
@@ -494,19 +501,40 @@ router.post("/ai-settings/provider-key", requirePlatformOrFirmAdmin, async (req:
 
     const schema = z.object({
       provider: z.enum(["openai", "gemini", "deepseek", "anthropic"]),
-      apiKey: z.string().min(5),
+      apiKey: z.string().min(5).optional(),
       enabled: z.boolean().optional(),
+      accountName: z.string().nullable().optional(),
+      accountEmail: z.string().email().or(z.literal("")).nullable().optional(),
+      organizationId: z.string().nullable().optional(),
     });
 
     const data = schema.parse(req.body);
     const { ip, userAgent } = extractRequestMeta(req);
 
-    const encrypted = encryptString(data.apiKey);
+    const existing = await prisma.aISettings.findUnique({ where: { firmId } });
+    if (!data.apiKey && !existing) {
+      return res.status(400).json({ error: "API key is required for first-time setup" });
+    }
 
     const updateData: any = {};
-    updateData[`${data.provider}ApiKey`] = encrypted;
+    if (data.apiKey) {
+      const encrypted = encryptString(data.apiKey);
+      updateData[`${data.provider}ApiKey`] = encrypted;
+    }
     if (data.enabled !== undefined) {
       updateData[`${data.provider}Enabled`] = data.enabled;
+    }
+    if (data.accountName !== undefined) {
+      updateData[`${data.provider}AccountName`] = data.accountName || null;
+    }
+    if (data.accountEmail !== undefined) {
+      updateData[`${data.provider}AccountEmail`] = data.accountEmail || null;
+    }
+    if (data.organizationId !== undefined) {
+      const orgField = data.provider === "gemini" ? `${data.provider}ProjectId` : `${data.provider}OrganizationId`;
+      if (["openai", "anthropic", "gemini"].includes(data.provider)) {
+        updateData[orgField] = data.organizationId || null;
+      }
     }
 
     const settings = await prisma.aISettings.upsert({
@@ -551,6 +579,14 @@ router.delete("/ai-settings/provider-key/:provider", requirePlatformOrFirmAdmin,
     updateData[`${provider}Enabled`] = false;
     updateData[`${provider}TestStatus`] = null;
     updateData[`${provider}LastTested`] = null;
+    updateData[`${provider}AccountName`] = null;
+    updateData[`${provider}AccountEmail`] = null;
+    if (provider === "openai" || provider === "anthropic") {
+      updateData[`${provider}OrganizationId`] = null;
+    }
+    if (provider === "gemini") {
+      updateData[`${provider}ProjectId`] = null;
+    }
 
     await prisma.aISettings.update({
       where: { firmId },

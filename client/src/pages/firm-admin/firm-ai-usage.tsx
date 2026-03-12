@@ -49,6 +49,13 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
+interface AIProviderExtraField {
+  key: string;
+  label: string;
+  placeholder: string;
+  settingsKey: string;
+}
+
 interface AIProviderInfo {
   id: string;
   name: string;
@@ -58,6 +65,7 @@ interface AIProviderInfo {
   docsUrl: string;
   color: string;
   icon: string;
+  extraFields: AIProviderExtraField[];
 }
 
 const PROVIDERS: AIProviderInfo[] = [
@@ -70,6 +78,11 @@ const PROVIDERS: AIProviderInfo[] = [
     docsUrl: "https://platform.openai.com/api-keys",
     color: "bg-emerald-500",
     icon: "O",
+    extraFields: [
+      { key: "accountName", label: "Account Name", placeholder: "e.g. Firm AI Account", settingsKey: "openaiAccountName" },
+      { key: "accountEmail", label: "Account Email", placeholder: "e.g. ai-admin@yourfirm.com", settingsKey: "openaiAccountEmail" },
+      { key: "organizationId", label: "Organization ID", placeholder: "e.g. org-xxxxxxxx", settingsKey: "openaiOrganizationId" },
+    ],
   },
   {
     id: "anthropic",
@@ -80,6 +93,11 @@ const PROVIDERS: AIProviderInfo[] = [
     docsUrl: "https://console.anthropic.com/settings/keys",
     color: "bg-orange-500",
     icon: "A",
+    extraFields: [
+      { key: "accountName", label: "Account Name", placeholder: "e.g. Firm AI Account", settingsKey: "anthropicAccountName" },
+      { key: "accountEmail", label: "Account Email", placeholder: "e.g. ai-admin@yourfirm.com", settingsKey: "anthropicAccountEmail" },
+      { key: "organizationId", label: "Organization ID", placeholder: "e.g. org-xxxxxxxx", settingsKey: "anthropicOrganizationId" },
+    ],
   },
   {
     id: "gemini",
@@ -90,6 +108,11 @@ const PROVIDERS: AIProviderInfo[] = [
     docsUrl: "https://aistudio.google.com/apikey",
     color: "bg-blue-500",
     icon: "G",
+    extraFields: [
+      { key: "accountName", label: "Account Name", placeholder: "e.g. Firm Google Account", settingsKey: "geminiAccountName" },
+      { key: "accountEmail", label: "Account Email", placeholder: "e.g. ai-admin@yourfirm.com", settingsKey: "geminiAccountEmail" },
+      { key: "organizationId", label: "Project ID", placeholder: "e.g. my-audit-project-123", settingsKey: "geminiProjectId" },
+    ],
   },
   {
     id: "deepseek",
@@ -100,6 +123,10 @@ const PROVIDERS: AIProviderInfo[] = [
     docsUrl: "https://platform.deepseek.com/api_keys",
     color: "bg-purple-500",
     icon: "D",
+    extraFields: [
+      { key: "accountName", label: "Account Name", placeholder: "e.g. Firm AI Account", settingsKey: "deepseekAccountName" },
+      { key: "accountEmail", label: "Account Email", placeholder: "e.g. ai-admin@yourfirm.com", settingsKey: "deepseekAccountEmail" },
+    ],
   },
 ];
 
@@ -185,12 +212,26 @@ function ProviderCard({
           </div>
         </div>
 
-        {configured && lastTested && (
-          <div className="text-[10px] text-muted-foreground flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            Last tested: {new Date(lastTested).toLocaleString()}
-            {testStatus === "success" && <span className="text-green-600 ml-1">- Passed</span>}
-            {testStatus === "failed" && <span className="text-red-500 ml-1">- Failed</span>}
+        {configured && (
+          <div className="space-y-1 text-[10px] text-muted-foreground bg-muted/40 rounded-md p-2">
+            {provider.extraFields.map((field) => {
+              const val = settings?.[field.settingsKey];
+              if (!val) return null;
+              return (
+                <div key={field.key} className="flex items-center gap-1.5">
+                  <span className="font-medium text-foreground/70">{field.label}:</span>
+                  <span className="truncate">{val}</span>
+                </div>
+              );
+            })}
+            {lastTested && (
+              <div className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                Last tested: {new Date(lastTested).toLocaleString()}
+                {testStatus === "success" && <span className="text-green-600 ml-1">- Passed</span>}
+                {testStatus === "failed" && <span className="text-red-500 ml-1">- Failed</span>}
+              </div>
+            )}
           </div>
         )}
 
@@ -209,7 +250,7 @@ function ProviderCard({
             data-testid={`button-set-key-${provider.id}`}
           >
             <Key className="w-3 h-3 mr-1" />
-            {configured ? "Update Key" : "Add API Key"}
+            {configured ? "Update" : "Configure"}
           </Button>
           {configured && (
             <>
@@ -245,18 +286,40 @@ function ProvidersTab({ settings, refetch }: { settings: any; refetch: () => voi
   const { toast } = useToast();
   const [keyDialog, setKeyDialog] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState("");
+  const [extraFieldValues, setExtraFieldValues] = useState<Record<string, string>>({});
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
   const [removeDialog, setRemoveDialog] = useState<string | null>(null);
 
+  const openKeyDialog = (providerId: string) => {
+    const provider = PROVIDERS.find(p => p.id === providerId);
+    if (provider) {
+      const vals: Record<string, string> = {};
+      provider.extraFields.forEach(f => {
+        vals[f.key] = settings?.[f.settingsKey] || "";
+      });
+      setExtraFieldValues(vals);
+    }
+    setApiKey("");
+    setKeyDialog(providerId);
+  };
+
   const setKeyMutation = useMutation({
-    mutationFn: async ({ provider, apiKey }: { provider: string; apiKey: string }) => {
-      const res = await apiRequest("POST", "/api/tenant/ai-settings/provider-key", { provider, apiKey, enabled: true });
+    mutationFn: async ({ provider, apiKey, accountName, accountEmail, organizationId }: {
+      provider: string; apiKey?: string; accountName?: string | null; accountEmail?: string | null; organizationId?: string | null;
+    }) => {
+      const payload: any = { provider, enabled: true };
+      if (apiKey) payload.apiKey = apiKey;
+      if (accountName !== undefined) payload.accountName = accountName;
+      if (accountEmail !== undefined) payload.accountEmail = accountEmail;
+      if (organizationId !== undefined) payload.organizationId = organizationId;
+      const res = await apiRequest("POST", "/api/tenant/ai-settings/provider-key", payload);
       return res.json();
     },
     onSuccess: (_data, variables) => {
-      toast({ title: "API Key Saved", description: `${variables.provider} API key has been encrypted and saved.` });
+      toast({ title: "Settings Saved", description: `${variables.provider} configuration has been saved.` });
       setKeyDialog(null);
       setApiKey("");
+      setExtraFieldValues({});
       queryClient.invalidateQueries({ queryKey: ["/api/tenant/ai-settings"] });
     },
     onError: (err: any) => {
@@ -353,7 +416,7 @@ function ProvidersTab({ settings, refetch }: { settings: any; refetch: () => voi
             key={provider.id}
             provider={provider}
             settings={settings}
-            onSetKey={(p) => { setKeyDialog(p); setApiKey(""); }}
+            onSetKey={(p) => openKeyDialog(p)}
             onToggle={(p, enabled) => toggleMutation.mutate({ provider: p, enabled })}
             onTest={(p) => testMutation.mutate(p)}
             onRemoveKey={(p) => setRemoveDialog(p)}
@@ -363,7 +426,7 @@ function ProvidersTab({ settings, refetch }: { settings: any; refetch: () => voi
       </div>
 
       <Dialog open={!!keyDialog} onOpenChange={(open) => !open && setKeyDialog(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {currentKeyProvider && (
@@ -371,15 +434,27 @@ function ProvidersTab({ settings, refetch }: { settings: any; refetch: () => voi
                   {currentKeyProvider.icon}
                 </div>
               )}
-              {settings?.[`${keyDialog}Configured`] ? "Update" : "Add"} {currentKeyProvider?.name} API Key
+              {settings?.[`${keyDialog}Configured`] ? "Update" : "Configure"} {currentKeyProvider?.name}
             </DialogTitle>
             <DialogDescription>
-              Your API key is encrypted at rest using AES-256-GCM. It will never be displayed after saving.
+              Enter your account details and API key. The key is encrypted at rest using AES-256-GCM.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {currentKeyProvider?.extraFields.map((field) => (
+              <div key={field.key}>
+                <Label className="text-sm">{field.label}</Label>
+                <Input
+                  type={field.key === "accountEmail" ? "email" : "text"}
+                  value={extraFieldValues[field.key] || ""}
+                  onChange={(e) => setExtraFieldValues({ ...extraFieldValues, [field.key]: e.target.value })}
+                  placeholder={field.placeholder}
+                />
+              </div>
+            ))}
+            <Separator />
             <div>
-              <Label>API Key</Label>
+              <Label className="text-sm">API Key <span className="text-red-500">*</span></Label>
               <Input
                 type="password"
                 value={apiKey}
@@ -387,6 +462,9 @@ function ProvidersTab({ settings, refetch }: { settings: any; refetch: () => voi
                 placeholder={currentKeyProvider ? `${currentKeyProvider.keyPrefix}...` : "Enter API key"}
                 data-testid="input-api-key"
               />
+              {settings?.[`${keyDialog}Configured`] && !apiKey && (
+                <p className="text-[10px] text-amber-600 mt-1">Leave blank to keep existing key (enter new key to replace)</p>
+              )}
             </div>
             {currentKeyProvider && (
               <p className="text-xs text-muted-foreground">
@@ -400,12 +478,22 @@ function ProvidersTab({ settings, refetch }: { settings: any; refetch: () => voi
           <DialogFooter>
             <Button variant="outline" onClick={() => setKeyDialog(null)}>Cancel</Button>
             <Button
-              onClick={() => keyDialog && setKeyMutation.mutate({ provider: keyDialog, apiKey })}
-              disabled={!apiKey || apiKey.length < 5 || setKeyMutation.isPending}
+              onClick={() => keyDialog && setKeyMutation.mutate({
+                provider: keyDialog,
+                apiKey: apiKey || undefined,
+                accountName: extraFieldValues.accountName ?? null,
+                accountEmail: extraFieldValues.accountEmail ?? null,
+                organizationId: extraFieldValues.organizationId ?? null,
+              })}
+              disabled={
+                (!settings?.[`${keyDialog}Configured`] && (!apiKey || apiKey.length < 5))
+                || (apiKey.length > 0 && apiKey.length < 5)
+                || setKeyMutation.isPending
+              }
               data-testid="button-save-api-key"
             >
               {setKeyMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Shield className="w-4 h-4 mr-2" />}
-              Save & Encrypt
+              {apiKey ? "Save & Encrypt" : "Save Details"}
             </Button>
           </DialogFooter>
         </DialogContent>
