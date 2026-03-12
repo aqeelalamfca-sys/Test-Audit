@@ -336,3 +336,15 @@ The Execution module's FS Heads wizard has been upgraded into a fully linked, IS
 - **ImportBatch** uses `processedRows` and `errorCount` (not `validRows`/`errorRows`).
 - **TBEntry** has `movementDebit`, `movementCredit`, `closingDebit`, `closingCredit` — not simple `debit`/`credit`.
 - `fsAreaToCategory()` helper maps FSArea enum values to high-level categories (ASSETS, LIABILITIES, EQUITY, INCOME, EXPENSES) for planning dashboard analytics.
+
+## Post-Merge Setup
+
+Script: `scripts/post-merge.sh` (configured in `.replit` [postMerge] section, timeout 300s)
+Runs automatically after task agent merges: `npm install`, `prisma db push --skip-generate` (no `--accept-data-loss`), `prisma generate` (with 120s timeout, non-fatal on timeout).
+
+## Data Intake Module (Task Merge Notes)
+
+- AP reconciliation sign: `drcr === 'CR' ? -balance : balance` (CR negative, DR positive)
+- Bank balance seed stores `Math.abs(bookBalance)` with separate `drcr` flag
+- `syncImportDataToCore` called after import POST `/post` to sync TB/GL data
+- ConfirmationPopulation auto-created for DEBTORS/CREDITORS/BANK during seed and import posting
