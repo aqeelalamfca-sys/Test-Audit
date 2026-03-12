@@ -91,7 +91,7 @@ export async function getDataIntakeStatus(engagementId: string): Promise<DataInt
       where: { engagementId },
       orderBy: { createdAt: "desc" },
       take: 1,
-      select: { id: true, createdAt: true, status: true, totalRows: true, validRows: true, errorRows: true },
+      select: { id: true, createdAt: true, status: true, totalRows: true, processedRows: true, errorCount: true },
     }).catch(() => []),
     prisma.tBBatch.findFirst({
       where: { engagementId },
