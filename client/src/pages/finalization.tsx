@@ -36,6 +36,7 @@ import { FSSoCE } from "@/components/planning/fs-soce";
 import { FSNotes } from "@/components/planning/fs-notes";
 import { NotesDisclosurePanel } from "@/components/finalization/notes-disclosure-panel";
 import { FinalizationControlBoard } from "@/components/finalization/finalization-control-board";
+import { AIOpinionEngine } from "@/components/finalization/ai-opinion-engine";
 import type { DraftFSData, CoAAccountData, FSPriorYear, TrialBalanceData } from "@/components/planning/fs-types";
 
 interface Attachment {
@@ -584,6 +585,7 @@ export default function Finalization() {
     { id: "checklist", label: "Completion Checklist" },
     { id: "events", label: "Subsequent Events" },
     { id: "going-concern", label: "Going Concern" },
+    { id: "ai-opinion-engine", label: "AI Opinion Engine" },
     { id: "reports", label: "Reports" },
     { id: "notes", label: "Notes & Disclosures" },
     { id: "written-representations", label: "Written Representations (ISA 580)" },
@@ -2162,6 +2164,10 @@ export default function Finalization() {
               <Separator />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="ai-opinion-engine" className="space-y-4">
+          <AIOpinionEngine engagementId={engagementId!} />
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-4">

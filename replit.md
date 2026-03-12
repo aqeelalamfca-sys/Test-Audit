@@ -103,6 +103,17 @@ Enhanced engagement creation/edit dialog (`client/src/components/create-engageme
 - No. of Employees, Company Category dropdown (Pakistani categories)
 - DB columns: `authorizedCapital`, `paidUpCapital`, `companyCategory` on Engagement model
 
+## AI Opinion Engine (Finalization)
+
+The AI Opinion Engine is a sub-tab in the Finalization phase between "Going Concern" and "Reports" tabs.
+- **Database**: `OpinionEngine`, `OpinionFinding`, `OpinionAiRun` models with enums (`OpinionEngineStatus`, `OpinionCategory`, `FindingRiskLevel`, `ReviewerDecision`, `DataReliability`)
+- **Backend**: `server/opinionEngineRoutes.ts` — registered at `/api/opinion-engine`
+- **Frontend**: `client/src/components/finalization/ai-opinion-engine.tsx` — integrated via `finalization.tsx`
+- **5 Sub-tabs**: Dashboard (overall score + AI recommendation + partner decision), Data Sources (6 ISA-mapped data feeds), Findings (AI-generated with reviewer workflow), Scores (section breakdown), Partner (sign-off + lock)
+- **Analysis Engine**: Scans misstatements (ISA 450), going concern (ISA 570), significant risks (ISA 315/330), control deficiencies (ISA 265), subsequent events (ISA 560) — generates findings, scores, and opinion recommendation
+- **Security**: Lock immutability enforced, finding ownership validated via engine ID, partner-sign/lock restricted to PARTNER role via `requireMinRole`, idempotent analysis runs (deletes previous findings in transaction)
+- **Advisory Only**: Mandatory banner stating AI is advisory — final opinion requires partner professional judgment
+
 ## Audit Log PDF Export
 
 The Audit Logs page (`/firm-admin/audit-logs`) has an "Export PDF" button that:

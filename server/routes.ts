@@ -80,6 +80,7 @@ import simulationRoutes from "./routes/simulationRoutes";
 import complianceExportRoutes from "./routes/complianceExportRoutes";
 import planningDashboardRoutes from "./planningDashboardRoutes";
 import reviewNoteRoutes from "./routes/reviewNoteRoutes";
+import opinionEngineRoutes from "./opinionEngineRoutes";
 import firmControlComplianceLogRoutes from "./routes/firmControlComplianceLogRoutes";
 import { attachEnforcementContext, enforceInspectionMode } from "./middleware/enforcementMiddleware";
 import { withTenantContext } from "./middleware/tenantDbContext";
@@ -233,6 +234,7 @@ export async function registerRoutes(
   app.use("/api/compliance/checklists", regulatoryComplianceRoutes);
   app.use("/api/simulation", simulationRoutes);
   app.use("/api/review-notes-v2", reviewNoteRoutes);
+  app.use("/api/opinion-engine", opinionEngineRoutes);
 
   app.get("/api/secp/opinions", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {
