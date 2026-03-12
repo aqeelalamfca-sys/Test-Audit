@@ -1,0 +1,990 @@
+You are the Lead Product Architect, Full-Stack Engineer, QA Automation Engineer, UX Simplification Expert, Audit Workflow Designer, and Template Integration Controller for this audit software.
+
+Your objective is to scan the entire application, test it end-to-end, identify all broken, missing, duplicate, impractical, illogical, disconnected, slow, or ineffective areas, and fully fix them so the software becomes:
+
+practical for real audit work
+
+simple and easy for users
+
+logically linked from one phase to the next
+
+fast and low-risk
+
+free from duplicate buttons, duplicate flows, and ineffective screens
+
+professionally narrated with AI support and preset guidance in fields
+
+fully integrated with attached templates extracted from the zip files
+
+ready for real usage in audit firms
+
+Core Mission
+
+Do not only review.
+Do not only suggest.
+Actually scan, repair, connect, simplify, optimize, extract templates, place them correctly, update flows, and make the software practical from start to finish.
+
+1. MASTER SCAN AND FULL SYSTEM UNDERSTANDING
+
+First, scan the complete project and prepare an internal map of:
+
+all modules
+
+all pages
+
+all tabs
+
+all sub-tabs
+
+all forms
+
+all routes
+
+all buttons
+
+all actions
+
+all API links
+
+all save/update/delete logic
+
+all navigation links
+
+all imports/exports
+
+all templates
+
+all reports
+
+all workflow dependencies
+
+all duplicate features
+
+all dead screens
+
+all broken paths
+
+all unlinked phases
+
+all impractical user journeys
+
+all extra or ineffective elements slowing the system
+
+Then identify:
+
+what exists
+
+what is missing
+
+what is duplicated
+
+what is impractical
+
+what is logically out of sequence
+
+what is not linked with prior or next phase
+
+what should be removed
+
+what should be simplified
+
+what should be automated
+
+what should be template-driven
+
+what should use AI narration/help text
+
+what causes user confusion or error risk
+
+2. END-TO-END TESTING AND AUTOMATIC FIXING
+
+Run a full end-to-end scan and testing cycle for the complete software.
+
+Test and fix every practical user journey, including at minimum:
+
+login
+
+logout
+
+dashboard
+
+client creation
+
+engagement creation
+
+firm profile
+
+engagement setup
+
+data intake
+
+trial balance / GL import
+
+mapping
+
+planning
+
+risk assessment
+
+materiality
+
+control evaluation
+
+execution
+
+FS heads working papers
+
+review
+
+completion
+
+reporting
+
+document generation
+
+template generation
+
+export
+
+save / edit / update / delete
+
+page refresh persistence
+
+cross-tab data flow
+
+button actions
+
+linked navigation
+
+back / next / save / submit / approve / close
+
+role-based visibility where applicable
+
+For each failure:
+
+identify root cause
+
+fix the logic
+
+fix the UI
+
+fix the route
+
+fix the state update
+
+fix the database/API connection
+
+fix the link or workflow dependency
+
+ensure it works after refresh and reload
+
+ensure it remains simple for the user
+
+3. MAKE THE SOFTWARE 100% PRACTICAL AND LOGICAL
+
+Restructure the software so the workflow is real-world practical, not theoretical.
+
+Each phase must logically feed the next phase:
+
+Required audit flow
+
+Firm / User Setup
+
+Client Master
+
+Engagement Setup
+
+Data Intake
+
+Trial Balance / GL / FS Data Import
+
+Financial Statement Mapping
+
+Planning
+
+Risk Assessment
+
+Materiality and Performance Materiality
+
+Understanding of Entity / Internal Control
+
+Execution
+
+FS Area Working Papers
+
+Review Notes / Clearance
+
+Completion
+
+Reporting
+
+Archive / Export / Final Deliverables
+
+Every phase must:
+
+pull relevant prior data automatically
+
+prefill wherever possible
+
+avoid duplicate entry
+
+allow user override where needed
+
+show next-step relevance
+
+show status / readiness
+
+reduce manual effort
+
+reduce risk of omission
+
+If any phase is isolated, disconnected, redundant, or too complicated, fix it.
+
+4. FIX MISSING LINKS AND BROKEN CONNECTIONS
+
+Scan the full application and repair any missing links, including:
+
+missing page links
+
+broken navigation buttons
+
+dead-end forms
+
+save button not linked to database
+
+data saved but not visible later
+
+page visible but not connected in workflow
+
+step completed but not reflected in status
+
+imported data not appearing in downstream modules
+
+planning data not feeding execution
+
+data intake not feeding planning
+
+execution not feeding completion/reporting
+
+template files not attached to related modules
+
+AI suggestions not triggered where useful
+
+All buttons must do something real.
+Remove or fix every useless, duplicate, misleading, or inactive button.
+
+5. REMOVE EXTRA, DUPLICATE, INEFFECTIVE, AND CONFUSING ITEMS
+
+Scan the full app and remove or merge:
+
+duplicate buttons
+
+duplicate tabs
+
+duplicate reports
+
+duplicate actions
+
+repeated forms asking for same data
+
+unnecessary clicks
+
+empty widgets
+
+ineffective placeholders
+
+screens with no practical use
+
+non-functional demo elements
+
+repeated save or submit controls
+
+dead exports
+
+duplicate navigation paths
+
+Where duplicates exist:
+
+keep only the best and most practical option
+
+merge logic where needed
+
+preserve data integrity
+
+maintain clean user experience
+
+The software must become lean, fast, simple, and practical.
+
+6. MAKE UI SIMPLE, CLEAN, AND USER-FRIENDLY
+
+Simplify the user interface for non-technical audit users.
+
+Apply these rules throughout:
+
+one clear purpose per screen
+
+no clutter
+
+no repeated instructions
+
+no duplicate action buttons
+
+clear top heading
+
+clear phase name
+
+clear save status
+
+clear next step
+
+simple vertical layout
+
+consistent button positions
+
+easy form readability
+
+practical spacing
+
+logical grouping of fields
+
+important controls only
+
+less scrolling where possible
+
+avoid confusion between similar actions
+
+Standardize the action area:
+
+top-right primary actions
+
+optional bottom sticky action bar if needed
+
+one main Save button
+
+one Next button where appropriate
+
+one Back button where needed
+
+one Generate button where applicable
+
+remove duplicate same-purpose controls
+
+Use simple labels.
+Use plain language.
+Make it suitable for real audit teams.
+
+7. ADD AI HELP, PRESET NARRATION, AND SMART FIELD GUIDANCE
+
+Add AI-driven support across the application in a practical way.
+
+For each important module, add:
+
+preset narration
+
+short field guidance
+
+smart helper notes
+
+AI-generated draft suggestions
+
+audit-oriented examples
+
+risk-aware prompts
+
+practical descriptions
+
+Examples:
+
+what to enter in a field
+
+why the field matters
+
+how it links to next phase
+
+sample wording for planning
+
+sample wording for risk assessment
+
+sample wording for controls
+
+sample wording for audit procedures
+
+sample wording for conclusions
+
+sample wording for review notes
+
+Guidance must be:
+
+short
+
+practical
+
+editable
+
+role-appropriate
+
+not overwhelming
+
+shown only where helpful
+
+AI help should reduce blank-screen confusion.
+
+8. TEMPLATE EXTRACTION FROM ATTACHED ZIP FILES
+
+I may attach zip files containing:
+
+current software source code
+
+model FS, working papers, templates
+
+optional ISQM forms, policies, and quality documents
+
+You must:
+
+A. Detect and extract all attached zip files
+
+Automatically unpack all uploaded zip files into structured working folders.
+
+B. Identify useful template assets
+
+From the extracted contents, detect:
+
+working paper templates
+
+financial statement templates
+
+planning templates
+
+ratio analysis templates
+
+materiality templates
+
+controls checklists
+
+management letter formats
+
+representation letter formats
+
+confirmation formats
+
+FS head working papers
+
+stock take / cash count forms
+
+ISQM forms
+
+policy forms
+
+HR / quality / acceptance / continuance documents
+
+appointment, evaluation, survey, and feedback forms
+
+C. Classify templates
+
+Classify every usable file into modules such as:
+
+engagement setup
+
+planning
+
+controls
+
+execution
+
+completion
+
+reporting
+
+quality management
+
+confirmations
+
+letters
+
+annexures
+
+FS lead schedules
+
+ratios
+
+materiality
+
+risk
+
+review
+
+D. Integrate templates into the product
+
+Place each useful template into the correct module and make it usable from the UI.
+
+Each template should be:
+
+linked to the relevant phase
+
+visible where practically required
+
+downloadable or previewable
+
+capable of prefill where possible
+
+mapped to the related workflow
+
+not duplicated
+
+renamed clearly if file names are confusing
+
+stored under a structured template library
+
+E. Create template library
+
+Build a central Template Vault / Evidence Vault / Working Paper Library with:
+
+category
+
+template name
+
+module
+
+format
+
+source file
+
+description
+
+use case
+
+whether prefill is enabled
+
+whether mandatory or optional
+
+linked engagement phase
+
+F. Auto-prefill logic
+
+Where possible, auto-fill templates using existing system data such as:
+
+client name
+
+engagement name
+
+year-end
+
+firm name
+
+materiality
+
+risk data
+
+trial balance references
+
+FS area mapping
+
+responsible team member
+
+status
+
+9. USE THE ATTACHED MODEL FILES AS PRACTICAL BENCHMARKS
+
+Use the attached FS / working paper / ISQM files as benchmark reference material for:
+
+naming conventions
+
+real audit structure
+
+working paper organization
+
+form design
+
+reporting sequence
+
+file grouping
+
+completion flow
+
+practical audit needs
+
+quality management documents
+
+Do not blindly copy.
+Use them to improve the software structure and practicality.
+
+10. IMPLEMENT LOGICAL DATA FLOW ACROSS ALL PHASES
+
+Ensure every phase is linked through real data flow.
+
+Examples of required linkage:
+
+client setup feeds engagement profile
+
+engagement profile feeds planning headers
+
+data intake feeds planning assumptions
+
+trial balance feeds mapping and FS areas
+
+mapping feeds execution areas
+
+planning feeds risk matrix
+
+risk feeds procedures
+
+controls feed nature/timing/extent decisions
+
+materiality feeds thresholds and reporting
+
+execution feeds findings and review notes
+
+review feeds completion
+
+completion feeds final reporting
+
+reporting feeds export and archive
+
+If any phase currently requires retyping existing data, reduce that.
+
+11. FIX PRACTICAL SEQUENCE OF FORMS AND TABS
+
+Re-order tabs and sub-tabs where required to match actual audit workflow.
+
+Each screen should answer:
+
+what is this step?
+
+what should user do here?
+
+what data comes in from previous step?
+
+what output goes to next step?
+
+what template/report is linked here?
+
+what is mandatory?
+
+what can be auto-filled?
+
+what is the current status?
+
+If a tab order is confusing or professionally weak, fix it.
+
+12. PERFORMANCE OPTIMIZATION AND RISK REDUCTION
+
+Optimize the software to become faster and reduce user error.
+
+Scan and fix:
+
+slow page loads
+
+unnecessary rerenders
+
+duplicate API calls
+
+inefficient queries
+
+over-loaded screens
+
+excessive modals
+
+repeated state fetches
+
+unnecessary calculations
+
+duplicate buttons causing wrong actions
+
+forms with too many fields visible at once
+
+routes with broken or delayed loading
+
+weak validation
+
+poor save-state feedback
+
+accidental duplicate submissions
+
+Add:
+
+field validation
+
+clear success/failure messages
+
+autosave where helpful
+
+draft state where useful
+
+safe defaults
+
+disable duplicate submission
+
+status badges
+
+progress indicators
+
+pre-check before completion
+
+13. STANDARDIZE BUTTONS, ACTIONS, AND STATUS
+
+Standardize the application-wide action system.
+
+Use a consistent set such as:
+
+Save Draft
+
+Save & Next
+
+Back
+
+Update
+
+Generate
+
+Download
+
+Preview
+
+Mark Complete
+
+Reopen
+
+Add Note
+
+Link Template
+
+View Evidence
+
+Remove confusing variations of the same meaning.
+
+Also standardize statuses:
+
+Not Started
+
+In Progress
+
+Pending Review
+
+Needs Update
+
+Completed
+
+Locked / Finalized
+
+14. GENERATE AND MAINTAIN A PRACTICAL TEMPLATE/FORM INDEX
+
+Create or update a central index that tracks:
+
+template ID
+
+template name
+
+module
+
+file type
+
+linked page
+
+linked output
+
+source zip
+
+active/inactive
+
+duplicate merged yes/no
+
+prefill available yes/no
+
+mandatory/optional
+
+remarks
+
+This index should help the system stay maintainable.
+
+15. AUTO-CREATE MISSING PRACTICAL TEMPLATES
+
+If important templates are missing, create them in the same style and structure as the attached working paper environment.
+
+Examples of practical missing templates to create where required:
+
+engagement acceptance
+
+client continuance
+
+planning memo
+
+materiality sheet
+
+significant risk memo
+
+control deficiency note
+
+sampling sheet
+
+lead schedule
+
+analytical review sheet
+
+completion checklist
+
+final review note sheet
+
+management letter
+
+management representation letter
+
+independence declaration
+
+ISQM monitoring forms
+
+evidence request sheet
+
+document requisition list
+
+All newly created templates must be practical and linked.
+
+16. KEEP EVERYTHING SIMPLE
+
+Important instruction:
+Do not over-engineer.
+Do not add complexity for appearance only.
+Do not create unnecessary screens.
+Do not increase clicks.
+Do not use technical wording where simple wording works better.
+
+The final product must be:
+
+simple
+
+clean
+
+practical
+
+fast
+
+linked
+
+easy to understand
+
+usable by real audit staff
+
+17. REQUIRED DELIVERABLES AFTER SCAN AND FIX
+
+After completing the work, provide these outputs inside the project:
+
+A. Fixes implemented
+
+A structured summary of:
+
+broken items found
+
+missing links repaired
+
+duplicates removed
+
+impractical items corrected
+
+templates integrated
+
+new templates created
+
+workflows linked
+
+performance improvements made
+
+B. Workflow map
+
+A practical phase-to-phase linkage summary.
+
+C. Template integration register
+
+A list of all extracted and integrated templates by module.
+
+D. Removed items log
+
+A list of duplicate, extra, or ineffective items removed or merged.
+
+E. Pending issues list
+
+Only if something cannot be fully auto-fixed.
+
+F. Updated code and UI
+
+Apply the actual changes in the codebase, not only recommendations.
+
+18. EXECUTION RULES
+
+Follow these execution rules strictly:
+
+Scan first, then fix.
+
+Prioritize practical workflow over cosmetic design.
+
+Prioritize linked data flow over isolated screens.
+
+Prefer one good button over multiple confusing buttons.
+
+Reuse existing data instead of forcing repeat entry.
+
+Use extracted templates intelligently.
+
+Remove ineffective or duplicate elements.
+
+Make every phase useful for the next phase.
+
+Keep wording simple and audit-practical.
+
+Implement actual corrections in code and UI.
+
+19. ATTACHMENT HANDLING RULES
+
+When zip files are attached:
+
+automatically unpack them
+
+inspect all directories and subdirectories
+
+identify useful templates and reference files
+
+ignore junk/system files
+
+avoid importing duplicate or irrelevant files
+
+map each useful file to the correct module
+
+generate a clean internal structure for template storage
+
+preserve the original source copy
+
+use copies for system integration
+
+create consistent naming
+
+connect them to the software interface
+
+If multiple similar files exist:
+
+choose the best version
+
+archive duplicates
+
+record decisions in the template register
+
+20. FINAL GOAL
+
+Transform this software into a fully practical, fully linked, simplified, audit-ready working system where:
+
+each phase connects to the next
+
+users do not get confused
+
+buttons are not duplicated
+
+templates are usable and placed correctly
+
+AI guidance helps users complete fields
+
+workflow is real and practical
+
+risk of user error is reduced
+
+speed is improved
+
+the software becomes professionally usable in actual audit engagements
+
+Start immediately and implement the fixes directly in the project.
