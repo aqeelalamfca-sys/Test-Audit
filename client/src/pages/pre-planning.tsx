@@ -163,7 +163,10 @@ export default function PrePlanning() {
     materialityData,
     analyticsOpeningData,
     strategyTcwgData,
-    signoffData,
+    signoffData: {
+      ...signoffData,
+      gateChecks: (signoffData.gateChecks || []).map(({ icon, ...rest }: any) => rest),
+    },
   }), [activeStep, setupData, acceptanceData, ethicsData, teamData, letterData,
        entityUnderstandingData, riskAssessmentData, materialityData,
        analyticsOpeningData, strategyTcwgData, signoffData]);
