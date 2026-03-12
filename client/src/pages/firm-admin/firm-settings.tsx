@@ -643,6 +643,8 @@ const AUDIT_PHASES_CONFIG = [
   { key: "evidence", label: "Evidence", description: "Evidence vault and documentation" },
   { key: "finalization", label: "Finalization", description: "Going concern, subsequent events, and opinion" },
   { key: "deliverables", label: "Deliverables", description: "Audit reports and management letters" },
+  { key: "eqcr", label: "QR / EQCR", description: "Quality review and engagement quality control review" },
+  { key: "inspection", label: "Inspection", description: "ISQM-1 inspection readiness and quality monitoring" },
 ];
 
 function LockingPhasesTab({ settings, settingsLoading }: { settings: any; settingsLoading: boolean }) {
@@ -754,9 +756,11 @@ function LockingPhasesTab({ settings, settingsLoading }: { settings: any; settin
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription className="text-xs">
-                  <strong>Note:</strong> The "Data Intake" phase is always accessible regardless of locking status, 
-                  as auditors need to upload financial data early in the engagement. When phase locking is active, 
-                  all other phases require the previous phase to reach at least "In Progress" status before they unlock.
+                  <strong>Note:</strong> Phase locking applies to all 10 audit phases. The "Data Intake" phase is 
+                  always accessible regardless of locking status, as auditors need to upload financial data early 
+                  in the engagement. "QR / EQCR" and "Inspection" phases are only visible to authorized roles 
+                  (Firm Admin, Partner, Manager, EQCR). When phase locking is active, all other phases require the 
+                  previous phase to reach at least "In Progress" status before they unlock.
                 </AlertDescription>
               </Alert>
             </>
