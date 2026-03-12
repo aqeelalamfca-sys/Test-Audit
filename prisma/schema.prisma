@@ -6935,6 +6935,9 @@ model FirmSettings {
   tokenLimitMonthly    Int     @default(100000)
   customAiAllowed      Boolean @default(true)
 
+  // Phase Locking
+  phaseLockingEnabled Boolean @default(true)
+
   // Audit Trail Settings
   immutableAuditTrail Boolean @default(true)
   logFieldChanges     Boolean @default(true)

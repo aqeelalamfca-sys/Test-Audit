@@ -318,6 +318,15 @@ The Execution module's FS Heads wizard has been upgraded into a fully linked, IS
 - CI/CD: GitHub Actions (.github/workflows/deploy.yml) auto-deploys on push to main
 - GitHub repo: aqeelalamfca-sys/Test-Audit (branch: main)
 
+### Phase Locking
+
+- **Firm Settings → Locking Phases tab** (`/firm-admin/settings`, tab `locking-phases`): Firm Admin toggle for `phaseLockingEnabled` (default: `true`)
+- `FirmSettings.phaseLockingEnabled` (Prisma) controls whether workspace phase gating is enforced
+- **Public endpoint**: `GET /api/tenant/settings/public` — returns `{ phaseLockingEnabled }` for all authenticated users (not admin-gated)
+- **Admin endpoint**: `PATCH /api/tenant/settings` with `{ phaseLockingEnabled: boolean }` — admin-only write
+- `workspace-ribbon.tsx` reads the public endpoint; when `phaseLockingEnabled === false`, `isPhaseGated()` returns `false` for all phases
+- "Data Intake" (requisition) tab is always accessible regardless of locking status
+
 ### Known Schema Mapping Notes
 
 - **TrialBalanceLine** uses `fsArea` (enum: REVENUE, FIXED_ASSETS, RECEIVABLES, etc.) — NOT fsCategory. The `debits` and `credits` fields hold movements (NOT debitMovement/creditMovement). No `fsLineItem` field exists — use CoA mapping or accountName instead.

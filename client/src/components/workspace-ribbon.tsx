@@ -113,6 +113,16 @@ export function WorkspaceRibbon() {
   const engagementId = urlEngagementId || currentEngagementId || activeEngagement?.id || selectedPeriodId;
   const activePhase = currentPhaseRoute || urlPhase;
 
+  const { data: firmSettings } = useQuery<{ phaseLockingEnabled: boolean }>({
+    queryKey: ["/api/tenant/settings/public"],
+    queryFn: async () => {
+      const r = await fetchWithAuth("/api/tenant/settings/public");
+      if (!r.ok) return { phaseLockingEnabled: true };
+      return r.json();
+    },
+    staleTime: 300000,
+  });
+
   const { data: phaseSummaries } = useQuery<Record<string, { prepared: number; reviewed: number; approved: number; total: number }>>({
     queryKey: ["/api/section-signoffs", engagementId, "__all-phases"],
     queryFn: async () => {
@@ -160,6 +170,7 @@ export function WorkspaceRibbon() {
   };
 
   const isPhaseGated = (phaseKey: string): boolean => {
+    if (firmSettings?.phaseLockingEnabled === false) return false;
     const idx = PHASE_ORDER.indexOf(phaseKey);
     if (idx <= 0) return false;
     if (phaseKey === "requisition") return false;

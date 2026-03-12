@@ -269,6 +269,24 @@ router.post("/users/:id/set-status", requirePlatformOrFirmAdmin, async (req: Aut
   }
 });
 
+// ========== FIRM SETTINGS (PUBLIC READ) ==========
+
+router.get("/settings/public", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(403).json({ error: "No firm context" });
+
+    const settings = await prisma.firmSettings.findUnique({
+      where: { firmId },
+      select: { phaseLockingEnabled: true },
+    });
+    res.json(settings || { phaseLockingEnabled: true });
+  } catch (error) {
+    console.error("Get public settings error:", error);
+    res.status(500).json({ error: "Failed to get settings" });
+  }
+});
+
 // ========== FIRM SETTINGS ==========
 
 router.get("/settings", requirePlatformOrFirmAdmin, async (req: AuthenticatedRequest, res: Response) => {
@@ -296,6 +314,7 @@ router.patch("/settings", requirePlatformOrFirmAdmin, async (req: AuthenticatedR
     const allowedFields = [
       "aiEnabled", "aiRequiresHumanApproval", "aiOutputLabel",
       "enforceRBAC", "requireDigitalSignatures", "requirePartnerPIN",
+      "phaseLockingEnabled",
     ];
 
     const data: any = {};

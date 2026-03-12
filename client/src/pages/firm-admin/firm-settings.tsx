@@ -42,6 +42,7 @@ import {
   Upload,
   HardDrive,
   FileJson,
+  Lock,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
@@ -633,6 +634,139 @@ function SecurityTab() {
   );
 }
 
+const AUDIT_PHASES_CONFIG = [
+  { key: "pre-planning", label: "Pre-Planning", description: "Engagement acceptance, independence, and initial setup" },
+  { key: "requisition", label: "Data Intake", description: "Financial data upload, validation, and reconciliation" },
+  { key: "planning", label: "Planning", description: "Risk assessment, materiality, and audit strategy" },
+  { key: "execution", label: "Execution", description: "Substantive testing, controls testing, and fieldwork" },
+  { key: "fs-heads", label: "FS Heads", description: "Financial statement working papers" },
+  { key: "evidence", label: "Evidence", description: "Evidence vault and documentation" },
+  { key: "finalization", label: "Finalization", description: "Going concern, subsequent events, and opinion" },
+  { key: "deliverables", label: "Deliverables", description: "Audit reports and management letters" },
+];
+
+function LockingPhasesTab({ settings, settingsLoading }: { settings: any; settingsLoading: boolean }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [saving, setSaving] = useState(false);
+  const phaseLockingEnabled = settings?.phaseLockingEnabled ?? true;
+
+  const handleToggle = async (enabled: boolean) => {
+    setSaving(true);
+    try {
+      const res = await fetchWithAuth("/api/tenant/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phaseLockingEnabled: enabled }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to update");
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/tenant/settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tenant/settings/public"] });
+      toast({
+        title: enabled ? "Phase Locking Activated" : "Phase Locking Deactivated",
+        description: enabled
+          ? "Audit phases will now require sequential completion before the next phase unlocks."
+          : "All audit phases are now accessible without sequential completion requirements.",
+      });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to update phase locking", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Lock className="h-4 w-4" /> Phase Locking System
+          </CardTitle>
+          <CardDescription>
+            Control whether audit phases must be completed sequentially before the next phase becomes accessible
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {settingsLoading ? (
+            <div className="text-muted-foreground">Loading...</div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-base font-semibold">Enable Phase Locking</Label>
+                    <Badge
+                      className={phaseLockingEnabled
+                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                      }
+                    >
+                      {phaseLockingEnabled ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {phaseLockingEnabled
+                      ? "Phases are locked until the previous phase is completed. This ensures sequential audit workflow."
+                      : "All phases are unlocked and accessible regardless of previous phase completion status."}
+                  </p>
+                </div>
+                <Switch
+                  checked={phaseLockingEnabled}
+                  onCheckedChange={handleToggle}
+                  disabled={saving}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Audit Phase Sequence</h3>
+                <div className="space-y-2">
+                  {AUDIT_PHASES_CONFIG.map((phase, index) => (
+                    <div
+                      key={phase.key}
+                      className="flex items-center gap-3 p-3 rounded-lg border bg-card"
+                    >
+                      <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold flex-shrink-0">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{phase.label}</span>
+                          {phaseLockingEnabled && index > 0 && phase.key !== "requisition" && (
+                            <Lock className="h-3 w-3 text-muted-foreground" />
+                          )}
+                          {phase.key === "requisition" && (
+                            <Badge variant="outline" className="text-[10px] h-4 px-1.5">Always Open</Badge>
+                          )}
+                          {index === 0 && (
+                            <Badge variant="outline" className="text-[10px] h-4 px-1.5">Starting Phase</Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{phase.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  <strong>Note:</strong> The "Data Intake" phase is always accessible regardless of locking status, 
+                  as auditors need to upload financial data early in the engagement. When phase locking is active, 
+                  all other phases require the previous phase to reach at least "In Progress" status before they unlock.
+                </AlertDescription>
+              </Alert>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function FirmSettingsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -697,6 +831,10 @@ export default function FirmSettingsPage() {
             <Shield className="h-4 w-4 mr-1.5" />
             Security
           </TabsTrigger>
+          <TabsTrigger value="locking-phases" data-testid="tab-locking-phases">
+            <Lock className="h-4 w-4 mr-1.5" />
+            Locking Phases
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="firm">
@@ -725,6 +863,10 @@ export default function FirmSettingsPage() {
 
         <TabsContent value="security">
           <SecurityTab />
+        </TabsContent>
+
+        <TabsContent value="locking-phases">
+          <LockingPhasesTab settings={settings} settingsLoading={settingsLoading} />
         </TabsContent>
       </Tabs>
     </div>
