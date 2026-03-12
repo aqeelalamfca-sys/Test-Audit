@@ -185,30 +185,39 @@ function createLegacyRedirect(legacyPath: string, workspacePath: string) {
   };
 }
 
+const ROLE_HIERARCHY: Record<string, number> = {
+  "SUPER_ADMIN": 100,
+  "FIRM_ADMIN": 90,
+  "PARTNER": 80,
+  "MANAGER": 70,
+  "EQCR": 65,
+  "SENIOR": 60,
+  "TEAM_LEAD": 55,
+  "STAFF": 50,
+  "TRAINEE": 40,
+  "CLIENT": 10,
+};
+
+function hasMinRole(userRole: string, requiredRole: string): boolean {
+  const userLevel = ROLE_HIERARCHY[userRole.toUpperCase()] ?? 0;
+  const requiredLevel = ROLE_HIERARCHY[requiredRole.toUpperCase()] ?? 0;
+  return userLevel >= requiredLevel;
+}
+
 function RoleGuard({ requiredRole, children }: { requiredRole: string; children: React.ReactNode }) {
   const { user } = useAuth();
   const userRole = user?.role?.toUpperCase() || "";
   
-  if (requiredRole === "SUPER_ADMIN" && userRole !== "SUPER_ADMIN") {
+  if (!hasMinRole(userRole, requiredRole)) {
+    const roleLabel = requiredRole === "SUPER_ADMIN" ? "Super Admin" 
+      : requiredRole === "FIRM_ADMIN" ? "Firm Admin"
+      : requiredRole.charAt(0) + requiredRole.slice(1).toLowerCase().replace(/_/g, " ");
     return (
       <div className="flex items-center justify-center h-full p-8" data-testid="access-denied">
         <div className="text-center space-y-3">
           <div className="text-4xl font-bold text-muted-foreground">403</div>
           <h2 className="text-xl font-semibold">Access Denied</h2>
-          <p className="text-muted-foreground">This area requires Super Admin privileges.</p>
-          <a href="/" className="text-primary underline">Return to Dashboard</a>
-        </div>
-      </div>
-    );
-  }
-  
-  if (requiredRole === "FIRM_ADMIN" && userRole !== "FIRM_ADMIN" && userRole !== "SUPER_ADMIN") {
-    return (
-      <div className="flex items-center justify-center h-full p-8" data-testid="access-denied">
-        <div className="text-center space-y-3">
-          <div className="text-4xl font-bold text-muted-foreground">403</div>
-          <h2 className="text-xl font-semibold">Access Denied</h2>
-          <p className="text-muted-foreground">This area requires Firm Admin privileges.</p>
+          <p className="text-muted-foreground">This area requires {roleLabel} privileges or higher.</p>
           <a href="/" className="text-primary underline">Return to Dashboard</a>
         </div>
       </div>
