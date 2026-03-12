@@ -155,28 +155,28 @@ export async function syncTbToFsMapping(engagementId: string, userId?: string): 
     }
 
     const FS_HEAD_KEY_MAP: Record<string, string> = {
-      'CASH_EQUIVALENTS': 'CASH_AND_BANK_BALANCES',
-      'TRADE_RECEIVABLES': 'TRADE_RECEIVABLES',
-      'INVENTORIES': 'INVENTORIES',
-      'OTHER_CURRENT_ASSETS': 'OTHER_RECEIVABLES',
-      'INVESTMENTS': 'INTANGIBLE_ASSETS',
-      'PPE': 'PROPERTY_PLANT_EQUIPMENT',
-      'INTANGIBLE_ASSETS': 'INTANGIBLE_ASSETS',
-      'TRADE_PAYABLES': 'TRADE_AND_OTHER_PAYABLES',
-      'SHORT_TERM_BORROWINGS': 'SHORT_TERM_BORROWINGS',
-      'OTHER_CURRENT_LIABILITIES': 'TRADE_AND_OTHER_PAYABLES',
-      'LONG_TERM_BORROWINGS': 'LONG_TERM_BORROWINGS',
-      'DEFERRED_TAX': 'TAXATION',
-      'SHARE_CAPITAL': 'SHARE_CAPITAL',
-      'RESERVES_SURPLUS': 'RESERVES_SURPLUS',
+      'CASH_EQUIVALENTS': 'ASSETS_CURRENT',
+      'TRADE_RECEIVABLES': 'ASSETS_CURRENT',
+      'INVENTORIES': 'ASSETS_CURRENT',
+      'OTHER_CURRENT_ASSETS': 'ASSETS_CURRENT',
+      'PPE': 'ASSETS_NON_CURRENT',
+      'INTANGIBLE_ASSETS': 'ASSETS_NON_CURRENT',
+      'INVESTMENTS': 'ASSETS_NON_CURRENT',
+      'TRADE_PAYABLES': 'LIABILITIES_CURRENT',
+      'SHORT_TERM_BORROWINGS': 'LIABILITIES_CURRENT',
+      'OTHER_CURRENT_LIABILITIES': 'LIABILITIES_CURRENT',
+      'LONG_TERM_BORROWINGS': 'LIABILITIES_NON_CURRENT',
+      'DEFERRED_TAX': 'LIABILITIES_NON_CURRENT',
+      'SHARE_CAPITAL': 'EQUITY',
+      'RESERVES_SURPLUS': 'EQUITY',
       'REVENUE_OPERATIONS': 'REVENUE',
       'OTHER_INCOME': 'OTHER_INCOME',
       'COST_MATERIALS': 'COST_OF_SALES',
-      'EMPLOYEE_BENEFITS': 'EMPLOYEE_BENEFITS',
-      'DEPRECIATION': 'ADMIN_EXPENSES',
-      'OTHER_EXPENSES': 'SELLING_EXPENSES',
+      'EMPLOYEE_BENEFITS': 'OPERATING_EXPENSES',
+      'DEPRECIATION': 'OPERATING_EXPENSES',
+      'OTHER_EXPENSES': 'OPERATING_EXPENSES',
       'FINANCE_COSTS': 'FINANCE_COSTS',
-      'TAX_EXPENSE': 'TAXATION',
+      'TAX_EXPENSE': 'TAX',
     };
 
     let newAllocations = 0;
@@ -245,12 +245,14 @@ export async function syncTbToFsMapping(engagementId: string, userId?: string): 
       orderBy: { versionNumber: "desc" },
     });
 
+    const resolvedStatus = unmappedCount === 0 ? "APPROVED" : "DRAFT";
+
     if (!mappingVersion) {
       mappingVersion = await prisma.coAFSMappingVersion.create({
         data: {
           engagementId,
           versionNumber: 1,
-          status: "DRAFT",
+          status: resolvedStatus,
           totalAccounts,
           mappedCount,
           unmappedCount,
@@ -265,6 +267,7 @@ export async function syncTbToFsMapping(engagementId: string, userId?: string): 
           mappedCount,
           unmappedCount,
           allMappedOrExcluded: unmappedCount === 0,
+          status: unmappedCount === 0 ? "APPROVED" : mappingVersion.status,
         },
       });
     }
@@ -280,6 +283,15 @@ export async function syncTbToFsMapping(engagementId: string, userId?: string): 
           performedById: userId,
         },
       });
+    }
+
+    if (unmappedCount === 0) {
+      try {
+        const { generateDraftFSSnapshot } = await import("../services/reconIssuesEngine");
+        await generateDraftFSSnapshot(engagementId, userId || "system");
+      } catch (snapshotError) {
+        console.error("Auto-generate Draft FS snapshot failed (non-blocking):", snapshotError);
+      }
     }
 
     return { success: true };

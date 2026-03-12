@@ -1,7 +1,7 @@
 import { prisma } from "../db";
 import { autoFixDeterministic } from "../services/reconIssuesEngine";
 import { syncTbToFsMapping } from "../routes/reviewMappingRoutes";
-import { DEMO_TB_DATA, DEMO_GL_ENTRIES, DEMO_COA } from "../services/demoData";
+import { DEMO_TB_DATA, DEMO_GL_ENTRIES, DEMO_COA, DEMO_AR_PARTIES, DEMO_AP_PARTIES, DEMO_BANK_MASTER, DEMO_BANK_BALANCES } from "../services/demoData";
 
 const SEED_CLASSIFICATION: Record<string, { accountClass: string; accountSubclass: string; fsHeadKey: string }> = {
   "10001": { accountClass: "ASSET", accountSubclass: "CURRENT_ASSET", fsHeadKey: "CASH_EQUIVALENTS" },
@@ -38,9 +38,9 @@ const SEED_CLASSIFICATION: Record<string, { accountClass: string; accountSubclas
   "14005": { accountClass: "ASSET", accountSubclass: "FIXED_ASSET", fsHeadKey: "PPE" },
   "14006": { accountClass: "ASSET", accountSubclass: "FIXED_ASSET", fsHeadKey: "PPE" },
   "14007": { accountClass: "ASSET", accountSubclass: "FIXED_ASSET", fsHeadKey: "PPE" },
-  "15001": { accountClass: "ASSET", accountSubclass: "NON_CURRENT_ASSET", fsHeadKey: "OTHER_NON_CURRENT_ASSETS" },
-  "15002": { accountClass: "ASSET", accountSubclass: "NON_CURRENT_ASSET", fsHeadKey: "OTHER_NON_CURRENT_ASSETS" },
-  "15003": { accountClass: "ASSET", accountSubclass: "NON_CURRENT_ASSET", fsHeadKey: "OTHER_NON_CURRENT_ASSETS" },
+  "15001": { accountClass: "ASSET", accountSubclass: "NON_CURRENT_ASSET", fsHeadKey: "INVESTMENTS" },
+  "15002": { accountClass: "ASSET", accountSubclass: "NON_CURRENT_ASSET", fsHeadKey: "INVESTMENTS" },
+  "15003": { accountClass: "ASSET", accountSubclass: "NON_CURRENT_ASSET", fsHeadKey: "INVESTMENTS" },
   "20001": { accountClass: "LIABILITY", accountSubclass: "CURRENT_LIABILITY", fsHeadKey: "TRADE_PAYABLES" },
   "20002": { accountClass: "LIABILITY", accountSubclass: "CURRENT_LIABILITY", fsHeadKey: "TRADE_PAYABLES" },
   "20003": { accountClass: "LIABILITY", accountSubclass: "CURRENT_LIABILITY", fsHeadKey: "TRADE_PAYABLES" },
@@ -58,9 +58,9 @@ const SEED_CLASSIFICATION: Record<string, { accountClass: string; accountSubclas
   "22004": { accountClass: "LIABILITY", accountSubclass: "NON_CURRENT_LIABILITY", fsHeadKey: "LONG_TERM_BORROWINGS" },
   "30001": { accountClass: "EQUITY", accountSubclass: "SHARE_CAPITAL", fsHeadKey: "SHARE_CAPITAL" },
   "30002": { accountClass: "EQUITY", accountSubclass: "SHARE_CAPITAL", fsHeadKey: "SHARE_CAPITAL" },
-  "30003": { accountClass: "EQUITY", accountSubclass: "RESERVES", fsHeadKey: "RESERVES" },
-  "30004": { accountClass: "EQUITY", accountSubclass: "RESERVES", fsHeadKey: "RESERVES" },
-  "30005": { accountClass: "EQUITY", accountSubclass: "RESERVES", fsHeadKey: "RESERVES" },
+  "30003": { accountClass: "EQUITY", accountSubclass: "RESERVES", fsHeadKey: "RESERVES_SURPLUS" },
+  "30004": { accountClass: "EQUITY", accountSubclass: "RESERVES", fsHeadKey: "RESERVES_SURPLUS" },
+  "30005": { accountClass: "EQUITY", accountSubclass: "RESERVES", fsHeadKey: "RESERVES_SURPLUS" },
   "40001": { accountClass: "INCOME", accountSubclass: "OPERATING_REVENUE", fsHeadKey: "REVENUE_OPERATIONS" },
   "40002": { accountClass: "INCOME", accountSubclass: "OPERATING_REVENUE", fsHeadKey: "REVENUE_OPERATIONS" },
   "40003": { accountClass: "INCOME", accountSubclass: "OPERATING_REVENUE", fsHeadKey: "REVENUE_OPERATIONS" },
@@ -81,11 +81,11 @@ const SEED_CLASSIFICATION: Record<string, { accountClass: string; accountSubclas
   "51008": { accountClass: "EXPENSE", accountSubclass: "OPERATING_EXPENSE", fsHeadKey: "OTHER_EXPENSES" },
   "51009": { accountClass: "EXPENSE", accountSubclass: "OPERATING_EXPENSE", fsHeadKey: "OTHER_EXPENSES" },
   "51010": { accountClass: "EXPENSE", accountSubclass: "OPERATING_EXPENSE", fsHeadKey: "OTHER_EXPENSES" },
-  "52001": { accountClass: "EXPENSE", accountSubclass: "OPERATING_EXPENSE", fsHeadKey: "SELLING_EXPENSES" },
-  "52002": { accountClass: "EXPENSE", accountSubclass: "OPERATING_EXPENSE", fsHeadKey: "SELLING_EXPENSES" },
-  "52003": { accountClass: "EXPENSE", accountSubclass: "OPERATING_EXPENSE", fsHeadKey: "SELLING_EXPENSES" },
-  "52004": { accountClass: "EXPENSE", accountSubclass: "OPERATING_EXPENSE", fsHeadKey: "SELLING_EXPENSES" },
-  "52005": { accountClass: "EXPENSE", accountSubclass: "OPERATING_EXPENSE", fsHeadKey: "SELLING_EXPENSES" },
+  "52001": { accountClass: "EXPENSE", accountSubclass: "OPERATING_EXPENSE", fsHeadKey: "OTHER_EXPENSES" },
+  "52002": { accountClass: "EXPENSE", accountSubclass: "OPERATING_EXPENSE", fsHeadKey: "OTHER_EXPENSES" },
+  "52003": { accountClass: "EXPENSE", accountSubclass: "OPERATING_EXPENSE", fsHeadKey: "OTHER_EXPENSES" },
+  "52004": { accountClass: "EXPENSE", accountSubclass: "OPERATING_EXPENSE", fsHeadKey: "OTHER_EXPENSES" },
+  "52005": { accountClass: "EXPENSE", accountSubclass: "OPERATING_EXPENSE", fsHeadKey: "OTHER_EXPENSES" },
   "53001": { accountClass: "EXPENSE", accountSubclass: "OPERATING_EXPENSE", fsHeadKey: "DEPRECIATION" },
   "53002": { accountClass: "EXPENSE", accountSubclass: "OPERATING_EXPENSE", fsHeadKey: "DEPRECIATION" },
   "54001": { accountClass: "EXPENSE", accountSubclass: "OPERATING_EXPENSE", fsHeadKey: "OTHER_EXPENSES" },
@@ -4158,11 +4158,30 @@ export async function seedWorkflowDemoData() {
 async function reseedEngagementImportData(engagementId: string, engagementCode: string, staffId: string) {
   console.log(`  [${engagementCode}] Force-reseeding import data from DEMO_TB_DATA/DEMO_GL_ENTRIES...`);
 
+  await prisma.mappingSession.deleteMany({ where: { engagementId } }).catch(() => {});
+  await prisma.fSMappingSuggestion.deleteMany({ where: { engagementId } }).catch(() => {});
+  await prisma.gLEntry.deleteMany({ where: { engagementId } });
+  await prisma.gLBatch.deleteMany({ where: { engagementId } });
+  await prisma.tBEntry.deleteMany({ where: { engagementId } });
+  await prisma.tBBatch.deleteMany({ where: { engagementId } });
+  await prisma.coAAccount.deleteMany({ where: { engagementId } });
+  await prisma.importBankBalance.deleteMany({ where: { engagementId } });
+  await prisma.importBankAccount.deleteMany({ where: { engagementId } });
+  await prisma.importPartyBalance.deleteMany({ where: { engagementId } });
   await prisma.importJournalLine.deleteMany({
     where: { journalHeader: { engagementId } },
   });
   await prisma.importJournalHeader.deleteMany({ where: { engagementId } });
   await prisma.importAccountBalance.deleteMany({ where: { engagementId } });
+  await prisma.summaryRun.deleteMany({ where: { engagementId } });
+  await prisma.uploadVersion.deleteMany({ where: { engagementId } });
+  await prisma.mappingAllocation.deleteMany({ where: { engagementId } });
+  await prisma.coAFSMappingVersion.deleteMany({ where: { engagementId } });
+  await prisma.draftFSSnapshot.deleteMany({ where: { engagementId } });
+  await prisma.fSLine.deleteMany({ where: { engagementId } });
+  await prisma.fSHead.deleteMany({ where: { engagementId } });
+  await prisma.reconIssue.deleteMany({ where: { engagementId } });
+  await prisma.reconGateStatus.deleteMany({ where: { engagementId } }).catch(() => {});
   await prisma.importBatch.deleteMany({ where: { engagementId } });
 
   const importBatch = await prisma.importBatch.create({
@@ -4258,14 +4277,207 @@ async function reseedEngagementImportData(engagementId: string, engagementCode: 
 
   console.log(`  [${engagementCode}] Reseeded ImportBatch with ${obBalances.length} OB + ${cbBalances.length} CB balances and ${DEMO_GL_ENTRIES.length} GL lines (${journalGroups.size} vouchers)`);
 
-  await prisma.reconIssue.deleteMany({ where: { engagementId } });
-  console.log(`  [${engagementCode}] Cleared all recon issues for clean start`);
+  const engagement = await prisma.engagement.findUnique({
+    where: { id: engagementId },
+    select: { periodEnd: true },
+  });
+  const periodEnd = engagement?.periodEnd || new Date("2024-12-31");
+
+  await prisma.importPartyBalance.deleteMany({ where: { engagementId } });
+  const arPartyData = DEMO_AR_PARTIES.map(ar => {
+    const netBalance = ar.closingDebit - ar.closingCredit;
+    return {
+      batchId: importBatch.id,
+      engagementId,
+      partyCode: ar.customerId,
+      partyName: ar.customerName,
+      partyType: "CUSTOMER" as const,
+      controlAccountCode: ar.glCode,
+      balance: Math.abs(netBalance),
+      drcr: netBalance >= 0 ? "DR" as const : "CR" as const,
+      balanceType: "CB",
+      asOfDate: periodEnd,
+      partyEmail: ar.email,
+    };
+  });
+  const apPartyData = DEMO_AP_PARTIES.map(ap => {
+    const netBalance = ap.closingDebit - ap.closingCredit;
+    return {
+      batchId: importBatch.id,
+      engagementId,
+      partyCode: ap.vendorId,
+      partyName: ap.vendorName,
+      partyType: "VENDOR" as const,
+      controlAccountCode: ap.glCode,
+      balance: Math.abs(netBalance),
+      drcr: netBalance >= 0 ? "DR" as const : "CR" as const,
+      balanceType: "CB",
+      asOfDate: periodEnd,
+      partyEmail: ap.email,
+    };
+  });
+  await prisma.importPartyBalance.createMany({ data: [...arPartyData, ...apPartyData] });
+  console.log(`  [${engagementCode}] Seeded ${arPartyData.length} AR + ${apPartyData.length} AP party balances`);
+
+  await prisma.importBankBalance.deleteMany({ where: { engagementId } });
+  await prisma.importBankAccount.deleteMany({ where: { engagementId } });
+  for (const bank of DEMO_BANK_MASTER) {
+    await prisma.importBankAccount.create({
+      data: {
+        batchId: importBatch.id,
+        engagementId,
+        bankAccountCode: bank.bankAccountId,
+        bankName: bank.bankName,
+        accountNo: bank.accountNumber,
+        accountTitle: `${bank.bankName} - ${bank.accountType}`,
+        branchName: bank.branch,
+        currency: bank.currency,
+      },
+    });
+  }
+  for (const bal of DEMO_BANK_BALANCES) {
+    const master = DEMO_BANK_MASTER.find(m => m.bankAccountId === bal.bankAccountId);
+    if (master) {
+      await prisma.importBankBalance.create({
+        data: {
+          batchId: importBatch.id,
+          engagementId,
+          bankAccountCode: bal.bankAccountId,
+          glBankAccountCode: master.glCode,
+          closingBalance: Math.abs(bal.bookBalance),
+          drcr: bal.bookBalance >= 0 ? "DR" : "CR",
+          asOfDate: periodEnd,
+        },
+      });
+    }
+  }
+  console.log(`  [${engagementCode}] Seeded ${DEMO_BANK_MASTER.length} bank accounts + ${DEMO_BANK_BALANCES.length} bank balances`);
+
+  await prisma.confirmationPopulation.deleteMany({ where: { engagementId } });
+  const arByControl = new Map<string, { total: number; count: number; name: string }>();
+  for (const ar of arPartyData) {
+    const existing = arByControl.get(ar.controlAccountCode) || { total: 0, count: 0, name: '' };
+    const signed = ar.drcr === 'CR' ? -ar.balance : ar.balance;
+    existing.total += signed;
+    existing.count += 1;
+    existing.name = 'Trade Receivables';
+    arByControl.set(ar.controlAccountCode, existing);
+  }
+  const apByControl = new Map<string, { total: number; count: number; name: string }>();
+  for (const ap of apPartyData) {
+    const existing = apByControl.get(ap.controlAccountCode) || { total: 0, count: 0, name: '' };
+    const signed = ap.drcr === 'CR' ? -ap.balance : ap.balance;
+    existing.total += signed;
+    existing.count += 1;
+    existing.name = 'Trade Payables';
+    apByControl.set(ap.controlAccountCode, existing);
+  }
+  const confirmationData: any[] = [];
+  for (const [code, data] of arByControl) {
+    confirmationData.push({
+      engagementId,
+      confirmationType: "DEBTORS",
+      balancePerBooks: data.total,
+      controlAccountCode: code,
+      controlAccountName: data.name,
+      totalParties: data.count,
+      status: "DRAFT",
+    });
+  }
+  for (const [code, data] of apByControl) {
+    confirmationData.push({
+      engagementId,
+      confirmationType: "CREDITORS",
+      balancePerBooks: Math.abs(data.total),
+      controlAccountCode: code,
+      controlAccountName: data.name,
+      totalParties: data.count,
+      status: "DRAFT",
+    });
+  }
+  for (const bankBal of DEMO_BANK_BALANCES) {
+    const master = DEMO_BANK_MASTER.find(m => m.bankAccountId === bankBal.bankAccountId);
+    if (master) {
+      confirmationData.push({
+        engagementId,
+        confirmationType: "BANK",
+        balancePerBooks: Math.abs(bankBal.bookBalance),
+        controlAccountCode: master.glCode,
+        controlAccountName: `${master.bankName} - ${master.accountType}`,
+        totalParties: 1,
+        status: "DRAFT",
+      });
+    }
+  }
+  if (confirmationData.length > 0) {
+    await prisma.confirmationPopulation.createMany({ data: confirmationData });
+  }
+  console.log(`  [${engagementCode}] Auto-created ${confirmationData.length} confirmation populations (AR/AP/Bank)`);
+
+  await prisma.uploadVersion.deleteMany({ where: { engagementId } });
+  await prisma.uploadVersion.create({
+    data: {
+      engagementId,
+      version: 1,
+      fileName: "Meridian_Tech_FY2024_Workbook.xlsx",
+      status: "ACTIVE",
+      uploadedById: staffId,
+    },
+  });
+
+  const tbObDr = obBalances.reduce((s: number, b: any) => s + (b.debitAmount || 0), 0);
+  const tbObCr = obBalances.reduce((s: number, b: any) => s + (b.creditAmount || 0), 0);
+  const tbCbDr = cbBalances.reduce((s: number, b: any) => s + (b.debitAmount || 0), 0);
+  const tbCbCr = cbBalances.reduce((s: number, b: any) => s + (b.creditAmount || 0), 0);
+  const glDr = DEMO_GL_ENTRIES.reduce((s, e) => s + e.debit, 0);
+  const glCr = DEMO_GL_ENTRIES.reduce((s, e) => s + e.credit, 0);
+  const tbMvtDr = tbCbDr - tbObDr;
+  const tbMvtCr = tbCbCr - tbObCr;
+  const uploadVersion = await prisma.uploadVersion.findFirst({ where: { engagementId } });
+
+  await prisma.summaryRun.deleteMany({ where: { engagementId } });
+  await prisma.summaryRun.create({
+    data: {
+      engagementId,
+      uploadVersionId: uploadVersion!.id,
+      runNumber: 1,
+      tbRowCount: DEMO_TB_DATA.length,
+      glEntryCount: DEMO_GL_ENTRIES.length,
+      apRowCount: apPartyData.length,
+      arRowCount: arPartyData.length,
+      bankRowCount: DEMO_BANK_BALANCES.length,
+      partyCount: arPartyData.length + apPartyData.length,
+      tbOpeningDebitTotal: tbObDr,
+      tbOpeningCreditTotal: tbObCr,
+      tbClosingDebitTotal: tbCbDr,
+      tbClosingCreditTotal: tbCbCr,
+      tbMovementDebitTotal: tbMvtDr > 0 ? tbMvtDr : 0,
+      tbMovementCreditTotal: tbMvtCr > 0 ? tbMvtCr : 0,
+      glDebitTotal: glDr,
+      glCreditTotal: glCr,
+      tbArithmeticStatus: Math.abs(tbCbDr - tbCbCr) < 1 && Math.abs(tbObDr - tbObCr) < 1 ? "PASS" : "FAIL",
+      glDrCrStatus: Math.abs(glDr - glCr) < 1 ? "PASS" : "FAIL",
+      tbGlTieOutStatus: "PASS",
+      tbGlTotalsStatus: "PASS",
+      overallStatus: "PASS",
+      createdById: staffId,
+    },
+  });
+  console.log(`  [${engagementCode}] Created SummaryRun and UploadVersion`);
+
+  try {
+    const { syncImportDataToCore } = await import("../services/importSyncService");
+    const syncCoreResult = await syncImportDataToCore(engagementId, staffId);
+    console.log(`  [${engagementCode}] Core sync: TB=${syncCoreResult.counts.tbEntries} entries, GL=${syncCoreResult.counts.glEntries} entries, CoA=${syncCoreResult.counts.coaAccounts}`);
+  } catch (e) {
+    console.error(`  [${engagementCode}] Core sync failed:`, e);
+  }
 
   try {
     const fixResult = await autoFixDeterministic(engagementId, staffId);
     console.log(`  [${engagementCode}] Auto-fix completed: fixed=${fixResult.fixed}, needsReview=${fixResult.needsReview}`);
   } catch (e) {
-    console.log(`  [${engagementCode}] Auto-fix skipped (no issues to fix)`);
+    console.log(`  [${engagementCode}] Auto-fix skipped`);
   }
 
   try {
@@ -4292,14 +4504,16 @@ async function ensureImportData() {
 
   for (const eng of engagements) {
     try {
-      const batchCount = await prisma.importBatch.count({
-        where: { engagementId: eng.id },
-      });
-      if (batchCount > 0) {
+      const hasPartyData = await prisma.importPartyBalance.count({ where: { engagementId: eng.id } });
+      const hasBankData = await prisma.importBankBalance.count({ where: { engagementId: eng.id } });
+      const hasUploadVersion = await prisma.uploadVersion.count({ where: { engagementId: eng.id } });
+      const hasCorrectFsHeads = await prisma.fSHead.count({ where: { engagementId: eng.id, code: "ASSETS_CURRENT" } });
+      const passingSnapshot = await prisma.draftFSSnapshot.findFirst({ where: { engagementId: eng.id, bsFootingPass: true } });
+      if (hasPartyData > 0 && hasBankData > 0 && hasUploadVersion > 0 && hasCorrectFsHeads > 0 && passingSnapshot) {
         console.log(`  [${eng.engagementCode}] Import data already exists, skipping...`);
         continue;
       }
-      console.log(`  [${eng.engagementCode}] Seeding import data...`);
+      console.log(`  [${eng.engagementCode}] Seeding import data (party/bank/sync)...`);
       await reseedEngagementImportData(eng.id, eng.engagementCode, staff.id);
     } catch (err) {
       console.error(`  [${eng.engagementCode}] Failed to seed import data:`, err);

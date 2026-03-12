@@ -1600,6 +1600,85 @@ router.post("/:engagementId/batches/:batchId/post", async (req: Request, res: Re
       },
     });
 
+    const arParties = await prisma.importPartyBalance.findMany({
+      where: { engagementId, balanceType: 'CB', partyType: { in: ['CUSTOMER', 'AR'] } },
+    });
+    const apParties = await prisma.importPartyBalance.findMany({
+      where: { engagementId, balanceType: 'CB', partyType: { in: ['VENDOR', 'AP'] } },
+    });
+    const bankBalances = await prisma.importBankBalance.findMany({
+      where: { engagementId },
+    });
+
+    if (arParties.length > 0 || apParties.length > 0 || bankBalances.length > 0) {
+      await prisma.confirmationPopulation.deleteMany({ where: { engagementId } });
+      const confData: any[] = [];
+      const arByCtrl = new Map<string, { total: number; count: number }>();
+      for (const ar of arParties) {
+        const code = ar.controlAccountCode?.trim();
+        if (!code) continue;
+        const existing = arByCtrl.get(code) || { total: 0, count: 0 };
+        const bal = Number(ar.balance);
+        existing.total += ar.drcr === 'CR' ? -bal : bal;
+        existing.count += 1;
+        arByCtrl.set(code, existing);
+      }
+      for (const [code, d] of arByCtrl) {
+        confData.push({
+          engagementId,
+          confirmationType: 'DEBTORS',
+          balancePerBooks: d.total,
+          controlAccountCode: code,
+          controlAccountName: 'Trade Receivables',
+          totalParties: d.count,
+          status: 'DRAFT',
+        });
+      }
+      const apByCtrl = new Map<string, { total: number; count: number }>();
+      for (const ap of apParties) {
+        const code = ap.controlAccountCode?.trim();
+        if (!code) continue;
+        const existing = apByCtrl.get(code) || { total: 0, count: 0 };
+        const bal = Number(ap.balance);
+        existing.total += ap.drcr === 'CR' ? -bal : bal;
+        existing.count += 1;
+        apByCtrl.set(code, existing);
+      }
+      for (const [code, d] of apByCtrl) {
+        confData.push({
+          engagementId,
+          confirmationType: 'CREDITORS',
+          balancePerBooks: Math.abs(d.total),
+          controlAccountCode: code,
+          controlAccountName: 'Trade Payables',
+          totalParties: d.count,
+          status: 'DRAFT',
+        });
+      }
+      for (const bank of bankBalances) {
+        confData.push({
+          engagementId,
+          confirmationType: 'BANK',
+          balancePerBooks: Math.abs(Number(bank.closingBalance)),
+          controlAccountCode: bank.glBankAccountCode,
+          controlAccountName: bank.bankAccountCode,
+          totalParties: 1,
+          status: 'DRAFT',
+        });
+      }
+      if (confData.length > 0) {
+        await prisma.confirmationPopulation.createMany({ data: confData });
+      }
+    }
+
+    let syncResult = null;
+    try {
+      const { syncImportDataToCore } = await import("./services/importSyncService");
+      syncResult = await syncImportDataToCore(engagementId, userId);
+    } catch (syncErr) {
+      console.error("Warning: syncImportDataToCore failed after post:", syncErr);
+    }
+
     await prisma.importAuditLog.create({
       data: {
         batchId,
@@ -1608,6 +1687,7 @@ router.post("/:engagementId/batches/:batchId/post", async (req: Request, res: Re
         details: { 
           postedAt: new Date().toISOString(),
           postedCounts,
+          syncResult: syncResult ? { success: syncResult.success, counts: syncResult.counts } : null,
         },
       },
     });
@@ -1616,6 +1696,7 @@ router.post("/:engagementId/batches/:batchId/post", async (req: Request, res: Re
       status: "POSTED", 
       message: "Batch posted successfully",
       postedCounts,
+      syncResult: syncResult ? { success: syncResult.success, counts: syncResult.counts } : null,
     });
   } catch (error) {
     console.error("Error posting import batch:", error);

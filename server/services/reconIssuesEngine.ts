@@ -911,7 +911,7 @@ export async function generateDraftFSSnapshot(
       }
 
       const isCreditNormal = category === "Liabilities" || category === "Equity" || category === "Income";
-      const balance = isCreditNormal ? Math.abs(rawBalance) : rawBalance;
+      const balance = isCreditNormal ? -rawBalance : rawBalance;
       const allocatedAmount = balance * pct;
 
       if (categoryTotals[category] !== undefined) {
@@ -1012,21 +1012,18 @@ export async function generateDraftFSSnapshot(
     },
   });
 
-  if (bsFootingPass) {
-    await prisma.reconGateStatus
-      .update({
-        where: { engagementId },
-        data: { bsFooting: ValidationStatus.PASS },
-      })
-      .catch(err => console.error("Recon gate status update (BS footing PASS) failed:", err));
-  } else {
-    await prisma.reconGateStatus
-      .update({
-        where: { engagementId },
-        data: { bsFooting: ValidationStatus.FAIL },
-      })
-      .catch(err => console.error("Recon gate status update (BS footing FAIL) failed:", err));
-  }
+  const bsFootingStatus = bsFootingPass ? ValidationStatus.PASS : ValidationStatus.FAIL;
+  await prisma.reconGateStatus
+    .upsert({
+      where: { engagementId },
+      create: {
+        engagementId,
+        bsFooting: bsFootingStatus,
+        lastScanById: userId,
+      },
+      update: { bsFooting: bsFootingStatus },
+    })
+    .catch(err => console.error("Recon gate status upsert (BS footing) failed:", err));
 
   return snapshot;
 }

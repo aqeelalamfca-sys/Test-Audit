@@ -134,7 +134,7 @@ export async function reconcileTBvsGL(
     const code = tb.accountCode?.trim();
     if (!code) continue;
     const existing = tbByCode.get(code);
-    const balance = toNumber(tb.closingBalance);
+    const balance = toNumber(tb.movementNet);
     if (existing) {
       existing.balance += balance;
     } else {
@@ -375,7 +375,7 @@ export async function reconcileAPControl(
     const code = ap.controlAccountCode?.trim();
     if (!code) continue;
     const balance = toNumber(ap.balance);
-    const signedBalance = ap.drcr === 'DR' ? -balance : balance;
+    const signedBalance = ap.drcr === 'CR' ? -balance : balance;
     const existing = apByControlCode.get(code) || 0;
     apByControlCode.set(code, existing + signedBalance);
   }
@@ -602,7 +602,7 @@ export async function getReconciliationDrilldown(
         select: {
           id: true,
           accountName: true,
-          closingBalance: true,
+          movementNet: true,
         },
       });
 
@@ -620,7 +620,7 @@ export async function getReconciliationDrilldown(
       });
 
       for (const tb of tbEntries) {
-        const balance = toNumber(tb.closingBalance);
+        const balance = toNumber(tb.movementNet);
         sourceTotal += balance;
         sourceItems.push({
           id: tb.id,
@@ -697,7 +697,7 @@ export async function getReconciliationDrilldown(
 
       for (const ap of apBalances) {
         const balance = toNumber(ap.balance);
-        const signedBalance = ap.drcr === 'DR' ? -balance : balance;
+        const signedBalance = ap.drcr === 'CR' ? -balance : balance;
         sourceTotal += signedBalance;
         sourceItems.push({
           id: ap.id,
