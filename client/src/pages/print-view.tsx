@@ -441,7 +441,7 @@ export default function PrintView() {
       showSaveNext={true}
       showSaveClose={true}
     >
-    <div className="px-4 py-3 space-y-3">
+    <div className="page-container">
       <input
         type="file"
         ref={fileInputRef}

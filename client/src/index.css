@@ -437,23 +437,49 @@
     @apply border-border;
   }
 
-  body {
-    @apply font-sans antialiased bg-background text-foreground;
+  html {
     scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
   }
 
-  h1, h2, h3, h4 {
-    @apply tracking-tight;
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+  }
+
+  h1 {
+    @apply text-2xl font-semibold tracking-tight;
+    line-height: 1.3;
+  }
+
+  h2 {
+    @apply text-xl font-semibold tracking-tight;
+    line-height: 1.35;
+  }
+
+  h3 {
+    @apply text-lg font-medium tracking-tight;
+    line-height: 1.4;
+  }
+
+  h4 {
+    @apply text-base font-medium tracking-tight;
+    line-height: 1.4;
+  }
+
+  p {
+    line-height: 1.6;
   }
 }
 
 @layer components {
   .page-container {
-    @apply px-4 py-3 space-y-4;
+    @apply px-5 py-5 space-y-6 max-w-[1400px] mx-auto w-full;
   }
 
   .page-header {
-    @apply flex items-center justify-between;
+    @apply flex items-center justify-between gap-4 flex-wrap;
   }
 
   .page-title-group {
@@ -461,23 +487,23 @@
   }
 
   .page-icon {
-    @apply p-2 rounded-xl bg-primary/10;
+    @apply p-2.5 rounded-xl bg-primary/10;
   }
 
   .page-title {
-    @apply text-2xl font-semibold tracking-tight;
+    @apply text-xl font-semibold tracking-tight;
   }
 
   .page-subtitle {
-    @apply text-sm text-muted-foreground;
+    @apply text-sm text-muted-foreground mt-0.5;
   }
 
   .section-header {
-    @apply text-lg font-semibold tracking-tight;
+    @apply text-base font-semibold tracking-tight;
   }
 
   .section-subheader {
-    @apply text-base font-medium tracking-tight;
+    @apply text-sm font-medium tracking-tight text-muted-foreground;
   }
 
   .soft-card {
@@ -490,6 +516,46 @@
 
   .accordion-form-card {
     @apply rounded-xl border-border/50;
+  }
+
+  .content-section {
+    @apply space-y-4;
+  }
+
+  .content-section + .content-section {
+    @apply pt-2;
+  }
+
+  .sticky-page-header {
+    @apply sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border/50 -mx-5 px-5 py-3;
+  }
+
+  .data-table-wrapper {
+    @apply border rounded-lg overflow-hidden;
+  }
+
+  .kpi-grid {
+    @apply grid grid-cols-2 md:grid-cols-4 gap-4;
+  }
+
+  .kpi-card {
+    @apply border rounded-xl p-4 bg-card hover:shadow-sm transition-shadow cursor-pointer;
+  }
+
+  .kpi-value {
+    @apply text-2xl font-bold tabular-nums;
+  }
+
+  .kpi-label {
+    @apply text-xs font-medium text-muted-foreground uppercase tracking-wide mt-1;
+  }
+
+  .filter-bar {
+    @apply flex items-center gap-3 flex-wrap;
+  }
+
+  .empty-state-container {
+    @apply flex flex-col items-center justify-center py-16 px-6 text-center;
   }
 }
 
@@ -733,8 +799,6 @@ label,
 }
 
 /* ---- TABLE OPTIMIZATION ---- */
-/* Table styling handled by TableHead/TableCell components with data-slot attributes */
-/* Global table styling is minimal to avoid conflicts */
 table {
   border-collapse: collapse;
   width: 100%;
@@ -745,15 +809,32 @@ table {
   vertical-align: middle;
   font-weight: 600;
   white-space: nowrap;
+  font-size: 0.8125rem;
+  color: hsl(var(--muted-foreground));
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
 }
 
 [data-slot="table-cell"] {
   vertical-align: middle;
+  font-size: 0.875rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
 }
 
 table tr {
   height: auto;
-  min-height: 2.5rem;
+  min-height: 2.75rem;
+}
+
+table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+table tbody tr:hover {
+  background-color: hsl(var(--muted) / 0.4);
 }
 
 /* ---- CARD & CONTAINER PADDING ---- */

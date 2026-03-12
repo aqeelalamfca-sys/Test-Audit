@@ -115,16 +115,16 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
 
   return (
     <Sidebar className={`border-r ${sidebarClasses.border}`}>
-      <SidebarHeader className={`border-b px-4 py-4 ${sidebarClasses.border} ${sidebarClasses.headerBg}`}>
-        <Link href={homeLink} className="flex items-center gap-3" data-testid="link-home">
-          <div className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold text-lg flex-shrink-0 ${theme.avatarBg} ${theme.avatarText}`}>
+      <SidebarHeader className={`border-b px-4 py-3 ${sidebarClasses.border} ${sidebarClasses.headerBg}`}>
+        <Link href={homeLink} className="flex items-center gap-2.5" data-testid="link-home">
+          <div className={`flex h-8 w-8 items-center justify-center rounded-lg font-bold text-sm flex-shrink-0 ${theme.avatarBg} ${theme.avatarText}`}>
             {headerInitials}
           </div>
           <div className="min-w-0">
-            <h1 className={`text-lg font-semibold leading-tight ${theme.iconColor} ${theme.iconColorDark}`}>
+            <h1 className={`text-sm font-semibold leading-tight tracking-tight ${theme.iconColor} ${theme.iconColorDark}`}>
               AuditWise
             </h1>
-            <p className={`text-xs leading-tight truncate ${theme.iconColor} ${theme.iconColorDark}`}>
+            <p className={`text-[11px] leading-tight truncate text-muted-foreground`}>
               {headerSubtitle}
             </p>
           </div>
@@ -571,19 +571,19 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
         )}
       </SidebarContent>
 
-      <SidebarFooter className={`border-t p-4 ${sidebarClasses.border} ${sidebarClasses.footerBg}`}>
-        <div className="flex items-center gap-2.5">
-          <Avatar className="h-9 w-9">
-            <AvatarFallback className={`text-sm font-medium ${theme.avatarBg} ${theme.avatarText}`}>
+      <SidebarFooter className={`border-t px-3 py-2.5 ${sidebarClasses.border} ${sidebarClasses.footerBg}`}>
+        <div className="flex items-center gap-2">
+          <Avatar className="h-7 w-7">
+            <AvatarFallback className={`text-xs font-medium ${theme.avatarBg} ${theme.avatarText}`}>
               {currentUser?.initials || "JD"}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">
+            <p className="text-xs font-medium text-sidebar-foreground truncate">
               {currentUser?.name || "John Doe"}
             </p>
             <span
-              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${badgeClasses}`}
+              className={`inline-flex items-center rounded-full px-1.5 py-0 text-[9px] font-semibold ${badgeClasses}`}
               data-testid={`badge-role-${userRole}`}
             >
               {getRoleDisplayLabel(userRole).toUpperCase()}

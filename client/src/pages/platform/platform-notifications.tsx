@@ -201,11 +201,11 @@ export default function PlatformNotifications() {
   const ytId = form.youtubeUrl ? extractYoutubeId(form.youtubeUrl) : null;
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto" data-testid="platform-notifications-page">
+    <div className="page-container" data-testid="platform-notifications-page">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Bell className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">Platform Notifications</h1>
+          <h1 className="text-xl font-semibold tracking-tight" data-testid="text-page-title">Platform Notifications</h1>
         </div>
         <Dialog open={showCreateDialog} onOpenChange={(open) => {
           setShowCreateDialog(open);

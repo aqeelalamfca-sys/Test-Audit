@@ -3225,7 +3225,7 @@ export default function InformationRequisition() {
 
   if (!effectiveEngagementId) {
     return (
-      <div className="container mx-auto py-3">
+      <div className="page-container">
         <Card>
           <CardContent className="py-12 text-center">
             <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground mb-4" />

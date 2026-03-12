@@ -110,7 +110,7 @@ export default function EngagementDetail() {
 
   if (engagementLoading) {
     return (
-      <div className="px-4 py-3 space-y-3">
+      <div className="page-container">
         <Skeleton className="h-12 w-full" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Skeleton className="h-24" />
@@ -125,7 +125,7 @@ export default function EngagementDetail() {
   const engagementName = engagement?.engagementCode || `Engagement ${engagementId}`;
 
   return (
-    <div className="px-4 py-3 space-y-3">
+    <div className="page-container">
       <div className="flex items-center gap-4">
         <Link href="/engagements">
           <Button variant="ghost" size="sm">

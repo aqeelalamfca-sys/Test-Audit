@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -490,7 +490,7 @@ export default function FirmControlComplianceLog() {
   const [activeTab, setActiveTab] = useState("summary");
 
   return (
-    <div className="p-6 space-y-4 max-w-7xl mx-auto" data-testid="firm-control-compliance-log-page">
+    <div className="page-container" data-testid="firm-control-compliance-log-page">
       <div className="flex items-center gap-3">
         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
           <Shield className="h-5 w-5 text-primary" />

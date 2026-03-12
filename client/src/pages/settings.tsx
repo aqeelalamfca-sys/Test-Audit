@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Settings as SettingsIcon, User, Bell, Shield, Palette, Globe, Sparkles, CheckCircle, XCircle, Loader2, ArrowUp, ArrowDown, AlertTriangle, Info, Save, Download, Upload, HardDrive, FileJson } from "lucide-react";
+import { User, Bell, Shield, Palette, Globe, Sparkles, CheckCircle, XCircle, Loader2, ArrowUp, ArrowDown, AlertTriangle, Info, Save, Download, Upload, HardDrive, FileJson } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -293,15 +293,10 @@ export default function Settings() {
   };
 
   return (
-    <div className="px-4 py-3 space-y-3">
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-primary/10">
-          <SettingsIcon className="h-6 w-6 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight" data-testid="page-title">Settings</h1>
-          <p className="text-muted-foreground">Manage your preferences and account settings</p>
-        </div>
+    <div className="page-container">
+      <div>
+        <h1 className="text-xl font-semibold tracking-tight" data-testid="page-title">Settings</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Manage your preferences and account settings</p>
       </div>
 
       <Tabs defaultValue="profile" className="space-y-4">

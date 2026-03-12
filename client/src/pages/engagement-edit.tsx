@@ -176,7 +176,7 @@ export default function EngagementEdit() {
   }
 
   return (
-    <div className="px-4 py-3 space-y-3">
+    <div className="page-container">
       <div className="flex items-center gap-4">
         <Link href="/engagements">
           <Button variant="ghost" size="sm">

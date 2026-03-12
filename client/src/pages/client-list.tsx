@@ -112,114 +112,102 @@ export default function ClientList() {
   ) || [];
 
   return (
-    <div className="px-4 py-3 space-y-3" data-testid="client-list-page">
+    <div className="page-container" data-testid="client-list-page">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-primary/10">
-            <Building2 className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight" data-testid="text-page-title">Clients</h1>
-            <p className="text-muted-foreground">
-              {clients ? `${clients.length} client${clients.length !== 1 ? "s" : ""} registered` : "Manage client master records"}
-            </p>
-          </div>
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight" data-testid="text-page-title">Clients</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {clients ? `${clients.length} client${clients.length !== 1 ? "s" : ""} registered` : "Manage client master records"}
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={exportToExcel} disabled={!filteredClients.length}>
-            <Download className="h-4 w-4 mr-2" />
-            Export List
+          <Button variant="outline" size="sm" onClick={exportToExcel} disabled={!filteredClients.length} className="gap-2">
+            <Download className="h-3.5 w-3.5" />
+            Export
           </Button>
           <CreateClientDialog />
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-md">
+      <div className="filter-bar">
+        <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             data-testid="input-search-clients"
             placeholder="Search by name, NTN, or city..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-9 h-9"
           />
         </div>
+        {filteredClients.length > 0 && (
+          <span className="text-xs text-muted-foreground">{filteredClients.length} result{filteredClients.length !== 1 ? "s" : ""}</span>
+        )}
       </div>
 
-      <Card>
+      <Card className="shadow-sm">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="whitespace-nowrap">Client Code</TableHead>
-                <TableHead className="whitespace-nowrap">Client Name</TableHead>
-                <TableHead className="whitespace-nowrap">Trade Name</TableHead>
-                <TableHead className="whitespace-nowrap">NTN / CNIC</TableHead>
-                <TableHead className="whitespace-nowrap">SECP No.</TableHead>
-                <TableHead className="whitespace-nowrap">Entity Type</TableHead>
-                <TableHead className="whitespace-nowrap">Industry</TableHead>
-                <TableHead className="whitespace-nowrap">Incorporation Date</TableHead>
-                <TableHead className="whitespace-nowrap">City</TableHead>
-                <TableHead className="whitespace-nowrap">Address</TableHead>
-                <TableHead className="whitespace-nowrap">Country</TableHead>
-                <TableHead className="whitespace-nowrap">Email</TableHead>
-                <TableHead className="whitespace-nowrap">Phone</TableHead>
-                <TableHead className="whitespace-nowrap">Focal Person</TableHead>
-                <TableHead className="whitespace-nowrap">Focal Mobile</TableHead>
-                <TableHead className="whitespace-nowrap">Focal Email</TableHead>
-                <TableHead className="whitespace-nowrap">Status</TableHead>
-                <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
+                <TableHead>Code</TableHead>
+                <TableHead>Client Name</TableHead>
+                <TableHead>NTN / CNIC</TableHead>
+                <TableHead>Entity Type</TableHead>
+                <TableHead>City</TableHead>
+                <TableHead>Focal Person</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={18} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center py-10">
                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Loading clients...
+                      <span className="text-sm">Loading clients...</span>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : filteredClients.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={18} className="text-center py-8 text-muted-foreground" data-testid="text-no-clients">
-                    {searchQuery ? "No clients match your search." : 'No clients found. Click "Add Client" to create one.'}
+                  <TableCell colSpan={8} className="text-center py-10" data-testid="text-no-clients">
+                    <div className="flex flex-col items-center gap-2">
+                      <Building2 className="h-8 w-8 text-muted-foreground/30" />
+                      <p className="text-sm text-muted-foreground">
+                        {searchQuery ? "No clients match your search." : 'No clients found. Click "Add Client" to create one.'}
+                      </p>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredClients.map((client) => (
-                  <TableRow key={client.id} data-testid={`row-client-${client.id}`}>
-                    <TableCell className="whitespace-nowrap font-mono text-sm">{client.clientCode || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      <span className="font-medium" data-testid={`text-client-name-${client.id}`}>{client.name}</span>
+                  <TableRow key={client.id} data-testid={`row-client-${client.id}`} className="cursor-pointer" onClick={() => setLocation(`/clients/${client.id}`)}>
+                    <TableCell className="font-mono text-xs">{client.clientCode || "-"}</TableCell>
+                    <TableCell>
+                      <div>
+                        <span className="font-medium text-sm" data-testid={`text-client-name-${client.id}`}>{client.name}</span>
+                        {client.tradingName && (
+                          <p className="text-xs text-muted-foreground truncate max-w-[200px]">{client.tradingName}</p>
+                        )}
+                      </div>
                     </TableCell>
-                    <TableCell className="whitespace-nowrap">{client.tradingName || "-"}</TableCell>
-                    <TableCell className="font-mono text-sm whitespace-nowrap" data-testid={`text-client-ntn-${client.id}`}>{client.ntn || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{client.secpNo || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{client.entityType?.replace(/_/g, " ") || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{client.industry?.replace(/_/g, " ") || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{formatDate(client.dateOfIncorporation)}</TableCell>
-                    <TableCell className="whitespace-nowrap">{client.city || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap max-w-[200px] truncate" title={client.address || ""}>{client.address || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{client.country || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{client.email || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{client.phone || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{client.focalPersonName || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{client.focalPersonMobile || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{client.focalPersonEmail || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{statusBadge(client)}</TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1">
+                    <TableCell className="font-mono text-xs" data-testid={`text-client-ntn-${client.id}`}>{client.ntn || "-"}</TableCell>
+                    <TableCell className="text-sm">{client.entityType?.replace(/_/g, " ") || "-"}</TableCell>
+                    <TableCell className="text-sm">{client.city || "-"}</TableCell>
+                    <TableCell className="text-sm">{client.focalPersonName || "-"}</TableCell>
+                    <TableCell>{statusBadge(client)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                         <Link href={`/clients/${client.id}`}>
-                          <Button variant="ghost" size="sm" title="View Details" data-testid={`button-view-client-${client.id}`}>
-                            <Eye className="h-4 w-4" />
+                          <Button variant="ghost" size="sm" title="View Details" data-testid={`button-view-client-${client.id}`} className="h-7 w-7 p-0">
+                            <Eye className="h-3.5 w-3.5" />
                           </Button>
                         </Link>
                         <Link href={`/clients/${client.id}/edit`}>
-                          <Button variant="ghost" size="sm" title="Edit Client" data-testid={`button-edit-client-${client.id}`}>
-                            <Edit className="h-4 w-4" />
+                          <Button variant="ghost" size="sm" title="Edit Client" data-testid={`button-edit-client-${client.id}`} className="h-7 w-7 p-0">
+                            <Edit className="h-3.5 w-3.5" />
                           </Button>
                         </Link>
                         <Button
@@ -228,11 +216,9 @@ export default function ClientList() {
                           title="View Engagements"
                           data-testid={`button-engagements-client-${client.id}`}
                           onClick={() => setLocation(`/engagements?client=${client.id}`)}
+                          className="h-7 w-7 p-0"
                         >
-                          <FolderOpen className="h-4 w-4" />
-                          {client._count?.engagements ? (
-                            <span className="ml-1 text-xs">{client._count.engagements}</span>
-                          ) : null}
+                          <FolderOpen className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </TableCell>

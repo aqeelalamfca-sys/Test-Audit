@@ -686,7 +686,7 @@ export default function TBReview() {
       }
     >
     {engagementId && <DataIntakeProgressRibbon engagementId={engagementId} />}
-    <div className="px-4 py-3 space-y-3">
+    <div className="page-container">
       {engagementId && (
         <AIAssistBanner
           engagementId={engagementId}

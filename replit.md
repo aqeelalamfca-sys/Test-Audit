@@ -4,6 +4,19 @@
 
 AuditWise is a full-stack TypeScript web application built for Pakistani audit firms. It provides ISA 200-720 full coverage, ISQM-1 quality controls, and deep local regulatory integration.
 
+## UI/UX Design System
+
+The application uses a clean, modern SaaS design with consistent patterns:
+- **Page container**: `page-container` class (`px-5 py-5 space-y-6 max-w-[1400px] mx-auto w-full`)
+- **Page headers**: `<h1 className="text-xl font-semibold tracking-tight">` — no icon-in-box patterns
+- **Filter bars**: `filter-bar` class for search/filter rows
+- **Cards**: `shadow-sm` standard, using `Card`/`CardContent` from shadcn
+- **KPI grids**: `kpi-grid` class for metric card layouts
+- **Tables**: Simplified to essential columns (e.g., clients 8 cols from 18, engagements 8 from 25)
+- **Sticky header**: PageShell has `sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b`
+- **Sidebar**: Compact header/footer (h-8 avatar, text-sm)
+- **CSS file**: `client/src/index.css` contains all utility classes
+
 ## Architecture
 
 - **Frontend**: React 18 + Vite + Tailwind CSS + shadcn/ui components

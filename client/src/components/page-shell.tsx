@@ -142,9 +142,9 @@ export function PageShell({
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
-      {/* Header Section */}
+      {/* Sticky Header Section */}
       {(effectiveShowTopBar || title || metadata) && (
-        <div className="flex flex-col gap-1.5 mb-1">
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/40 pb-3 pt-1 mb-4">
           {/* Title Row */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3 min-w-0">
@@ -167,14 +167,14 @@ export function PageShell({
                   )}
                 </div>
                 {subtitle && (
-                  <p className="text-sm text-muted-foreground truncate" data-testid="page-subtitle">
+                  <p className="text-sm text-muted-foreground truncate mt-0.5" data-testid="page-subtitle">
                     {subtitle}
                   </p>
                 )}
               </div>
             </div>
             
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               {!hideSignoff && workspace.isInWorkspaceMode && workspace.currentEngagementId && (
                 <SignOffBar
                   phase={signoffPhase || workspace.currentPhaseRoute || "PLANNING"}
@@ -189,7 +189,7 @@ export function PageShell({
 
           {/* Metadata Row */}
           {metadata && metadata.length > 0 && (
-            <div className="flex items-center gap-4 flex-wrap text-sm" data-testid="page-metadata">
+            <div className="flex items-center gap-4 flex-wrap text-sm mt-2" data-testid="page-metadata">
               {metadata.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-1.5">
                   <span className="text-muted-foreground">{item.label}:</span>
@@ -209,8 +209,8 @@ export function PageShell({
 
       {/* Content Section */}
       <div className={cn(
-        "flex-1 overflow-auto",
-        !noPadding && "space-y-4",
+        "flex-1",
+        !noPadding && "space-y-5",
         contentClassName
       )}>
         {children}
@@ -218,7 +218,9 @@ export function PageShell({
 
       {/* Bottom Action Bar */}
       {effectiveShowBottomBar && (
-        <PageActionBar {...actionBarProps} position="bottom" />
+        <div className="sticky bottom-0 z-10 bg-background/95 backdrop-blur-sm border-t border-border/40 mt-4">
+          <PageActionBar {...actionBarProps} position="bottom" />
+        </div>
       )}
     </div>
   );
@@ -245,12 +247,12 @@ export function PageSection({
   noPadding = false,
 }: PageSectionProps) {
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card className={cn("overflow-hidden shadow-sm", className)}>
       {(title || actions) && (
-        <div className="flex items-center justify-between gap-4 px-5 py-3.5 border-b flex-wrap">
+        <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-border/50 flex-wrap">
           <div>
-            {title && <h3 className="font-medium tracking-tight">{title}</h3>}
-            {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+            {title && <h3 className="text-sm font-semibold tracking-tight uppercase text-muted-foreground">{title}</h3>}
+            {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
           </div>
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </div>

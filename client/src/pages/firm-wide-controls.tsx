@@ -915,7 +915,7 @@ export default function FirmWideControls() {
   const overallScore = complianceDashboard?.overallScore ?? 0;
 
   return (
-    <div className="px-4 py-3 space-y-3">
+    <div className="page-container">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-primary/10">

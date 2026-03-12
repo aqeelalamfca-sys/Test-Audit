@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -591,10 +591,10 @@ export default function FirmUsers() {
   };
 
   return (
-    <div className="p-6 space-y-5 max-w-6xl mx-auto" data-testid="firm-users-page">
+    <div className="page-container" data-testid="firm-users-page">
       <div className="flex items-center gap-3">
         <Users className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold" data-testid="text-page-title">Firm User Management</h1>
+        <h1 className="text-xl font-semibold tracking-tight" data-testid="text-page-title">Firm User Management</h1>
       </div>
 
       <SimpleTabNavigation

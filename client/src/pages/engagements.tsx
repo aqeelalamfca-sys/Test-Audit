@@ -27,7 +27,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { getSmartWorkspaceRoute, getButtonLabel, type PhaseProgress } from "@/lib/navigation";
-import { apiRequest } from "@/lib/queryClient";
 import * as XLSX from "xlsx";
 
 interface Engagement {
@@ -263,21 +262,18 @@ export default function Engagements() {
   };
 
   return (
-    <div className="px-4 py-3 space-y-3">
+    <div className="page-container">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <FileText className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Engagements</h1>
-            <p className="text-muted-foreground">Manage audit engagements</p>
-          </div>
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Engagements</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {engagements ? `${engagements.length} engagement${engagements.length !== 1 ? "s" : ""}` : "Manage audit engagements"}
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={exportToExcel} disabled={!filteredEngagements.length}>
-            <Download className="h-4 w-4 mr-2" />
-            Export List
+          <Button variant="outline" size="sm" onClick={exportToExcel} disabled={!filteredEngagements.length} className="gap-2">
+            <Download className="h-3.5 w-3.5" />
+            Export
           </Button>
           {isAdmin && (
             <CreateEngagementDialog onSuccess={() => refetch()} />
@@ -285,19 +281,19 @@ export default function Engagements() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-md">
+      <div className="filter-bar">
+        <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by client or engagement code..."
+            placeholder="Search by client or code..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-9 h-9"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-40">
-            <Filter className="h-4 w-4 mr-2" />
+          <SelectTrigger className="w-36 h-9">
+            <Filter className="h-3.5 w-3.5 mr-1.5" />
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -308,117 +304,88 @@ export default function Engagements() {
             <SelectItem value="archived">Archived</SelectItem>
           </SelectContent>
         </Select>
+        {filteredEngagements.length > 0 && (
+          <span className="text-xs text-muted-foreground">{filteredEngagements.length} result{filteredEngagements.length !== 1 ? "s" : ""}</span>
+        )}
       </div>
 
-      <Card>
+      <Card className="shadow-sm">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="whitespace-nowrap">Engagement Code</TableHead>
-                <TableHead className="whitespace-nowrap">Client</TableHead>
-                <TableHead className="whitespace-nowrap">Type</TableHead>
-                <TableHead className="whitespace-nowrap">FY End</TableHead>
-                <TableHead className="whitespace-nowrap">Period Start</TableHead>
-                <TableHead className="whitespace-nowrap">Period End</TableHead>
-                <TableHead className="whitespace-nowrap">Company Category</TableHead>
-                <TableHead className="whitespace-nowrap text-right">Authorized Capital</TableHead>
-                <TableHead className="whitespace-nowrap text-right">Paid-up Capital</TableHead>
-                <TableHead className="whitespace-nowrap text-right">Revenue (Last Year)</TableHead>
-                <TableHead className="whitespace-nowrap text-right">Revenue (Year Before)</TableHead>
-                <TableHead className="whitespace-nowrap text-right">No. of Employees</TableHead>
-                <TableHead className="whitespace-nowrap">Partner</TableHead>
-                <TableHead className="whitespace-nowrap">Manager</TableHead>
-                <TableHead className="whitespace-nowrap">Senior</TableHead>
-                <TableHead className="whitespace-nowrap">Prior Auditor</TableHead>
-                <TableHead className="whitespace-nowrap">Auditor Email</TableHead>
-                <TableHead className="whitespace-nowrap">Auditor Phone</TableHead>
-                <TableHead className="whitespace-nowrap">Prior Audit Opinion</TableHead>
-                <TableHead className="whitespace-nowrap">Auditor Address</TableHead>
-                <TableHead className="whitespace-nowrap">UDIN</TableHead>
-                <TableHead className="whitespace-nowrap">EQCR</TableHead>
-                <TableHead className="whitespace-nowrap">Phase</TableHead>
-                <TableHead className="whitespace-nowrap">Status</TableHead>
-                <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
+                <TableHead>Code</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead>FY End</TableHead>
+                <TableHead>Partner</TableHead>
+                <TableHead>Manager</TableHead>
+                <TableHead>Phase</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredEngagements.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={25} className="text-center py-4 text-muted-foreground">
-                    No engagements found.
+                  <TableCell colSpan={8} className="text-center py-10">
+                    <div className="flex flex-col items-center gap-2">
+                      <FileText className="h-8 w-8 text-muted-foreground/30" />
+                      <p className="text-sm text-muted-foreground">No engagements found.</p>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredEngagements.map((eng) => (
-                  <TableRow key={eng.id}>
-                    <TableCell className="font-mono whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <EngagementLink
-                          engagementId={eng.id}
-                          engagementCode={eng.engagementCode}
-                          clientId={eng.clientId || eng.client?.id}
-                        />
+                  <TableRow key={eng.id} className="cursor-pointer" onClick={() => handleStartEngagement(eng)}>
+                    <TableCell className="font-mono text-xs">
+                      <EngagementLink
+                        engagementId={eng.id}
+                        engagementCode={eng.engagementCode}
+                        clientId={eng.clientId || eng.client?.id}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <span className="font-medium text-sm">{eng.client?.name || "-"}</span>
+                        {eng.engagementType && (
+                          <p className="text-xs text-muted-foreground">{eng.engagementType.replace(/_/g, " ")}</p>
+                        )}
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium whitespace-nowrap">{eng.client?.name || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{eng.engagementType?.replace(/_/g, " ") || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{formatDate(eng.fiscalYearEnd)}</TableCell>
-                    <TableCell className="whitespace-nowrap">{formatDate(eng.periodStart)}</TableCell>
-                    <TableCell className="whitespace-nowrap">{formatDate(eng.periodEnd)}</TableCell>
-                    <TableCell className="whitespace-nowrap">{eng.companyCategory ? (COMPANY_CATEGORY_LABELS[eng.companyCategory] || eng.companyCategory) : "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap text-right">{formatCurrency(eng.authorizedCapital)}</TableCell>
-                    <TableCell className="whitespace-nowrap text-right">{formatCurrency(eng.paidUpCapital)}</TableCell>
-                    <TableCell className="whitespace-nowrap text-right">{formatCurrency(eng.lastYearRevenue)}</TableCell>
-                    <TableCell className="whitespace-nowrap text-right">{formatCurrency(eng.previousYearRevenue)}</TableCell>
-                    <TableCell className="whitespace-nowrap text-right">{eng.numberOfEmployees != null ? eng.numberOfEmployees.toLocaleString() : "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{getPartner(eng.team)}</TableCell>
-                    <TableCell className="whitespace-nowrap">{getManager(eng.team)}</TableCell>
-                    <TableCell className="whitespace-nowrap">{getSenior(eng.team)}</TableCell>
-                    <TableCell className="whitespace-nowrap">{eng.priorAuditor || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{eng.priorAuditorEmail || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{eng.priorAuditorPhone || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{eng.priorAuditOpinion?.replace(/_/g, " ") || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap max-w-[200px] truncate" title={eng.priorAuditorAddress || ""}>{eng.priorAuditorAddress || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap font-mono text-sm">{eng.udin || "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {eng.eqcrRequired ? (
-                        <Badge className="bg-blue-100 text-blue-700 border-0">Yes</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">No</span>
-                      )}
+                    <TableCell className="text-sm">{formatDate(eng.fiscalYearEnd)}</TableCell>
+                    <TableCell className="text-sm">{getPartner(eng.team)}</TableCell>
+                    <TableCell className="text-sm">{getManager(eng.team)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">{eng.currentPhase?.replace(/_/g, " ") || "-"}</Badge>
                     </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      <Badge variant="outline">{eng.currentPhase?.replace(/_/g, " ") || "-"}</Badge>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">{getStatusBadge(eng.status)}</TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-2">
+                    <TableCell>{getStatusBadge(eng.status)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                         <Button 
                           size="sm" 
                           title={getButtonLabel(eng).tooltip}
-                          className="gap-1"
+                          className="gap-1 h-7 text-xs"
                           onClick={() => handleStartEngagement(eng)}
                           disabled={startingEngagement === eng.id}
                         >
                           {startingEngagement === eng.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
-                            <Play className="h-3.5 w-3.5" />
+                            <Play className="h-3 w-3" />
                           )}
                           {getButtonLabel(eng).label}
                         </Button>
                         <Link href={`/engagement/${eng.id}`}>
-                          <Button variant="ghost" size="sm" title="View Details">
-                            <Eye className="h-4 w-4" />
+                          <Button variant="ghost" size="sm" title="View Details" className="h-7 w-7 p-0">
+                            <Eye className="h-3.5 w-3.5" />
                           </Button>
                         </Link>
                         <EditEngagementDialog 
                           engagementId={eng.id} 
                           onSuccess={() => refetch()}
                           trigger={
-                            <Button variant="ghost" size="sm" title="Edit Engagement">
-                              <Edit className="h-4 w-4" />
+                            <Button variant="ghost" size="sm" title="Edit" className="h-7 w-7 p-0">
+                              <Edit className="h-3.5 w-3.5" />
                             </Button>
                           }
                         />

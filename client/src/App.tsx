@@ -435,10 +435,12 @@ function EnforcedAppContent({ user, firm, sidebarStyle, initials }: {
             <TrialBanner />
             <WorkspaceRibbon />
             
-            <main className="flex-1 overflow-auto bg-background">
-              <ErrorBoundary>
-                <Router />
-              </ErrorBoundary>
+            <main className="flex-1 overflow-auto bg-background scroll-smooth">
+              <div className="min-h-full">
+                <ErrorBoundary>
+                  <Router />
+                </ErrorBoundary>
+              </div>
             </main>
           </div>
         </div>

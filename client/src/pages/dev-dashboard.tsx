@@ -6,7 +6,7 @@ import { ArrowLeft, Code, Database, Server, Settings } from "lucide-react";
 
 export default function DevDashboard() {
   return (
-    <div className="px-4 py-3 space-y-3">
+    <div className="page-container">
       <div className="flex items-center gap-4">
         <Link href="/">
           <Button variant="ghost" size="sm">
@@ -22,7 +22,7 @@ export default function DevDashboard() {
             <Code className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Developer Dashboard</h1>
+            <h1 className="text-xl font-semibold tracking-tight">Developer Dashboard</h1>
             <p className="text-muted-foreground">System diagnostics and tools</p>
           </div>
         </div>

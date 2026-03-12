@@ -8,7 +8,7 @@ export default function PhaseView() {
   const phase = params.phase;
 
   return (
-    <div className="px-4 py-3 space-y-3">
+    <div className="page-container">
       <div className="flex items-center gap-4">
         <Link href="/">
           <Button variant="ghost" size="sm">
@@ -16,7 +16,7 @@ export default function PhaseView() {
             Back
           </Button>
         </Link>
-        <h1 className="text-2xl font-semibold tracking-tight capitalize">{phase} Phase</h1>
+        <h1 className="text-xl font-semibold tracking-tight capitalize">{phase} Phase</h1>
       </div>
 
       <Card>

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
@@ -213,7 +213,7 @@ export default function FirmAuditLogs() {
   };
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-6xl mx-auto" data-testid="firm-audit-logs-page">
+    <div className="page-container" data-testid="firm-audit-logs-page">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">

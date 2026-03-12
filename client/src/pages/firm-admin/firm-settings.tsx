@@ -802,15 +802,10 @@ export default function FirmSettingsPage() {
   const isFirmAdmin = user?.role === "FIRM_ADMIN";
 
   return (
-    <div className="p-6 space-y-4 max-w-5xl mx-auto" data-testid="firm-settings-page">
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-primary/10">
-          <Settings className="h-6 w-6 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">Firm Settings</h1>
-          <p className="text-muted-foreground">Manage firm configuration and your account settings</p>
-        </div>
+    <div className="page-container" data-testid="firm-settings-page">
+      <div>
+        <h1 className="text-xl font-semibold tracking-tight" data-testid="text-page-title">Firm Settings</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Manage firm configuration and your account settings</p>
       </div>
 
       <Tabs defaultValue="firm" className="space-y-4">

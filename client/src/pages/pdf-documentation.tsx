@@ -215,13 +215,13 @@ export default function PDFDocumentation() {
   }
 
   return (
-    <div className="px-4 py-3 space-y-3">
+    <div className="page-container">
       <div className="flex items-center gap-4">
         <div className="p-2 rounded-lg bg-primary/10">
           <FileDown className="h-6 w-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">PDF Documentation</h1>
+          <h1 className="text-xl font-semibold tracking-tight">PDF Documentation</h1>
           <p className="text-muted-foreground">
             Generate complete, inspection-ready audit files for ICAP QCR, EQCR, and AOB reviews
           </p>

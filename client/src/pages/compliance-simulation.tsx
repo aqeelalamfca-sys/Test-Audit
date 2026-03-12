@@ -130,7 +130,7 @@ export default function ComplianceSimulation() {
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <Shield className="h-6 w-6" />
-          <h1 className="text-2xl font-semibold" data-testid="text-page-title">Compliance Simulation</h1>
+          <h1 className="text-xl font-semibold" data-testid="text-page-title">Compliance Simulation</h1>
         </div>
         <Button
           onClick={() => runMutation.mutate()}

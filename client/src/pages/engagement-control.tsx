@@ -341,11 +341,11 @@ export default function EngagementControl() {
   }
 
   return (
-    <div className="px-4 py-3 space-y-3">
+    <div className="page-container">
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl font-semibold tracking-tight">{engagement.client?.name || "Client"}</h1>
+            <h1 className="text-xl font-semibold tracking-tight">{engagement.client?.name || "Client"}</h1>
             <Badge variant={getStatusVariant(engagement.status)}>
               {engagement.status?.replace("_", " ") || "Draft"}
             </Badge>

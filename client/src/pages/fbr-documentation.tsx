@@ -1029,10 +1029,10 @@ export default function FBRDocumentation() {
   });
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="page-container">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">FBR Documentation</h1>
+          <h1 className="text-xl font-semibold tracking-tight" data-testid="text-page-title">FBR Documentation</h1>
           <p className="text-sm text-muted-foreground">
             Federal Board of Revenue — Tax computations, WHT reconciliation, and compliance documentation
           </p>

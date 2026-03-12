@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,6 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { MetricCard } from "@/components/reports/MetricCard";
 import { ReportViewer } from "@/components/reports/ReportViewer";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { formatAccounting } from '@/lib/formatters';
@@ -135,7 +134,7 @@ export default function Reports() {
 
   if (isLoading) {
     return (
-      <div className="px-4 py-3 space-y-3">
+      <div className="page-container">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Skeleton className="h-10 w-10 rounded-lg" />
@@ -157,16 +156,11 @@ export default function Reports() {
   }
 
   return (
-    <div className="px-4 py-3 space-y-3">
+    <div className="page-container">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-primary/10">
-            <BarChart3 className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Intelligence Dashboard</h1>
-            <p className="text-muted-foreground">Real-time analytics and reporting</p>
-          </div>
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Intelligence Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Real-time analytics and reporting</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => refetch()} disabled={isRefetching}>
@@ -200,7 +194,7 @@ export default function Reports() {
                     <FileText className="h-5 w-5 text-blue-500" />
                     <div>
                       <p className="text-sm text-muted-foreground">Total Engagements</p>
-                      <p className="text-2xl font-semibold">{metrics?.summary.totalEngagements || 0}</p>
+                      <p className="text-xl font-semibold">{metrics?.summary.totalEngagements || 0}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -219,7 +213,7 @@ export default function Reports() {
                   <TrendingUp className="h-5 w-5 text-green-500" />
                   <div>
                     <p className="text-sm text-muted-foreground">On Track</p>
-                    <p className="text-2xl font-semibold">{metrics?.summary.onTrack || 0}</p>
+                    <p className="text-xl font-semibold">{metrics?.summary.onTrack || 0}</p>
                   </div>
                 </div>
               </CardContent>
@@ -235,7 +229,7 @@ export default function Reports() {
                     <Clock className="h-5 w-5 text-orange-500" />
                     <div>
                       <p className="text-sm text-muted-foreground">At Risk</p>
-                      <p className="text-2xl font-semibold">{metrics?.summary.atRisk || 0}</p>
+                      <p className="text-xl font-semibold">{metrics?.summary.atRisk || 0}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -258,7 +252,7 @@ export default function Reports() {
                     <Calendar className="h-5 w-5 text-red-500" />
                     <div>
                       <p className="text-sm text-muted-foreground">Overdue</p>
-                      <p className="text-2xl font-semibold">{metrics?.summary.overdue || 0}</p>
+                      <p className="text-xl font-semibold">{metrics?.summary.overdue || 0}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -456,7 +450,7 @@ export default function Reports() {
                     <div className="flex items-center gap-3">
                       <CheckCircle2 className="h-8 w-8 text-green-500" />
                       <div>
-                        <p className="text-2xl font-semibold text-green-700 dark:text-green-400">
+                        <p className="text-xl font-semibold text-green-700 dark:text-green-400">
                           {metrics?.summary.completed || 0}
                         </p>
                         <p className="text-sm text-green-600 dark:text-green-500">Completed On Time</p>
@@ -469,7 +463,7 @@ export default function Reports() {
                     <div className="flex items-center gap-3">
                       <AlertTriangle className="h-8 w-8 text-orange-500" />
                       <div>
-                        <p className="text-2xl font-semibold text-orange-700 dark:text-orange-400">
+                        <p className="text-xl font-semibold text-orange-700 dark:text-orange-400">
                           {metrics?.summary.atRisk || 0}
                         </p>
                         <p className="text-sm text-orange-600 dark:text-orange-500">At Risk of Delay</p>
@@ -482,7 +476,7 @@ export default function Reports() {
                     <div className="flex items-center gap-3">
                       <Calendar className="h-8 w-8 text-red-500" />
                       <div>
-                        <p className="text-2xl font-semibold text-red-700 dark:text-red-400">
+                        <p className="text-xl font-semibold text-red-700 dark:text-red-400">
                           {metrics?.summary.overdue || 0}
                         </p>
                         <p className="text-sm text-red-600 dark:text-red-500">Past Deadline</p>

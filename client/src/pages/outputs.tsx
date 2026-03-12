@@ -351,12 +351,12 @@ export default function OutputsPage() {
     : { draft: 0, reviewed: 0, approved: 0, final: 0 };
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="page-container">
       <PhaseLockIndicator phase="FINALIZATION" />
 
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight" data-testid="text-page-title">Outputs Registry</h1>
+          <h1 className="text-xl font-semibold tracking-tight" data-testid="text-page-title">Outputs Registry</h1>
           <p className="text-muted-foreground">Central repository of all generated audit outputs and deliverables</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -384,7 +384,7 @@ export default function OutputsPage() {
               <FileText className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">Total Outputs</p>
-                <p className="text-2xl font-semibold" data-testid="text-total-count">{outputs.length}</p>
+                <p className="text-xl font-semibold" data-testid="text-total-count">{outputs.length}</p>
               </div>
             </div>
           </CardContent>

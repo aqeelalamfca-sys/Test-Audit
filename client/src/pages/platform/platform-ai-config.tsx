@@ -75,10 +75,10 @@ export default function PlatformAIConfig() {
   const providerLabel = PROVIDERS.find(p => p.value === config?.provider)?.label || config?.provider;
 
   return (
-    <div className="p-6 space-y-6 max-w-3xl mx-auto" data-testid="platform-ai-config-page">
+    <div className="page-container max-w-3xl" data-testid="platform-ai-config-page">
       <div className="flex items-center gap-3">
         <Bot className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold" data-testid="text-page-title">Platform AI Configuration</h1>
+        <h1 className="text-xl font-semibold tracking-tight" data-testid="text-page-title">Platform AI Configuration</h1>
       </div>
 
       {config && (

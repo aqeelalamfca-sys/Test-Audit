@@ -272,16 +272,11 @@ export default function UserManagement() {
   };
 
   return (
-    <div className="px-4 py-3 space-y-3">
+    <div className="page-container">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-primary/10">
-            <Users className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Users & Roles</h1>
-            <p className="text-muted-foreground">Manage system users and role assignments</p>
-          </div>
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Users & Roles</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage system users and role assignments</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>

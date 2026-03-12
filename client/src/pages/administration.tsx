@@ -1051,11 +1051,11 @@ export default function Administration() {
   }
 
   return (
-    <div className="container mx-auto py-3 space-y-4">
+    <div className="page-container">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Administration</h1>
-          <p className="text-muted-foreground">Configure firm-wide controls, RBAC, and governance settings</p>
+          <h1 className="text-xl font-semibold tracking-tight">Administration</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Configure firm-wide controls, RBAC, and governance settings</p>
         </div>
         {Object.keys(unsavedChanges).length > 0 && (
           <Button onClick={saveSettings} disabled={updateSettingsMutation.isPending}>

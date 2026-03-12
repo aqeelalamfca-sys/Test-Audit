@@ -27,7 +27,7 @@ export default function EthicsIndependence() {
   const engagementId = params.engagementId || contextEngagementId || undefined;
 
   return (
-    <div className="px-4 py-3 space-y-3">
+    <div className="page-container">
       <div className="flex items-center gap-4">
         <Link href={`/workspace/${engagementId}/pre-planning`}>
           <Button variant="ghost" size="sm">
@@ -43,7 +43,7 @@ export default function EthicsIndependence() {
             <Scale className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Ethics & Independence</h1>
+            <h1 className="text-xl font-semibold tracking-tight">Ethics & Independence</h1>
             <p className="text-muted-foreground">
               {client?.name ? `${client.name} - ` : ""}ISA 200, IESBA Code of Ethics
               {engagement?.engagementCode && <span className="ml-2 text-xs opacity-70">({engagement.engagementCode})</span>}

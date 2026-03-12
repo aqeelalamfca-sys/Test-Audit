@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { EngagementLink } from "@/components/engagement-link";
 import { CreateClientDialog } from "@/components/create-client-dialog";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -15,21 +14,15 @@ import {
 } from "@/components/ui/table";
 import {
   StatusBadge,
-  SectionIndicator,
   type EntityStatus,
   type SectionStatus,
 } from "@/components/ui/visual-indicators";
 import {
   Building2,
   FileText,
-  Users,
   UserCheck,
   Plus,
-  Search,
   Eye,
-  Edit,
-  FolderOpen,
-  PlusCircle,
   ChevronRight,
   Clock,
   CheckCircle2,
@@ -39,7 +32,6 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -259,275 +251,170 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="px-4 py-3 space-y-3">
+    <div className="page-container pb-8">
+      {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Welcome back, {user?.fullName || "User"}</p>
+          <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Welcome back, {user?.fullName || "User"}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleOpenWorkspace} className="gap-2">
+            <Briefcase className="h-4 w-4" />
+            Open Workspace
+          </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card 
-          className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => handleKPIClick("/clients")}
-        >
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Clients</p>
-                <p className="text-3xl font-bold text-blue-600">{stats.totalClients}</p>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        {[
+          { label: "Total Clients", value: stats.totalClients, icon: Building2, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-900/20", route: "/clients" },
+          { label: "Active Engagements", value: stats.activeEngagements, icon: Briefcase, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-900/20", route: "/engagements?status=active" },
+          { label: "In Progress", value: stats.inProgressEngagements, icon: PlayCircle, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-900/20", route: "/engagements?status=in_progress" },
+          { label: "Pending Reviews", value: stats.pendingReviews, icon: AlertCircle, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-900/20", route: "/engagements?status=pending_review" },
+          { label: "Completed", value: stats.completedEngagements, icon: CheckCircle2, color: "text-teal-600", bg: "bg-teal-50 dark:bg-teal-900/20", route: "/engagements?status=completed" },
+        ].map((kpi) => (
+          <Card
+            key={kpi.label}
+            className="cursor-pointer hover:shadow-md transition-all border-border/60"
+            onClick={() => handleKPIClick(kpi.route)}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className={`${kpi.bg} p-2 rounded-lg`}>
+                  <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
+                </div>
               </div>
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-2.5 rounded-xl">
-                <Building2 className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => handleKPIClick("/engagements?status=active")}
-        >
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Active Engagements</p>
-                <p className="text-3xl font-bold text-green-600">{stats.activeEngagements}</p>
-              </div>
-              <div className="bg-green-50 dark:bg-green-900/20 p-2.5 rounded-xl">
-                <Briefcase className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => handleKPIClick("/engagements?status=in_progress")}
-        >
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">In Progress</p>
-                <p className="text-3xl font-bold text-purple-600">{stats.inProgressEngagements}</p>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-2.5 rounded-xl">
-                <PlayCircle className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => handleKPIClick("/engagements?status=pending_review")}
-        >
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pending Reviews</p>
-                <p className="text-3xl font-bold text-orange-600">{stats.pendingReviews}</p>
-              </div>
-              <div className="bg-orange-50 dark:bg-orange-900/20 p-2.5 rounded-xl">
-                <AlertCircle className="h-6 w-6 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => handleKPIClick("/engagements?status=completed")}
-        >
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Completed (FY)</p>
-                <p className="text-3xl font-bold text-teal-600">{stats.completedEngagements}</p>
-              </div>
-              <div className="bg-teal-50 dark:bg-teal-900/20 p-2.5 rounded-xl">
-                <CheckCircle2 className="h-6 w-6 text-teal-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              <p className={`text-2xl font-bold tabular-nums ${kpi.color}`}>{kpi.value}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{kpi.label}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* Quick Actions */}
+      <div className="flex items-center gap-2 flex-wrap">
         {isAdmin && (
           <CreateClientDialog
             trigger={
-              <Card className="cursor-pointer hover:shadow-md transition-all duration-200 border border-border h-full">
-                <CardContent className="flex items-center gap-4 py-4">
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-2.5 rounded-xl">
-                    <Plus className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold">Add Client</h3>
-                    <p className="text-sm text-muted-foreground">Create new client record</p>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                </CardContent>
-              </Card>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Plus className="h-3.5 w-3.5" />
+                Add Client
+              </Button>
             }
           />
         )}
-
         {isManager && (
           <Link href="/engagement/new">
-            <Card className="cursor-pointer hover:shadow-md transition-all duration-200 border border-border h-full">
-              <CardContent className="flex items-center gap-4 py-4">
-                <div className="bg-green-50 dark:bg-green-900/20 p-2.5 rounded-xl">
-                  <FileText className="h-6 w-6 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold">Create Engagement</h3>
-                  <p className="text-sm text-muted-foreground">Start new audit engagement</p>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </CardContent>
-            </Card>
+            <Button variant="outline" size="sm" className="gap-2">
+              <FileText className="h-3.5 w-3.5" />
+              New Engagement
+            </Button>
           </Link>
         )}
-
         {isManager && (
-          <Card 
-            className="cursor-pointer hover:shadow-md transition-all duration-200 border border-border h-full"
-            onClick={handleAllocateEngagement}
-          >
-            <CardContent className="flex items-center gap-4 py-4">
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-2.5 rounded-xl">
-                <UserCheck className="h-6 w-6 text-purple-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold">Allocate Engagement</h3>
-                <p className="text-sm text-muted-foreground">Assign team members</p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </CardContent>
-          </Card>
+          <Button variant="outline" size="sm" className="gap-2" onClick={handleAllocateEngagement}>
+            <UserCheck className="h-3.5 w-3.5" />
+            Allocate Team
+          </Button>
         )}
-
-        <Card 
-          className="cursor-pointer hover:shadow-md transition-all duration-200 border border-border h-full"
-          onClick={handleOpenWorkspace}
-        >
-          <CardContent className="flex items-center gap-4 py-4">
-            <div className="bg-orange-50 dark:bg-orange-900/20 p-2.5 rounded-xl">
-              <Briefcase className="h-6 w-6 text-orange-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold">Open Workspace</h3>
-              <p className="text-sm text-muted-foreground">Continue audit work</p>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          </CardContent>
-        </Card>
-
-        {(isAdmin || isManager) && (
-          <Card 
-            className="cursor-pointer hover:shadow-md transition-all duration-200 border border-border h-full"
-            onClick={handleViewPendingReviews}
-          >
-            <CardContent className="flex items-center gap-4 py-4">
-              <div className="bg-red-50 dark:bg-red-900/20 p-2.5 rounded-xl">
-                <Eye className="h-6 w-6 text-red-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold">View Pending Reviews</h3>
-                <p className="text-sm text-muted-foreground">{stats.pendingReviews} items awaiting</p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </CardContent>
-          </Card>
+        {(isAdmin || isManager) && stats.pendingReviews > 0 && (
+          <Button variant="outline" size="sm" className="gap-2 border-amber-200 text-amber-700 dark:border-amber-800 dark:text-amber-300" onClick={handleViewPendingReviews}>
+            <Eye className="h-3.5 w-3.5" />
+            {stats.pendingReviews} Pending Reviews
+          </Button>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ClipboardCheck className="h-5 w-5" />
-                My Assignments
-              </CardTitle>
-              <CardDescription>Engagements assigned to you</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Engagement</TableHead>
-                    <TableHead>Client</TableHead>
-                    <TableHead>My Role</TableHead>
-                    <TableHead>Phase</TableHead>
-                    <TableHead>Due Date</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {myAssignments.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                        No assignments found.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    myAssignments.map((assignment) => (
-                      <TableRow 
-                        key={assignment.id} 
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => handleEngagementRowClick(assignment.id, assignment.currentPhase, assignment.status)}
+      {/* My Assignments Table */}
+      <Card className="shadow-sm">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border/50">
+          <div className="flex items-center gap-2">
+            <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold">My Assignments</h2>
+            {myAssignments.length > 0 && (
+              <Badge variant="secondary" className="text-xs">{myAssignments.length}</Badge>
+            )}
+          </div>
+          <Link href="/engagements">
+            <Button variant="ghost" size="sm" className="text-xs gap-1">
+              View All <ChevronRight className="h-3 w-3" />
+            </Button>
+          </Link>
+        </div>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Engagement</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Phase</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {myAssignments.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                    <div className="flex flex-col items-center gap-2">
+                      <ClipboardCheck className="h-8 w-8 text-muted-foreground/30" />
+                      <p className="text-sm">No assignments found</p>
+                      <p className="text-xs text-muted-foreground">Engagements assigned to you will appear here</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                myAssignments.map((assignment) => (
+                  <TableRow 
+                    key={assignment.id} 
+                    className="cursor-pointer"
+                    onClick={() => handleEngagementRowClick(assignment.id, assignment.currentPhase, assignment.status)}
+                  >
+                    <TableCell className="font-medium font-mono text-sm">
+                      <EngagementLink
+                        engagementId={assignment.id}
+                        engagementCode={assignment.engagementName}
+                        clientId={assignment.clientId}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <span 
+                        className="hover:text-primary hover:underline cursor-pointer text-sm"
+                        onClick={(e) => handleClientCellClick(e, assignment.clientId)}
                       >
-                        <TableCell className="font-medium font-mono">
-                          <EngagementLink
-                            engagementId={assignment.id}
-                            engagementCode={assignment.engagementName}
-                            clientId={assignment.clientId}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <span 
-                            className="hover:text-primary hover:underline cursor-pointer"
-                            onClick={(e) => handleClientCellClick(e, assignment.clientId)}
-                          >
-                            {assignment.clientName}
-                          </span>
-                        </TableCell>
-                        <TableCell>{getRoleBadge(assignment.myRole)}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{assignment.currentPhase}</Badge>
-                        </TableCell>
-                        <TableCell>{assignment.dueDate}</TableCell>
-                        <TableCell>{getStatusBadge(assignment.status)}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                        {assignment.clientName}
+                      </span>
+                    </TableCell>
+                    <TableCell>{getRoleBadge(assignment.myRole)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">{assignment.currentPhase}</Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{assignment.dueDate}</TableCell>
+                    <TableCell>{getStatusBadge(assignment.status)}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
+      </Card>
 
-        <div>
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Recent Activity
-              </CardTitle>
-              <CardDescription>Latest system updates</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Clock className="h-8 w-8 text-muted-foreground/40 mb-2" />
-                <p className="text-sm text-muted-foreground">Activity tracking will appear here as you work</p>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Recent Activity */}
+      <Card className="shadow-sm">
+        <div className="flex items-center gap-2 px-5 py-3 border-b border-border/50">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold">Recent Activity</h2>
         </div>
-      </div>
+        <CardContent className="py-8">
+          <div className="flex flex-col items-center justify-center text-center">
+            <Clock className="h-8 w-8 text-muted-foreground/30 mb-2" />
+            <p className="text-sm text-muted-foreground">Activity tracking will appear here as you work</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
