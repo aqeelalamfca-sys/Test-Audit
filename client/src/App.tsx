@@ -281,6 +281,7 @@ const GuardedOutputsPage = createGuardedComponent(OutputsPage, "OutputsPage", tr
 
 const GuardedObservations = createGuardedComponent(Observations, "Observations", true);
 const GuardedPostUploadWorkflow = createGuardedComponent(PostUploadWorkflow, "PostUploadWorkflow", true);
+const GuardedWorkflowHealthPage = createGuardedComponent(WorkflowHealthPage, "WorkflowHealthPage", true);
 
 function Router() {
   return (
@@ -326,12 +327,14 @@ function Router() {
       <Route path="/platform/legal-acceptances" component={GuardedPlatformLegalAcceptances} />
 
       {/* Firm Admin routes (FirmAdmin+ role guard) */}
-      <Route path="/firm-admin" component={GuardedFirmSettings} />
       <Route path="/firm-admin/users" component={GuardedFirmUsers} />
       <Route path="/firm-admin/settings" component={GuardedFirmSettings} />
       <Route path="/firm-admin/audit-logs" component={GuardedFirmAuditLogs} />
       <Route path="/firm-admin/control-compliance-log" component={GuardedFirmControlComplianceLog} />
       <Route path="/firm-admin/ai-usage" component={GuardedFirmAIUsage} />
+      <Route path="/firm-admin">
+        <Redirect to="/firm-admin/settings" />
+      </Route>
       
       {/* Redirect bare /workspace to engagements */}
       <Route path="/workspace" component={WorkspaceRedirect} />
@@ -350,7 +353,7 @@ function Router() {
       <Route path="/workspace/:engagementId/inspection" component={GuardedInspection} />
       <Route path="/workspace/:engagementId/qcr-dashboard" component={GuardedInspectionDashboard} />
       <Route path="/workspace/:engagementId/audit-health" component={GuardedAuditHealthDashboard} />
-      <Route path="/workspace/:engagementId/workflow-health" component={WorkflowHealthPageLazy} />
+      <Route path="/workspace/:engagementId/workflow-health" component={GuardedWorkflowHealthPage} />
       <Route path="/workspace/:engagementId/onboarding" component={GuardedEngagementControl} />
       <Route path="/workspace/:engagementId/control" component={GuardedEngagementControl} />
       <Route path="/workspace/:engagementId/ethics" component={GuardedEthicsIndependence} />
@@ -393,9 +396,13 @@ function Router() {
       <Route path="/engagement/:id/import" component={createLegacyRedirect("import", "import")} />
       <Route path="/engagement/:id/requisition" component={createLegacyRedirect("requisition", "requisition")} />
       
-      {/* Standalone workspace routes - redirect to engagements */}
-      <Route path="/pre-planning" component={withLazySuspense(PrePlanning)} />
-      <Route path="/information-requisition" component={withLazySuspense(InformationRequisition)} />
+      {/* Standalone workspace routes - redirect to engagements (require engagement context) */}
+      <Route path="/pre-planning">
+        <Redirect to="/engagements" />
+      </Route>
+      <Route path="/information-requisition">
+        <Redirect to="/engagements" />
+      </Route>
       
       <Route component={NotFound} />
     </Switch>

@@ -74,7 +74,7 @@ const WORKSPACE_PHASE_ICONS: Record<string, React.ElementType> = {
   "checklists": ListChecks,
   "finalization": CheckCircle2,
   "deliverables": FileOutput,
-  "eqcr": CheckCircle2,
+  "eqcr": UserCheck,
   "inspection": Search,
 };
 
