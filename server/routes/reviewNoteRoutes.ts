@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth, type AuthenticatedRequest } from "../auth";
+import { createNotifications } from "./userNotificationRoutes";
 
 const router = Router();
 
@@ -184,6 +185,19 @@ router.post("/", requireAuth, async (req: AuthenticatedRequest, res: Response) =
       return res.status(400).json({ error: "Cannot add notes to a completed or archived engagement" });
     }
 
+    if (data.assigneeIds && data.assigneeIds.length > 0) {
+      const validUsers = await prisma.user.count({
+        where: {
+          id: { in: data.assigneeIds },
+          firmId: req.user!.firmId,
+          status: "ACTIVE",
+        },
+      });
+      if (validUsers !== data.assigneeIds.length) {
+        return res.status(400).json({ error: "One or more assignees are not valid firm members" });
+      }
+    }
+
     const note = await prisma.reviewNote.create({
       data: {
         engagementId: data.engagementId,
@@ -205,6 +219,19 @@ router.post("/", requireAuth, async (req: AuthenticatedRequest, res: Response) =
       },
       include: noteInclude,
     });
+
+    if (data.assigneeIds && data.assigneeIds.length > 0) {
+      const recipientIds = data.assigneeIds.filter((uid) => uid !== req.user!.id);
+      const engCode = note.engagement?.engagementCode || "";
+      const clientName = note.engagement?.client?.name || "";
+      createNotifications(recipientIds, {
+        type: "REVIEW_NOTE_ASSIGNED",
+        title: "New review note assigned",
+        message: `${req.user!.fullName} assigned you a ${data.noteType.toLowerCase()}: "${data.title}" — ${clientName} ${engCode}`,
+        referenceId: note.id,
+        referenceType: "REVIEW_NOTE",
+      });
+    }
 
     res.status(201).json(note);
   } catch (error) {
@@ -281,6 +308,20 @@ router.patch("/:id/status", requireAuth, async (req: AuthenticatedRequest, res: 
       include: noteInclude,
     });
 
+    const allInvolved = new Set<string>();
+    if (existing.authorId) allInvolved.add(existing.authorId);
+    existing.assignees?.forEach((a: any) => allInvolved.add(a.userId));
+    allInvolved.delete(req.user!.id);
+
+    const statusLabel = data.status === "CLEARED" ? "cleared" : data.status === "ADDRESSED" ? "addressed" : "reopened";
+    createNotifications([...allInvolved], {
+      type: "REVIEW_NOTE_STATUS",
+      title: `Review note ${statusLabel}`,
+      message: `${req.user!.fullName} ${statusLabel} the note: "${existing.title}"`,
+      referenceId: existing.id,
+      referenceType: "REVIEW_NOTE",
+    });
+
     res.json(note);
   } catch (error) {
     if (error instanceof z.ZodError) return res.status(400).json({ error: "Validation failed" });
@@ -326,6 +367,19 @@ router.post("/:id/messages", requireAuth, async (req: AuthenticatedRequest, res:
     await prisma.reviewNote.update({
       where: { id: req.params.id },
       data: { updatedAt: new Date() },
+    });
+
+    const allInvolved = new Set<string>();
+    if (note.authorId) allInvolved.add(note.authorId);
+    note.assignees?.forEach((a: any) => allInvolved.add(a.userId));
+    allInvolved.delete(req.user!.id);
+
+    createNotifications([...allInvolved], {
+      type: "REVIEW_NOTE_REPLY",
+      title: "New reply on review note",
+      message: `${req.user!.fullName} replied on: "${note.title}"`,
+      referenceId: note.id,
+      referenceType: "REVIEW_NOTE",
     });
 
     res.status(201).json(thread);

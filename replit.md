@@ -80,6 +80,24 @@ The workflow runs: `NODE_OPTIONS='--max-old-space-size=1024' NODE_ENV=developmen
 - Build: `npm run build`
 - Run: `node dist/index.cjs`
 
+## User Notification System
+
+Real-time per-user notifications for review note events:
+- **Database**: `UserNotification` model (userId, type, title, message, referenceId, referenceType, isRead, createdAt)
+- **Backend**: `server/routes/userNotificationRoutes.ts` — mounted at `/api/notifications`
+  - `GET /api/notifications` — list user's notifications with unread count
+  - `PATCH /api/notifications/:id/read` — mark single notification as read
+  - `PATCH /api/notifications/mark-all-read` — mark all as read
+- **Notification triggers** (in `server/routes/reviewNoteRoutes.ts`):
+  - `REVIEW_NOTE_ASSIGNED` — when a review note is created with assignees
+  - `REVIEW_NOTE_STATUS` — when note status changes (addressed/cleared/reopened)
+  - `REVIEW_NOTE_REPLY` — when a new message is posted on a note thread
+- **Frontend**: Dynamic notification dropdown in `client/src/components/top-bar.tsx`
+  - Polls every 30s, shows unread badge count
+  - Clicking a review note notification navigates to `/review-notes`
+  - "Mark all read" button, per-notification read indicators
+- **Helper**: `createNotifications(userIds, data)` exported from userNotificationRoutes for reuse
+
 ## Engagement Allocation
 
 The Engagement Allocation page (`/engagement-allocation`) provides:

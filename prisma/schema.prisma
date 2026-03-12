@@ -687,6 +687,7 @@ model User {
   moduleDataCreated WorkspaceModuleData[] @relation("ModuleCreatedBy")
   moduleDataUpdated WorkspaceModuleData[] @relation("ModuleUpdatedBy")
 
+  notifications          UserNotification[] @relation("UserNotifications")
   aiInteractionLogs      AIInteractionLog[]
   enforcementGatesPassed EnforcementGate[]
   makerCheckerPrepared   MakerCheckerWorkflow[] @relation("WorkflowPreparer")
@@ -4135,6 +4136,23 @@ model ReviewThread {
 
   reviewNote ReviewNote @relation(fields: [reviewNoteId], references: [id])
   author     User       @relation("ReviewThreadAuthor", fields: [authorId], references: [id])
+}
+
+model UserNotification {
+  id            String   @id @default(uuid())
+  userId        String
+  type          String
+  title         String
+  message       String
+  referenceId   String?
+  referenceType String?
+  isRead        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
 }
 
 model SectionSignOff {
