@@ -1137,13 +1137,30 @@ export default function Finalization() {
                       <TableHead className="w-[120px]">Response</TableHead>
                       <TableHead className="w-[200px]">Remarks</TableHead>
                       <TableHead className="w-[100px]">ISA Ref</TableHead>
+                      {fileStatus !== "locked" && <TableHead className="w-[40px]"></TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {checklistItems.map((item, idx) => (
                       <TableRow key={item.id} className={item.response === "no" && !item.remarks ? "bg-red-50 dark:bg-red-900/20" : ""}>
                         <TableCell className="font-mono">{item.srNo}</TableCell>
-                        <TableCell className="font-medium">{item.item}</TableCell>
+                        <TableCell className="font-medium">
+                          {item.id.startsWith("custom-") ? (
+                            <Input
+                              value={item.item}
+                              onChange={(e) => {
+                                const updated = [...checklistItems];
+                                updated[idx].item = e.target.value;
+                                setChecklistItems(updated);
+                              }}
+                              placeholder="Enter item name"
+                              className="text-sm font-medium"
+                              disabled={fileStatus === "locked"}
+                            />
+                          ) : (
+                            item.item
+                          )}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-start gap-2">
                             {item.aiGenerated && <Sparkles className="h-3 w-3 text-purple-500 mt-1 shrink-0" />}
@@ -1194,13 +1211,70 @@ export default function Finalization() {
                           />
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="text-xs">{item.isaReference}</Badge>
+                          <div className="flex items-center gap-1">
+                            {item.id.startsWith("custom-") ? (
+                              <Input
+                                value={item.isaReference}
+                                onChange={(e) => {
+                                  const updated = [...checklistItems];
+                                  updated[idx].isaReference = e.target.value;
+                                  setChecklistItems(updated);
+                                }}
+                                placeholder="ISA Ref"
+                                className="text-xs w-24"
+                                disabled={fileStatus === "locked"}
+                              />
+                            ) : (
+                              <Badge variant="outline" className="text-xs">{item.isaReference}</Badge>
+                            )}
+                          </div>
                         </TableCell>
+                        {fileStatus !== "locked" && (
+                          <TableCell className="w-[40px]">
+                            {item.id.startsWith("custom-") && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                onClick={() => {
+                                  const updated = checklistItems.filter((_, i) => i !== idx).map((ci, i) => ({ ...ci, srNo: i + 1 }));
+                                  setChecklistItems(updated);
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </div>
+              {fileStatus !== "locked" && (
+                <div className="mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newItem: ChecklistItem = {
+                        id: `custom-${Date.now()}`,
+                        srNo: checklistItems.length + 1,
+                        item: "",
+                        description: "",
+                        aiGenerated: false,
+                        response: "",
+                        remarks: "",
+                        isaReference: "",
+                      };
+                      setChecklistItems([...checklistItems, newItem]);
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add More Line
+                  </Button>
+                </div>
+              )}
               
               {checklistItems.some(item => item.response === "no" && !item.remarks) && (
                 <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-center gap-2 text-red-700 dark:text-red-300">
