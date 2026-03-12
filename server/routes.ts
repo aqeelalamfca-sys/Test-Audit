@@ -733,7 +733,7 @@ export async function registerRoutes(
       if (data.engagementManagerId !== undefined) updateData.engagementManagerId = data.engagementManagerId;
       if (data.teamLeadId !== undefined) updateData.teamLeadId = data.teamLeadId;
 
-      const engagement = await withTenantContext(firmId, async (tx) => {
+      const { updated, previousData } = await withTenantContext(firmId, async (tx) => {
         const existing = await tx.engagement.findUnique({
           where: { id: req.params.id },
         });
@@ -746,28 +746,28 @@ export async function registerRoutes(
           throw Object.assign(new Error("Access denied"), { statusCode: 403 });
         }
 
-        const updated = await tx.engagement.update({
+        const result = await tx.engagement.update({
           where: { id: req.params.id },
           data: updateData,
         });
 
-        await logAuditTrail(
-          req.user!.id,
-          "ENGAGEMENT_UPDATED",
-          "engagement",
-          updated.id,
-          existing,
-          updated,
-          updated.id,
-          req.body.justification || "Engagement updated",
-          req.ip,
-          req.get("user-agent")
-        );
-
-        return updated;
+        return { updated: result, previousData: existing };
       });
 
-      res.json(engagement);
+      logAuditTrail(
+        req.user!.id,
+        "ENGAGEMENT_UPDATED",
+        "engagement",
+        updated.id,
+        previousData,
+        updated,
+        updated.id,
+        req.body.justification || "Engagement updated",
+        req.ip,
+        req.get("user-agent")
+      ).catch(err => console.error("Audit trail log error:", err));
+
+      res.json(updated);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Validation failed", details: error.errors });

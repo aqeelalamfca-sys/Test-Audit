@@ -128,7 +128,6 @@ function handleGlobalError(error: unknown) {
       description: "You don't have permission to perform this action.",
       variant: "destructive",
     });
-    setTimeout(() => { window.location.href = "/"; }, 2000);
     return;
   }
 
