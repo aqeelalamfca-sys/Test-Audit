@@ -1,7 +1,7 @@
-import { useState, useEffect, useImperativeHandle, forwardRef } from "react";
+import { useState, useEffect, useImperativeHandle, forwardRef, useRef } from "react";
 import { useParams } from "wouter";
 import { useEngagement } from "@/lib/workspace-context";
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun, BorderStyle, Table, TableRow, TableCell, WidthType } from "docx";
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
 import { getClientDocxLogoParagraph } from "@/lib/docx-logo";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,15 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   FileSignature,
   CheckCircle2,
@@ -27,32 +24,23 @@ import {
   Plus,
   Loader2,
   FileText,
-  FileDown,
   Wand2,
-  RotateCcw,
   Eye,
-  Edit3,
-  HelpCircle,
   Info,
   Check,
   X,
   Paperclip,
+  Upload,
+  Calendar,
+  Download,
+  FileCheck,
+  File,
+  Trash2,
 } from "lucide-react";
 import { SectionAttachments } from "./section-attachments";
 import { useToast } from "@/hooks/use-toast";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import type { EngagementLetterChecklistRow } from "./shared-types";
-
-const FIRM_DETAILS = {
-  name: "AuditWise & Co.",
-  tradingName: "AuditWise Chartered Accountants",
-  registrationNo: "AW-2024-001",
-  address: "Suite 501, Business Tower, Clifton, Karachi 75600, Pakistan",
-  phone: "+92 21 3456 7890",
-  email: "info@auditwise.pk",
-  website: "www.auditwise.pk",
-  icapMemberNo: "ICAP/2024/12345",
-};
 
 interface ChecklistQuestion {
   id: string;
@@ -163,117 +151,18 @@ const ENGAGEMENT_CHECKLIST_QUESTIONS: ChecklistQuestion[] = [
   },
 ];
 
-const getDefaultFormData = (clientName: string, fiscalYearEnd: string, engagementCode: string) => ({
-  scopeOfAudit: `We will conduct a statutory audit of the financial statements of ${clientName || "[Client Name]"} for the year ending ${fiscalYearEnd || "[Year End Date]"} in accordance with International Standards on Auditing (ISAs) as adopted by the Institute of Chartered Accountants of Pakistan (ICAP).
+interface DocumentRecord {
+  date: string;
+  generatedAt: string | null;
+  attachedFile: { name: string; url: string; uploadedAt: string } | null;
+  notes: string;
+}
 
-The audit will cover:
-• Statement of Financial Position as at ${fiscalYearEnd || "[Year End Date]"}
-• Statement of Profit or Loss and Other Comprehensive Income
-• Statement of Changes in Equity
-• Statement of Cash Flows
-• Notes to the Financial Statements, including material accounting policies
-
-Our audit will be conducted to obtain reasonable assurance about whether the financial statements as a whole are free from material misstatement, whether due to fraud or error.`,
-
-  managementResponsibilities: `Management is responsible for:
-
-1. Preparation and Fair Presentation of Financial Statements
-   • Preparing financial statements in accordance with the applicable financial reporting framework (IFRS/Local GAAP)
-   • Ensuring fair presentation of financial position, performance, and cash flows
-
-2. Internal Control
-   • Designing, implementing, and maintaining internal controls relevant to the preparation of financial statements that are free from material misstatement
-   • Safeguarding assets and preventing/detecting fraud and errors
-
-3. Access and Information
-   • Providing unrestricted access to all records, documents, and personnel necessary for the audit
-   • Providing written representations on matters material to the financial statements
-   • Providing a management representation letter upon completion of audit fieldwork
-
-4. Regulatory Compliance
-   • Ensuring compliance with applicable laws, regulations, and statutory requirements
-   • Maintaining proper books of account as required under the Companies Act, 2017`,
-
-  auditorResponsibilities: `As auditors, our responsibilities include:
-
-1. Audit Opinion
-   • Expressing an independent opinion on whether the financial statements present a true and fair view in accordance with the applicable financial reporting framework
-
-2. Professional Standards
-   • Conducting the audit in accordance with International Standards on Auditing (ISAs) as adopted by ICAP
-   • Complying with the ICAP Code of Ethics including independence requirements
-
-3. Audit Procedures
-   • Performing risk assessment procedures to identify and assess risks of material misstatement
-   • Designing and performing further audit procedures responsive to assessed risks
-   • Obtaining sufficient appropriate audit evidence to support our opinion
-
-4. Communication
-   • Communicating significant findings to those charged with governance
-   • Reporting any significant deficiencies in internal control identified during the audit
-   • Issuing a management letter with recommendations for improvement
-
-5. Limitations
-   • An audit does not guarantee that all misstatements will be detected
-   • We are not responsible for preventing fraud or errors`,
-
-  reportingFramework: "ifrs",
-  auditingStandards: "International Standards on Auditing (ISAs) as adopted by ICAP",
-  reportForm: `Our audit report will include:
-• Independent Auditor's Report on the Financial Statements
-• Key Audit Matters (if applicable for listed entities)
-• Report on compliance with the Companies Act, 2017
-• Report on the adequacy of internal controls`,
-
-  deliverables: `Upon completion of the audit, we will provide:
-• Signed Audit Report on Financial Statements
-• Management Letter with recommendations
-• Internal Control Assessment Report
-• Tax Compliance Review (if agreed)
-• Draft financial statements review notes`,
-
-  timeline: `Proposed audit timeline for ${engagementCode || "[Engagement Code]"}:
-• Planning and risk assessment: Week 1-2
-• Interim audit procedures: Week 3-4
-• Year-end audit fieldwork: Week 5-8
-• Draft report review: Week 9
-• Final report issuance: Week 10`,
-
-  feeStructure: `Professional fees for the statutory audit engagement:
-• Base audit fee: PKR [Amount]
-• Out-of-pocket expenses: Actual cost basis
-• Additional services (if any): As agreed separately
-
-Fee is based on anticipated cooperation from management and availability of requested documents within agreed timelines.`,
-
-  paymentTerms: `Payment terms:
-• 30% upon signing of engagement letter
-• 40% upon completion of fieldwork
-• 30% upon issuance of final audit report
-
-Invoices are payable within 15 days of issuance. Late payments may attract interest at KIBOR + 2% per annum.`,
-
-  additionalCosts: `Additional costs that may be billed separately:
-• Travel and accommodation for out-of-station visits
-• Specialist consultations (IT audit, actuarial, legal)
-• Extended procedures due to significant issues identified
-• Regulatory filing fees (if applicable)
-
-All additional costs will be communicated and agreed in advance.`,
-
-  liabilityLimitation: `In accordance with ICAP guidelines and professional standards:
-• Our liability is limited to the amount of professional fees for this engagement
-• We shall not be liable for any indirect, consequential, or special damages
-• Any claims must be made within one year of delivery of the final audit report
-• This limitation does not apply to fraud or willful misconduct on our part`,
-
-  clientAcceptance: `By signing this engagement letter, ${clientName || "[Client Name]"} confirms:
-• Agreement to the terms and conditions set forth herein
-• Acknowledgment of management's responsibilities as outlined above
-• Authorization for us to proceed with the audit engagement
-• Commitment to provide full cooperation and timely access to information
-
-This engagement letter remains effective until superseded by a new engagement letter or terminated in writing by either party.`,
+const emptyDocRecord = (): DocumentRecord => ({
+  date: new Date().toISOString().split("T")[0],
+  generatedAt: null,
+  attachedFile: null,
+  notes: "",
 });
 
 const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
@@ -285,28 +174,13 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
   const [saving, setSaving] = useState(false);
   const [generatingConsent, setGeneratingConsent] = useState(false);
   const [generatingEngLetter, setGeneratingEngLetter] = useState(false);
-  const [activeView, setActiveView] = useState<"edit" | "preview">("edit");
-  const [hasLoadedDefaults, setHasLoadedDefaults] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState<"engagement" | "consent" | null>(null);
 
-  const clientName = client?.name || "";
-  const fiscalYearEnd = engagement?.fiscalYearEnd ? new Date(engagement.fiscalYearEnd).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : "";
-  const engagementCode = engagement?.engagementCode || "";
+  const engFileRef = useRef<HTMLInputElement>(null);
+  const consentFileRef = useRef<HTMLInputElement>(null);
 
-  const [formData, setFormData] = useState({
-    scopeOfAudit: "",
-    managementResponsibilities: "",
-    auditorResponsibilities: "",
-    reportingFramework: "",
-    auditingStandards: "",
-    reportForm: "",
-    deliverables: "",
-    timeline: "",
-    feeStructure: "",
-    paymentTerms: "",
-    additionalCosts: "",
-    liabilityLimitation: "",
-    clientAcceptance: "",
-  });
+  const [engRecord, setEngRecord] = useState<DocumentRecord>(emptyDocRecord());
+  const [consentRecord, setConsentRecord] = useState<DocumentRecord>(emptyDocRecord());
 
   const [checklistResponses, setChecklistResponses] = useState<Record<string, { response: string; remarks: string }>>(() => {
     const initial: Record<string, { response: string; remarks: string }> = {};
@@ -317,8 +191,11 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
   });
 
   const [customQuestions, setCustomQuestions] = useState<ChecklistQuestion[]>([]);
-
   const allQuestions = [...ENGAGEMENT_CHECKLIST_QUESTIONS, ...customQuestions];
+
+  const clientName = client?.name || "";
+  const fiscalYearEnd = engagement?.fiscalYearEnd ? new Date(engagement.fiscalYearEnd).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : "";
+  const engagementCode = engagement?.engagementCode || "";
 
   const addCustomQuestion = () => {
     const newId = `eng-custom-${Date.now()}`;
@@ -383,7 +260,6 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
     const resp = checklistResponses[questionId];
     if (!resp || !resp.response) return false;
     if (resp.response === "No" && !resp.remarks.trim()) return false;
-    // Check if custom question has text
     const question = allQuestions.find(q => q.id === questionId);
     if (question?.isCustom && !question.question.trim()) return false;
     return true;
@@ -391,20 +267,7 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
 
   const completedCount = allQuestions.filter(q => isQuestionComplete(q.id)).length;
   const totalQuestions = allQuestions.length;
-
-  // Legacy compatibility - convert old format to new
-  const [engagementRows, setEngagementRows] = useState<EngagementLetterChecklistRow[]>([]);
-
-  const applyDefaultText = () => {
-    const defaults = getDefaultFormData(clientName, fiscalYearEnd, engagementCode);
-    setFormData(defaults);
-    toast({ title: "Defaults Applied", description: "Pre-filled text has been applied to all fields. You can now edit as needed." });
-  };
-
-  const resetToDefaults = (field: keyof typeof formData) => {
-    const defaults = getDefaultFormData(clientName, fiscalYearEnd, engagementCode);
-    setFormData(prev => ({ ...prev, [field]: defaults[field] }));
-  };
+  const incompleteCount = totalQuestions - completedCount;
 
   useEffect(() => {
     const loadData = async () => {
@@ -414,17 +277,16 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
         if (response.ok) {
           const result = await response.json();
           if (result.data?.engagementLetter) {
-            const { formData: savedFormData, checklistResponses: savedResponses, customQuestions: savedCustom, engagementRows: savedRows } = result.data.engagementLetter;
-            if (savedFormData && Object.values(savedFormData).some(v => v !== "")) {
-              setFormData(savedFormData);
-              setHasLoadedDefaults(true);
-            }
-            // Load new format with proper normalization
-            if (savedResponses) {
+            const saved = result.data.engagementLetter;
+
+            if (saved.engRecord) setEngRecord({ ...emptyDocRecord(), ...saved.engRecord });
+            if (saved.consentRecord) setConsentRecord({ ...emptyDocRecord(), ...saved.consentRecord });
+
+            if (saved.checklistResponses) {
               setChecklistResponses(prev => {
                 const normalized = { ...prev };
-                Object.entries(savedResponses).forEach(([id, saved]) => {
-                  const savedData = saved as { response?: string; remarks?: string };
+                Object.entries(saved.checklistResponses).forEach(([id, s]) => {
+                  const savedData = s as { response?: string; remarks?: string };
                   normalized[id] = {
                     response: savedData.response || "",
                     remarks: savedData.remarks || ""
@@ -433,12 +295,11 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
                 return normalized;
               });
             }
-            if (savedCustom) {
-              setCustomQuestions(savedCustom);
-              // Ensure custom questions have response entries
+            if (saved.customQuestions) {
+              setCustomQuestions(saved.customQuestions);
               setChecklistResponses(prev => {
                 const updated = { ...prev };
-                (savedCustom as ChecklistQuestion[]).forEach(q => {
+                (saved.customQuestions as ChecklistQuestion[]).forEach(q => {
                   if (!updated[q.id]) {
                     updated[q.id] = { response: "", remarks: "" };
                   }
@@ -446,10 +307,9 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
                 return updated;
               });
             }
-            // Legacy format migration
-            if (savedRows && !savedResponses) {
+            if (saved.engagementRows && !saved.checklistResponses) {
               const migrated: Record<string, { response: string; remarks: string }> = {};
-              savedRows.forEach((row: EngagementLetterChecklistRow) => {
+              saved.engagementRows.forEach((row: EngagementLetterChecklistRow) => {
                 migrated[row.id] = { response: row.response || "", remarks: row.remarks || "" };
               });
               setChecklistResponses(prev => ({ ...prev, ...migrated }));
@@ -465,22 +325,12 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
     loadData();
   }, [engagementId]);
 
-  useEffect(() => {
-    if (!loading && !hasLoadedDefaults && clientName) {
-      const defaults = getDefaultFormData(clientName, fiscalYearEnd, engagementCode);
-      setFormData(defaults);
-      setHasLoadedDefaults(true);
-    }
-  }, [loading, hasLoadedDefaults, clientName, fiscalYearEnd, engagementCode]);
-
   const handleSave = async () => {
     try {
       setSaving(true);
-      
       const loadResponse = await fetchWithAuth(`/api/workspace/${engagementId}/pre-planning`);
       const existingData = loadResponse.ok ? (await loadResponse.json()).data || {} : {};
-      
-      // Serialize responses without File objects (they can't be JSON serialized)
+
       const serializableResponses: Record<string, { response: string; remarks: string }> = {};
       Object.entries(checklistResponses).forEach(([key, value]) => {
         serializableResponses[key] = { response: value.response, remarks: value.remarks };
@@ -489,20 +339,21 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
       const dataToSave = {
         ...existingData,
         engagementLetter: {
-          formData,
+          engRecord,
+          consentRecord,
           checklistResponses: serializableResponses,
           customQuestions,
         }
       };
-      
+
       const response = await fetchWithAuth(`/api/workspace/${engagementId}/pre-planning`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dataToSave)
       });
-      
+
       if (response.ok) {
-        toast({ title: "Saved", description: "Engagement letter saved successfully" });
+        toast({ title: "Saved", description: "Engagement letter data saved successfully" });
       } else {
         throw new Error('Failed to save');
       }
@@ -514,351 +365,29 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
     }
   };
 
-  const generateConsentLetter = async (format: "word" | "pdf") => {
-    try {
-      setGeneratingConsent(true);
-      
-      const currentDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-
-      const logoParagraph = await getClientDocxLogoParagraph(firm?.logoUrl);
-      
-      const doc = new Document({
-        sections: [{
-          properties: {},
-          children: [
-            ...(logoParagraph ? [logoParagraph] : []),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: FIRM_DETAILS.tradingName,
-                  bold: true,
-                  size: 32,
-                  color: "1e40af",
-                }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: FIRM_DETAILS.address,
-                  size: 18,
-                  color: "6b7280",
-                }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 50 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Tel: ${FIRM_DETAILS.phone} | Email: ${FIRM_DETAILS.email}`,
-                  size: 18,
-                  color: "6b7280",
-                }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 50 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `ICAP Member No: ${FIRM_DETAILS.icapMemberNo}`,
-                  size: 18,
-                  color: "6b7280",
-                }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 400 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "─".repeat(80) }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 400 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "CONSENT LETTER TO PREDECESSOR AUDITOR",
-                  bold: true,
-                  size: 28,
-                }),
-              ],
-              heading: HeadingLevel.HEADING_1,
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "(In accordance with ISA 300 and ICAP Guidelines)",
-                  italics: true,
-                  size: 20,
-                  color: "6b7280",
-                }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 400 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: `Date: ${currentDate}` }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: `Ref: ${engagementCode}/CONSENT/${new Date().getFullYear()}` }),
-              ],
-              spacing: { after: 400 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "To," }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "M/s [Predecessor Auditor Name]", bold: true }),
-              ],
-              spacing: { after: 50 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "Chartered Accountants" }),
-              ],
-              spacing: { after: 50 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "[Address Line 1]" }),
-              ],
-              spacing: { after: 50 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "[City, Country]" }),
-              ],
-              spacing: { after: 400 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "Dear Sirs," }),
-              ],
-              spacing: { after: 300 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Re: Request for Professional Clearance - ${clientName || "[Client Name]"}`,
-                  bold: true,
-                }),
-              ],
-              spacing: { after: 300 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `We have been approached by ${clientName || "[Client Name]"} to accept appointment as their statutory auditors for the financial year ending ${fiscalYearEnd || "[Year End Date]"}.`,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "In accordance with the requirements of the Code of Ethics issued by the Institute of Chartered Accountants of Pakistan (ICAP) and International Standard on Auditing 300 (Planning an Audit of Financial Statements), we request you to kindly provide us with professional clearance and confirm whether there are any professional or other reasons why we should not accept this appointment.",
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "We would also appreciate if you could provide us with the following information:",
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "1. Any matters relating to the client that would affect our decision to accept the engagement;" }),
-              ],
-              spacing: { after: 100 },
-              indent: { left: 360 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "2. Any unpaid fees for professional services rendered by you;" }),
-              ],
-              spacing: { after: 100 },
-              indent: { left: 360 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "3. Any disagreements with management on significant accounting or auditing matters;" }),
-              ],
-              spacing: { after: 100 },
-              indent: { left: 360 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "4. Your assessment of management's integrity; and" }),
-              ],
-              spacing: { after: 100 },
-              indent: { left: 360 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "5. Any other information that you consider relevant for our consideration." }),
-              ],
-              spacing: { after: 300 },
-              indent: { left: 360 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `${clientName || "[Client Name]"} has authorized us to approach you and has given consent for you to provide the information requested above.`,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "We would appreciate your response within 14 days from the date of this letter. Your cooperation in this matter is highly appreciated.",
-                }),
-              ],
-              spacing: { after: 400 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "Yours faithfully," }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "" }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "____________________________",
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "Authorized Signatory",
-                  bold: true,
-                }),
-              ],
-              spacing: { after: 50 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: FIRM_DETAILS.tradingName,
-                }),
-              ],
-              spacing: { after: 400 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "─".repeat(80) }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { before: 400, after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "CLIENT AUTHORIZATION",
-                  bold: true,
-                  size: 24,
-                }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `We, ${clientName || "[Client Name]"}, hereby authorize ${FIRM_DETAILS.tradingName} to contact our predecessor auditors to obtain professional clearance and any relevant information for the purpose of accepting the audit engagement.`,
-                }),
-              ],
-              spacing: { after: 300 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "Authorized by: ____________________________" }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "Name: ____________________________" }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "Designation: ____________________________" }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "Date: ____________________________" }),
-              ],
-              spacing: { after: 100 },
-            }),
-          ],
-        }],
-      });
-
-      const blob = await Packer.toBlob(doc);
-      
-      if (format === "word") {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `Consent_Letter_${engagementCode || "ENG"}_${new Date().toISOString().split('T')[0]}.docx`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        toast({ title: "Success", description: "Consent letter downloaded as Word document" });
-      } else {
-        toast({ 
-          title: "PDF Generation", 
-          description: "PDF generation requires server-side processing. Word document downloaded instead.",
-          variant: "default"
-        });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `Consent_Letter_${engagementCode || "ENG"}_${new Date().toISOString().split('T')[0]}.docx`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
-    } catch (error) {
-      console.error("Error generating consent letter:", error);
-      toast({ title: "Error", description: "Failed to generate consent letter", variant: "destructive" });
-    } finally {
-      setGeneratingConsent(false);
+  useImperativeHandle(ref, () => ({
+    save: async () => {
+      await handleSave();
     }
+  }));
+
+  const handleFileAttach = (type: "engagement" | "consent", file: File) => {
+    const fileRecord = {
+      name: file.name,
+      url: "",
+      uploadedAt: new Date().toISOString(),
+    };
+
+    if (type === "engagement") {
+      setEngRecord(prev => ({ ...prev, attachedFile: fileRecord }));
+    } else {
+      setConsentRecord(prev => ({ ...prev, attachedFile: fileRecord }));
+    }
+
+    toast({
+      title: "Attached",
+      description: `Signed ${type === "engagement" ? "engagement" : "consent"} letter recorded. Click "Save All Changes" to persist.`,
+    });
   };
 
   const generateEngagementLetter = async () => {
@@ -894,13 +423,14 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
       } catch {}
 
       const firmDisplayName = firm?.displayName || firm?.name || "Firm Name";
-      const currentDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-      const yearEnd = engagement?.fiscalYearEnd 
-        ? new Date(engagement.fiscalYearEnd).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) 
-        : "June 30, 202X";
-      const yearEndShort = engagement?.periodEnd 
+      const letterDate = engRecord.date
+        ? new Date(engRecord.date + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+        : new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+      const yearEndShort = engagement?.periodEnd
         ? `June 30, ${new Date(engagement.periodEnd).getFullYear()}`
-        : "June 30, 202X";
+        : engagement?.fiscalYearEnd
+          ? new Date(engagement.fiscalYearEnd).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+          : "June 30, 202X";
       const refCode = engagementCode || "___";
 
       const logoParagraph = await getClientDocxLogoParagraph(firm?.logoUrl);
@@ -958,7 +488,7 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
             ...headerParagraphs,
 
             p(`Ref:\t${refCode}/AEL/${new Date().getFullYear()}`),
-            p(`Date:\t${currentDate}`),
+            p(`Date:\t${letterDate}`),
             p(""),
 
             p("The Board of Directors", { bold: true }),
@@ -1052,11 +582,11 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
             p(""),
             p(`Name of Engagement Partner:     _________________________       Signature: ___________________________`),
             p(`${partnerName}`),
-            p(`Date:   ${currentDate}`),
+            p(`Date:   ${letterDate}`),
             p(""),
             p(""),
 
-            new Paragraph({ children: [new TextRun({ text: "─".repeat(80) })], alignment: AlignmentType.CENTER, spacing: { before: 400, after: 200 } }),
+            new Paragraph({ children: [new TextRun({ text: "\u2500".repeat(80) })], alignment: AlignmentType.CENTER, spacing: { before: 400, after: 200 } }),
             p(""),
 
             p(`I have read and understood the terms and conditions of this letter and attachments, and I agree to and accept them for and on behalf of ${clientName || "[Client Name]"} by whom I am duly authorized:`, { bold: false }),
@@ -1072,12 +602,14 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `Engagement_Letter_${engagementCode || "ENG"}_${new Date().toISOString().split('T')[0]}.docx`;
+      link.download = `Engagement_Letter_${engagementCode || "ENG"}_${new Date().toISOString().split("T")[0]}.docx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast({ title: "Success", description: "Engagement letter downloaded as Word document" });
+
+      setEngRecord(prev => ({ ...prev, generatedAt: new Date().toISOString() }));
+      toast({ title: "Downloaded", description: "Engagement letter downloaded as Word document" });
     } catch (error) {
       console.error("Error generating engagement letter:", error);
       toast({ title: "Error", description: "Failed to generate engagement letter", variant: "destructive" });
@@ -1086,51 +618,168 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
     }
   };
 
-  useImperativeHandle(ref, () => ({
-    save: async () => {
-      await handleSave();
+  const generateConsentLetter = async () => {
+    try {
+      setGeneratingConsent(true);
+
+      const letterDate = consentRecord.date
+        ? new Date(consentRecord.date + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+        : new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+
+      const firmDisplayName = firm?.displayName || firm?.name || "Firm Name";
+      let firmAddress = "";
+      let firmPhone = "";
+      let firmEmail = "";
+      let firmIcap = "";
+      try {
+        const firmRes = await fetchWithAuth("/api/auth/me");
+        if (firmRes.ok) {
+          const meData = await firmRes.json();
+          if (meData.firm) {
+            firmAddress = meData.firm.address || "";
+            firmPhone = meData.firm.phone || "";
+            firmEmail = meData.firm.email || "";
+            firmIcap = meData.firm.icapMemberNo || "";
+          }
+        }
+      } catch {}
+
+      const logoParagraph = await getClientDocxLogoParagraph(firm?.logoUrl);
+
+      const doc = new Document({
+        sections: [{
+          properties: {
+            page: { margin: { top: 1440, bottom: 1440, left: 1440, right: 1440 } },
+          },
+          children: [
+            ...(logoParagraph ? [logoParagraph] : []),
+            new Paragraph({
+              children: [new TextRun({ text: firmDisplayName, bold: true, size: 32, color: "1e40af" })],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 100 },
+            }),
+            ...(firmAddress ? [new Paragraph({
+              children: [new TextRun({ text: firmAddress, size: 18, color: "6b7280" })],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 50 },
+            })] : []),
+            ...((firmPhone || firmEmail) ? [new Paragraph({
+              children: [new TextRun({ text: `Tel: ${firmPhone}${firmEmail ? ` | Email: ${firmEmail}` : ""}`, size: 18, color: "6b7280" })],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 50 },
+            })] : []),
+            ...(firmIcap ? [new Paragraph({
+              children: [new TextRun({ text: `ICAP Member No: ${firmIcap}`, size: 18, color: "6b7280" })],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 400 },
+            })] : []),
+            new Paragraph({
+              children: [new TextRun({ text: "\u2500".repeat(80) })],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 400 },
+            }),
+            new Paragraph({
+              children: [new TextRun({ text: "CONSENT LETTER TO PREDECESSOR AUDITOR", bold: true, size: 28 })],
+              heading: HeadingLevel.HEADING_1,
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 100 },
+            }),
+            new Paragraph({
+              children: [new TextRun({ text: "(In accordance with ISA 300 and ICAP Guidelines)", italics: true, size: 20, color: "6b7280" })],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 400 },
+            }),
+            new Paragraph({
+              children: [new TextRun({ text: `Date: ${letterDate}` })],
+              spacing: { after: 200 },
+            }),
+            new Paragraph({
+              children: [new TextRun({ text: `Ref: ${engagementCode}/CONSENT/${new Date().getFullYear()}` })],
+              spacing: { after: 400 },
+            }),
+            new Paragraph({ children: [new TextRun({ text: "To," })], spacing: { after: 100 } }),
+            new Paragraph({ children: [new TextRun({ text: "M/s [Predecessor Auditor Name]", bold: true })], spacing: { after: 50 } }),
+            new Paragraph({ children: [new TextRun({ text: "Chartered Accountants" })], spacing: { after: 50 } }),
+            new Paragraph({ children: [new TextRun({ text: "[Address Line 1]" })], spacing: { after: 50 } }),
+            new Paragraph({ children: [new TextRun({ text: "[City, Country]" })], spacing: { after: 400 } }),
+            new Paragraph({ children: [new TextRun({ text: "Dear Sirs," })], spacing: { after: 300 } }),
+            new Paragraph({
+              children: [new TextRun({ text: `Re: Request for Professional Clearance - ${clientName || "[Client Name]"}`, bold: true })],
+              spacing: { after: 300 },
+            }),
+            new Paragraph({
+              children: [new TextRun({ text: `We have been approached by ${clientName || "[Client Name]"} to accept appointment as their statutory auditors for the financial year ending ${fiscalYearEnd || "[Year End Date]"}.` })],
+              spacing: { after: 200 },
+            }),
+            new Paragraph({
+              children: [new TextRun({ text: "In accordance with the requirements of the Code of Ethics issued by the Institute of Chartered Accountants of Pakistan (ICAP) and International Standard on Auditing 300 (Planning an Audit of Financial Statements), we request you to kindly provide us with professional clearance and confirm whether there are any professional or other reasons why we should not accept this appointment." })],
+              spacing: { after: 200 },
+            }),
+            new Paragraph({
+              children: [new TextRun({ text: "We would also appreciate if you could provide us with the following information:" })],
+              spacing: { after: 200 },
+            }),
+            new Paragraph({ children: [new TextRun({ text: "1. Any matters relating to the client that would affect our decision to accept the engagement;" })], spacing: { after: 100 }, indent: { left: 360 } }),
+            new Paragraph({ children: [new TextRun({ text: "2. Any unpaid fees for professional services rendered by you;" })], spacing: { after: 100 }, indent: { left: 360 } }),
+            new Paragraph({ children: [new TextRun({ text: "3. Any disagreements with management on significant accounting or auditing matters;" })], spacing: { after: 100 }, indent: { left: 360 } }),
+            new Paragraph({ children: [new TextRun({ text: "4. Your assessment of management's integrity; and" })], spacing: { after: 100 }, indent: { left: 360 } }),
+            new Paragraph({ children: [new TextRun({ text: "5. Any other information that you consider relevant for our consideration." })], spacing: { after: 300 }, indent: { left: 360 } }),
+            new Paragraph({
+              children: [new TextRun({ text: `${clientName || "[Client Name]"} has authorized us to approach you and has given consent for you to provide the information requested above.` })],
+              spacing: { after: 200 },
+            }),
+            new Paragraph({
+              children: [new TextRun({ text: "We would appreciate your response within 14 days from the date of this letter. Your cooperation in this matter is highly appreciated." })],
+              spacing: { after: 400 },
+            }),
+            new Paragraph({ children: [new TextRun({ text: "Yours faithfully," })], spacing: { after: 200 } }),
+            new Paragraph({ children: [new TextRun({ text: "" })], spacing: { after: 100 } }),
+            new Paragraph({ children: [new TextRun({ text: "____________________________" })], spacing: { after: 100 } }),
+            new Paragraph({ children: [new TextRun({ text: "Authorized Signatory", bold: true })], spacing: { after: 50 } }),
+            new Paragraph({ children: [new TextRun({ text: firmDisplayName })], spacing: { after: 400 } }),
+            new Paragraph({ children: [new TextRun({ text: "\u2500".repeat(80) })], alignment: AlignmentType.CENTER, spacing: { before: 400, after: 200 } }),
+            new Paragraph({
+              children: [new TextRun({ text: "CLIENT AUTHORIZATION", bold: true, size: 24 })],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 200 },
+            }),
+            new Paragraph({
+              children: [new TextRun({ text: `We, ${clientName || "[Client Name]"}, hereby authorize ${firmDisplayName} to contact our predecessor auditors to obtain professional clearance and any relevant information for the purpose of accepting the audit engagement.` })],
+              spacing: { after: 300 },
+            }),
+            new Paragraph({ children: [new TextRun({ text: "Authorized by: ____________________________" })], spacing: { after: 100 } }),
+            new Paragraph({ children: [new TextRun({ text: "Name: ____________________________" })], spacing: { after: 100 } }),
+            new Paragraph({ children: [new TextRun({ text: "Designation: ____________________________" })], spacing: { after: 100 } }),
+            new Paragraph({ children: [new TextRun({ text: "Date: ____________________________" })], spacing: { after: 100 } }),
+          ],
+        }],
+      });
+
+      const blob = await Packer.toBlob(doc);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Consent_Letter_${engagementCode || "ENG"}_${new Date().toISOString().split("T")[0]}.docx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setConsentRecord(prev => ({ ...prev, generatedAt: new Date().toISOString() }));
+      toast({ title: "Downloaded", description: "Consent letter downloaded as Word document" });
+    } catch (error) {
+      console.error("Error generating consent letter:", error);
+      toast({ title: "Error", description: "Failed to generate consent letter", variant: "destructive" });
+    } finally {
+      setGeneratingConsent(false);
     }
-  }));
+  };
 
-  const incompleteCount = totalQuestions - completedCount;
-
-  const FieldWithReset = ({ 
-    label, 
-    field, 
-    rows = 4,
-    hint 
-  }: { 
-    label: string; 
-    field: keyof typeof formData; 
-    rows?: number;
-    hint?: string;
-  }) => (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label className="flex items-center gap-2">
-          {label}
-          {hint && <span className="text-xs text-muted-foreground">({hint})</span>}
-        </Label>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => resetToDefaults(field)}
-          className="text-xs text-muted-foreground"
-          data-testid={`button-reset-${field}`}
-        >
-          <RotateCcw className="h-3 w-3 mr-1" />
-          Reset
-        </Button>
-      </div>
-      <Textarea 
-        value={formData[field]} 
-        onChange={(e) => setFormData({ ...formData, [field]: e.target.value })} 
-        rows={rows}
-        className="font-mono text-sm"
-        data-testid={`textarea-${field}`}
-      />
-    </div>
-  );
+  const getDocStatus = (record: DocumentRecord): { label: string; color: string } => {
+    if (record.attachedFile) return { label: "Signed Copy Attached", color: "bg-green-100 text-green-800 border-green-300" };
+    if (record.generatedAt) return { label: "Generated - Pending Signature", color: "bg-amber-100 text-amber-800 border-amber-300" };
+    return { label: "Not Generated", color: "bg-gray-100 text-gray-600 border-gray-300" };
+  };
 
   if (loading) {
     return (
@@ -1140,294 +789,236 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
     );
   }
 
+  const engStatus = getDocStatus(engRecord);
+  const consentStatus = getDocStatus(consentRecord);
+
+  const DocumentCard = ({
+    title,
+    icon,
+    iconColor,
+    borderColor,
+    bgColor,
+    record,
+    setRecord,
+    status,
+    generating,
+    uploading,
+    onGenerate,
+    onAttachClick,
+    fileRef,
+    type,
+  }: {
+    title: string;
+    icon: React.ReactNode;
+    iconColor: string;
+    borderColor: string;
+    bgColor: string;
+    record: DocumentRecord;
+    setRecord: React.Dispatch<React.SetStateAction<DocumentRecord>>;
+    status: { label: string; color: string };
+    generating: boolean;
+    onGenerate: () => void;
+    onAttachClick: () => void;
+    fileRef: React.RefObject<HTMLInputElement>;
+    type: "engagement" | "consent";
+  }) => (
+    <Card className={`${borderColor} ${bgColor}`}>
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            {icon}
+            {title}
+          </CardTitle>
+          <Badge variant="outline" className={`${status.color} text-xs font-medium px-3 py-1`}>
+            {status.label}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Label className="text-sm font-medium whitespace-nowrap">Document Date</Label>
+          </div>
+          <Input
+            type="date"
+            value={record.date}
+            onChange={e => setRecord(prev => ({ ...prev, date: e.target.value }))}
+            className="w-48 bg-white"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            onClick={onGenerate}
+            disabled={generating}
+            size="sm"
+            className="bg-purple-600 hover:bg-purple-700"
+          >
+            {generating ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            Download
+          </Button>
+
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            className="hidden"
+            onChange={e => {
+              const file = e.target.files?.[0];
+              if (file) handleFileAttach(type, file);
+              e.target.value = "";
+            }}
+          />
+          <Button
+            onClick={onAttachClick}
+            variant="outline"
+            size="sm"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Attach Signed Copy
+          </Button>
+
+          {record.attachedFile && (
+            <Button
+              onClick={() => setViewDialogOpen(type)}
+              variant="outline"
+              size="sm"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              View
+            </Button>
+          )}
+        </div>
+
+        {record.attachedFile && (
+          <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-green-200">
+            <FileCheck className="h-5 w-5 text-green-600 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{record.attachedFile.name}</p>
+              <p className="text-xs text-muted-foreground">
+                Uploaded {new Date(record.attachedFile.uploadedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+              onClick={() => setRecord(prev => ({ ...prev, attachedFile: null }))}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        {record.generatedAt && !record.attachedFile && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <Info className="h-3 w-3" />
+            Last downloaded on {new Date(record.generatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+            {" \u2014 "}Get it signed and attach the signed copy above.
+          </p>
+        )}
+
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Notes</Label>
+          <Textarea
+            value={record.notes}
+            onChange={e => setRecord(prev => ({ ...prev, notes: e.target.value }))}
+            placeholder="Add any notes about this document..."
+            rows={2}
+            className="text-sm bg-white"
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-6">
-      <Card className="border-purple-200 bg-purple-50/30">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <FileSignature className="h-5 w-5 text-purple-600" />
-            Generate Engagement Letter
-          </CardTitle>
-          <CardDescription>
-            Generate a professional ISA 210 compliant engagement letter in Word format with firm logo, addresses and signature blocks
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => generateEngagementLetter()}
-              disabled={generatingEngLetter}
-              className="bg-purple-600 hover:bg-purple-700"
-              data-testid="button-generate-engagement-letter"
-            >
-              {generatingEngLetter ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <FileDown className="h-4 w-4 mr-2" />
-              )}
-              Generate Letter
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Downloads as Word document (.docx) with firm letterhead, client details, and dual signature blocks
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <DocumentCard
+          title="Engagement Letter"
+          icon={<FileSignature className="h-5 w-5 text-purple-600" />}
+          iconColor="text-purple-600"
+          borderColor="border-purple-200"
+          bgColor="bg-purple-50/30"
+          record={engRecord}
+          setRecord={setEngRecord}
+          status={engStatus}
+          generating={generatingEngLetter}
+          onGenerate={generateEngagementLetter}
+          onAttachClick={() => engFileRef.current?.click()}
+          fileRef={engFileRef as React.RefObject<HTMLInputElement>}
+          type="engagement"
+        />
 
-      <Card className="border-blue-200 bg-blue-50/30">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <FileDown className="h-5 w-5 text-blue-600" />
-            Generate Consent Letter
-          </CardTitle>
-          <CardDescription>
-            Generate a professional consent letter to the predecessor auditor with firm letterhead
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={() => generateConsentLetter("word")}
-              disabled={generatingConsent}
-              data-testid="button-generate-consent-letter"
-            >
-              {generatingConsent ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <FileText className="h-4 w-4 mr-2" />
-              )}
-              Generate Consent Letter
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Downloads as Word document with firm letterhead and client authorization section
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+        <DocumentCard
+          title="Consent Letter"
+          icon={<FileText className="h-5 w-5 text-blue-600" />}
+          iconColor="text-blue-600"
+          borderColor="border-blue-200"
+          bgColor="bg-blue-50/30"
+          record={consentRecord}
+          setRecord={setConsentRecord}
+          status={consentStatus}
+          generating={generatingConsent}
+          onGenerate={generateConsentLetter}
+          onAttachClick={() => consentFileRef.current?.click()}
+          fileRef={consentFileRef as React.RefObject<HTMLInputElement>}
+          type="consent"
+        />
+      </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2" data-testid="title-engagement-letter">
-                <FileSignature className="h-5 w-5" />
-                Engagement Letter
-              </CardTitle>
-              <CardDescription>
-                Formalize terms of engagement as per ISA 210 and legal requirements
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={applyDefaultText}
-                data-testid="button-apply-defaults"
-              >
-                <Wand2 className="h-4 w-4 mr-2" />
-                Apply Default Text
-              </Button>
-              <div className="flex border rounded-md">
-                <Button
-                  variant={activeView === "edit" ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setActiveView("edit")}
-                  className="rounded-r-none"
-                  data-testid="button-view-edit"
-                >
-                  <Edit3 className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-                <Button
-                  variant={activeView === "preview" ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setActiveView("preview")}
-                  className="rounded-l-none"
-                  data-testid="button-view-preview"
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  Preview
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {activeView === "edit" ? (
-            <>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <div className="flex items-start gap-3">
-                  <Wand2 className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <h4 className="font-medium text-blue-900">Smart Pre-filled Content</h4>
-                    <p className="text-sm text-blue-700 mt-1">
-                      All fields are pre-filled with professional ISA-compliant text using client details from <strong>{clientName || "your client"}</strong>.
-                      Click any field to edit, or use the Reset button to restore default text.
+      <Dialog open={viewDialogOpen !== null} onOpenChange={() => setViewDialogOpen(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileCheck className="h-5 w-5 text-green-600" />
+              {viewDialogOpen === "engagement" ? "Signed Engagement Letter" : "Signed Consent Letter"}
+            </DialogTitle>
+          </DialogHeader>
+          {(() => {
+            const record = viewDialogOpen === "engagement" ? engRecord : consentRecord;
+            if (!record.attachedFile) return <p className="text-sm text-muted-foreground">No file attached.</p>;
+            const fileUrl = record.attachedFile.url;
+            const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(record.attachedFile.name);
+            const isPdf = /\.pdf$/i.test(record.attachedFile.name);
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                  <File className="h-5 w-5 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{record.attachedFile.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Uploaded {new Date(record.attachedFile.uploadedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                     </p>
                   </div>
                 </div>
+                {isImage && fileUrl && (
+                  <img src={fileUrl} alt="Signed document" className="w-full rounded border" />
+                )}
+                {isPdf && fileUrl && (
+                  <iframe src={fileUrl} className="w-full h-96 rounded border" title="Signed document" />
+                )}
+                {fileUrl && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => window.open(fileUrl, "_blank")}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Open / Download File
+                  </Button>
+                )}
               </div>
-
-              <FieldWithReset 
-                label="Scope of Audit" 
-                field="scopeOfAudit" 
-                rows={6}
-                hint="ISA 210.10"
-              />
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <FieldWithReset 
-                  label="Management Responsibilities" 
-                  field="managementResponsibilities" 
-                  rows={8}
-                  hint="ISA 210.6(b)"
-                />
-                <FieldWithReset 
-                  label="Auditor Responsibilities" 
-                  field="auditorResponsibilities" 
-                  rows={8}
-                  hint="ISA 210.10"
-                />
-              </div>
-
-              <Separator />
-              <h4 className="font-semibold flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Standards & Reporting
-              </h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Financial Reporting Framework</Label>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => resetToDefaults("reportingFramework")}
-                      className="text-xs text-muted-foreground"
-                      data-testid="button-reset-reportingFramework"
-                    >
-                      <RotateCcw className="h-3 w-3 mr-1" />
-                      Reset
-                    </Button>
-                  </div>
-                  <Select value={formData.reportingFramework} onValueChange={(v) => setFormData({ ...formData, reportingFramework: v })}>
-                    <SelectTrigger data-testid="select-reporting-framework"><SelectValue placeholder="Select framework" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ifrs" data-testid="select-item-ifrs">IFRS (International Financial Reporting Standards)</SelectItem>
-                      <SelectItem value="aaoifi" data-testid="select-item-aaoifi">AAOIFI (Islamic Financial Accounting)</SelectItem>
-                      <SelectItem value="local-gaap" data-testid="select-item-local-gaap">Local GAAP (Pakistan)</SelectItem>
-                      <SelectItem value="us-gaap" data-testid="select-item-us-gaap">US GAAP</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <FieldWithReset label="Auditing Standards" field="auditingStandards" rows={2} />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <FieldWithReset label="Form of Reports" field="reportForm" rows={3} />
-                <FieldWithReset label="Deliverables" field="deliverables" rows={3} />
-                <FieldWithReset label="Timeline" field="timeline" rows={3} />
-              </div>
-
-              <Separator />
-              <h4 className="font-semibold">Fees & Terms</h4>
-              <div className="grid grid-cols-3 gap-4">
-                <FieldWithReset label="Fee Structure" field="feeStructure" rows={3} />
-                <FieldWithReset label="Payment Terms" field="paymentTerms" rows={3} />
-                <FieldWithReset label="Additional Costs" field="additionalCosts" rows={3} />
-              </div>
-
-              <FieldWithReset 
-                label="Limitation of Liability" 
-                field="liabilityLimitation" 
-                rows={3}
-                hint="Per ICAP Guidelines"
-              />
-
-              <FieldWithReset 
-                label="Client Acceptance of Terms" 
-                field="clientAcceptance" 
-                rows={4}
-              />
-            </>
-          ) : (
-            <div className="bg-white border rounded-lg p-8 max-w-4xl mx-auto space-y-6">
-              <div className="text-center border-b pb-6">
-                <h1 className="text-2xl font-bold text-blue-800">{FIRM_DETAILS.tradingName}</h1>
-                <p className="text-sm text-muted-foreground mt-2">{FIRM_DETAILS.address}</p>
-                <p className="text-sm text-muted-foreground">ICAP Member No: {FIRM_DETAILS.icapMemberNo}</p>
-              </div>
-
-              <div className="text-center py-4">
-                <h2 className="text-xl font-bold">ENGAGEMENT LETTER</h2>
-                <p className="text-sm text-muted-foreground">Ref: {engagementCode}</p>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-blue-800 border-b pb-1">1. Scope of Audit</h3>
-                  <p className="mt-2 text-sm whitespace-pre-wrap">{formData.scopeOfAudit}</p>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-blue-800 border-b pb-1">2. Management Responsibilities</h3>
-                  <p className="mt-2 text-sm whitespace-pre-wrap">{formData.managementResponsibilities}</p>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-blue-800 border-b pb-1">3. Auditor Responsibilities</h3>
-                  <p className="mt-2 text-sm whitespace-pre-wrap">{formData.auditorResponsibilities}</p>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-blue-800 border-b pb-1">4. Standards & Reporting</h3>
-                  <div className="mt-2 text-sm space-y-2">
-                    <p><strong>Framework:</strong> {formData.reportingFramework === "ifrs" ? "IFRS" : formData.reportingFramework === "aaoifi" ? "AAOIFI" : formData.reportingFramework === "local-gaap" ? "Local GAAP" : formData.reportingFramework}</p>
-                    <p><strong>Standards:</strong> {formData.auditingStandards}</p>
-                    <p className="whitespace-pre-wrap"><strong>Report Form:</strong> {formData.reportForm}</p>
-                    <p className="whitespace-pre-wrap"><strong>Deliverables:</strong> {formData.deliverables}</p>
-                    <p className="whitespace-pre-wrap"><strong>Timeline:</strong> {formData.timeline}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-blue-800 border-b pb-1">5. Fees & Payment Terms</h3>
-                  <div className="mt-2 text-sm space-y-2">
-                    <p className="whitespace-pre-wrap">{formData.feeStructure}</p>
-                    <p className="whitespace-pre-wrap">{formData.paymentTerms}</p>
-                    <p className="whitespace-pre-wrap">{formData.additionalCosts}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-blue-800 border-b pb-1">6. Limitation of Liability</h3>
-                  <p className="mt-2 text-sm whitespace-pre-wrap">{formData.liabilityLimitation}</p>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-blue-800 border-b pb-1">7. Client Acceptance</h3>
-                  <p className="mt-2 text-sm whitespace-pre-wrap">{formData.clientAcceptance}</p>
-                </div>
-
-                <div className="pt-8 grid grid-cols-2 gap-8">
-                  <div className="text-center">
-                    <div className="border-t border-black pt-2">
-                      <p className="font-semibold">{FIRM_DETAILS.tradingName}</p>
-                      <p className="text-sm text-muted-foreground">Authorized Signatory</p>
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="border-t border-black pt-2">
-                      <p className="font-semibold">{clientName || "[Client Name]"}</p>
-                      <p className="text-sm text-muted-foreground">Client Authorized Signatory</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader className="pb-4">
@@ -1435,23 +1026,18 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
             <div>
               <CardTitle className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5" />
-                Engagement Letter Checklist (ISA 210 Compliance)
+                ISA 210 Compliance Checklist
               </CardTitle>
-              <CardDescription className="mt-1">Verify all engagement letter requirements per ISA 210</CardDescription>
-              <div className="flex flex-wrap gap-2 mt-2">
-                <Badge variant="outline" className="text-xs">ISA 210</Badge>
-                <Badge variant="outline" className="text-xs">ISA 220</Badge>
-                <Badge variant="outline" className="text-xs">ICAP</Badge>
-              </div>
+              <CardDescription className="mt-1">Verify all engagement letter requirements</CardDescription>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-muted-foreground" data-testid="text-checklist-progress">
+              <span className="text-sm font-medium text-muted-foreground">
                 {completedCount}/{totalQuestions}
               </span>
-              <Button 
+              <Button
                 variant="outline"
+                size="sm"
                 onClick={markAllYes}
-                data-testid="button-mark-all-yes"
               >
                 <Check className="h-4 w-4 mr-2" />
                 Mark All Yes
@@ -1459,22 +1045,21 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {allQuestions.map((question, idx) => {
             const resp = checklistResponses[question.id] || { response: "", remarks: "" };
             const isComplete = isQuestionComplete(question.id);
             const needsRemarks = resp.response === "No" && !resp.remarks.trim();
 
             return (
-              <Card 
-                key={question.id} 
-                className={`border ${isComplete ? "border-green-200 bg-green-50/30" : resp.response ? "border-blue-200" : "border-muted"} ${question.isCustom ? "bg-blue-50/20" : ""}`}
-                data-testid={`card-question-${question.id}`}
+              <Card
+                key={question.id}
+                className={`border ${isComplete ? "border-green-200 bg-green-50/30" : resp.response ? "border-blue-200" : "border-muted"}`}
               >
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
+                      <div className="flex-shrink-0 w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
                         {idx + 1}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -1485,41 +1070,25 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
                               onChange={e => updateCustomQuestion(question.id, e.target.value)}
                               placeholder="Enter custom requirement..."
                               className="font-medium"
-                              data-testid={`input-custom-question-${question.id}`}
                             />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeCustomQuestion(question.id)}
-                              className="text-destructive"
-                              data-testid={`button-remove-question-${question.id}`}
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => removeCustomQuestion(question.id)} className="text-destructive">
                               <X className="h-4 w-4" />
                             </Button>
                           </div>
                         ) : (
-                          <h4 className="font-medium text-foreground">{question.question}</h4>
+                          <h4 className="font-medium text-sm text-foreground">{question.question}</h4>
                         )}
-                        <div className="flex items-start gap-2 mt-1 text-sm text-muted-foreground">
-                          <Info className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-500" />
-                          <p>{question.helpText}</p>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mt-2">
+                        <div className="flex items-center gap-2 mt-1">
                           <Badge variant="secondary" className="text-xs">{question.category}</Badge>
                           <Badge variant="outline" className="text-xs">{question.isaReference}</Badge>
                         </div>
                       </div>
-                      {isComplete && (
-                        <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
-                      )}
+                      {isComplete && <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pl-11">
-                      <div className="space-y-2">
-                        <Label className="text-sm text-muted-foreground">
-                          Response {!resp.response && <span className="text-amber-500">*</span>}
-                        </Label>
-                        <div className={`flex gap-1 ${!resp.response ? "rounded-md border border-amber-300 p-1" : ""}`}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-10">
+                      <div className="space-y-1">
+                        <div className="flex gap-1">
                           {["Yes", "No", "N/A"].map(option => (
                             <Button
                               key={option}
@@ -1528,42 +1097,34 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
                               size="sm"
                               className="flex-1"
                               onClick={() => updateChecklistResponse(question.id, "response", option)}
-                              data-testid={`button-response-${question.id}-${option.toLowerCase().replace("/", "")}`}
                             >
                               {option}
                             </Button>
                           ))}
                         </div>
-                        {!resp.response && (
-                          <p className="text-xs text-amber-600 mt-1">Please select a response</p>
-                        )}
                       </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-sm text-muted-foreground">Remarks</Label>
+                      <div className="space-y-1">
                         <Textarea
                           value={resp.remarks}
                           onChange={e => updateChecklistResponse(question.id, "remarks", e.target.value)}
-                          placeholder="Click 'Use Suggested' or enter your own..."
-                          className={`min-h-[60px] ${needsRemarks ? "border-red-500" : ""}`}
+                          placeholder="Remarks..."
+                          className={`min-h-[50px] text-sm ${needsRemarks ? "border-red-500" : ""}`}
                           rows={2}
-                          data-testid={`textarea-remarks-${question.id}`}
                         />
-                        {!resp.remarks && (
+                        {!resp.remarks && question.suggestedResponse && (
                           <button
                             type="button"
-                            className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors"
+                            className="flex items-center gap-1 text-xs text-primary hover:text-primary/80"
                             onClick={() => useSuggestedResponse(question.id)}
-                            data-testid={`button-use-suggested-${question.id}`}
                           >
-                            <Wand2 className="h-3.5 w-3.5" />
+                            <Wand2 className="h-3 w-3" />
                             Use Suggested
                           </button>
                         )}
                         {needsRemarks && (
                           <p className="text-xs text-red-600 flex items-center gap-1">
                             <AlertCircle className="h-3 w-3" />
-                            Remarks required when response is 'No'
+                            Required when 'No'
                           </p>
                         )}
                       </div>
@@ -1574,46 +1135,24 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
             );
           })}
 
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={addCustomQuestion}
             className="w-full border-dashed"
-            data-testid="button-add-custom-question"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Custom Requirement
           </Button>
-
-          {incompleteCount > 0 && (
-            <p className="text-sm text-amber-600 flex items-center gap-1" data-testid="text-incomplete-count">
-              <AlertCircle className="h-4 w-4" />
-              {incompleteCount} item(s) require completion
-            </p>
-          )}
         </CardContent>
       </Card>
 
-      {incompleteCount > 0 && (
-        <Card className="border-amber-200 bg-amber-50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2 text-amber-800">
-              <AlertCircle className="h-5 w-5" />
-              Validation Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-amber-700">{incompleteCount} item(s) require completion before this page can be finalized.</p>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card className="mt-6">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Paperclip className="h-4 w-4" />
-            Engagement Letter Documents
+            Supporting Documents
           </CardTitle>
-          <CardDescription>Upload signed engagement letter, terms of engagement, and related correspondence</CardDescription>
+          <CardDescription>Upload additional engagement-related correspondence and documents</CardDescription>
         </CardHeader>
         <CardContent>
           <SectionAttachments
@@ -1632,9 +1171,9 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving || loading} data-testid="button-save-engagement-letter">
+        <Button onClick={handleSave} disabled={saving || loading} size="lg">
           {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-          {saving ? "Saving..." : "Save Progress"}
+          {saving ? "Saving..." : "Save All Changes"}
         </Button>
       </div>
     </div>
