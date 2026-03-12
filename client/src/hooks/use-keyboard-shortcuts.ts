@@ -80,7 +80,7 @@ export function useKeyboardShortcuts(options: {
 
       if (ctrl && e.key === "/") {
         e.preventDefault();
-        const searchInput = document.querySelector('[data-testid="input-search"]') as HTMLInputElement;
+        const searchInput = document.querySelector('[data-testid="input-search"], [data-testid="filter-search"]') as HTMLInputElement;
         if (searchInput) searchInput.focus();
         return;
       }
