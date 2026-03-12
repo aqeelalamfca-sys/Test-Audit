@@ -764,6 +764,111 @@ function generateGLEntries(): GLEntry[] {
     { code: '70002', debit: 0, credit: 800000, narrative: 'DTA recognized against deferred tax expense' },
   ]);
 
+  addJournal(entries, 'JV', fmtDate(3, 15), [
+    { code: '13001', debit: 5000000, credit: 0, narrative: 'Land revaluation - independent valuation FY 2024' },
+    { code: '30005', debit: 0, credit: 5000000, narrative: 'Revaluation surplus on land' },
+  ]);
+
+  addJournal(entries, 'BPV', fmtDate(2, 10), [
+    { code: '13002', debit: 3500000, credit: 0, narrative: 'Building renovation - office expansion' },
+    { code: '10003', debit: 0, credit: 3500000, narrative: 'Building renovation payment via HBL' },
+  ]);
+
+  addJournal(entries, 'BPV', fmtDate(4, 5), [
+    { code: '13003', debit: 2800000, credit: 0, narrative: 'Purchase of CNC machine for production' },
+    { code: '10003', debit: 0, credit: 2800000, narrative: 'Plant & Machinery payment via HBL' },
+  ]);
+
+  addJournal(entries, 'BPV', fmtDate(5, 12), [
+    { code: '13004', debit: 1200000, credit: 0, narrative: 'Office furniture for new wing' },
+    { code: '10005', debit: 0, credit: 1200000, narrative: 'Furniture payment via Allied Bank' },
+  ]);
+
+  addJournal(entries, 'BPV', fmtDate(8, 5), [
+    { code: '13008', debit: 2000000, credit: 0, narrative: 'Leasehold improvements - floor renovation' },
+    { code: '10003', debit: 0, credit: 2000000, narrative: 'Leasehold improvements payment via HBL' },
+  ]);
+
+  addJournal(entries, 'JV', fmtDate(1, 15), [
+    { code: '11002', debit: 25000000, credit: 0, narrative: 'Receivable allocation - TechVision Systems' },
+    { code: '11001', debit: 0, credit: 25000000, narrative: 'Transfer to customer sub-ledger - TechVision' },
+  ]);
+  addJournal(entries, 'JV', fmtDate(6, 30), [
+    { code: '11001', debit: 25000000, credit: 0, narrative: 'Reclassify TechVision to control account' },
+    { code: '11002', debit: 0, credit: 25000000, narrative: 'Receivable reclassification - TechVision' },
+  ]);
+
+  addJournal(entries, 'JV', fmtDate(2, 15), [
+    { code: '11003', debit: 18000000, credit: 0, narrative: 'Receivable allocation - National Bank of Pakistan' },
+    { code: '11001', debit: 0, credit: 18000000, narrative: 'Transfer to customer sub-ledger - NBP' },
+  ]);
+  addJournal(entries, 'JV', fmtDate(7, 31), [
+    { code: '11001', debit: 18000000, credit: 0, narrative: 'Reclassify NBP to control account' },
+    { code: '11003', debit: 0, credit: 18000000, narrative: 'Receivable reclassification - NBP' },
+  ]);
+
+  addJournal(entries, 'JV', fmtDate(3, 10), [
+    { code: '11004', debit: 12000000, credit: 0, narrative: 'Receivable allocation - Engro Digital' },
+    { code: '11001', debit: 0, credit: 12000000, narrative: 'Transfer to customer sub-ledger - Engro' },
+  ]);
+  addJournal(entries, 'JV', fmtDate(9, 30), [
+    { code: '11001', debit: 12000000, credit: 0, narrative: 'Reclassify Engro to control account' },
+    { code: '11004', debit: 0, credit: 12000000, narrative: 'Receivable reclassification - Engro' },
+  ]);
+
+  addJournal(entries, 'JV', fmtDate(2, 1), [
+    { code: '20001', debit: 15000000, credit: 0, narrative: 'Payable allocation - Dell Technologies' },
+    { code: '20002', debit: 0, credit: 15000000, narrative: 'Transfer to supplier sub-ledger - Dell' },
+  ]);
+  addJournal(entries, 'JV', fmtDate(8, 31), [
+    { code: '20002', debit: 15000000, credit: 0, narrative: 'Payable reclassification - Dell Technologies' },
+    { code: '20001', debit: 0, credit: 15000000, narrative: 'Reclassify Dell to control account' },
+  ]);
+
+  addJournal(entries, 'JV', fmtDate(3, 1), [
+    { code: '20001', debit: 10000000, credit: 0, narrative: 'Payable allocation - Microsoft Pakistan' },
+    { code: '20003', debit: 0, credit: 10000000, narrative: 'Transfer to supplier sub-ledger - Microsoft' },
+  ]);
+  addJournal(entries, 'JV', fmtDate(10, 31), [
+    { code: '20003', debit: 10000000, credit: 0, narrative: 'Payable reclassification - Microsoft Pakistan' },
+    { code: '20001', debit: 0, credit: 10000000, narrative: 'Reclassify Microsoft to control account' },
+  ]);
+
+  addJournal(entries, 'BPV', fmtDate(1, 20), [
+    { code: '10006', debit: 15000000, credit: 0, narrative: 'Fixed deposit placement - HBL 6-month FD' },
+    { code: '10003', debit: 0, credit: 15000000, narrative: 'Transfer to fixed deposit via HBL' },
+  ]);
+  addJournal(entries, 'BRV', fmtDate(7, 20), [
+    { code: '10003', debit: 5000000, credit: 0, narrative: 'Partial FD maturity proceeds received - HBL' },
+    { code: '10006', debit: 0, credit: 5000000, narrative: 'Fixed deposit partial maturity - HBL' },
+  ]);
+
+  addJournal(entries, 'BPV', fmtDate(4, 1), [
+    { code: '15001', debit: 2500000, credit: 0, narrative: 'Security deposit - new warehouse lease' },
+    { code: '10003', debit: 0, credit: 2500000, narrative: 'Deposit payment via HBL' },
+  ]);
+
+  addJournal(entries, 'BPV', fmtDate(5, 1), [
+    { code: '15003', debit: 8000000, credit: 0, narrative: 'Investment in Pakistan Investment Bonds' },
+    { code: '10004', debit: 0, credit: 8000000, narrative: 'Investment payment via MCB' },
+  ]);
+
+  addJournal(entries, 'BRV', fmtDate(1, 5), [
+    { code: '10003', debit: 5000000, credit: 0, narrative: 'Rights issue subscription received' },
+    { code: '30001', debit: 0, credit: 3000000, narrative: 'Share capital - rights issue' },
+    { code: '30002', debit: 0, credit: 2000000, narrative: 'Share premium on rights issue' },
+  ]);
+
+  addJournal(entries, 'JV', fmtDate(6, 30), [
+    { code: '30003', debit: 12000000, credit: 0, narrative: 'Dividend declaration - interim FY 2024' },
+    { code: '20004', debit: 0, credit: 12000000, narrative: 'Interim dividend payable' },
+  ]);
+
+  addJournal(entries, 'JV', fmtDate(12, 31), [
+    { code: '30003', debit: 5000000, credit: 0, narrative: 'Transfer to general reserve - FY 2024' },
+    { code: '30004', debit: 0, credit: 5000000, narrative: 'General reserve appropriation - FY 2024' },
+  ]);
+
   return entries;
 }
 
