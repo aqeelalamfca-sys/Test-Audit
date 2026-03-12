@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Plus, Download, Trash2, AlertTriangle, AlertCircle, ChevronDown, ChevronRight, Database, FileSpreadsheet, Target, Calculator, Users, Building2, Check, X, Info, FileDown, Scale, FileText, Camera, CheckCircle2, XCircle, Shield, ClipboardCheck, ArrowRight, Upload, Layers, Mail, Map, ListChecks, Landmark } from "lucide-react";
+import { Loader2, Plus, Download, Trash2, AlertTriangle, AlertCircle, ChevronDown, ChevronRight, Database, FileSpreadsheet, Target, Calculator, Users, Building2, Check, X, Info, FileDown, Scale, FileText, Camera, CheckCircle2, XCircle, Shield, ClipboardCheck, ArrowRight, Upload, Layers, Mail, Map as MapIcon, ListChecks, Landmark } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -1595,7 +1595,7 @@ export function ReviewCoaSection({
             { key: 'ar', label: 'AR', icon: <Users className="h-3.5 w-3.5" /> },
             { key: 'bank', label: 'Bank', icon: <Landmark className="h-3.5 w-3.5" /> },
             { key: 'confirmations', label: 'Confirmations', icon: <Mail className="h-3.5 w-3.5" /> },
-            { key: 'mapping', label: 'FS Mapping', icon: <Map className="h-3.5 w-3.5" /> },
+            { key: 'mapping', label: 'FS Mapping', icon: <MapIcon className="h-3.5 w-3.5" /> },
             { key: 'draft-fs', label: 'Draft FS', icon: <FileText className="h-3.5 w-3.5" /> },
             { key: 'checks', label: 'Checks', icon: <ListChecks className="h-3.5 w-3.5" /> },
           ].map((tab) => {
