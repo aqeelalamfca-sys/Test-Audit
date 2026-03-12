@@ -1,0 +1,264 @@
+Build an Excel workbook generator called “AuditWise_Data_Validation_Workbook.xlsx” for statutory audit data validation. The workbook must be professional, formula-driven, user-friendly, and ready for practical audit use. It must validate 5 uploaded datasets separately and also validate them on a consolidated basis. Treat GL Code as the unique matching key unless a module specifically requires document-level matching. The workbook must work for these 5 source sheets:
+
+1. Trial Balance
+2. General Ledger
+3. Bank
+4. Accounts Receivable
+5. Accounts Payable
+
+Create exactly 5 formatted validation sheets in one workbook, with strong headings, color coding, filters, frozen panes, data validation dropdowns where useful, conditional formatting, formulas, exception flags, auto totals, and review remarks columns. The workbook must be usable even when source data is pasted manually by end users. Keep the layout simple, practical, and audit-friendly.
+
+Required workbook structure:
+
+Sheet 1: Control_Summary
+Purpose:
+Master dashboard and control sheet for overall validation status of all uploaded data.
+
+Include:
+- Client Name
+- Engagement Name
+- Period From
+- Period To
+- Prepared By
+- Reviewed By
+- Date of Import
+- Data Version
+- Currency
+- Materiality input
+- Clearly marked input cells
+- Row counts for each imported dataset
+- Count of unique GL Codes in each file
+- Count of matched GL Codes
+- Count of missing GL Codes
+- Count of duplicate GL Codes
+- Count of amount mismatches
+- Count of blank mandatory fields
+- Count of invalid dates
+- Count of invalid signs
+- Count of unmapped balances
+- Overall validation status: Pass / Review / Fail
+- Traffic light indicators
+- Hyperlinks to detailed sheets
+- Final section for auditor remarks and conclusion
+
+Also include a consolidated reconciliation summary:
+- TB total debit
+- TB total credit
+- TB closing net balance
+- GL total debit
+- GL total credit
+- GL net movement
+- Bank total
+- AR total
+- AP total
+- Difference between TB and subledgers
+- Difference between TB and GL
+- Exception count summary
+
+Sheet 2: TB_Validation
+Purpose:
+Validate the Trial Balance independently and prepare it for linkage with other sheets.
+
+Include columns / checks:
+- GL Code
+- Account Name
+- Account Type
+- Opening Debit
+- Opening Credit
+- Period Debit
+- Period Credit
+- Closing Debit
+- Closing Credit
+- Net Closing
+- Financial Statement Head
+- Mapping Status
+- Duplicate GL Code Flag
+- Blank GL Code Flag
+- Blank Account Name Flag
+- Unusual Sign Flag
+- Zero Balance Flag
+- Cross-cast Check
+- Formula Check
+- Review Remark
+- Validation Status
+
+Validation logic:
+- GL Code must not be blank
+- GL Code should be unique in TB
+- Closing balance logic must agree with opening + movement
+- Total debits and credits must mathematically reconcile
+- Detect accounts with both closing debit and closing credit
+- Detect negative values in inappropriate columns
+- Flag accounts without FS mapping
+- Flag duplicate codes
+- Add conditional formatting for exceptions
+
+Sheet 3: GL_vs_TB_Validation
+Purpose:
+Validate General Ledger against Trial Balance using GL Code as the core matching field.
+
+Include:
+- GL Code
+- Account Name from GL
+- Account Name from TB
+- GL transaction count
+- GL total debit
+- GL total credit
+- GL net movement
+- TB period debit
+- TB period credit
+- TB net movement
+- Movement difference
+- Opening difference if available
+- Closing difference if available
+- GL Code found in TB? Yes/No
+- TB Code found in GL? Yes/No
+- Name mismatch flag
+- Amount mismatch flag
+- Duplicate transaction flag
+- Invalid date flag
+- Blank narration flag
+- Review Remark
+- Validation Status
+
+Validation logic:
+- Summarize GL by GL Code
+- Compare GL totals with TB movement by GL Code
+- Highlight codes existing in one file but not the other
+- Highlight same GL Code with different account descriptions
+- Highlight amount differences above user-defined threshold
+- Highlight blank or invalid transaction fields
+- Add section at top showing:
+  - total codes matched
+  - total codes missing in TB
+  - total codes missing in GL
+  - total movement mismatches
+  - total description mismatches
+
+Sheet 4: Subledger_Validation
+Purpose:
+Validate Bank, AR, and AP separately and also compare them with TB and GL.
+
+Design this sheet in 3 blocks or 3 formatted tables:
+A. Bank Validation
+B. AR Validation
+C. AP Validation
+
+For each block include:
+- GL Code
+- Subledger Account Name
+- Source Sheet Name
+- Source total amount
+- Related TB closing balance
+- Related GL activity / balance
+- Difference vs TB
+- Difference vs GL
+- Code found in TB? Yes/No
+- Code found in GL? Yes/No
+- Duplicate GL Code Flag
+- Missing Code Flag
+- Amount Difference Flag
+- Sign Difference Flag
+- Review Remark
+- Validation Status
+
+Validation logic:
+- Bank total must reconcile to mapped bank GL codes in TB
+- AR total must reconcile to receivable GL codes in TB
+- AP total must reconcile to payable GL codes in TB
+- Where multiple GL codes belong to same subledger class, allow grouping
+- Highlight codes in subledger but absent in TB
+- Highlight codes present in TB but unsupported by subledger
+- Provide subtotal and difference lines for each block
+- Provide separate exception counts for Bank, AR, and AP
+
+Sheet 5: Exceptions_Report
+Purpose:
+Centralized exception log for all sheets, filtered and audit-ready.
+
+Include:
+- Exception ID
+- Source Validation Area
+- Source File
+- GL Code
+- Account Name
+- Exception Category
+- Exception Description
+- Amount / Difference
+- Severity: High / Medium / Low
+- Auditor Action Required
+- Assigned To
+- Status: Open / Cleared / Under Review
+- Reviewer Comment
+- Management Explanation
+- Final Resolution
+- Date Cleared
+
+Exception categories should include at minimum:
+- Missing GL Code
+- Duplicate GL Code
+- Amount mismatch
+- Description mismatch
+- Invalid date
+- Blank mandatory field
+- Mapping missing
+- Sign inconsistency
+- Unreconciled balance
+- Formula exception
+
+Formatting and usability requirements:
+- Make all 5 sheets professionally formatted
+- Freeze header rows
+- Turn on filters
+- Use Excel tables where practical
+- Auto-fit columns with practical widths
+- Use clear section headers
+- Use blue for input cells, black for formulas, green for linked data, orange for review flags, light red for exceptions
+- Use drop-downs for status fields
+- Use conditional formatting to highlight:
+  - duplicates
+  - blanks
+  - missing matches
+  - non-zero differences
+  - failed validation
+- Add formulas, not hardcoded outputs
+- Add a legend for colors and status meanings
+- Add protection only on formula cells if feasible, while keeping user input cells editable
+- Add top navigation links back to Control_Summary
+
+Technical requirements:
+- Build this through code in Replit using Python and openpyxl
+- The workbook should be generated automatically from uploaded source files or pasted source data
+- Standardize headers before validation, even if minor naming differences exist
+- Create helper calculations in hidden columns or hidden helper areas if needed
+- Use GL Code as text format to preserve leading zeros
+- Trim spaces and normalize codes before matching
+- Detect and flag duplicate GL codes both before and after normalization
+- Keep formulas stable and expandable for future rows
+- Add named sections and structured formulas
+- Ensure no formula errors like #REF!, #VALUE!, #N/A remain in final workbook
+
+Matching logic:
+- Primary key for reconciliation is GL Code
+- First normalize GL Code by trimming spaces, converting to text, and removing accidental formatting inconsistencies
+- Then compare:
+  - TB vs GL
+  - Bank vs TB
+  - AR vs TB
+  - AP vs TB
+  - Bank / AR / AP vs GL where relevant
+- Clearly highlight all differences and unmatched items
+- Show separate validations and consolidated validation
+
+Output requirement:
+Generate one final workbook named exactly:
+AuditWise_Data_Validation_Workbook.xlsx
+
+The workbook must be ready for audit teams to paste/import data and instantly see:
+- separate validation results for each file
+- consolidated validation results
+- highlighted differences
+- exception tracking
+- final validation conclusion
+
+Also generate sample formulas, sample formatting, and sample test rows so the workbook is immediately understandable. Keep the design practical for real audit use, not decorative.
