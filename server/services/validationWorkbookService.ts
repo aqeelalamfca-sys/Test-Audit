@@ -4,6 +4,8 @@ import { withTenantContext } from "../middleware/tenantDbContext";
 interface TBRow {
   accountCode: string;
   accountName: string | null;
+  accountClass: string | null;
+  fsHeadKey: string | null;
   openingDebit: number;
   openingCredit: number;
   closingDebit: number;
@@ -15,10 +17,14 @@ interface TBRow {
 
 interface GLAggRow {
   accountCode: string;
+  accountName: string | null;
   totalDebit: number;
   totalCredit: number;
   glNetMovement: number;
   entryCount: number;
+  hasBlankNarration: boolean;
+  earliestDate: Date | null;
+  latestDate: Date | null;
 }
 
 interface PartyRow {
@@ -41,12 +47,23 @@ interface BankRow {
   drcr: string;
 }
 
+interface EngagementMeta {
+  clientName: string;
+  firmName: string;
+  periodEnd: string;
+  engagementCode: string;
+}
+
 const HEADER_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F4E79" } };
 const HEADER_FONT: Partial<ExcelJS.Font> = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
+const SECTION_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD9E2F3" } };
+const SECTION_FONT: Partial<ExcelJS.Font> = { bold: true, size: 11, color: { argb: "FF1F4E79" } };
 const PASS_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFC6EFCE" } };
 const FAIL_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFC7CE" } };
 const WARN_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFEB9C" } };
+const INFO_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFDDEBF7" } };
 const NUMBER_FMT = '#,##0.00';
+const INT_FMT = '#,##0';
 
 function styleHeaderRow(ws: ExcelJS.Worksheet) {
   const row = ws.getRow(1);
@@ -56,9 +73,10 @@ function styleHeaderRow(ws: ExcelJS.Worksheet) {
     cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
     cell.border = {
       bottom: { style: "thin", color: { argb: "FF000000" } },
+      right: { style: "thin", color: { argb: "FF4472C4" } },
     };
   });
-  row.height = 28;
+  row.height = 32;
   ws.views = [{ state: "frozen", ySplit: 1, xSplit: 0 }];
 }
 
@@ -66,6 +84,60 @@ function applyAutoFilter(ws: ExcelJS.Worksheet) {
   if (ws.rowCount > 1) {
     ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: ws.rowCount, column: ws.columnCount } };
   }
+}
+
+function addSectionRow(ws: ExcelJS.Worksheet, text: string, colCount: number) {
+  const row = ws.addRow([text]);
+  row.font = SECTION_FONT;
+  ws.mergeCells(row.number, 1, row.number, colCount);
+  row.getCell(1).fill = SECTION_FILL;
+  row.getCell(1).alignment = { horizontal: "left", vertical: "middle" };
+  row.height = 24;
+  return row;
+}
+
+function statusFill(status: string): ExcelJS.Fill {
+  if (status === "PASS") return PASS_FILL;
+  if (status === "FAIL" || status === "CRITICAL") return FAIL_FILL;
+  if (status === "WARN" || status === "WARNING") return WARN_FILL;
+  if (status === "INFO") return INFO_FILL;
+  return { type: "pattern", pattern: "none" };
+}
+
+function addConditionalFormatting(ws: ExcelJS.Worksheet, col: string, lastRow: number) {
+  ws.addConditionalFormatting({
+    ref: `${col}2:${col}${lastRow}`,
+    rules: [
+      {
+        type: "containsText",
+        operator: "containsText",
+        text: "FAIL",
+        priority: 1,
+        style: { fill: FAIL_FILL, font: { bold: true, color: { argb: "FF9C0006" } } },
+      },
+      {
+        type: "containsText",
+        operator: "containsText",
+        text: "PASS",
+        priority: 2,
+        style: { fill: PASS_FILL, font: { color: { argb: "FF006100" } } },
+      },
+      {
+        type: "containsText",
+        operator: "containsText",
+        text: "WARN",
+        priority: 3,
+        style: { fill: WARN_FILL, font: { color: { argb: "FF9C6500" } } },
+      },
+      {
+        type: "containsText",
+        operator: "containsText",
+        text: "MISMATCH",
+        priority: 4,
+        style: { fill: FAIL_FILL, font: { bold: true, color: { argb: "FF9C0006" } } },
+      },
+    ],
+  });
 }
 
 export async function generateValidationWorkbook(
@@ -77,15 +149,32 @@ export async function generateValidationWorkbook(
   const glAgg: Map<string, GLAggRow> = new Map();
   const partyRows: PartyRow[] = [];
   const bankRows: BankRow[] = [];
+  let meta: EngagementMeta = { clientName: "", firmName: "", periodEnd: "", engagementCode: "" };
 
   await withTenantContext(firmId, async (tx) => {
+    const engagement = await tx.engagement.findUnique({
+      where: { id: engagementId },
+      include: {
+        client: { select: { name: true, displayName: true } },
+        firm: { select: { name: true, displayName: true } },
+      },
+    });
+    if (engagement) {
+      meta = {
+        clientName: engagement.client?.displayName || engagement.client?.name || "",
+        firmName: engagement.firm?.displayName || engagement.firm?.name || "",
+        periodEnd: engagement.periodEnd ? new Date(engagement.periodEnd).toISOString().split("T")[0] : "",
+        engagementCode: engagement.engagementCode || engagement.id,
+      };
+    }
+
     const obRows = await tx.importAccountBalance.findMany({
       where: { engagementId, balanceType: "OB" },
-      select: { accountCode: true, accountName: true, debitAmount: true, creditAmount: true },
+      select: { accountCode: true, accountName: true, debitAmount: true, creditAmount: true, accountClass: true, fsHeadKey: true },
     });
     const cbRows = await tx.importAccountBalance.findMany({
       where: { engagementId, balanceType: "CB" },
-      select: { accountCode: true, accountName: true, debitAmount: true, creditAmount: true },
+      select: { accountCode: true, accountName: true, debitAmount: true, creditAmount: true, accountClass: true, fsHeadKey: true },
     });
 
     const obMap = new Map(obRows.map(r => [r.accountCode.trim(), r]));
@@ -104,6 +193,8 @@ export async function generateValidationWorkbook(
       tbRows.push({
         accountCode: code,
         accountName: ob?.accountName ?? cb?.accountName ?? null,
+        accountClass: cb?.accountClass ?? ob?.accountClass ?? null,
+        fsHeadKey: cb?.fsHeadKey ?? ob?.fsHeadKey ?? null,
         openingDebit: obDr,
         openingCredit: obCr,
         closingDebit: cbDr,
@@ -115,27 +206,45 @@ export async function generateValidationWorkbook(
     }
     tbRows.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
 
+    const glHeaders = await tx.importJournalHeader.findMany({
+      where: { engagementId },
+      select: { id: true, voucherDate: true },
+    });
+    const headerDateMap = new Map(glHeaders.map(h => [h.id, h.voucherDate]));
+
     const glLines = await tx.importJournalLine.findMany({
       where: { journalHeader: { engagementId } },
-      select: { accountCode: true, debit: true, credit: true },
+      select: { accountCode: true, accountName: true, debit: true, credit: true, narration: true, description: true, journalHeaderId: true },
     });
     for (const line of glLines) {
       const code = line.accountCode.trim();
       const dr = Number(line.debit);
       const cr = Number(line.credit);
+      const hasBlankNarr = !line.narration && !line.description;
+      const voucherDate = headerDateMap.get(line.journalHeaderId) ?? null;
       const existing = glAgg.get(code);
       if (existing) {
         existing.totalDebit += dr;
         existing.totalCredit += cr;
         existing.glNetMovement += (dr - cr);
         existing.entryCount++;
+        if (hasBlankNarr) existing.hasBlankNarration = true;
+        if (!existing.accountName && line.accountName) existing.accountName = line.accountName;
+        if (voucherDate) {
+          if (!existing.earliestDate || voucherDate < existing.earliestDate) existing.earliestDate = voucherDate;
+          if (!existing.latestDate || voucherDate > existing.latestDate) existing.latestDate = voucherDate;
+        }
       } else {
         glAgg.set(code, {
           accountCode: code,
+          accountName: line.accountName,
           totalDebit: dr,
           totalCredit: cr,
           glNetMovement: dr - cr,
           entryCount: 1,
+          hasBlankNarration: hasBlankNarr,
+          earliestDate: voucherDate,
+          latestDate: voucherDate,
         });
       }
     }
@@ -192,11 +301,11 @@ export async function generateValidationWorkbook(
   workbook.creator = "AuditWise";
   workbook.created = new Date();
 
-  buildControlSummary(workbook, tbRows, glAgg, partyRows, bankRows);
-  buildTBValidation(workbook, tbRows);
-  buildGLvsTBValidation(workbook, tbRows, glAgg);
-  buildSubledgerValidation(workbook, tbRows, partyRows, bankRows);
-  buildExceptionsReport(workbook, tbRows, glAgg, partyRows, bankRows);
+  buildControlSummary(workbook, tbRows, glAgg, partyRows, bankRows, meta);
+  buildTBValidation(workbook, tbRows, glAgg);
+  buildGLvsTBValidation(workbook, tbRows, glAgg, meta);
+  buildSubledgerValidation(workbook, tbRows, partyRows, bankRows, glAgg);
+  buildExceptionsReport(workbook, tbRows, glAgg, partyRows, bankRows, meta);
 
   const buffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(buffer);
@@ -207,17 +316,25 @@ function buildControlSummary(
   tbRows: TBRow[],
   glAgg: Map<string, GLAggRow>,
   partyRows: PartyRow[],
-  bankRows: BankRow[]
+  bankRows: BankRow[],
+  meta: EngagementMeta
 ) {
   const ws = wb.addWorksheet("Control_Summary");
 
   ws.columns = [
-    { header: "Control Check", key: "check", width: 40 },
-    { header: "Value / Count", key: "value", width: 22 },
+    { header: "Control Check", key: "check", width: 44 },
+    { header: "Value / Count", key: "value", width: 24 },
     { header: "Status", key: "status", width: 14 },
-    { header: "Notes", key: "notes", width: 45 },
+    { header: "Notes / Auditor Remarks", key: "notes", width: 50 },
   ];
   styleHeaderRow(ws);
+
+  const tbCodeSet = new Set(tbRows.map(r => r.accountCode));
+  const glCodeSet = new Set(glAgg.keys());
+  const matchedCodes = [...tbCodeSet].filter(c => glCodeSet.has(c));
+  const codesOnlyInGL = [...glCodeSet].filter(c => !tbCodeSet.has(c));
+  const codesOnlyInTBWithMov = tbRows.filter(r => !glCodeSet.has(r.accountCode) && Math.abs(r.tbNetMovement) > 0);
+  const codesOnlyInTBNoMov = tbRows.filter(r => !glCodeSet.has(r.accountCode) && Math.abs(r.tbNetMovement) === 0);
 
   const tbTotalOBDr = tbRows.reduce((s, r) => s + r.openingDebit, 0);
   const tbTotalOBCr = tbRows.reduce((s, r) => s + r.openingCredit, 0);
@@ -235,52 +352,104 @@ function buildControlSummary(
   const glBalance = Math.abs(glTotalDr - glTotalCr);
   const netMovDiff = Math.abs(tbNetMovTotal - glNetMovTotal);
 
-  const tbCodeSet = new Set(tbRows.map(r => r.accountCode));
-  const glCodeSet = new Set(glAgg.keys());
-  const codesOnlyInGL = [...glCodeSet].filter(c => !tbCodeSet.has(c));
-  const codesOnlyInTB = [...tbCodeSet].filter(c => !glCodeSet.has(c));
+  const tbUnmapped = tbRows.filter(r => !r.fsHeadKey).length;
+  const tbBlankNames = tbRows.filter(r => !r.accountName || r.accountName.trim() === "").length;
+  const tbZeroBal = tbRows.filter(r => Math.abs(r.cbNet) < 0.01 && Math.abs(r.obNet) < 0.01).length;
+  const tbDualBal = tbRows.filter(r => r.closingDebit > 0 && r.closingCredit > 0).length;
+
+  const glBlankNarr = Array.from(glAgg.values()).filter(r => r.hasBlankNarration).length;
+
+  const cbPartySumByCtrl = new Map<string, number>();
+  for (const p of partyRows.filter(pp => pp.balanceType === "CB")) {
+    const signed = p.drcr === "DR" ? p.balance : -p.balance;
+    cbPartySumByCtrl.set(p.controlAccountCode, (cbPartySumByCtrl.get(p.controlAccountCode) || 0) + signed);
+  }
+  let subReconPassCount = 0;
+  let subReconFailCount = 0;
+  const tbMap = new Map(tbRows.map(r => [r.accountCode, r]));
+  for (const [ctrl, subTotal] of cbPartySumByCtrl) {
+    const tb = tbMap.get(ctrl);
+    const tbNet = tb ? tb.cbNet : 0;
+    if (Math.abs(subTotal - tbNet) < 1) subReconPassCount++;
+    else subReconFailCount++;
+  }
 
   const tolerance = 1;
 
-  const checks = [
-    { check: "TB Account Count", value: tbRows.length, status: tbRows.length > 0 ? "PASS" : "FAIL", notes: "" },
-    { check: "GL Entry Count", value: glEntryCount, status: glEntryCount > 0 ? "PASS" : "FAIL", notes: "" },
-    { check: "GL Unique Account Count", value: glAgg.size, status: "", notes: "" },
-    { check: "Party Balance Count (AR+AP)", value: partyRows.length, status: "", notes: "" },
-    { check: "Bank Account Count", value: bankRows.length, status: "", notes: "" },
-    { check: "", value: "", status: "", notes: "" },
-    { check: "TB Opening Balance (DR - CR)", value: (tbTotalOBDr - tbTotalOBCr).toFixed(2), status: obBalance <= tolerance ? "PASS" : "FAIL", notes: obBalance <= tolerance ? "Balanced" : `Difference: ${obBalance.toFixed(2)}` },
-    { check: "TB Closing Balance (DR - CR)", value: (tbTotalCBDr - tbTotalCBCr).toFixed(2), status: cbBalance <= tolerance ? "PASS" : "FAIL", notes: cbBalance <= tolerance ? "Balanced" : `Difference: ${cbBalance.toFixed(2)}` },
-    { check: "GL Total DR - CR", value: (glTotalDr - glTotalCr).toFixed(2), status: glBalance <= tolerance ? "PASS" : "WARN", notes: glBalance <= tolerance ? "Balanced" : `Difference: ${glBalance.toFixed(2)}` },
-    { check: "", value: "", status: "", notes: "" },
-    { check: "TB Net Movement vs GL Net Movement", value: netMovDiff.toFixed(2), status: netMovDiff <= tolerance ? "PASS" : "FAIL", notes: `TB Net Mov: ${tbNetMovTotal.toFixed(2)} | GL Net Mov: ${glNetMovTotal.toFixed(2)}` },
-    { check: "GL Codes in GL but not TB", value: codesOnlyInGL.length, status: codesOnlyInGL.length === 0 ? "PASS" : "WARN", notes: codesOnlyInGL.length > 0 ? codesOnlyInGL.slice(0, 10).join(", ") + (codesOnlyInGL.length > 10 ? "..." : "") : "" },
-    { check: "GL Codes in TB but not GL (with movement)", value: codesOnlyInTB.filter(c => { const r = tbRows.find(t => t.accountCode === c); return r && Math.abs(r.tbNetMovement) > 0; }).length, status: codesOnlyInTB.filter(c => { const r = tbRows.find(t => t.accountCode === c); return r && Math.abs(r.tbNetMovement) > 0; }).length === 0 ? "PASS" : "WARN", notes: "" },
-    { check: "", value: "", status: "", notes: "" },
-    { check: "TB Opening Debit Total", value: tbTotalOBDr.toFixed(2), status: "", notes: "" },
-    { check: "TB Opening Credit Total", value: tbTotalOBCr.toFixed(2), status: "", notes: "" },
-    { check: "TB Closing Debit Total", value: tbTotalCBDr.toFixed(2), status: "", notes: "" },
-    { check: "TB Closing Credit Total", value: tbTotalCBCr.toFixed(2), status: "", notes: "" },
-    { check: "TB Net Movement Total", value: tbNetMovTotal.toFixed(2), status: "", notes: "(CB_Net - OB_Net)" },
-    { check: "GL Debit Total", value: glTotalDr.toFixed(2), status: "", notes: "" },
-    { check: "GL Credit Total", value: glTotalCr.toFixed(2), status: "", notes: "" },
-    { check: "GL Net Movement Total", value: glNetMovTotal.toFixed(2), status: "", notes: "(GL_DR - GL_CR)" },
-  ];
+  const addCheck = (check: string, value: string | number, status: string, notes: string) => {
+    const row = ws.addRow({ check, value, status, notes });
+    if (status) row.getCell("status").fill = statusFill(status);
+    return row;
+  };
 
-  for (const c of checks) {
-    const row = ws.addRow(c);
-    if (c.status === "PASS") row.getCell("status").fill = PASS_FILL;
-    else if (c.status === "FAIL") row.getCell("status").fill = FAIL_FILL;
-    else if (c.status === "WARN") row.getCell("status").fill = WARN_FILL;
-  }
+  addSectionRow(ws, "ENGAGEMENT INFORMATION", 4);
+  addCheck("Client Name", meta.clientName, "", "");
+  addCheck("Firm Name", meta.firmName, "", "");
+  addCheck("Engagement Code", meta.engagementCode, "", "");
+  addCheck("Period End Date", meta.periodEnd, "", "");
+  addCheck("Workbook Generated", new Date().toISOString().split("T")[0], "", "");
+  ws.addRow({});
+
+  addSectionRow(ws, "DATA COMPLETENESS", 4);
+  addCheck("TB Account Count", tbRows.length, tbRows.length > 0 ? "PASS" : "FAIL", "");
+  addCheck("GL Entry Count", glEntryCount, glEntryCount > 0 ? "PASS" : "FAIL", "");
+  addCheck("GL Unique Account Count", glAgg.size, "", "");
+  addCheck("Party Balance Count (AR/AP)", partyRows.length, "", "");
+  addCheck("Bank Account Count", bankRows.length, "", "");
+  ws.addRow({});
+
+  addSectionRow(ws, "GL CODE RECONCILIATION", 4);
+  addCheck("Matched GL Codes (TB & GL)", matchedCodes.length, matchedCodes.length > 0 ? "PASS" : "FAIL", "");
+  addCheck("GL Codes in GL only (not in TB)", codesOnlyInGL.length, codesOnlyInGL.length === 0 ? "PASS" : "WARN", codesOnlyInGL.length > 0 ? codesOnlyInGL.slice(0, 8).join(", ") + (codesOnlyInGL.length > 8 ? ` (+${codesOnlyInGL.length - 8} more)` : "") : "");
+  addCheck("TB Codes with movement but no GL", codesOnlyInTBWithMov.length, codesOnlyInTBWithMov.length === 0 ? "PASS" : "WARN", codesOnlyInTBWithMov.length > 0 ? codesOnlyInTBWithMov.slice(0, 8).map(r => r.accountCode).join(", ") : "");
+  addCheck("TB Codes without movement, no GL", codesOnlyInTBNoMov.length, "", "Static balances (no period activity)");
+  ws.addRow({});
+
+  addSectionRow(ws, "TB BALANCE CHECKS", 4);
+  addCheck("TB Opening Balance (DR - CR)", (tbTotalOBDr - tbTotalOBCr).toFixed(2), obBalance <= tolerance ? "PASS" : "FAIL", obBalance <= tolerance ? "Balanced" : `Difference: ${obBalance.toFixed(2)}`);
+  addCheck("TB Closing Balance (DR - CR)", (tbTotalCBDr - tbTotalCBCr).toFixed(2), cbBalance <= tolerance ? "PASS" : "FAIL", cbBalance <= tolerance ? "Balanced" : `Difference: ${cbBalance.toFixed(2)}`);
+  addCheck("GL Total DR - CR", (glTotalDr - glTotalCr).toFixed(2), glBalance <= tolerance ? "PASS" : "WARN", glBalance <= tolerance ? "Balanced" : `Difference: ${glBalance.toFixed(2)}`);
+  ws.addRow({});
+
+  addSectionRow(ws, "TB-GL NET MOVEMENT RECONCILIATION", 4);
+  addCheck("TB Net Movement Total (CB_net - OB_net)", tbNetMovTotal.toFixed(2), "", "");
+  addCheck("GL Net Movement Total (GL_DR - GL_CR)", glNetMovTotal.toFixed(2), "", "");
+  addCheck("Net Movement Difference", netMovDiff.toFixed(2), netMovDiff <= tolerance ? "PASS" : "FAIL", netMovDiff <= tolerance ? "Reconciled" : `Difference: ${netMovDiff.toFixed(2)}`);
+  ws.addRow({});
+
+  addSectionRow(ws, "DATA QUALITY CHECKS", 4);
+  addCheck("TB Accounts without FS Head mapping", tbUnmapped, tbUnmapped === 0 ? "PASS" : "WARN", tbUnmapped > 0 ? "Accounts need FS line mapping" : "All mapped");
+  addCheck("TB Accounts with blank names", tbBlankNames, tbBlankNames === 0 ? "PASS" : "WARN", "");
+  addCheck("TB Accounts with zero balances (OB & CB)", tbZeroBal, "", "");
+  addCheck("TB Accounts with dual DR/CR closing balance", tbDualBal, tbDualBal === 0 ? "PASS" : "WARN", tbDualBal > 0 ? "Unusual: both DR and CR closing" : "");
+  addCheck("GL Accounts with blank narrations", glBlankNarr, glBlankNarr === 0 ? "PASS" : "WARN", glBlankNarr > 0 ? "Entries without description" : "");
+  ws.addRow({});
+
+  addSectionRow(ws, "SUBLEDGER RECONCILIATION SUMMARY", 4);
+  addCheck("Subledger control accounts reconciled", subReconPassCount, subReconPassCount > 0 ? "PASS" : "", "");
+  addCheck("Subledger control accounts unreconciled", subReconFailCount, subReconFailCount === 0 ? "PASS" : "FAIL", "");
+  addCheck("Bank accounts loaded", bankRows.length, "", "");
+  ws.addRow({});
+
+  addSectionRow(ws, "TOTALS REFERENCE", 4);
+  addCheck("TB Opening Debit Total", tbTotalOBDr.toFixed(2), "", "");
+  addCheck("TB Opening Credit Total", tbTotalOBCr.toFixed(2), "", "");
+  addCheck("TB Closing Debit Total", tbTotalCBDr.toFixed(2), "", "");
+  addCheck("TB Closing Credit Total", tbTotalCBCr.toFixed(2), "", "");
+  addCheck("GL Debit Total", glTotalDr.toFixed(2), "", "");
+  addCheck("GL Credit Total", glTotalCr.toFixed(2), "", "");
+
+  addConditionalFormatting(ws, "C", ws.rowCount);
 }
 
-function buildTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[]) {
+function buildTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map<string, GLAggRow>) {
   const ws = wb.addWorksheet("TB_Validation");
 
   ws.columns = [
     { header: "GL Code", key: "code", width: 16 },
     { header: "Account Name", key: "name", width: 32 },
+    { header: "Account Class", key: "accClass", width: 16 },
+    { header: "FS Head", key: "fsHead", width: 18 },
     { header: "OB Debit", key: "obDr", width: 16 },
     { header: "OB Credit", key: "obCr", width: 16 },
     { header: "OB Net (DR-CR)", key: "obNet", width: 16 },
@@ -288,21 +457,45 @@ function buildTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[]) {
     { header: "CB Credit", key: "cbCr", width: 16 },
     { header: "CB Net (DR-CR)", key: "cbNet", width: 16 },
     { header: "Net Movement", key: "netMov", width: 16 },
-    { header: "Has OB?", key: "hasOb", width: 10 },
-    { header: "Has CB?", key: "hasCb", width: 10 },
-    { header: "Balance Check", key: "balCheck", width: 14 },
+    { header: "In GL?", key: "inGl", width: 10 },
+    { header: "Blank Name?", key: "blankName", width: 12 },
+    { header: "Zero Balance?", key: "zeroBal", width: 13 },
+    { header: "Dual DR/CR?", key: "dualBal", width: 12 },
+    { header: "FS Mapped?", key: "fsMapped", width: 12 },
+    { header: "Unusual Sign?", key: "unusualSign", width: 14 },
+    { header: "Checks", key: "checks", width: 14 },
   ];
   styleHeaderRow(ws);
 
   for (const tb of tbRows) {
-    const hasOb = tb.openingDebit !== 0 || tb.openingCredit !== 0;
-    const hasCb = tb.closingDebit !== 0 || tb.closingCredit !== 0;
-    const hasBothDrCr = (tb.closingDebit > 0 && tb.closingCredit > 0) || (tb.openingDebit > 0 && tb.openingCredit > 0);
-    const balCheck = hasBothDrCr ? "WARN" : "OK";
+    const inGl = glAgg.has(tb.accountCode);
+    const blankName = !tb.accountName || tb.accountName.trim() === "";
+    const zeroBal = Math.abs(tb.cbNet) < 0.01 && Math.abs(tb.obNet) < 0.01;
+    const dualBal = tb.closingDebit > 0 && tb.closingCredit > 0;
+    const fsMapped = !!tb.fsHeadKey;
+
+    let unusualSign = false;
+    if (tb.accountClass) {
+      const assetLike = ["ASSET", "EXPENSE"].includes(tb.accountClass.toUpperCase());
+      if (assetLike && tb.cbNet < -1) unusualSign = true;
+      const liabLike = ["LIABILITY", "EQUITY", "INCOME", "REVENUE"].includes(tb.accountClass.toUpperCase());
+      if (liabLike && tb.cbNet > 1) unusualSign = true;
+    }
+
+    const issues: string[] = [];
+    if (blankName) issues.push("BLANK_NAME");
+    if (dualBal) issues.push("DUAL_BAL");
+    if (!fsMapped) issues.push("NO_FS");
+    if (unusualSign) issues.push("UNUSUAL_SIGN");
+    if (!inGl && Math.abs(tb.tbNetMovement) > 0) issues.push("NO_GL");
+
+    const checksStatus = issues.length === 0 ? "PASS" : issues.length <= 1 ? "WARN" : "FAIL";
 
     const row = ws.addRow({
       code: tb.accountCode,
       name: tb.accountName ?? "",
+      accClass: tb.accountClass ?? "",
+      fsHead: tb.fsHeadKey ?? "",
       obDr: tb.openingDebit,
       obCr: tb.openingCredit,
       obNet: tb.obNet,
@@ -310,22 +503,31 @@ function buildTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[]) {
       cbCr: tb.closingCredit,
       cbNet: tb.cbNet,
       netMov: tb.tbNetMovement,
-      hasOb: hasOb ? "YES" : "NO",
-      hasCb: hasCb ? "YES" : "NO",
-      balCheck,
+      inGl: inGl ? "YES" : "NO",
+      blankName: blankName ? "YES" : "",
+      zeroBal: zeroBal ? "YES" : "",
+      dualBal: dualBal ? "YES" : "",
+      fsMapped: fsMapped ? "YES" : "NO",
+      unusualSign: unusualSign ? "YES" : "",
+      checks: checksStatus,
     });
 
-    for (let c = 3; c <= 9; c++) {
+    for (let c = 5; c <= 11; c++) {
       row.getCell(c).numFmt = NUMBER_FMT;
     }
-    if (balCheck === "WARN") {
-      row.getCell("balCheck").fill = WARN_FILL;
-    }
+    row.getCell("checks").fill = statusFill(checksStatus);
+    if (blankName) row.getCell("blankName").fill = WARN_FILL;
+    if (dualBal) row.getCell("dualBal").fill = WARN_FILL;
+    if (!fsMapped) row.getCell("fsMapped").fill = WARN_FILL;
+    if (unusualSign) row.getCell("unusualSign").fill = FAIL_FILL;
+    if (!inGl) row.getCell("inGl").fill = WARN_FILL;
   }
 
   const totRow = ws.addRow({
     code: "TOTAL",
-    name: "",
+    name: `${tbRows.length} accounts`,
+    accClass: "",
+    fsHead: "",
     obDr: tbRows.reduce((s, r) => s + r.openingDebit, 0),
     obCr: tbRows.reduce((s, r) => s + r.openingCredit, 0),
     obNet: tbRows.reduce((s, r) => s + r.obNet, 0),
@@ -333,39 +535,45 @@ function buildTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[]) {
     cbCr: tbRows.reduce((s, r) => s + r.closingCredit, 0),
     cbNet: tbRows.reduce((s, r) => s + r.cbNet, 0),
     netMov: tbRows.reduce((s, r) => s + r.tbNetMovement, 0),
-    hasOb: "",
-    hasCb: "",
-    balCheck: "",
+    inGl: "",
+    blankName: "",
+    zeroBal: "",
+    dualBal: "",
+    fsMapped: "",
+    unusualSign: "",
+    checks: "",
   });
   totRow.font = { bold: true };
-  for (let c = 3; c <= 9; c++) {
+  for (let c = 5; c <= 11; c++) {
     totRow.getCell(c).numFmt = NUMBER_FMT;
   }
 
   const obDiff = Math.abs(tbRows.reduce((s, r) => s + r.openingDebit, 0) - tbRows.reduce((s, r) => s + r.openingCredit, 0));
   const cbDiff = Math.abs(tbRows.reduce((s, r) => s + r.closingDebit, 0) - tbRows.reduce((s, r) => s + r.closingCredit, 0));
-  if (obDiff >= 1) {
-    totRow.getCell("obNet").fill = FAIL_FILL;
-  }
-  if (cbDiff >= 1) {
-    totRow.getCell("cbNet").fill = FAIL_FILL;
-  }
+  if (obDiff >= 1) totRow.getCell("obNet").fill = FAIL_FILL;
+  if (cbDiff >= 1) totRow.getCell("cbNet").fill = FAIL_FILL;
 
+  addConditionalFormatting(ws, "R", ws.rowCount);
   applyAutoFilter(ws);
 }
 
-function buildGLvsTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map<string, GLAggRow>) {
+function buildGLvsTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map<string, GLAggRow>, meta: EngagementMeta) {
   const ws = wb.addWorksheet("GL_vs_TB_Validation");
 
   ws.columns = [
     { header: "GL Code", key: "code", width: 16 },
-    { header: "Account Name", key: "name", width: 32 },
+    { header: "TB Account Name", key: "tbName", width: 28 },
+    { header: "GL Account Name", key: "glName", width: 28 },
+    { header: "Name Match?", key: "nameMatch", width: 13 },
     { header: "TB Net Movement", key: "tbNetMov", width: 18 },
     { header: "GL Net Movement", key: "glNetMov", width: 18 },
     { header: "Net Difference", key: "netDiff", width: 18 },
     { header: "GL Total DR", key: "glDr", width: 16 },
     { header: "GL Total CR", key: "glCr", width: 16 },
     { header: "GL Entries", key: "entries", width: 12 },
+    { header: "Blank Narrations?", key: "blankNarr", width: 16 },
+    { header: "Earliest GL Date", key: "earlyDate", width: 16 },
+    { header: "Latest GL Date", key: "lateDate", width: 16 },
     { header: "In TB?", key: "inTb", width: 10 },
     { header: "In GL?", key: "inGl", width: 10 },
     { header: "Match Status", key: "match", width: 14 },
@@ -385,6 +593,12 @@ function buildGLvsTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map
     const inTb = !!tb;
     const inGl = !!gl;
 
+    const tbName = tb?.accountName ?? "";
+    const glName = gl?.accountName ?? "";
+    const nameMatch = (!inTb || !inGl) ? "" :
+      tbName.toLowerCase().trim() === glName.toLowerCase().trim() ? "YES" :
+      !glName ? "N/A" : "NO";
+
     let matchStatus = "MATCH";
     if (!inTb) matchStatus = "GL_ONLY";
     else if (!inGl) matchStatus = "TB_ONLY";
@@ -392,32 +606,34 @@ function buildGLvsTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map
 
     const row = ws.addRow({
       code,
-      name: tb?.accountName ?? "",
+      tbName,
+      glName,
+      nameMatch,
       tbNetMov,
       glNetMov,
       netDiff,
       glDr: gl?.totalDebit ?? 0,
       glCr: gl?.totalCredit ?? 0,
       entries: gl?.entryCount ?? 0,
+      blankNarr: gl?.hasBlankNarration ? "YES" : "",
+      earlyDate: gl?.earliestDate ? gl.earliestDate.toISOString().split("T")[0] : "",
+      lateDate: gl?.latestDate ? gl.latestDate.toISOString().split("T")[0] : "",
       inTb: inTb ? "YES" : "NO",
       inGl: inGl ? "YES" : "NO",
       match: matchStatus,
     });
 
-    for (let c = 3; c <= 7; c++) {
+    for (let c = 5; c <= 9; c++) {
       row.getCell(c).numFmt = NUMBER_FMT;
     }
 
-    if (matchStatus === "MATCH") {
-      row.getCell("match").fill = PASS_FILL;
-    } else {
-      row.getCell("match").fill = FAIL_FILL;
-      if (matchStatus === "MISMATCH") {
-        row.getCell("netDiff").fill = FAIL_FILL;
-      }
-    }
+    row.getCell("match").fill = statusFill(matchStatus === "MATCH" ? "PASS" : "FAIL");
+    if (matchStatus === "MISMATCH") row.getCell("netDiff").fill = FAIL_FILL;
+    if (nameMatch === "NO") row.getCell("nameMatch").fill = WARN_FILL;
+    if (gl?.hasBlankNarration) row.getCell("blankNarr").fill = WARN_FILL;
   }
 
+  addConditionalFormatting(ws, "P", ws.rowCount);
   applyAutoFilter(ws);
 }
 
@@ -425,7 +641,8 @@ function buildSubledgerValidation(
   wb: ExcelJS.Workbook,
   tbRows: TBRow[],
   partyRows: PartyRow[],
-  bankRows: BankRow[]
+  bankRows: BankRow[],
+  glAgg: Map<string, GLAggRow>
 ) {
   const ws = wb.addWorksheet("Subledger_Validation");
 
@@ -438,7 +655,9 @@ function buildSubledgerValidation(
     { header: "Sub Balance", key: "subBal", width: 18 },
     { header: "DR/CR", key: "drcr", width: 10 },
     { header: "TB Net (DR-CR)", key: "tbNet", width: 18 },
-    { header: "Difference", key: "diff", width: 18 },
+    { header: "GL Net Movement", key: "glNet", width: 18 },
+    { header: "Sub vs TB Diff", key: "diff", width: 18 },
+    { header: "Exception Count", key: "excCount", width: 14 },
     { header: "Status", key: "status", width: 12 },
   ];
   styleHeaderRow(ws);
@@ -463,10 +682,11 @@ function buildSubledgerValidation(
     const ctrlCode = parts[1];
     const balType = parts[2];
 
+    addSectionRow(ws, `${grp.type} - Control Account: ${ctrlCode} (${balType})`, 12);
+
     for (const p of grp.items) {
       const signedBal = p.drcr === "DR" ? p.balance : -p.balance;
-
-      ws.addRow({
+      const row = ws.addRow({
         type: p.partyType,
         glCode: p.controlAccountCode,
         subCode: p.partyCode,
@@ -475,31 +695,42 @@ function buildSubledgerValidation(
         subBal: signedBal,
         drcr: p.drcr,
         tbNet: "",
+        glNet: "",
         diff: "",
+        excCount: "",
         status: "",
       });
+      row.getCell("subBal").numFmt = NUMBER_FMT;
     }
 
     const tb = tbMap.get(ctrlCode);
     const tbNet = tb ? (balType === "CB" ? tb.cbNet : tb.obNet) : 0;
-    const diff = Math.abs(grp.totalSub - tbNet);
-    const status = diff < 1 ? "PASS" : "FAIL";
+    const gl = glAgg.get(ctrlCode);
+    const glNetMov = gl?.glNetMovement ?? 0;
+    const diff = grp.totalSub - tbNet;
+    const excCount = grp.items.filter(p => {
+      const signed = p.drcr === "DR" ? p.balance : -p.balance;
+      return Math.abs(signed) < 0.01;
+    }).length;
+    const status = Math.abs(diff) < 1 ? "PASS" : "FAIL";
 
     const sumRow = ws.addRow({
       type: `${grp.type} TOTAL`,
       glCode: ctrlCode,
-      subCode: "",
+      subCode: `${grp.items.length} parties`,
       subName: "",
       balType: balType,
       subBal: grp.totalSub,
       drcr: "",
       tbNet,
-      diff: grp.totalSub - tbNet,
+      glNet: glNetMov,
+      diff,
+      excCount,
       status,
     });
     sumRow.font = { bold: true };
-    sumRow.getCell("status").fill = status === "PASS" ? PASS_FILL : FAIL_FILL;
-    for (const colKey of ["subBal", "tbNet", "diff"]) {
+    sumRow.getCell("status").fill = statusFill(status);
+    for (const colKey of ["subBal", "tbNet", "glNet", "diff"]) {
       sumRow.getCell(colKey).numFmt = NUMBER_FMT;
     }
 
@@ -507,10 +738,12 @@ function buildSubledgerValidation(
   }
 
   if (bankRows.length > 0) {
-    ws.addRow({ type: "--- BANK ACCOUNTS ---" });
+    addSectionRow(ws, "BANK ACCOUNTS", 12);
     for (const b of bankRows) {
       const tb = tbMap.get(b.glCode);
       const tbNet = tb ? tb.cbNet : 0;
+      const gl = glAgg.get(b.glCode);
+      const glNetMov = gl?.glNetMovement ?? 0;
       const signedBal = b.drcr === "DR" ? b.closingBalance : -b.closingBalance;
       const diff = signedBal - tbNet;
       const status = Math.abs(diff) < 1 ? "PASS" : "FAIL";
@@ -519,21 +752,24 @@ function buildSubledgerValidation(
         type: "BANK",
         glCode: b.glCode,
         subCode: b.bankAccountCode,
-        subName: `${b.bankName} - ${b.accountTitle}`,
+        subName: `${b.bankName} - ${b.accountTitle} (${b.accountNo})`,
         balType: "CB",
         subBal: signedBal,
         drcr: b.drcr,
         tbNet,
+        glNet: glNetMov,
         diff,
+        excCount: "",
         status,
       });
-      row.getCell("status").fill = status === "PASS" ? PASS_FILL : FAIL_FILL;
-      for (const colKey of ["subBal", "tbNet", "diff"]) {
+      row.getCell("status").fill = statusFill(status);
+      for (const colKey of ["subBal", "tbNet", "glNet", "diff"]) {
         row.getCell(colKey).numFmt = NUMBER_FMT;
       }
     }
   }
 
+  addConditionalFormatting(ws, "L", ws.rowCount);
   applyAutoFilter(ws);
 }
 
@@ -542,56 +778,77 @@ function buildExceptionsReport(
   tbRows: TBRow[],
   glAgg: Map<string, GLAggRow>,
   partyRows: PartyRow[],
-  bankRows: BankRow[]
+  bankRows: BankRow[],
+  meta: EngagementMeta
 ) {
   const ws = wb.addWorksheet("Exceptions_Report");
 
   ws.columns = [
-    { header: "#", key: "seq", width: 6 },
-    { header: "Category", key: "category", width: 22 },
+    { header: "Exception ID", key: "excId", width: 14 },
+    { header: "Source Area", key: "source", width: 18 },
+    { header: "Category", key: "category", width: 24 },
     { header: "Severity", key: "severity", width: 12 },
     { header: "GL Code", key: "code", width: 16 },
-    { header: "Description", key: "desc", width: 55 },
-    { header: "Expected", key: "expected", width: 20 },
-    { header: "Actual", key: "actual", width: 20 },
+    { header: "Account Name", key: "accName", width: 28 },
+    { header: "Description", key: "desc", width: 50 },
+    { header: "Expected", key: "expected", width: 22 },
+    { header: "Actual", key: "actual", width: 22 },
     { header: "Difference", key: "diff", width: 16 },
+    { header: "Status", key: "status", width: 14 },
+    { header: "Reviewer Comments", key: "reviewer", width: 30 },
+    { header: "Management Response", key: "mgmt", width: 30 },
+    { header: "Resolution", key: "resolution", width: 30 },
   ];
   styleHeaderRow(ws);
 
   let seq = 0;
   const tbMap = new Map(tbRows.map(r => [r.accountCode, r]));
 
+  const addException = (source: string, category: string, severity: string, code: string, accName: string, desc: string, expected: string, actual: string, diff: string) => {
+    seq++;
+    const excId = `EXC-${String(seq).padStart(4, "0")}`;
+    const row = ws.addRow({
+      excId,
+      source,
+      category,
+      severity,
+      code,
+      accName,
+      desc,
+      expected,
+      actual,
+      diff,
+      status: "OPEN",
+      reviewer: "",
+      mgmt: "",
+      resolution: "",
+    });
+    row.getCell("severity").fill = statusFill(severity);
+    row.getCell("status").fill = WARN_FILL;
+    if (diff && parseFloat(diff) !== 0) row.getCell("diff").numFmt = NUMBER_FMT;
+    return row;
+  };
+
+  const tbTotalOBDr = tbRows.reduce((s, r) => s + r.openingDebit, 0);
+  const tbTotalOBCr = tbRows.reduce((s, r) => s + r.openingCredit, 0);
+  const tbTotalCBDr = tbRows.reduce((s, r) => s + r.closingDebit, 0);
+  const tbTotalCBCr = tbRows.reduce((s, r) => s + r.closingCredit, 0);
+  if (Math.abs(tbTotalOBDr - tbTotalOBCr) >= 1) {
+    addException("TB", "TB Balance", "CRITICAL", "", "", `TB Opening Balance doesn't balance: DR ${tbTotalOBDr.toFixed(2)} vs CR ${tbTotalOBCr.toFixed(2)}`, "DR = CR", `Diff: ${(tbTotalOBDr - tbTotalOBCr).toFixed(2)}`, Math.abs(tbTotalOBDr - tbTotalOBCr).toFixed(2));
+  }
+  if (Math.abs(tbTotalCBDr - tbTotalCBCr) >= 1) {
+    addException("TB", "TB Balance", "CRITICAL", "", "", `TB Closing Balance doesn't balance: DR ${tbTotalCBDr.toFixed(2)} vs CR ${tbTotalCBCr.toFixed(2)}`, "DR = CR", `Diff: ${(tbTotalCBDr - tbTotalCBCr).toFixed(2)}`, Math.abs(tbTotalCBDr - tbTotalCBCr).toFixed(2));
+  }
+
   for (const [code, gl] of glAgg) {
     if (!tbMap.has(code)) {
-      seq++;
-      const row = ws.addRow({
-        seq,
-        category: "GL Code Mismatch",
-        severity: "WARNING",
-        code,
-        desc: `GL code "${code}" exists in GL but not in TB`,
-        expected: "Present in TB",
-        actual: "Missing",
-        diff: "",
-      });
-      row.getCell("severity").fill = WARN_FILL;
+      addException("GL", "GL Code Mismatch", "WARNING", code, gl.accountName ?? "", `GL code exists in GL (${gl.entryCount} entries) but not in TB`, "Present in TB", "Missing", "");
     }
   }
 
   for (const tb of tbRows) {
     if (!glAgg.has(tb.accountCode) && Math.abs(tb.tbNetMovement) > 0) {
-      seq++;
-      const row = ws.addRow({
-        seq,
-        category: "GL Code Mismatch",
-        severity: "WARNING",
-        code: tb.accountCode,
-        desc: `TB code "${tb.accountCode}" has net movement (${tb.tbNetMovement.toFixed(2)}) but no GL entries`,
-        expected: "GL entries present",
-        actual: "No GL entries",
-        diff: "",
-      });
-      row.getCell("severity").fill = WARN_FILL;
+      addException("TB", "GL Code Mismatch", "WARNING", tb.accountCode, tb.accountName ?? "", `TB code has net movement (${tb.tbNetMovement.toFixed(2)}) but no GL entries`, "GL entries present", "No GL entries", "");
     }
   }
 
@@ -601,83 +858,104 @@ function buildExceptionsReport(
       const gl = glAgg.get(code)!;
       const netDiff = tb.tbNetMovement - gl.glNetMovement;
       if (Math.abs(netDiff) >= 1) {
-        seq++;
-        const row = ws.addRow({
-          seq,
-          category: "TB-GL Net Movement Mismatch",
-          severity: "ERROR",
-          code,
-          desc: `TB net movement doesn't match GL net movement`,
-          expected: `TB Net: ${tb.tbNetMovement.toFixed(2)}`,
-          actual: `GL Net: ${gl.glNetMovement.toFixed(2)}`,
-          diff: netDiff.toFixed(2),
-        });
-        row.getCell("severity").fill = FAIL_FILL;
+        addException("RECON", "TB-GL Net Movement Mismatch", "ERROR", code, tb.accountName ?? "", `TB net movement doesn't match GL net movement`, `TB Net: ${tb.tbNetMovement.toFixed(2)}`, `GL Net: ${gl.glNetMovement.toFixed(2)}`, netDiff.toFixed(2));
       }
     }
   }
 
-  const tbTotalOBDr = tbRows.reduce((s, r) => s + r.openingDebit, 0);
-  const tbTotalOBCr = tbRows.reduce((s, r) => s + r.openingCredit, 0);
-  const tbTotalCBDr = tbRows.reduce((s, r) => s + r.closingDebit, 0);
-  const tbTotalCBCr = tbRows.reduce((s, r) => s + r.closingCredit, 0);
-  if (Math.abs(tbTotalOBDr - tbTotalOBCr) >= 1) {
-    seq++;
-    ws.addRow({
-      seq,
-      category: "TB Balance",
-      severity: "CRITICAL",
-      code: "",
-      desc: `TB Opening Balance doesn't balance: DR ${tbTotalOBDr.toFixed(2)} vs CR ${tbTotalOBCr.toFixed(2)}`,
-      expected: "DR = CR",
-      actual: `Diff: ${(tbTotalOBDr - tbTotalOBCr).toFixed(2)}`,
-      diff: Math.abs(tbTotalOBDr - tbTotalOBCr).toFixed(2),
-    }).getCell("severity").fill = FAIL_FILL;
-  }
-  if (Math.abs(tbTotalCBDr - tbTotalCBCr) >= 1) {
-    seq++;
-    ws.addRow({
-      seq,
-      category: "TB Balance",
-      severity: "CRITICAL",
-      code: "",
-      desc: `TB Closing Balance doesn't balance: DR ${tbTotalCBDr.toFixed(2)} vs CR ${tbTotalCBCr.toFixed(2)}`,
-      expected: "DR = CR",
-      actual: `Diff: ${(tbTotalCBDr - tbTotalCBCr).toFixed(2)}`,
-      diff: Math.abs(tbTotalCBDr - tbTotalCBCr).toFixed(2),
-    }).getCell("severity").fill = FAIL_FILL;
+  for (const [code] of glAgg) {
+    const tb = tbMap.get(code);
+    if (tb) {
+      const gl = glAgg.get(code)!;
+      const tbName = (tb.accountName ?? "").toLowerCase().trim();
+      const glName = (gl.accountName ?? "").toLowerCase().trim();
+      if (glName && tbName && glName !== tbName) {
+        addException("RECON", "Account Name Mismatch", "INFO", code, "", `TB name "${tb.accountName}" differs from GL name "${gl.accountName}"`, tb.accountName ?? "", gl.accountName ?? "", "");
+      }
+    }
   }
 
   for (const tb of tbRows) {
-    const hasBothDrCr = (tb.closingDebit > 0 && tb.closingCredit > 0);
-    if (hasBothDrCr) {
-      seq++;
-      const row = ws.addRow({
-        seq,
-        category: "Dual Balance",
-        severity: "INFO",
-        code: tb.accountCode,
-        desc: `Account has both debit (${tb.closingDebit.toFixed(2)}) and credit (${tb.closingCredit.toFixed(2)}) closing balances`,
-        expected: "Single-sided balance",
-        actual: `DR: ${tb.closingDebit.toFixed(2)}, CR: ${tb.closingCredit.toFixed(2)}`,
-        diff: "",
-      });
-      row.getCell("severity").fill = WARN_FILL;
+    if (tb.closingDebit > 0 && tb.closingCredit > 0) {
+      addException("TB", "Dual Balance", "INFO", tb.accountCode, tb.accountName ?? "", `Account has both DR (${tb.closingDebit.toFixed(2)}) and CR (${tb.closingCredit.toFixed(2)}) closing balances`, "Single-sided", `DR: ${tb.closingDebit.toFixed(2)}, CR: ${tb.closingCredit.toFixed(2)}`, "");
+    }
+  }
+
+  for (const tb of tbRows) {
+    if (!tb.accountName || tb.accountName.trim() === "") {
+      addException("TB", "Data Quality", "WARNING", tb.accountCode, "", `Account has a blank name`, "Account name present", "Blank", "");
+    }
+  }
+
+  for (const tb of tbRows) {
+    if (!tb.fsHeadKey) {
+      addException("TB", "FS Mapping", "INFO", tb.accountCode, tb.accountName ?? "", `Account is not mapped to an FS head/line item`, "FS head mapped", "Unmapped", "");
+    }
+  }
+
+  for (const tb of tbRows) {
+    if (tb.accountClass) {
+      const assetLike = ["ASSET", "EXPENSE"].includes(tb.accountClass.toUpperCase());
+      if (assetLike && tb.cbNet < -1) {
+        addException("TB", "Unusual Sign", "WARNING", tb.accountCode, tb.accountName ?? "", `${tb.accountClass} account has negative net closing balance (${tb.cbNet.toFixed(2)})`, "Positive (DR) balance", `Net: ${tb.cbNet.toFixed(2)}`, "");
+      }
+      const liabLike = ["LIABILITY", "EQUITY", "INCOME", "REVENUE"].includes(tb.accountClass.toUpperCase());
+      if (liabLike && tb.cbNet > 1) {
+        addException("TB", "Unusual Sign", "WARNING", tb.accountCode, tb.accountName ?? "", `${tb.accountClass} account has positive net closing balance (${tb.cbNet.toFixed(2)})`, "Negative (CR) balance", `Net: ${tb.cbNet.toFixed(2)}`, "");
+      }
+    }
+  }
+
+  for (const gl of glAgg.values()) {
+    if (gl.hasBlankNarration) {
+      addException("GL", "Data Quality", "WARNING", gl.accountCode, gl.accountName ?? "", `GL entries found with blank narration/description`, "Narration present", "Blank narration(s)", "");
+    }
+  }
+
+  const cbPartySumByCtrl = new Map<string, number>();
+  for (const p of partyRows.filter(pp => pp.balanceType === "CB")) {
+    const signed = p.drcr === "DR" ? p.balance : -p.balance;
+    cbPartySumByCtrl.set(p.controlAccountCode, (cbPartySumByCtrl.get(p.controlAccountCode) || 0) + signed);
+  }
+  for (const [ctrl, subTotal] of cbPartySumByCtrl) {
+    const tb = tbMap.get(ctrl);
+    const tbNet = tb ? tb.cbNet : 0;
+    const diff = subTotal - tbNet;
+    if (Math.abs(diff) >= 1) {
+      addException("SUBLEDGER", "Subledger Recon", "ERROR", ctrl, tb?.accountName ?? "", `Subledger total (${subTotal.toFixed(2)}) doesn't match TB net (${tbNet.toFixed(2)})`, `TB Net: ${tbNet.toFixed(2)}`, `Sub Total: ${subTotal.toFixed(2)}`, diff.toFixed(2));
+    }
+  }
+
+  for (const b of bankRows) {
+    const tb = tbMap.get(b.glCode);
+    const tbNet = tb ? tb.cbNet : 0;
+    const signedBal = b.drcr === "DR" ? b.closingBalance : -b.closingBalance;
+    const diff = signedBal - tbNet;
+    if (Math.abs(diff) >= 1) {
+      addException("BANK", "Bank Recon", "ERROR", b.glCode, `${b.bankName} - ${b.accountTitle}`, `Bank balance (${signedBal.toFixed(2)}) doesn't match TB net (${tbNet.toFixed(2)})`, `TB Net: ${tbNet.toFixed(2)}`, `Bank: ${signedBal.toFixed(2)}`, diff.toFixed(2));
     }
   }
 
   if (seq === 0) {
     ws.addRow({
-      seq: "",
+      excId: "",
+      source: "",
       category: "",
       severity: "",
       code: "",
+      accName: "",
       desc: "No exceptions found - all validations passed",
       expected: "",
       actual: "",
       diff: "",
+      status: "",
+      reviewer: "",
+      mgmt: "",
+      resolution: "",
     });
   }
 
+  addConditionalFormatting(ws, "D", ws.rowCount);
+  addConditionalFormatting(ws, "K", ws.rowCount);
   applyAutoFilter(ws);
 }

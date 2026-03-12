@@ -3496,7 +3496,7 @@ router.get("/:engagementId/validation-workbook", requireAuth, async (req: Reques
 
     const buffer = await generateValidationWorkbook(engagementId, userFirmId);
 
-    const filename = `AuditWise_Data_Validation_Workbook_${new Date().toISOString().split("T")[0]}.xlsx`;
+    const filename = `AuditWise_Data_Validation_Workbook.xlsx`;
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.send(buffer);

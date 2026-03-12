@@ -487,7 +487,7 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `AuditWise_Data_Validation_Workbook_${new Date().toISOString().split("T")[0]}.xlsx`;
+      a.download = `AuditWise_Data_Validation_Workbook.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
