@@ -150,6 +150,9 @@ export async function generateValidationWorkbook(
   const partyRows: PartyRow[] = [];
   const bankRows: BankRow[] = [];
   let meta: EngagementMeta = { clientName: "", firmName: "", periodEnd: "", engagementCode: "" };
+  const duplicateTbCodes: string[] = [];
+  const duplicateGlTransactions: Array<{ journalId: string; voucherNo: string; accountCode: string; count: number }> = [];
+  const invalidDateEntries: Array<{ accountCode: string; voucherNo: string; date: string }> = [];
 
   await withTenantContext(firmId, async (tx) => {
     const engagement = await tx.engagement.findUnique({
@@ -176,6 +179,23 @@ export async function generateValidationWorkbook(
       where: { engagementId, balanceType: "CB" },
       select: { accountCode: true, accountName: true, debitAmount: true, creditAmount: true, accountClass: true, fsHeadKey: true },
     });
+
+    const obCodeCounts = new Map<string, number>();
+    for (const r of obRows) {
+      const trimmed = r.accountCode.trim();
+      obCodeCounts.set(trimmed, (obCodeCounts.get(trimmed) || 0) + 1);
+    }
+    const cbCodeCounts = new Map<string, number>();
+    for (const r of cbRows) {
+      const trimmed = r.accountCode.trim();
+      cbCodeCounts.set(trimmed, (cbCodeCounts.get(trimmed) || 0) + 1);
+    }
+    for (const [code, count] of obCodeCounts) {
+      if (count > 1) duplicateTbCodes.push(`${code} (OB x${count})`);
+    }
+    for (const [code, count] of cbCodeCounts) {
+      if (count > 1) duplicateTbCodes.push(`${code} (CB x${count})`);
+    }
 
     const obMap = new Map(obRows.map(r => [r.accountCode.trim(), r]));
     const cbMap = new Map(cbRows.map(r => [r.accountCode.trim(), r]));
@@ -208,20 +228,41 @@ export async function generateValidationWorkbook(
 
     const glHeaders = await tx.importJournalHeader.findMany({
       where: { engagementId },
-      select: { id: true, voucherDate: true },
+      select: { id: true, journalId: true, voucherNo: true, voucherDate: true },
     });
     const headerDateMap = new Map(glHeaders.map(h => [h.id, h.voucherDate]));
+    const headerInfoMap = new Map(glHeaders.map(h => [h.id, { journalId: h.journalId, voucherNo: h.voucherNo, voucherDate: h.voucherDate }]));
+
+    const periodEndDate = meta.periodEnd ? new Date(meta.periodEnd) : null;
+    const periodStartDate = periodEndDate ? new Date(periodEndDate.getFullYear() - 1, periodEndDate.getMonth(), periodEndDate.getDate() + 1) : null;
 
     const glLines = await tx.importJournalLine.findMany({
       where: { journalHeader: { engagementId } },
       select: { accountCode: true, accountName: true, debit: true, credit: true, narration: true, description: true, journalHeaderId: true },
     });
+
+    const txnFingerprints = new Map<string, number>();
     for (const line of glLines) {
       const code = line.accountCode.trim();
       const dr = Number(line.debit);
       const cr = Number(line.credit);
       const hasBlankNarr = !line.narration && !line.description;
+      const headerInfo = headerInfoMap.get(line.journalHeaderId);
       const voucherDate = headerDateMap.get(line.journalHeaderId) ?? null;
+
+      if (voucherDate && periodEndDate && periodStartDate) {
+        if (voucherDate > periodEndDate || voucherDate < periodStartDate) {
+          invalidDateEntries.push({
+            accountCode: code,
+            voucherNo: headerInfo?.voucherNo ?? "",
+            date: voucherDate.toISOString().split("T")[0],
+          });
+        }
+      }
+
+      const fingerprint = `${headerInfo?.voucherNo ?? ""}|${code}|${dr}|${cr}`;
+      txnFingerprints.set(fingerprint, (txnFingerprints.get(fingerprint) || 0) + 1);
+
       const existing = glAgg.get(code);
       if (existing) {
         existing.totalDebit += dr;
@@ -249,6 +290,18 @@ export async function generateValidationWorkbook(
       }
     }
 
+    for (const [fp, count] of txnFingerprints) {
+      if (count > 1) {
+        const parts = fp.split("|");
+        duplicateGlTransactions.push({
+          journalId: "",
+          voucherNo: parts[0],
+          accountCode: parts[1],
+          count,
+        });
+      }
+    }
+
     const parties = await tx.importPartyBalance.findMany({
       where: { engagementId },
       select: {
@@ -261,7 +314,7 @@ export async function generateValidationWorkbook(
         partyCode: p.partyCode,
         partyName: p.partyName,
         partyType: p.partyType,
-        controlAccountCode: p.controlAccountCode,
+        controlAccountCode: p.controlAccountCode.trim(),
         balanceType: p.balanceType,
         balance: Number(p.balance),
         drcr: p.drcr,
@@ -290,7 +343,7 @@ export async function generateValidationWorkbook(
         bankName: ba.bankName,
         accountNo: ba.accountNo,
         accountTitle: ba.accountTitle,
-        glCode: bal?.glBankAccountCode ?? "",
+        glCode: (bal?.glBankAccountCode ?? "").trim(),
         closingBalance: Number(bal?.closingBalance ?? 0),
         drcr: bal?.drcr ?? "DR",
       });
@@ -301,11 +354,11 @@ export async function generateValidationWorkbook(
   workbook.creator = "AuditWise";
   workbook.created = new Date();
 
-  buildControlSummary(workbook, tbRows, glAgg, partyRows, bankRows, meta);
+  buildControlSummary(workbook, tbRows, glAgg, partyRows, bankRows, meta, duplicateTbCodes, duplicateGlTransactions, invalidDateEntries);
   buildTBValidation(workbook, tbRows, glAgg);
-  buildGLvsTBValidation(workbook, tbRows, glAgg, meta);
+  buildGLvsTBValidation(workbook, tbRows, glAgg, meta, duplicateGlTransactions, invalidDateEntries);
   buildSubledgerValidation(workbook, tbRows, partyRows, bankRows, glAgg);
-  buildExceptionsReport(workbook, tbRows, glAgg, partyRows, bankRows, meta);
+  buildExceptionsReport(workbook, tbRows, glAgg, partyRows, bankRows, meta, duplicateTbCodes, duplicateGlTransactions, invalidDateEntries);
 
   const buffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(buffer);
@@ -317,7 +370,10 @@ function buildControlSummary(
   glAgg: Map<string, GLAggRow>,
   partyRows: PartyRow[],
   bankRows: BankRow[],
-  meta: EngagementMeta
+  meta: EngagementMeta,
+  duplicateTbCodes: string[],
+  duplicateGlTransactions: Array<{ journalId: string; voucherNo: string; accountCode: string; count: number }>,
+  invalidDateEntries: Array<{ accountCode: string; voucherNo: string; date: string }>
 ) {
   const ws = wb.addWorksheet("Control_Summary");
 
@@ -423,6 +479,9 @@ function buildControlSummary(
   addCheck("TB Accounts with zero balances (OB & CB)", tbZeroBal, "", "");
   addCheck("TB Accounts with dual DR/CR closing balance", tbDualBal, tbDualBal === 0 ? "PASS" : "WARN", tbDualBal > 0 ? "Unusual: both DR and CR closing" : "");
   addCheck("GL Accounts with blank narrations", glBlankNarr, glBlankNarr === 0 ? "PASS" : "WARN", glBlankNarr > 0 ? "Entries without description" : "");
+  addCheck("Duplicate TB GL codes (after trim)", duplicateTbCodes.length, duplicateTbCodes.length === 0 ? "PASS" : "FAIL", duplicateTbCodes.length > 0 ? duplicateTbCodes.slice(0, 5).join(", ") : "No duplicates");
+  addCheck("Duplicate GL transactions", duplicateGlTransactions.length, duplicateGlTransactions.length === 0 ? "PASS" : "WARN", duplicateGlTransactions.length > 0 ? `${duplicateGlTransactions.length} potential duplicate groups` : "No duplicates");
+  addCheck("GL entries with dates outside period", invalidDateEntries.length, invalidDateEntries.length === 0 ? "PASS" : "WARN", invalidDateEntries.length > 0 ? `${invalidDateEntries.length} entries outside ${meta.periodEnd || "period"}` : "All within period");
   ws.addRow({});
 
   addSectionRow(ws, "SUBLEDGER RECONCILIATION SUMMARY", 4);
@@ -457,6 +516,7 @@ function buildTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map<str
     { header: "CB Credit", key: "cbCr", width: 16 },
     { header: "CB Net (DR-CR)", key: "cbNet", width: 16 },
     { header: "Net Movement", key: "netMov", width: 16 },
+    { header: "Cross-Cast (OB+Mov=CB)", key: "crossCast", width: 22 },
     { header: "In GL?", key: "inGl", width: 10 },
     { header: "Blank Name?", key: "blankName", width: 12 },
     { header: "Zero Balance?", key: "zeroBal", width: 13 },
@@ -482,12 +542,19 @@ function buildTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map<str
       if (liabLike && tb.cbNet > 1) unusualSign = true;
     }
 
+    const glRow = glAgg.get(tb.accountCode);
+    const glNetMov = glRow?.glNetMovement ?? 0;
+    const crossCastExpected = tb.obNet + glNetMov;
+    const crossCastDiff = Math.abs(crossCastExpected - tb.cbNet);
+    const crossCastPass = crossCastDiff < 1;
+
     const issues: string[] = [];
     if (blankName) issues.push("BLANK_NAME");
     if (dualBal) issues.push("DUAL_BAL");
     if (!fsMapped) issues.push("NO_FS");
     if (unusualSign) issues.push("UNUSUAL_SIGN");
     if (!inGl && Math.abs(tb.tbNetMovement) > 0) issues.push("NO_GL");
+    if (!crossCastPass && inGl) issues.push("CROSS_CAST");
 
     const checksStatus = issues.length === 0 ? "PASS" : issues.length <= 1 ? "WARN" : "FAIL";
 
@@ -503,6 +570,7 @@ function buildTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map<str
       cbCr: tb.closingCredit,
       cbNet: tb.cbNet,
       netMov: tb.tbNetMovement,
+      crossCast: crossCastPass ? "PASS" : `FAIL (${crossCastDiff.toFixed(2)})`,
       inGl: inGl ? "YES" : "NO",
       blankName: blankName ? "YES" : "",
       zeroBal: zeroBal ? "YES" : "",
@@ -515,6 +583,7 @@ function buildTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map<str
     for (let c = 5; c <= 11; c++) {
       row.getCell(c).numFmt = NUMBER_FMT;
     }
+    if (!crossCastPass) row.getCell("crossCast").fill = FAIL_FILL;
     row.getCell("checks").fill = statusFill(checksStatus);
     if (blankName) row.getCell("blankName").fill = WARN_FILL;
     if (dualBal) row.getCell("dualBal").fill = WARN_FILL;
@@ -535,6 +604,7 @@ function buildTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map<str
     cbCr: tbRows.reduce((s, r) => s + r.closingCredit, 0),
     cbNet: tbRows.reduce((s, r) => s + r.cbNet, 0),
     netMov: tbRows.reduce((s, r) => s + r.tbNetMovement, 0),
+    crossCast: "",
     inGl: "",
     blankName: "",
     zeroBal: "",
@@ -553,11 +623,18 @@ function buildTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map<str
   if (obDiff >= 1) totRow.getCell("obNet").fill = FAIL_FILL;
   if (cbDiff >= 1) totRow.getCell("cbNet").fill = FAIL_FILL;
 
-  addConditionalFormatting(ws, "R", ws.rowCount);
+  addConditionalFormatting(ws, "S", ws.rowCount);
   applyAutoFilter(ws);
 }
 
-function buildGLvsTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map<string, GLAggRow>, meta: EngagementMeta) {
+function buildGLvsTBValidation(
+  wb: ExcelJS.Workbook,
+  tbRows: TBRow[],
+  glAgg: Map<string, GLAggRow>,
+  meta: EngagementMeta,
+  duplicateGlTransactions: Array<{ journalId: string; voucherNo: string; accountCode: string; count: number }>,
+  invalidDateEntries: Array<{ accountCode: string; voucherNo: string; date: string }>
+) {
   const ws = wb.addWorksheet("GL_vs_TB_Validation");
 
   ws.columns = [
@@ -576,9 +653,20 @@ function buildGLvsTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map
     { header: "Latest GL Date", key: "lateDate", width: 16 },
     { header: "In TB?", key: "inTb", width: 10 },
     { header: "In GL?", key: "inGl", width: 10 },
+    { header: "Dup Transactions?", key: "dupTxn", width: 18 },
+    { header: "Invalid Dates?", key: "invDate", width: 16 },
     { header: "Match Status", key: "match", width: 14 },
   ];
   styleHeaderRow(ws);
+
+  const dupByCode = new Map<string, number>();
+  for (const d of duplicateGlTransactions) {
+    dupByCode.set(d.accountCode, (dupByCode.get(d.accountCode) || 0) + d.count);
+  }
+  const invDateByCode = new Map<string, number>();
+  for (const e of invalidDateEntries) {
+    invDateByCode.set(e.accountCode, (invDateByCode.get(e.accountCode) || 0) + 1);
+  }
 
   const tbMap = new Map(tbRows.map(r => [r.accountCode, r]));
   const allCodes = new Set([...tbMap.keys(), ...glAgg.keys()]);
@@ -598,6 +686,9 @@ function buildGLvsTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map
     const nameMatch = (!inTb || !inGl) ? "" :
       tbName.toLowerCase().trim() === glName.toLowerCase().trim() ? "YES" :
       !glName ? "N/A" : "NO";
+
+    const dupCount = dupByCode.get(code) || 0;
+    const invDateCount = invDateByCode.get(code) || 0;
 
     let matchStatus = "MATCH";
     if (!inTb) matchStatus = "GL_ONLY";
@@ -620,6 +711,8 @@ function buildGLvsTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map
       lateDate: gl?.latestDate ? gl.latestDate.toISOString().split("T")[0] : "",
       inTb: inTb ? "YES" : "NO",
       inGl: inGl ? "YES" : "NO",
+      dupTxn: dupCount > 0 ? `YES (${dupCount})` : "",
+      invDate: invDateCount > 0 ? `YES (${invDateCount})` : "",
       match: matchStatus,
     });
 
@@ -631,9 +724,11 @@ function buildGLvsTBValidation(wb: ExcelJS.Workbook, tbRows: TBRow[], glAgg: Map
     if (matchStatus === "MISMATCH") row.getCell("netDiff").fill = FAIL_FILL;
     if (nameMatch === "NO") row.getCell("nameMatch").fill = WARN_FILL;
     if (gl?.hasBlankNarration) row.getCell("blankNarr").fill = WARN_FILL;
+    if (dupCount > 0) row.getCell("dupTxn").fill = WARN_FILL;
+    if (invDateCount > 0) row.getCell("invDate").fill = WARN_FILL;
   }
 
-  addConditionalFormatting(ws, "P", ws.rowCount);
+  addConditionalFormatting(ws, "R", ws.rowCount);
   applyAutoFilter(ws);
 }
 
@@ -779,7 +874,10 @@ function buildExceptionsReport(
   glAgg: Map<string, GLAggRow>,
   partyRows: PartyRow[],
   bankRows: BankRow[],
-  meta: EngagementMeta
+  meta: EngagementMeta,
+  duplicateTbCodes: string[],
+  duplicateGlTransactions: Array<{ journalId: string; voucherNo: string; accountCode: string; count: number }>,
+  invalidDateEntries: Array<{ accountCode: string; voucherNo: string; date: string }>
 ) {
   const ws = wb.addWorksheet("Exceptions_Report");
 
@@ -934,6 +1032,25 @@ function buildExceptionsReport(
     if (Math.abs(diff) >= 1) {
       addException("BANK", "Bank Recon", "ERROR", b.glCode, `${b.bankName} - ${b.accountTitle}`, `Bank balance (${signedBal.toFixed(2)}) doesn't match TB net (${tbNet.toFixed(2)})`, `TB Net: ${tbNet.toFixed(2)}`, `Bank: ${signedBal.toFixed(2)}`, diff.toFixed(2));
     }
+  }
+
+  for (const dupCode of duplicateTbCodes) {
+    addException("TB", "Duplicate GL Code", "ERROR", dupCode, "", `Duplicate GL code detected in TB data after trimming: ${dupCode}`, "Unique codes", "Duplicate", "");
+  }
+
+  for (const dup of duplicateGlTransactions) {
+    addException("GL", "Duplicate Transaction", "WARNING", dup.accountCode, "", `Potential duplicate GL transaction: voucher ${dup.voucherNo || "N/A"}, account ${dup.accountCode} appears ${dup.count} times with same amounts`, "Unique entries", `${dup.count} duplicates`, "");
+  }
+
+  const invDateGrouped = new Map<string, string[]>();
+  for (const e of invalidDateEntries) {
+    const existing = invDateGrouped.get(e.accountCode) || [];
+    if (existing.length < 3) existing.push(e.date);
+    invDateGrouped.set(e.accountCode, existing);
+  }
+  for (const [code, dates] of invDateGrouped) {
+    const tb = tbMap.get(code);
+    addException("GL", "Invalid Date", "WARNING", code, tb?.accountName ?? "", `GL entries with dates outside engagement period: ${dates.join(", ")}${invDateGrouped.get(code)!.length >= 3 ? " ..." : ""}`, `Within ${meta.periodEnd || "period"}`, "Outside period", "");
   }
 
   if (seq === 0) {
