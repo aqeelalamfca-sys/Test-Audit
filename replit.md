@@ -291,3 +291,13 @@ The Execution module's FS Heads wizard has been upgraded into a fully linked, IS
 - Domain: https://auditwise.tech (live and verified)
 - CI/CD: GitHub Actions (.github/workflows/deploy.yml) auto-deploys on push to main
 - GitHub repo: aqeelalamfca-sys/Test-Audit (branch: main)
+
+### Known Schema Mapping Notes
+
+- **TrialBalanceLine** uses `fsArea` (enum: REVENUE, FIXED_ASSETS, RECEIVABLES, etc.) — NOT fsCategory. The `debits` and `credits` fields hold movements (NOT debitMovement/creditMovement). No `fsLineItem` field exists — use CoA mapping or accountName instead.
+- **TBReconciliation** uses `isResolved` (boolean, not `status`), `varianceAmount` (not `difference`), and `tbEntry` relation (not `tbItem`).
+- **TBValidationError** uses `isResolved` and `isBlocking` (not `resolved`/`severity`), `batch` relation (not `tbBatch`), `entry` relation (not `tbItem`).
+- **GLValidationError** uses `isResolved` (not `resolved`), `entry` relation for GLEntry.
+- **ImportBatch** uses `processedRows` and `errorCount` (not `validRows`/`errorRows`).
+- **TBEntry** has `movementDebit`, `movementCredit`, `closingDebit`, `closingCredit` — not simple `debit`/`credit`.
+- `fsAreaToCategory()` helper maps FSArea enum values to high-level categories (ASSETS, LIABILITIES, EQUITY, INCOME, EXPENSES) for planning dashboard analytics.

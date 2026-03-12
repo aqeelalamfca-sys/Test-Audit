@@ -728,15 +728,15 @@ router.post("/auto-create-from-exceptions", requireAuth, requireMinRole("SENIOR"
       const reconciliations = await db.tBReconciliation.findMany({
         where: {
           engagementId: data.engagementId,
-          status: { in: ["UNRESOLVED", "UNDER_INVESTIGATION"] },
+          isResolved: false,
         },
         include: {
-          tbItem: { select: { accountCode: true, accountName: true } },
+          tbEntry: { select: { accountCode: true, accountName: true } },
         },
       });
 
       for (const recon of reconciliations) {
-        const diffAmount = Math.abs(Number(recon.difference) || 0);
+        const diffAmount = Math.abs(Number(recon.varianceAmount) || 0);
         if (diffAmount === 0) continue;
 
         const existingObs = await db.observation.findFirst({
@@ -755,7 +755,7 @@ router.post("/auto-create-from-exceptions", requireAuth, requireMinRole("SENIOR"
               type: "MISSTATEMENT",
               severity,
               status: "OPEN",
-              condition: `Reconciliation mismatch detected: TB vs GL difference of ${diffAmount.toLocaleString()} for account ${recon.tbItem?.accountCode || "Unknown"} (${recon.tbItem?.accountName || "Unknown"})`,
+              condition: `Reconciliation mismatch detected: TB vs GL difference of ${diffAmount.toLocaleString()} for account ${recon.tbEntry?.accountCode || recon.accountCode || "Unknown"} (${recon.tbEntry?.accountName || "Unknown"})`,
               criteria: "TB amounts should reconcile with GL totals",
               effect: `Potential misstatement of ${diffAmount.toLocaleString()}`,
               effectAmount: diffAmount.toString(),
@@ -775,15 +775,15 @@ router.post("/auto-create-from-exceptions", requireAuth, requireMinRole("SENIOR"
         where: {
           engagementId: data.engagementId,
           reconciliationType: { in: ["CONTROL_TO_SUBLEDGER", "AP_SUBLEDGER", "AR_SUBLEDGER", "BANK_RECON"] },
-          status: { in: ["UNRESOLVED", "UNDER_INVESTIGATION"] },
+          isResolved: false,
         },
         include: {
-          tbItem: { select: { accountCode: true, accountName: true } },
+          tbEntry: { select: { accountCode: true, accountName: true } },
         },
       });
 
       for (const diff of controlDiffs) {
-        const diffAmount = Math.abs(Number(diff.difference) || 0);
+        const diffAmount = Math.abs(Number(diff.varianceAmount) || 0);
         if (diffAmount === 0) continue;
 
         const existingObs = await db.observation.findFirst({
@@ -802,7 +802,7 @@ router.post("/auto-create-from-exceptions", requireAuth, requireMinRole("SENIOR"
               type: "CONTROL_DEFICIENCY",
               severity,
               status: "OPEN",
-              condition: `Control account difference: ${diff.reconciliationType} shows difference of ${diffAmount.toLocaleString()} for account ${diff.tbItem?.accountCode || "Unknown"}`,
+              condition: `Control account difference: ${diff.reconciliationType} shows difference of ${diffAmount.toLocaleString()} for account ${diff.tbEntry?.accountCode || diff.accountCode || "Unknown"}`,
               criteria: "Control account balances should agree with underlying subledgers",
               cause: "Potential timing difference, unrecorded transactions, or control breakdown",
               effect: `Control account variance of ${diffAmount.toLocaleString()}`,
@@ -821,12 +821,12 @@ router.post("/auto-create-from-exceptions", requireAuth, requireMinRole("SENIOR"
     if (data.includeDataQualityIssues) {
       const validationErrors = await db.tBValidationError.findMany({
         where: {
-          tbBatch: { engagementId: data.engagementId },
-          resolved: false,
-          severity: { in: ["HIGH", "CRITICAL"] },
+          batch: { engagementId: data.engagementId },
+          isResolved: false,
+          isBlocking: true,
         },
         include: {
-          tbItem: { select: { accountCode: true, accountName: true } },
+          entry: { select: { accountCode: true, accountName: true } },
         },
       });
 
@@ -844,9 +844,9 @@ router.post("/auto-create-from-exceptions", requireAuth, requireMinRole("SENIOR"
               engagementId: data.engagementId,
               observationRef: generateAutoRef(),
               type: "OTHER",
-              severity: error.severity === "CRITICAL" ? "HIGH" : "MEDIUM",
+              severity: error.isBlocking ? "HIGH" : "MEDIUM",
               status: "OPEN",
-              condition: `Data quality issue detected: ${error.errorType} - ${error.errorMessage || "Validation failed"} for account ${error.tbItem?.accountCode || "Unknown"}`,
+              condition: `Data quality issue detected: ${error.errorType} - ${error.errorMessage || "Validation failed"} for account ${error.entry?.accountCode || "Unknown"}`,
               criteria: "Financial data should meet quality standards with no missing mandatory fields or duplicates",
               effect: "Data integrity concern affecting reliability of financial information",
               linkedProcedureRef: `DATAERR-${error.id}`,
@@ -861,7 +861,7 @@ router.post("/auto-create-from-exceptions", requireAuth, requireMinRole("SENIOR"
       const glValidationErrors = await db.gLValidationError.findMany({
         where: {
           batch: { engagementId: data.engagementId },
-          resolved: false,
+          isResolved: false,
         },
         include: {
           entry: { select: { accountCode: true, description: true } },

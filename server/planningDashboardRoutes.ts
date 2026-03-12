@@ -68,11 +68,11 @@ router.get("/:engagementId/readiness", requireAuth, async (req: AuthenticatedReq
     try {
       const draftFs = await prisma.$queryRaw`
         SELECT 
-          COALESCE(SUM(CASE WHEN "fsCategory" = 'ASSETS' THEN COALESCE("closingBalance", 0) ELSE 0 END), 0) as "totalAssets",
-          COALESCE(SUM(CASE WHEN "fsCategory" = 'LIABILITIES' THEN COALESCE("closingBalance", 0) ELSE 0 END), 0) as "totalLiabilities",
-          COALESCE(SUM(CASE WHEN "fsCategory" = 'EQUITY' THEN COALESCE("closingBalance", 0) ELSE 0 END), 0) as "totalEquity",
-          COALESCE(SUM(CASE WHEN "fsCategory" = 'INCOME' THEN COALESCE("closingBalance", 0) ELSE 0 END), 0) as "totalIncome",
-          COALESCE(SUM(CASE WHEN "fsCategory" = 'EXPENSES' THEN COALESCE("closingBalance", 0) ELSE 0 END), 0) as "totalExpenses"
+          COALESCE(SUM(CASE WHEN "fsArea" IN ('CASH_AND_BANK','RECEIVABLES','INVENTORIES','INVESTMENTS','FIXED_ASSETS','INTANGIBLES') THEN COALESCE("closingBalance", 0) ELSE 0 END), 0) as "totalAssets",
+          COALESCE(SUM(CASE WHEN "fsArea" IN ('PAYABLES','BORROWINGS','PROVISIONS','RELATED_PARTIES','CONTINGENCIES','COMMITMENTS','EVENTS_AFTER_REPORTING') THEN COALESCE("closingBalance", 0) ELSE 0 END), 0) as "totalLiabilities",
+          COALESCE(SUM(CASE WHEN "fsArea" = 'EQUITY' THEN COALESCE("closingBalance", 0) ELSE 0 END), 0) as "totalEquity",
+          COALESCE(SUM(CASE WHEN "fsArea" IN ('REVENUE','OTHER_INCOME') THEN COALESCE("closingBalance", 0) ELSE 0 END), 0) as "totalIncome",
+          COALESCE(SUM(CASE WHEN "fsArea" IN ('COST_OF_SALES','OPERATING_EXPENSES','FINANCE_COSTS','TAXATION') THEN COALESCE("closingBalance", 0) ELSE 0 END), 0) as "totalExpenses"
         FROM "TrialBalanceLine" tbl
         JOIN "TrialBalance" tb ON tbl."trialBalanceId" = tb.id
         WHERE tb."engagementId" = ${engagementId}
@@ -221,12 +221,25 @@ router.get("/:engagementId/significant-accounts", requireAuth, async (req: Authe
         accountName: true,
         closingBalance: true,
         openingBalance: true,
-        debitMovement: true,
-        creditMovement: true,
-        fsCategory: true,
-        fsLineItem: true,
+        debits: true,
+        credits: true,
+        fsArea: true,
       },
     });
+
+    const fsAreaToCategorySA = (fsArea: string | null): string => {
+      if (!fsArea) return "UNCLASSIFIED";
+      const map: Record<string, string> = {
+        REVENUE: "INCOME", COST_OF_SALES: "EXPENSES", OPERATING_EXPENSES: "EXPENSES",
+        OTHER_INCOME: "INCOME", FINANCE_COSTS: "EXPENSES", TAXATION: "EXPENSES",
+        CASH_AND_BANK: "ASSETS", RECEIVABLES: "ASSETS", INVENTORIES: "ASSETS",
+        INVESTMENTS: "ASSETS", FIXED_ASSETS: "ASSETS", INTANGIBLES: "ASSETS",
+        PAYABLES: "LIABILITIES", BORROWINGS: "LIABILITIES", PROVISIONS: "LIABILITIES",
+        EQUITY: "EQUITY", RELATED_PARTIES: "LIABILITIES", CONTINGENCIES: "LIABILITIES",
+        COMMITMENTS: "LIABILITIES", EVENTS_AFTER_REPORTING: "LIABILITIES",
+      };
+      return map[fsArea] || "UNCLASSIFIED";
+    };
 
     const materiality = await prisma.materialityAssessment.findFirst({
       where: { engagementId },
@@ -244,7 +257,7 @@ router.get("/:engagementId/significant-accounts", requireAuth, async (req: Authe
     const significantAccounts = tbLines
       .map((line) => {
         const balance = Math.abs(line.closingBalance || 0);
-        const movement = Math.abs((line.debitMovement || 0) + (line.creditMovement || 0));
+        const movement = Math.abs((line.debits || 0) + (line.credits || 0));
         const change = line.openingBalance
           ? Math.abs((line.closingBalance || 0) - (line.openingBalance || 0))
           : 0;
@@ -275,8 +288,8 @@ router.get("/:engagementId/significant-accounts", requireAuth, async (req: Authe
         return {
           accountCode: line.accountCode,
           accountName: line.accountName,
-          fsCategory: line.fsCategory,
-          fsLineItem: line.fsLineItem,
+          fsCategory: fsAreaToCategorySA(line.fsArea),
+          fsLineItem: line.accountName,
           closingBalance: line.closingBalance,
           openingBalance: line.openingBalance,
           movement,
@@ -318,16 +331,29 @@ router.get("/:engagementId/analytical-review", requireAuth, async (req: Authenti
         accountName: true,
         closingBalance: true,
         openingBalance: true,
-        debitMovement: true,
-        creditMovement: true,
-        fsCategory: true,
-        fsLineItem: true,
+        debits: true,
+        credits: true,
+        fsArea: true,
       },
     });
 
+    const fsAreaToCategory = (fsArea: string | null): string => {
+      if (!fsArea) return "UNCLASSIFIED";
+      const map: Record<string, string> = {
+        REVENUE: "INCOME", COST_OF_SALES: "EXPENSES", OPERATING_EXPENSES: "EXPENSES",
+        OTHER_INCOME: "INCOME", FINANCE_COSTS: "EXPENSES", TAXATION: "EXPENSES",
+        CASH_AND_BANK: "ASSETS", RECEIVABLES: "ASSETS", INVENTORIES: "ASSETS",
+        INVESTMENTS: "ASSETS", FIXED_ASSETS: "ASSETS", INTANGIBLES: "ASSETS",
+        PAYABLES: "LIABILITIES", BORROWINGS: "LIABILITIES", PROVISIONS: "LIABILITIES",
+        EQUITY: "EQUITY", RELATED_PARTIES: "LIABILITIES", CONTINGENCIES: "LIABILITIES",
+        COMMITMENTS: "LIABILITIES", EVENTS_AFTER_REPORTING: "LIABILITIES",
+      };
+      return map[fsArea] || "UNCLASSIFIED";
+    };
+
     const categories: Record<string, { current: number; prior: number }> = {};
     tbLines.forEach((line) => {
-      const cat = line.fsCategory || "UNCLASSIFIED";
+      const cat = fsAreaToCategory(line.fsArea);
       if (!categories[cat]) categories[cat] = { current: 0, prior: 0 };
       categories[cat].current += line.closingBalance || 0;
       categories[cat].prior += line.openingBalance || 0;
@@ -380,16 +406,17 @@ router.get("/:engagementId/analytical-review", requireAuth, async (req: Authenti
         const changePercent = line.openingBalance && line.openingBalance !== 0
           ? (change / Math.abs(line.openingBalance)) * 100
           : (line.closingBalance !== 0 ? 100 : 0);
+        const cat = fsAreaToCategory(line.fsArea);
         return {
           accountCode: line.accountCode,
           accountName: line.accountName,
-          fsCategory: line.fsCategory,
+          fsCategory: cat,
           closingBalance: line.closingBalance,
           openingBalance: line.openingBalance,
           change,
           changePercent,
           isUnusual: Math.abs(changePercent) > 25 && Math.abs(line.closingBalance || 0) > 0,
-          isNegativeBalance: (line.closingBalance || 0) < 0 && (line.fsCategory === "ASSETS" || line.fsCategory === "INCOME"),
+          isNegativeBalance: (line.closingBalance || 0) < 0 && (cat === "ASSETS" || cat === "INCOME"),
           isDormant: (line.closingBalance || 0) === 0 && (line.openingBalance || 0) !== 0,
         };
       })
@@ -404,9 +431,10 @@ router.get("/:engagementId/analytical-review", requireAuth, async (req: Authenti
     if (Math.abs(grossProfitMargin - priorGrossMargin) > 5) anomalies.push(`Gross margin shift of ${(grossProfitMargin - priorGrossMargin).toFixed(1)}%`);
     if (totalEquity < 0) anomalies.push("Negative equity — going concern indicator");
 
-    const negativeBalances = tbLines.filter(l =>
-      (l.closingBalance || 0) < 0 && (l.fsCategory === "ASSETS" || l.fsCategory === "INCOME")
-    ).length;
+    const negativeBalances = tbLines.filter(l => {
+      const c = fsAreaToCategory(l.fsArea);
+      return (l.closingBalance || 0) < 0 && (c === "ASSETS" || c === "INCOME");
+    }).length;
     if (negativeBalances > 0) anomalies.push(`${negativeBalances} unexpected negative balance(s)`);
 
     res.json({
@@ -524,7 +552,7 @@ router.get("/:engagementId/control-cycles", requireAuth, async (req: Authenticat
 
     const tbLines = await prisma.trialBalanceLine.findMany({
       where: { trialBalance: { engagementId } },
-      select: { fsCategory: true, closingBalance: true, fsLineItem: true },
+      select: { fsArea: true, closingBalance: true, accountName: true },
     });
 
     const materiality = await prisma.materialityAssessment.findFirst({
@@ -534,9 +562,23 @@ router.get("/:engagementId/control-cycles", requireAuth, async (req: Authenticat
 
     const performanceMateriality = materiality?.performanceMateriality || 0;
 
+    const fsAreaToCategoryLocal = (fsArea: string | null): string => {
+      if (!fsArea) return "UNCLASSIFIED";
+      const map: Record<string, string> = {
+        REVENUE: "INCOME", COST_OF_SALES: "EXPENSES", OPERATING_EXPENSES: "EXPENSES",
+        OTHER_INCOME: "INCOME", FINANCE_COSTS: "EXPENSES", TAXATION: "EXPENSES",
+        CASH_AND_BANK: "ASSETS", RECEIVABLES: "ASSETS", INVENTORIES: "ASSETS",
+        INVESTMENTS: "ASSETS", FIXED_ASSETS: "ASSETS", INTANGIBLES: "ASSETS",
+        PAYABLES: "LIABILITIES", BORROWINGS: "LIABILITIES", PROVISIONS: "LIABILITIES",
+        EQUITY: "EQUITY", RELATED_PARTIES: "LIABILITIES", CONTINGENCIES: "LIABILITIES",
+        COMMITMENTS: "LIABILITIES", EVENTS_AFTER_REPORTING: "LIABILITIES",
+      };
+      return map[fsArea] || "UNCLASSIFIED";
+    };
+
     const categoryTotals: Record<string, number> = {};
     tbLines.forEach((line) => {
-      const cat = line.fsCategory || "UNCLASSIFIED";
+      const cat = fsAreaToCategoryLocal(line.fsArea);
       categoryTotals[cat] = (categoryTotals[cat] || 0) + Math.abs(line.closingBalance || 0);
     });
 
@@ -553,9 +595,9 @@ router.get("/:engagementId/control-cycles", requireAuth, async (req: Authenticat
 
     const cycleData = cycles.map((cycle) => {
       const relatedAccounts = tbLines.filter((line) =>
-        cycle.relatedCategories.includes(line.fsCategory || "") ||
+        cycle.relatedCategories.includes(fsAreaToCategoryLocal(line.fsArea)) ||
         cycle.relatedLineItems.some((item) =>
-          (line.fsLineItem || "").toLowerCase().includes(item.toLowerCase())
+          (line.accountName || "").toLowerCase().includes(item.toLowerCase())
         )
       );
       const totalBalance = relatedAccounts.reduce((sum, acc) => sum + Math.abs(acc.closingBalance || 0), 0);
@@ -592,12 +634,26 @@ router.get("/:engagementId/going-concern-indicators", requireAuth, async (req: A
 
     const tbLines = await prisma.trialBalanceLine.findMany({
       where: { trialBalance: { engagementId } },
-      select: { closingBalance: true, openingBalance: true, fsCategory: true, fsLineItem: true },
+      select: { closingBalance: true, openingBalance: true, fsArea: true, accountName: true },
     });
+
+    const fsAreaToCategoryGC = (fsArea: string | null): string => {
+      if (!fsArea) return "UNCLASSIFIED";
+      const map: Record<string, string> = {
+        REVENUE: "INCOME", COST_OF_SALES: "EXPENSES", OPERATING_EXPENSES: "EXPENSES",
+        OTHER_INCOME: "INCOME", FINANCE_COSTS: "EXPENSES", TAXATION: "EXPENSES",
+        CASH_AND_BANK: "ASSETS", RECEIVABLES: "ASSETS", INVENTORIES: "ASSETS",
+        INVESTMENTS: "ASSETS", FIXED_ASSETS: "ASSETS", INTANGIBLES: "ASSETS",
+        PAYABLES: "LIABILITIES", BORROWINGS: "LIABILITIES", PROVISIONS: "LIABILITIES",
+        EQUITY: "EQUITY", RELATED_PARTIES: "LIABILITIES", CONTINGENCIES: "LIABILITIES",
+        COMMITMENTS: "LIABILITIES", EVENTS_AFTER_REPORTING: "LIABILITIES",
+      };
+      return map[fsArea] || "UNCLASSIFIED";
+    };
 
     const categories: Record<string, number> = {};
     tbLines.forEach((line) => {
-      const cat = line.fsCategory || "UNCLASSIFIED";
+      const cat = fsAreaToCategoryGC(line.fsArea);
       categories[cat] = (categories[cat] || 0) + (line.closingBalance || 0);
     });
 
