@@ -28,7 +28,7 @@ import {
   ArrowUpDown, Layers
 } from "lucide-react";
 import { AIAssistBanner, PHASE_AI_CONFIGS } from "@/components/ai-assist-banner";
-import { PhaseApprovalControl, PhaseLockIndicator } from "@/components/phase-approval-control";
+import { PhaseLockIndicator } from "@/components/phase-approval-control";
 import { LockGatePanel } from "@/components/control-pack";
 import { useQuery } from "@tanstack/react-query";
 import { FSSoCF } from "@/components/planning/fs-socf";
@@ -657,133 +657,6 @@ export default function Finalization() {
       )}
 
       <PhaseLockIndicator phase="FINALIZATION" />
-
-      <div className="flex items-center justify-between gap-2 flex-wrap py-1.5 px-3 rounded-md border bg-muted/30">
-        <div className="flex items-center gap-3 flex-wrap">
-          <PhaseApprovalControl phase="FINALIZATION" inline />
-        </div>
-      </div>
-
-      {/* Read-Only Summary Outputs - Auto-pulled from earlier phases */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-        <Card className="border-blue-200 bg-blue-50/30 dark:bg-blue-950/20">
-          <CardContent className="py-2 px-3">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle className="h-3.5 w-3.5 text-orange-500 flex-shrink-0" />
-              <span className="text-xs font-medium">Pending Items from Execution</span>
-              <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1">Read-Only</Badge>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-lg font-bold text-orange-600" data-testid="text-pending-items-count">
-                {checklistItems.filter(i => i.response === "" || i.response === "no").length}
-              </span>
-              <span className="text-[11px] text-muted-foreground">items requiring attention</span>
-            </div>
-            {checklistItems.filter(i => i.response === "no" && !i.remarks).length > 0 && (
-              <p className="text-[11px] text-red-600 mt-0.5">
-                {checklistItems.filter(i => i.response === "no" && !i.remarks).length} marked "No" need remarks
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="border-purple-200 bg-purple-50/30 dark:bg-purple-950/20">
-          <CardContent className="py-2 px-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Scale className="h-3.5 w-3.5 text-purple-500 flex-shrink-0" />
-              <span className="text-xs font-medium">Unadjusted Differences Summary</span>
-              <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1">Read-Only</Badge>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-lg font-bold text-purple-600" data-testid="text-unadjusted-count">0</span>
-              <span className="text-[11px] text-muted-foreground">uncorrected misstatements (ISA 450)</span>
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Auto-pulled from Execution phase</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-green-200 bg-green-50/30 dark:bg-green-950/20">
-          <CardContent className="py-2 px-3">
-            <div className="flex items-center gap-2 mb-1">
-              <FileCheck2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
-              <span className="text-xs font-medium">Key Audit Matters Summary</span>
-              <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1">Read-Only</Badge>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-lg font-bold text-green-600" data-testid="text-kam-count">
-                {subsequentEvents.length + (goingConcernConclusion === "material-uncertainty-exists" ? 1 : 0)}
-              </span>
-              <span className="text-[11px] text-muted-foreground">matters requiring reporting (ISA 701)</span>
-            </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">
-              {subsequentEvents.length > 0 && <span>• {subsequentEvents.length} subsequent event(s) </span>}
-              {goingConcernConclusion === "material-uncertainty-exists" && <span>• Going concern </span>}
-              {emphasisOfMatter && <span>• Emphasis of matter</span>}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex items-center gap-2 justify-end flex-wrap">
-        <Button
-          variant="outline"
-          onClick={generateFinalizationOutputs}
-          disabled={isGeneratingOutputs || fileStatus === "locked" || saveEngine.isSaving}
-          data-testid="button-generate-completion-pack"
-          title={fileStatus === "locked" ? "File is locked" : saveEngine.isSaving ? "Save in progress" : isGeneratingOutputs ? "Generation in progress" : "Generate completion pack outputs"}
-        >
-          {isGeneratingOutputs ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <FileCheck className="h-4 w-4 mr-2" />}
-          Generate Completion Pack
-        </Button>
-        <Button
-          variant="outline"
-          onClick={generateAISummary}
-          disabled={isGeneratingAI || fileStatus === "locked" || saveEngine.isSaving}
-          data-testid="button-generate-summary"
-          title={fileStatus === "locked" ? "File is locked" : saveEngine.isSaving ? "Save in progress" : isGeneratingAI ? "AI generation in progress" : "Generate AI-powered audit summary"}
-        >
-          {isGeneratingAI ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Brain className="h-4 w-4 mr-2" />}
-          Generate Summary
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => {
-            toast({
-              title: "Exporting Working Papers",
-              description: "Generating working papers package for download...",
-            });
-          }}
-          disabled={fileStatus === "locked"}
-          data-testid="button-export-working-papers"
-          title={fileStatus === "locked" ? "File is locked" : "Export working papers package"}
-        >
-          <Download className="h-4 w-4 mr-2" />
-          Export Working Papers
-        </Button>
-        <Button
-          onClick={() => {
-            if (!allChecklistItemsAnswered || !noMissingRemarks) {
-              toast({
-                title: "Cannot Submit for EQCR",
-                description: "Complete all checklist items and provide remarks for 'No' responses first.",
-                variant: "destructive",
-              });
-              return;
-            }
-            toast({
-              title: "Submitted for EQCR",
-              description: "Engagement has been submitted for Engagement Quality Control Review.",
-            });
-          }}
-          disabled={fileStatus === "locked" || !allChecklistItemsAnswered || !noMissingRemarks}
-          data-testid="button-submit-eqcr"
-          title={fileStatus === "locked" ? "File is locked" : !allChecklistItemsAnswered ? "Complete all checklist items first" : !noMissingRemarks ? "Provide remarks for all 'No' responses first" : "Submit engagement for EQCR"}
-        >
-          <Shield className="h-4 w-4 mr-2" />
-          Submit for EQCR
-        </Button>
-      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <SimpleTabNavigation
