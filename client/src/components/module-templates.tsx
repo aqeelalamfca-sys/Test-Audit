@@ -16,7 +16,7 @@ import {
   ChevronUp,
   Sparkles,
 } from "lucide-react";
-import { fetchWithAuth } from "@/lib/auth";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { useToast } from "@/hooks/use-toast";
 
 interface ModuleTemplate {

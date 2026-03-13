@@ -148,10 +148,15 @@ const VALID_PHASES = ["ONBOARDING", "PRE_PLANNING", "PLANNING", "EXECUTION", "FI
 const VALID_STATUSES = ["OPEN", "ADDRESSED", "CLEARED"] as const;
 const VALID_SEVERITIES = ["INFO", "LOW", "MEDIUM", "WARNING", "HIGH", "CRITICAL"] as const;
 
-function isAuthorAssigneeOrPrivileged(note: any, userId: string, userRole: string): boolean {
+interface NoteWithAssignees {
+  authorId: string;
+  assignees?: Array<{ userId: string }>;
+}
+
+function isAuthorAssigneeOrPrivileged(note: NoteWithAssignees, userId: string, userRole: string): boolean {
   if (PRIVILEGED_ROLES.includes(userRole)) return true;
   if (note.authorId === userId) return true;
-  if (note.assignees?.some((a: any) => a.userId === userId)) return true;
+  if (note.assignees?.some((a) => a.userId === userId)) return true;
   return false;
 }
 
@@ -202,11 +207,11 @@ router.post("/", requireAuth, async (req: AuthenticatedRequest, res: Response) =
       data: {
         engagementId: data.engagementId,
         authorId: req.user!.id,
-        phase: data.phase as any,
+        phase: data.phase,
         title: data.title,
         content: data.content,
         noteType: data.noteType,
-        severity: data.severity as any,
+        severity: data.severity,
         sectionKey: data.sectionKey,
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
         checklistItemId: data.checklistItemId,
@@ -286,7 +291,12 @@ router.patch("/:id/status", requireAuth, async (req: AuthenticatedRequest, res: 
       return res.status(400).json({ error: "Resolution is required when clearing a note" });
     }
 
-    const updateData: any = {
+    const updateData: {
+      status: string;
+      resolution?: string;
+      resolvedById?: string | null;
+      resolvedAt?: Date | null;
+    } = {
       status: data.status,
       resolution: data.resolution,
     };
@@ -299,7 +309,7 @@ router.patch("/:id/status", requireAuth, async (req: AuthenticatedRequest, res: 
     if (data.status === "OPEN") {
       updateData.resolvedById = null;
       updateData.resolvedAt = null;
-      updateData.resolution = null;
+      updateData.resolution = undefined;
     }
 
     const note = await prisma.reviewNote.update({
@@ -310,7 +320,7 @@ router.patch("/:id/status", requireAuth, async (req: AuthenticatedRequest, res: 
 
     const allInvolved = new Set<string>();
     if (existing.authorId) allInvolved.add(existing.authorId);
-    existing.assignees?.forEach((a: any) => allInvolved.add(a.userId));
+    existing.assignees?.forEach((a) => allInvolved.add(a.userId));
     allInvolved.delete(req.user!.id);
 
     const statusLabel = data.status === "CLEARED" ? "cleared" : data.status === "ADDRESSED" ? "addressed" : "reopened";
@@ -371,7 +381,7 @@ router.post("/:id/messages", requireAuth, async (req: AuthenticatedRequest, res:
 
     const allInvolved = new Set<string>();
     if (note.authorId) allInvolved.add(note.authorId);
-    note.assignees?.forEach((a: any) => allInvolved.add(a.userId));
+    note.assignees?.forEach((a) => allInvolved.add(a.userId));
     allInvolved.delete(req.user!.id);
 
     createNotifications([...allInvolved], {
@@ -405,7 +415,7 @@ router.get("/engagement/:engagementId", requireAuth, async (req: AuthenticatedRe
     const notes = await prisma.reviewNote.findMany({
       where: {
         engagementId: req.params.engagementId,
-        ...(phase && { phase: phase as any }),
+        ...(phase && { phase: phase as string }),
         ...(status && { status: status as string }),
       },
       include: noteInclude,

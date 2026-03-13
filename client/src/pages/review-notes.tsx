@@ -40,19 +40,15 @@ import {
   Info,
   Plus,
   Search,
-  Filter,
   MessageSquare,
   CheckCircle2,
   Clock,
   Send,
-  MoreVertical,
   FileText,
-  ArrowRight,
   Loader2,
   ClipboardList,
   Users,
   Eye,
-  Paperclip,
   X,
   ChevronDown,
   BookOpen,
@@ -456,8 +452,8 @@ export default function ReviewNotesPage() {
     dueDate: "",
     assigneeIds: [] as string[],
   });
-  const [attachments, setAttachments] = useState<File[]>([]);
-  const [replyAttachments, setReplyAttachments] = useState<File[]>([]);
+
+
   const isManager = MANAGER_ROLES.includes(user?.role || "");
 
   const [adjustingEntryOpen, setAdjustingEntryOpen] = useState(false);
@@ -541,7 +537,6 @@ export default function ReviewNotesPage() {
       toast({ title: "Review note created successfully" });
       setCreateOpen(false);
       setCreateForm({ title: "", content: "", engagementId: "", phase: "PLANNING", noteType: "ISSUE", severity: "INFO", sectionKey: "", dueDate: "", assigneeIds: [] });
-      setAttachments([]);
     },
     onError: (err: any) => {
       toast({ title: "Error", description: err.message || "Failed to create note", variant: "destructive" });
@@ -631,7 +626,6 @@ export default function ReviewNotesPage() {
       toast({ title: "Reply sent" });
       setReplyNoteId(null);
       setReplyMessage("");
-      setReplyAttachments([]);
     },
     onError: (err: any) => {
       toast({ title: "Error", description: err.message || "Failed to reply", variant: "destructive" });
@@ -680,26 +674,10 @@ export default function ReviewNotesPage() {
   const handleReply = (noteId: string) => {
     setReplyNoteId(noteId);
     setReplyMessage("");
-    setReplyAttachments([]);
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, target: "create" | "reply") => {
-    const files = Array.from(e.target.files || []);
-    if (target === "create") {
-      setAttachments((prev) => [...prev, ...files]);
-    } else {
-      setReplyAttachments((prev) => [...prev, ...files]);
-    }
-    e.target.value = "";
-  };
 
-  const removeAttachment = (index: number, target: "create" | "reply") => {
-    if (target === "create") {
-      setAttachments((prev) => prev.filter((_, i) => i !== index));
-    } else {
-      setReplyAttachments((prev) => prev.filter((_, i) => i !== index));
-    }
-  };
+
 
   const activeEngagements = (engagementsQuery.data || []).filter(
     (e) => e.status !== "COMPLETED" && e.status !== "ARCHIVED"
@@ -1038,48 +1016,8 @@ export default function ReviewNotesPage() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label>Attachments</Label>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => document.getElementById("create-file-input")?.click()}
-                >
-                  <Paperclip className="h-3.5 w-3.5" />
-                  Attach File
-                </Button>
-                <input
-                  id="create-file-input"
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => handleFileSelect(e, "create")}
-                />
-                <span className="text-xs text-muted-foreground">
-                  {attachments.length > 0 ? `${attachments.length} file(s) selected` : "No files attached"}
-                </span>
-              </div>
-              {attachments.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {attachments.map((file, idx) => (
-                    <Badge key={idx} variant="outline" className="text-xs gap-1 pr-1">
-                      <Paperclip className="h-3 w-3" />
-                      {file.name}
-                      <button
-                        type="button"
-                        onClick={() => removeAttachment(idx, "create")}
-                        className="ml-0.5 rounded-full hover:bg-muted-foreground/20 p-0.5"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
+
+
           </div>
 
           <DialogFooter className="gap-2">
@@ -1419,7 +1357,7 @@ export default function ReviewNotesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!replyNoteId} onOpenChange={(open) => { if (!open) { setReplyNoteId(null); setReplyAttachments([]); } }}>
+      <Dialog open={!!replyNoteId} onOpenChange={(open) => { if (!open) { setReplyNoteId(null); } }}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1451,53 +1389,14 @@ export default function ReviewNotesPage() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => document.getElementById("reply-file-input")?.click()}
-                >
-                  <Paperclip className="h-3.5 w-3.5" />
-                  Attach File
-                </Button>
-                <input
-                  id="reply-file-input"
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => handleFileSelect(e, "reply")}
-                />
-                <span className="text-xs text-muted-foreground">
-                  {replyAttachments.length > 0 ? `${replyAttachments.length} file(s)` : ""}
-                </span>
-              </div>
-              {replyAttachments.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {replyAttachments.map((file, idx) => (
-                    <Badge key={idx} variant="outline" className="text-xs gap-1 pr-1">
-                      <Paperclip className="h-3 w-3" />
-                      {file.name}
-                      <button
-                        type="button"
-                        onClick={() => removeAttachment(idx, "reply")}
-                        className="ml-0.5 rounded-full hover:bg-muted-foreground/20 p-0.5"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
+
+
           </div>
 
           <DialogFooter className="gap-2">
             <Button
               variant="outline"
-              onClick={() => { setReplyNoteId(null); setReplyAttachments([]); }}
+              onClick={() => { setReplyNoteId(null); }}
               data-testid="button-cancel-reply"
             >
               Cancel
