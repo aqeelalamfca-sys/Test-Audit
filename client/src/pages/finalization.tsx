@@ -214,7 +214,7 @@ export default function Finalization() {
   });
   const coaAccounts = coaAccountsRaw || [];
 
-  const { data: preReportCheck } = useQuery<{ readyForRelease: boolean; issues: Array<{ type: string; count?: number; message: string }> }>({
+  const { data: preReportCheck } = useQuery<{ readyForDraft: boolean; readyForRelease: boolean; draftIssues: Array<{ type: string; count?: number; message: string }>; issues: Array<{ type: string; count?: number; message: string }> }>({
     queryKey: [`/api/finalization/${engagementId}/pre-report-check`],
     queryFn: async () => {
       const res = await fetchWithAuth(`/api/finalization/${engagementId}/pre-report-check`);

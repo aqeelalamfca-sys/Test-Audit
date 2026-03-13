@@ -151,10 +151,16 @@ router.post("/:engagementId/report", requireAuth, requirePhaseUnlocked("REPORTIN
       return res.status(400).json({ error: "Completion-phase blockers must be resolved before report drafting", blockers: draftCheck.issues });
     }
 
+    const allowedFields = ["opinionType", "basisForOpinion", "keyAuditMatters", "emphasisOfMatter", "otherMatter", "goingConcernNote", "otherInformation", "reportTitle"];
+    const safeData: Record<string, unknown> = {};
+    for (const key of allowedFields) {
+      if (req.body[key] !== undefined) safeData[key] = req.body[key];
+    }
+
     const report = await prisma.auditReport.upsert({
       where: { engagementId: req.params.engagementId },
-      update: { ...req.body },
-      create: { ...req.body, engagementId: req.params.engagementId, draftedById: req.user!.id, draftedDate: new Date() },
+      update: safeData,
+      create: { ...safeData, engagementId: req.params.engagementId, draftedById: req.user!.id, draftedDate: new Date() },
     });
 
     logAuditTrail(req.user!.id, "AUDIT_REPORT_DRAFTED", "audit_report", report.id, null, report, req.params.engagementId, "Audit report drafted", req.ip, req.get("user-agent")).catch(err => console.error("Audit trail error:", err));
@@ -237,10 +243,16 @@ router.post("/:engagementId/management-letter", requireAuth, requirePhaseUnlocke
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
+    const letterAllowedFields = ["subject", "findings", "recommendations", "managementResponses", "letterBody"];
+    const letterData: Record<string, unknown> = {};
+    for (const key of letterAllowedFields) {
+      if (req.body[key] !== undefined) letterData[key] = req.body[key];
+    }
+
     const letter = await prisma.managementLetter.upsert({
       where: { engagementId: req.params.engagementId },
-      update: { ...req.body },
-      create: { ...req.body, engagementId: req.params.engagementId, draftedById: req.user!.id, draftedDate: new Date() },
+      update: letterData,
+      create: { ...letterData, engagementId: req.params.engagementId, draftedById: req.user!.id, draftedDate: new Date() },
     });
     res.json(letter);
   } catch (error: any) {
@@ -273,10 +285,16 @@ router.post("/:engagementId/completion-memo", requireAuth, requirePhaseUnlocked(
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
+    const memoAllowedFields = ["summary", "unresolvedMatters", "subsequentEventsConclusion", "goingConcernConclusion", "overallConclusion", "memoText"];
+    const memoData: Record<string, unknown> = {};
+    for (const key of memoAllowedFields) {
+      if (req.body[key] !== undefined) memoData[key] = req.body[key];
+    }
+
     const memo = await prisma.completionMemo.upsert({
       where: { engagementId: req.params.engagementId },
-      update: { ...req.body },
-      create: { ...req.body, engagementId: req.params.engagementId, preparedById: req.user!.id, preparedDate: new Date() },
+      update: memoData,
+      create: { ...memoData, engagementId: req.params.engagementId, preparedById: req.user!.id, preparedDate: new Date() },
     });
     res.json(memo);
   } catch (error: any) {
