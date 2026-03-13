@@ -34,7 +34,7 @@ import {
   Lock, UserCheck, Calendar, ClipboardList, AlertCircle,
   ArrowRight, Database, Brain, TrendingUp, BarChart3, FileSpreadsheet,
   Briefcase, MessageSquare, Activity, RefreshCw, Info,
-  Plus, Trash2, Download, ExternalLink, ChevronDown, FileOutput, Loader2, Link2,
+  Plus, Trash2, Download, ExternalLink, ChevronDown, ChevronRight, FileOutput, Loader2, Link2,
   Layers, CircleDashed, ArrowUpDown, Users, Network, GraduationCap
 } from "lucide-react";
 import {
@@ -173,8 +173,10 @@ export default function Planning() {
     if (saved === "tcwg-communication" || saved === "team-quality") {
       return "team-planning";
     }
+    if (window.location.pathname.includes("/materiality")) return "materiality";
     const validTabs = ["planning-dashboard", "financial-statements", "entity-controls", "analytical-procedures", "materiality", "significant-accounts", "risk-assessment", "fraud-risk", "internal-controls", "related-parties", "laws-regulations", "going-concern", "team-planning", "strategy-approach", "audit-program", "planning-memo"];
-    return validTabs.includes(saved || "") ? (saved as string) : "planning-dashboard";
+    if (validTabs.includes(saved || "")) return saved as string;
+    return "planning-dashboard";
   });
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -2933,11 +2935,11 @@ export default function Planning() {
   return (
     <PageShell
       showTopBar={false}
-      title="Audit Planning Phase"
+      title={activeTab === "materiality" ? "Materiality (ISA 320)" : "Audit Planning Phase"}
       subtitle={`${client?.name || ""} ${engagement?.engagementCode ? `(${engagement.engagementCode})` : ""}`}
       icon={<Calculator className="h-5 w-5 text-primary" />}
-      backHref={`/workspace/${engagementId}/pre-planning`}
-      nextHref={`/workspace/${engagementId}/execution`}
+      backHref={`/engagements`}
+      nextHref={`/workspace/${engagementId}/risk-assessment`}
       dashboardHref="/engagements"
       saveFn={async () => {
         try {
@@ -5528,10 +5530,73 @@ export default function Planning() {
         {/* Tab 4: Materiality */}
         <TabsContent value="materiality" className="space-y-4 mt-3" data-testid="tab-content-materiality">
           {engagementId && (
-            <ISA320MaterialityPanelNew
-              engagementId={engagementId}
-              readOnly={planningReadOnly}
-            />
+            <>
+              <Card className="border-blue-200 dark:border-blue-800">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Target className="h-4 w-4" />
+                    Materiality Phase Overview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-md border border-blue-100 dark:border-blue-900">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Calculator className="h-4 w-4 text-blue-500" />
+                        <p className="text-sm font-medium">Benchmark & Calculation</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Select benchmark basis, calculate OM, PM, and trivial threshold per ISA 320</p>
+                    </div>
+                    <div className="p-3 bg-purple-50/50 dark:bg-purple-950/20 rounded-md border border-purple-100 dark:border-purple-900">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Shield className="h-4 w-4 text-purple-500" />
+                        <p className="text-sm font-medium">Qualitative Factors</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Assess entity-specific risk factors, fraud considerations, and regulatory environment</p>
+                    </div>
+                    <div className="p-3 bg-green-50/50 dark:bg-green-950/20 rounded-md border border-green-100 dark:border-green-900">
+                      <div className="flex items-center gap-2 mb-1">
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        <p className="text-sm font-medium">Approval & Linkage</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Partner approval and downstream linkage to risk assessment and significant accounts</p>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="h-4 w-4 text-purple-500" />
+                      <h3 className="text-sm font-semibold">AI Support Available</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="text-xs">Benchmark Recommendation</Badge>
+                      <Badge variant="outline" className="text-xs">Materiality Narration</Badge>
+                      <Badge variant="outline" className="text-xs">Linkage Summary</Badge>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">DOWNSTREAM LINKAGE</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" variant="secondary">
+                        <ChevronRight className="h-3 w-3 mr-1" /> FS Heads — Significant account identification
+                      </Badge>
+                      <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200" variant="secondary">
+                        <ChevronRight className="h-3 w-3 mr-1" /> Risk Assessment — Risk scoring thresholds
+                      </Badge>
+                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" variant="secondary">
+                        <ChevronRight className="h-3 w-3 mr-1" /> Planning — Sampling size determination
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <ISA320MaterialityPanelNew
+                engagementId={engagementId}
+                readOnly={planningReadOnly}
+              />
+            </>
           )}
         </TabsContent>
 

@@ -314,30 +314,96 @@ async function evaluateSingleGate(
       }
 
       case "coa-mapped": {
+        const totalAccounts = await prisma.coAAccount.count({ where: { engagementId } });
         const mappedCount = await prisma.coAAccount.count({
           where: { engagementId, fsLineItem: { not: null } },
         });
-        passed = mappedCount > 0;
-        if (passed) message = `${mappedCount} accounts mapped to FS heads`;
+        passed = totalAccounts > 0 && mappedCount > 0;
+        if (passed) message = `${mappedCount}/${totalAccounts} accounts mapped to FS line items`;
+        else if (totalAccounts === 0) message = "No CoA accounts loaded";
+        else message = `${mappedCount}/${totalAccounts} mapped — mapping required`;
         break;
       }
 
-      case "fs-draft-generated": {
+      case "fs-heads-mapped": {
         const fsHeadCount = await prisma.fSHead.count({
           where: { engagementId },
         });
         passed = fsHeadCount > 0;
-        if (passed) message = `${fsHeadCount} FS heads generated`;
+        if (passed) message = `${fsHeadCount} FS heads assigned`;
+        else message = "No FS heads created — generate from mappings";
+        break;
+      }
+
+      case "lead-schedules-grouped": {
+        const fsHeadCount = await prisma.fSHead.count({
+          where: { engagementId },
+        });
+        passed = fsHeadCount > 0;
+        if (passed) message = `${fsHeadCount} lead schedule group(s) available`;
+        else message = "Lead schedules not yet grouped";
+        break;
+      }
+
+      case "unmapped-reviewed": {
+        const totalAccounts = await prisma.coAAccount.count({ where: { engagementId } });
+        const mappedCount = await prisma.coAAccount.count({
+          where: { engagementId, fsLineItem: { not: null } },
+        });
+        const flaggedCount = await prisma.coAAccount.count({
+          where: { engagementId, fsLineItem: null, notesDisclosureRef: { not: null } },
+        });
+        const unmappedUnflagged = totalAccounts - mappedCount - flaggedCount;
+        passed = totalAccounts > 0 && unmappedUnflagged === 0;
+        if (passed) message = "All accounts mapped or explicitly flagged";
+        else if (totalAccounts === 0) message = "No CoA accounts loaded";
+        else message = `${unmappedUnflagged} account(s) neither mapped nor flagged`;
+        break;
+      }
+
+      case "mapping-score-met": {
+        const totalAccounts = await prisma.coAAccount.count({ where: { engagementId } });
+        const mappedCount = await prisma.coAAccount.count({
+          where: { engagementId, fsLineItem: { not: null } },
+        });
+        const score = totalAccounts > 0 ? Math.round((mappedCount / totalAccounts) * 100) : 0;
+        passed = score >= 95;
+        if (passed) message = `Mapping completeness ${score}% — threshold met`;
+        else if (totalAccounts === 0) message = "No CoA accounts loaded";
+        else message = `Mapping completeness ${score}% — need 95% minimum`;
+        break;
+      }
+
+      case "benchmark-selected": {
+        const matCalc = await prisma.materialityCalculation.findFirst({
+          where: { engagementId },
+          select: { primaryBenchmarkType: true },
+        });
+        passed = !!matCalc?.primaryBenchmarkType;
+        if (passed) message = `Benchmark: ${matCalc!.primaryBenchmarkType}`;
+        else message = "No benchmark selected";
         break;
       }
 
       case "materiality-calculated": {
         const matCalc = await prisma.materialityCalculation.findFirst({
           where: { engagementId },
-          select: { id: true },
+          select: { id: true, overallMateriality: true, performanceMateriality: true },
         });
         passed = !!matCalc;
         if (passed) message = "Materiality calculated";
+        else message = "Materiality not yet calculated";
+        break;
+      }
+
+      case "qualitative-assessed": {
+        const matCalc = await prisma.materialityCalculation.findFirst({
+          where: { engagementId },
+          select: { riskFactorsConsidered: true, calculationNotes: true },
+        });
+        passed = !!(matCalc && (matCalc.riskFactorsConsidered.length > 0 || matCalc.calculationNotes));
+        if (passed) message = "Qualitative factors documented";
+        else message = "Qualitative factors not yet assessed";
         break;
       }
 
@@ -347,7 +413,8 @@ async function evaluateSingleGate(
           select: { approvedAt: true },
         });
         passed = !!matCalc?.approvedAt;
-        if (passed) message = "Materiality approved";
+        if (passed) message = "Materiality approved by partner";
+        else message = "Awaiting partner approval";
         break;
       }
 

@@ -173,18 +173,56 @@ const AI_CAPABILITY_REGISTRY: Record<string, PhaseAICapability[]> = {
     {
       id: "coa-mapping-suggestions",
       label: "CoA Mapping Suggestions",
-      description: "Suggest FS line item mappings for unmapped chart of accounts entries",
+      description: "Suggest FS line item mappings for unmapped chart of accounts entries based on account names, codes, and industry context",
       promptType: "coa_mapping",
       requiresContext: ["unmapped_accounts", "fs_heads", "industry"],
+    },
+  ],
+  "unmapped-account-explainer": [
+    {
+      id: "unmapped-account-explainer",
+      label: "Unmapped Account Explainer",
+      description: "Explain why certain accounts remain unmapped, suggest possible FS classifications, and flag accounts that should be parked vs mapped",
+      promptType: "unmapped_analysis",
+      requiresContext: ["unmapped_accounts", "account_names", "industry"],
+    },
+  ],
+  "mapping-confidence-review": [
+    {
+      id: "mapping-confidence-review",
+      label: "Mapping Confidence Review",
+      description: "Review mapping assignments for confidence levels, flag low-confidence or unusual mappings, and suggest corrections based on industry norms",
+      promptType: "mapping_review",
+      requiresContext: ["mapped_accounts", "fs_heads", "mapping_scores", "industry"],
     },
   ],
   "materiality-narration-drafting": [
     {
       id: "materiality-narration-drafting",
       label: "Draft Materiality Memo",
-      description: "Generate materiality determination narrative including benchmark rationale",
+      description: "Generate materiality determination narrative including benchmark rationale and ISA 320 compliance",
       promptType: "materiality_rationale",
       requiresContext: ["benchmark", "materiality_amounts", "financial_data"],
+      isaReference: "ISA 320",
+    },
+  ],
+  "benchmark-recommendation": [
+    {
+      id: "benchmark-recommendation",
+      label: "Benchmark Recommendation",
+      description: "Recommend the most appropriate materiality benchmark based on entity type, industry, and financial profile with supporting rationale",
+      promptType: "benchmark_analysis",
+      requiresContext: ["financial_data", "entity_type", "industry", "prior_year_benchmark"],
+      isaReference: "ISA 320",
+    },
+  ],
+  "materiality-linkage-summary": [
+    {
+      id: "materiality-linkage-summary",
+      label: "Materiality Linkage Summary",
+      description: "Summarize how materiality connects to FS heads, risk assessment, and planning strategy with downstream impact analysis",
+      promptType: "materiality_linkage",
+      requiresContext: ["materiality_amounts", "fs_heads", "risk_assessment"],
       isaReference: "ISA 320",
     },
   ],
@@ -322,13 +360,15 @@ Explain technical data issues in plain audit language.`,
 Focus on TB/GL reconciliation differences, data integrity, and validation rules.
 Identify patterns that may indicate data quality problems.`,
 
-  "coa-mapping": `You are assisting with chart of accounts and financial statement mapping.
-Focus on proper FS line item classification per applicable framework.
-Consider industry-specific presentation requirements.`,
+  "coa-mapping": `You are assisting with chart of accounts normalization and financial statement mapping.
+Focus on proper FS line item classification per the applicable reporting framework, lead schedule grouping, and mapping completeness.
+Suggest mappings for unmapped accounts, explain why accounts may be difficult to classify, and flag low-confidence assignments.
+Consider industry-specific presentation requirements, prior year mapping patterns, and ISA 315 significant account identification.`,
 
   materiality: `You are assisting with materiality determination per ISA 320.
-Focus on benchmark selection rationale, percentage justification, and performance materiality.
-Consider entity-specific qualitative factors.`,
+Focus on benchmark selection rationale with supporting analysis, percentage justification, performance materiality calculation, and trivial threshold setting.
+Draft materiality narration suitable for audit documentation, recommend benchmarks based on entity type and industry, and explain downstream linkage to risk assessment and planning.
+Consider entity-specific qualitative factors including fraud risk, going concern, regulatory environment, and stakeholder expectations.`,
 
   "risk-assessment": `You are assisting with risk assessment per ISA 315 and ISA 240.
 Focus on inherent risk, control risk, and significant risks including fraud.

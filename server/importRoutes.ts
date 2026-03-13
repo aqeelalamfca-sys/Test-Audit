@@ -3756,4 +3756,62 @@ router.get("/:engagementId/validation-results", requireAuth, async (req: Request
   }
 });
 
+router.get("/:engagementId/coa-accounts", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const accounts = await prisma.coAAccount.findMany({
+      where: { engagementId },
+      orderBy: { accountCode: "asc" },
+      select: {
+        id: true,
+        accountCode: true,
+        accountName: true,
+        accountClass: true,
+        accountSubclass: true,
+        nature: true,
+        tbGroup: true,
+        fsLineItem: true,
+        notesDisclosureRef: true,
+        openingBalance: true,
+        periodDr: true,
+        periodCr: true,
+        closingBalance: true,
+        aiSuggestedTBGroup: true,
+        aiSuggestedFSLine: true,
+        aiConfidence: true,
+        aiRationale: true,
+        isOverridden: true,
+      },
+    });
+    res.json(accounts);
+  } catch (error) {
+    console.error("Error fetching CoA accounts:", error);
+    res.status(500).json({ error: "Failed to fetch CoA accounts" });
+  }
+});
+
+router.get("/:engagementId/mapping-stats", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const totalAccounts = await prisma.coAAccount.count({ where: { engagementId } });
+    const mappedCount = await prisma.coAAccount.count({ where: { engagementId, fsLineItem: { not: null } } });
+    const flaggedCount = await prisma.coAAccount.count({ where: { engagementId, fsLineItem: null, notesDisclosureRef: { not: null } } });
+    const fsHeadCount = await prisma.fSHead.count({ where: { engagementId } });
+    const score = totalAccounts > 0 ? Math.round((mappedCount / totalAccounts) * 100) : 0;
+
+    res.json({
+      totalAccounts,
+      mappedCount,
+      unmappedCount: totalAccounts - mappedCount - flaggedCount,
+      flaggedCount,
+      fsHeadCount,
+      mappingScore: score,
+      thresholdMet: score >= 95,
+    });
+  } catch (error) {
+    console.error("Error fetching mapping stats:", error);
+    res.status(500).json({ error: "Failed to fetch mapping stats" });
+  }
+});
+
 export default router;
