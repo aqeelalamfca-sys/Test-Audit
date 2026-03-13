@@ -1001,6 +1001,10 @@ enum ReportingFramework {
   IFRS
   IFRS_SME
   LOCAL_GAAP
+  AFRS
+  GAAP_PK
+  IPSAS
+  ISLAMIC
   OTHER
 }
 
@@ -1233,6 +1237,8 @@ model Client {
   ultimateBeneficialOwners Json?
   parentCompany            String?
   subsidiaries             String[]
+  reportingFramework       String?
+  contactPersons           Json?
 
   focalPersonName   String?
   focalPersonMobile String?

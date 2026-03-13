@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation, useSearch } from "wouter";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -16,14 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -33,36 +24,34 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { Breadcrumbs } from "@/components/breadcrumbs";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { FileText, Save, Loader2, ArrowLeft, Building2, Shield, Users, AlertTriangle, Plus } from "lucide-react";
-import { fetchWithAuth } from "@/lib/fetchWithAuth";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
-
-const PAKISTAN_CITIES = [
-  "Karachi", "Lahore", "Islamabad", "Rawalpindi", "Faisalabad", "Multan",
-  "Peshawar", "Quetta", "Sialkot", "Gujranwala", "Hyderabad", "Abbottabad",
-  "Bahawalpur", "Sargodha", "Sukkur", "Larkana", "Sheikhupura", "Jhang",
-  "Rahim Yar Khan", "Gujrat", "Mardan", "Kasur", "Dera Ghazi Khan",
-  "Sahiwal", "Nawabshah", "Mirpur Khas", "Chiniot", "Kamoke", "Other",
-];
-
-const newClientInitial = {
-  clientLegalName: "",
-  tradeName: "",
-  ntn: "",
-  secpNo: "",
-  dateOfIncorporation: "",
-  city: "",
-  registeredAddress: "",
-  contactEmail: "",
-  contactPhone: "",
-  country: "Pakistan",
-};
+import { Checkbox } from "@/components/ui/checkbox";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { CreateClientDialog } from "@/components/create-client-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient as globalQueryClient } from "@/lib/queryClient";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
+import {
+  FileText,
+  Save,
+  Loader2,
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  Shield,
+  Users,
+  AlertTriangle,
+  Bot,
+  X,
+  Calendar,
+  Clock,
+} from "lucide-react";
+import {
+  ENGAGEMENT_TYPES,
+  SIZE_CLASSIFICATIONS,
+  RISK_RATINGS,
+  REPORTING_FRAMEWORKS,
+} from "@/lib/form-constants";
 
 interface Client {
   id: string;
@@ -71,6 +60,8 @@ interface Client {
   ntn?: string;
   sizeClassification?: string;
   city?: string;
+  fiscalYearEndDate?: string;
+  reportingFramework?: string;
 }
 
 interface FirmUser {
@@ -84,14 +75,24 @@ const engagementFormSchema = z.object({
   clientId: z.string().min(1, "Please select a client"),
   sizeClassification: z.string().min(1, "Company size is required"),
   engagementType: z.string().min(1, "Audit type is required"),
+  reportingFramework: z.string().optional(),
   periodStart: z.string().min(1, "Period start date is required"),
   periodEnd: z.string().min(1, "Period end date is required"),
+  fiscalYearEnd: z.string().optional(),
   riskRating: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
   eqcrRequired: z.boolean().default(false),
+  eqcrRationale: z.string().optional(),
   eqcrPartnerUserId: z.string().optional(),
   engagementPartnerId: z.string().optional(),
   engagementManagerId: z.string().optional(),
+  teamLeadId: z.string().optional(),
   budgetHours: z.number().optional(),
+  fieldworkStartDate: z.string().optional(),
+  fieldworkEndDate: z.string().optional(),
+  reportDeadline: z.string().optional(),
+  filingDeadline: z.string().optional(),
+  isGroupAudit: z.boolean().default(false),
+  isComponentAudit: z.boolean().default(false),
 }).refine((data) => {
   if (data.periodStart && data.periodEnd) {
     return new Date(data.periodEnd) > new Date(data.periodStart);
@@ -112,61 +113,40 @@ const engagementFormSchema = z.object({
 
 type EngagementFormData = z.infer<typeof engagementFormSchema>;
 
+const REQUIRED_FIELD_LABELS: { key: keyof EngagementFormData; label: string }[] = [
+  { key: "clientId", label: "Client" },
+  { key: "engagementType", label: "Engagement Type" },
+  { key: "periodStart", label: "Period Start" },
+  { key: "periodEnd", label: "Period End" },
+  { key: "sizeClassification", label: "Company Size" },
+  { key: "engagementPartnerId", label: "Engagement Partner" },
+  { key: "engagementManagerId", label: "Engagement Manager" },
+];
+
+function computeSetupCompleteness(data: EngagementFormData): { pct: number; missing: string[] } {
+  const missing: string[] = [];
+  for (const f of REQUIRED_FIELD_LABELS) {
+    const val = data[f.key];
+    if (!val || (typeof val === "string" && !val.trim())) {
+      missing.push(f.label);
+    }
+  }
+  const filled = REQUIRED_FIELD_LABELS.length - missing.length;
+  return { pct: Math.round((filled / REQUIRED_FIELD_LABELS.length) * 100), missing };
+}
+
 export default function NewEngagement() {
   const [, setLocation] = useLocation();
   const searchString = useSearch();
   const { toast } = useToast();
-  
+  const qc = useQueryClient();
+
   const searchParams = new URLSearchParams(searchString);
   const preselectedClientId = searchParams.get("clientId") || "";
 
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [newClientOpen, setNewClientOpen] = useState(false);
-  const [newClientForm, setNewClientForm] = useState({ ...newClientInitial });
-  const [newClientLoading, setNewClientLoading] = useState(false);
-
-  const handleNewClientSubmit = async () => {
-    if (!newClientForm.clientLegalName.trim()) {
-      toast({ title: "Validation Error", description: "Legal Name is required", variant: "destructive" });
-      return;
-    }
-    setNewClientLoading(true);
-    try {
-      const payload = {
-        name: newClientForm.clientLegalName.trim(),
-        tradingName: newClientForm.tradeName || "",
-        ntn: newClientForm.ntn || "",
-        secpNo: newClientForm.secpNo || "",
-        dateOfIncorporation: newClientForm.dateOfIncorporation || undefined,
-        address: newClientForm.registeredAddress || "",
-        city: newClientForm.city || "",
-        country: newClientForm.country || "Pakistan",
-        email: newClientForm.contactEmail || "",
-        phone: newClientForm.contactPhone || "",
-        entityType: "private_limited",
-        industry: "general",
-      };
-      const response = await fetchWithAuth("/api/clients", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: "Failed to create client" }));
-        throw new Error(err.error || "Failed to create client");
-      }
-      const created = await response.json();
-      await queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
-      form.setValue("clientId", created.id);
-      setNewClientOpen(false);
-      setNewClientForm({ ...newClientInitial });
-      toast({ title: "Client Created", description: `${created.name} has been added successfully` });
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } finally {
-      setNewClientLoading(false);
-    }
-  };
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const { data: clients = [], isLoading: loadingClients } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
@@ -186,8 +166,9 @@ export default function NewEngagement() {
     },
   });
 
-  const partners = firmUsers.filter(u => u.role === "PARTNER");
-  const managers = firmUsers.filter(u => u.role === "MANAGER");
+  const partners = firmUsers.filter(u => ["PARTNER", "FIRM_ADMIN"].includes(u.role));
+  const managers = firmUsers.filter(u => ["MANAGER", "PARTNER", "FIRM_ADMIN"].includes(u.role));
+  const seniors = firmUsers.filter(u => ["SENIOR", "MANAGER", "PARTNER", "FIRM_ADMIN"].includes(u.role));
   const eqcrPartners = firmUsers.filter(u => ["EQCR", "PARTNER"].includes(u.role));
 
   const form = useForm<EngagementFormData>({
@@ -196,21 +177,47 @@ export default function NewEngagement() {
       clientId: preselectedClientId,
       sizeClassification: "",
       engagementType: "statutory_audit",
+      reportingFramework: "",
       periodStart: "",
       periodEnd: "",
+      fiscalYearEnd: "",
       riskRating: "MEDIUM",
       eqcrRequired: false,
+      eqcrRationale: "",
       eqcrPartnerUserId: "",
       engagementPartnerId: "",
       engagementManagerId: "",
+      teamLeadId: "",
       budgetHours: undefined,
+      fieldworkStartDate: "",
+      fieldworkEndDate: "",
+      reportDeadline: "",
+      filingDeadline: "",
+      isGroupAudit: false,
+      isComponentAudit: false,
     },
   });
 
-  const eqcrRequired = form.watch("eqcrRequired");
+  const formValues = form.watch();
+  const completeness = useMemo(() => computeSetupCompleteness(formValues), [formValues]);
 
+  const eqcrRequired = form.watch("eqcrRequired");
   const selectedClientId = form.watch("clientId");
   const selectedClient = clients.find(c => c.id === selectedClientId);
+
+  useEffect(() => {
+    if (selectedClient) {
+      if (selectedClient.sizeClassification && !form.getValues("sizeClassification")) {
+        form.setValue("sizeClassification", selectedClient.sizeClassification);
+      }
+      if (selectedClient.fiscalYearEndDate && !form.getValues("fiscalYearEnd")) {
+        form.setValue("fiscalYearEnd", selectedClient.fiscalYearEndDate.slice(0, 10));
+      }
+      if (selectedClient.reportingFramework && !form.getValues("reportingFramework")) {
+        form.setValue("reportingFramework", selectedClient.reportingFramework);
+      }
+    }
+  }, [selectedClient]);
 
   const createEngagementMutation = useMutation({
     mutationFn: async (data: EngagementFormData) => {
@@ -218,26 +225,38 @@ export default function NewEngagement() {
         clientId: data.clientId,
         sizeClassification: data.sizeClassification,
         engagementType: data.engagementType,
+        reportingFramework: data.reportingFramework || undefined,
         periodStart: data.periodStart,
         periodEnd: data.periodEnd,
+        fiscalYearEnd: data.fiscalYearEnd || undefined,
         riskRating: data.riskRating,
         eqcrRequired: data.eqcrRequired,
+        eqcrRationale: data.eqcrRationale || undefined,
         eqcrPartnerUserId: data.eqcrPartnerUserId || undefined,
         engagementPartnerId: data.engagementPartnerId || undefined,
         engagementManagerId: data.engagementManagerId || undefined,
+        teamLeadId: data.teamLeadId || undefined,
         budgetHours: data.budgetHours,
+        fieldworkStartDate: data.fieldworkStartDate || undefined,
+        fieldworkEndDate: data.fieldworkEndDate || undefined,
+        reportDeadline: data.reportDeadline || undefined,
+        filingDeadline: data.filingDeadline || undefined,
+        isGroupAudit: data.isGroupAudit,
+        isComponentAudit: data.isComponentAudit,
       });
       return response.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/engagements"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/workspace/engagements"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      qc.invalidateQueries({ queryKey: ["/api/engagements"] });
+      qc.invalidateQueries({ queryKey: ["/api/workspace/engagements"] });
+      qc.invalidateQueries({ queryKey: ["/api/clients"] });
+      globalQueryClient.invalidateQueries({ queryKey: ["/api/engagements"] });
+      globalQueryClient.invalidateQueries({ queryKey: ["/api/workspace/engagements"] });
       toast({
         title: "Engagement Created",
-        description: `New audit engagement has been created successfully.`,
+        description: `Engagement created successfully. Proceeding to workspace...`,
       });
-      setLocation(`/workspace/${data.id}/pre-planning`);
+      setLocation(`/workspace/${data.id}/acceptance`);
     },
     onError: (error: Error) => {
       toast({
@@ -252,571 +271,463 @@ export default function NewEngagement() {
     createEngagementMutation.mutate(data);
   };
 
+  const generateAiSummary = useCallback(async () => {
+    setAiLoading(true);
+    try {
+      const vals = form.getValues();
+      const client = clients.find(c => c.id === vals.clientId);
+      const res = await fetchWithAuth("/api/ai/phase/engagement-setup/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          capabilityId: "engagement-setup-summary",
+          additionalContext: {
+            clientName: client?.name || "",
+            engagementType: vals.engagementType,
+            periodStart: vals.periodStart,
+            periodEnd: vals.periodEnd,
+            riskRating: vals.riskRating,
+            eqcrRequired: String(vals.eqcrRequired),
+            sizeClassification: vals.sizeClassification,
+          },
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAiSummary(data.content || "Summary generated.");
+      } else {
+        setAiSummary("AI summary unavailable — ensure the AI service is configured.");
+      }
+    } catch {
+      setAiSummary("AI summary unavailable — ensure the AI service is configured.");
+    } finally {
+      setAiLoading(false);
+    }
+  }, [form, clients]);
+
   return (
-    <div className="flex-1 overflow-auto">
-      <div className="max-w-2xl mx-auto px-6 py-6">
-        <Breadcrumbs
-          items={[
+    <div className="flex flex-col h-full">
+      <div className="border-b px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => setLocation("/engagements")}>
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Engagements
+          </Button>
+          <Separator orientation="vertical" className="h-5" />
+          <Breadcrumbs items={[
             { label: "Dashboard", href: "/" },
             { label: "Engagements", href: "/engagements" },
             { label: "New Engagement" },
-          ]}
-          className="mb-3"
-        />
-
-        <div className="mb-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="bg-primary p-2 rounded-xl">
-              <FileText className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">New Audit Engagement</h1>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Create a new audit engagement for an existing client
-          </p>
+          ]} />
         </div>
+        <div className="flex items-center gap-2">
+          <Button variant={showAiPanel ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setShowAiPanel(!showAiPanel)}>
+            <Bot className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
 
-        <Card>
-          <CardHeader className="border-b bg-muted/30">
-            <CardTitle className="text-lg">Engagement Details</CardTitle>
-            <CardDescription>Select the client and specify the audit period</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                
-                <FormField
-                  control={form.control}
-                  name="clientId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Client *</FormLabel>
-                      <div className="flex gap-2">
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-client" className="flex-1">
-                              <SelectValue placeholder="Select a registered client" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {loadingClients ? (
-                              <div className="p-2 text-center text-muted-foreground">
-                                <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
-                                Loading clients...
-                              </div>
-                            ) : clients.length === 0 ? (
-                              <div className="p-2 text-center text-muted-foreground">
-                                No clients found. Create a client first.
-                              </div>
-                            ) : (
-                              clients.map((client) => (
-                                <SelectItem key={client.id} value={client.id}>
-                                  <div className="flex items-center gap-2">
-                                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                                    <span>{client.name}</span>
-                                    {client.city && (
-                                      <span className="text-muted-foreground text-xs">({client.city})</span>
-                                    )}
-                                  </div>
-                                </SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="shrink-0 h-10"
-                          data-testid="button-new-client-page"
-                          onClick={() => {
-                            setNewClientForm({ ...newClientInitial });
-                            setNewClientOpen(true);
-                          }}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          New Client
-                        </Button>
-                      </div>
-                      <FormDescription>
-                        Select an existing client or add a new one.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+      <div className="flex flex-1 min-h-0">
+        <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <FileText className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h1 className="text-lg font-semibold">Engagement Setup</h1>
+              <p className="text-xs text-muted-foreground">Phase 2 of 19 — Create engagement with period, team, and timeline</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="text-right">
+                <div className="text-xs text-muted-foreground">Completeness</div>
+                <div className="text-sm font-semibold">{completeness.pct}%</div>
+              </div>
+              <Progress value={completeness.pct} className="w-24 h-2" />
+            </div>
+          </div>
 
-                {selectedClient && (
-                  <div className="p-3 rounded-md bg-muted/50 border text-sm">
-                    <div className="font-medium mb-1">{selectedClient.name}</div>
-                    {selectedClient.tradingName && (
-                      <div className="text-muted-foreground">Trading as: {selectedClient.tradingName}</div>
+          {completeness.missing.length > 0 && (
+            <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md px-3 py-2 mb-4">
+              <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              <span>Missing required: {completeness.missing.join(", ")}</span>
+            </div>
+          )}
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <Card>
+                <CardContent className="pt-4 space-y-3">
+                  <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5" /> Client & Type
+                  </h3>
+                  <FormField
+                    control={form.control}
+                    name="clientId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Client *</FormLabel>
+                        <div className="flex gap-2">
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="flex-1">
+                                <SelectValue placeholder="Select a registered client" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {loadingClients ? (
+                                <div className="p-2 text-center text-muted-foreground">
+                                  <Loader2 className="h-4 w-4 animate-spin inline mr-2" />Loading...
+                                </div>
+                              ) : clients.length === 0 ? (
+                                <div className="p-2 text-center text-muted-foreground">No clients. Create one first.</div>
+                              ) : (
+                                clients.map(client => (
+                                  <SelectItem key={client.id} value={client.id}>
+                                    <div className="flex items-center gap-2">
+                                      <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                                      <span>{client.name}</span>
+                                      {client.city && <span className="text-muted-foreground text-xs">({client.city})</span>}
+                                    </div>
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <CreateClientDialog
+                            onSuccess={(client) => {
+                              qc.invalidateQueries({ queryKey: ["/api/clients"] });
+                              form.setValue("clientId", client.id);
+                            }}
+                          />
+                        </div>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                    {selectedClient.ntn && (
-                      <div className="text-muted-foreground">NTN: {selectedClient.ntn}</div>
-                    )}
-                  </div>
-                )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="sizeClassification"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Company Size *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-size">
-                            <SelectValue placeholder="Select company size" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="large">Large Company</SelectItem>
-                          <SelectItem value="medium">Medium-Sized Company</SelectItem>
-                          <SelectItem value="small">Small Company</SelectItem>
-                          <SelectItem value="sme">SME (SECP / ICAP)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Size classification affects audit scope and procedures
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
+                  {selectedClient && (
+                    <div className="p-3 rounded-md bg-muted/50 border text-sm">
+                      <div className="font-medium mb-1">{selectedClient.name}</div>
+                      {selectedClient.tradingName && <div className="text-muted-foreground text-xs">Trading as: {selectedClient.tradingName}</div>}
+                      {selectedClient.ntn && <div className="text-muted-foreground text-xs">NTN: {selectedClient.ntn}</div>}
+                    </div>
                   )}
-                />
 
-                <FormField
-                  control={form.control}
-                  name="engagementType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Audit Type *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-audit-type">
-                            <SelectValue placeholder="Select audit type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="statutory_audit">Statutory Audit</SelectItem>
-                          <SelectItem value="internal_audit">Internal Audit</SelectItem>
-                          <SelectItem value="tax_audit">Tax Audit</SelectItem>
-                          <SelectItem value="forensic_audit">Forensic Audit</SelectItem>
-                          <SelectItem value="compliance_audit">Compliance Audit</SelectItem>
-                          <SelectItem value="special_purpose">Special Purpose Audit</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Determines audit approach per ISA 315: Statutory = full ISA compliance, Special Purpose = tailored scope
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="space-y-4">
-                  <h4 className="text-sm font-medium">Audit Period *</h4>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <FormField
                       control={form.control}
-                      name="periodStart"
+                      name="engagementType"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Start Date</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="date" 
-                              data-testid="input-period-start"
-                              {...field} 
-                            />
-                          </FormControl>
+                          <FormLabel>Engagement Type *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              {ENGAGEMENT_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
-                      name="periodEnd"
+                      name="sizeClassification"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>End Date</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="date" 
-                              data-testid="input-period-end"
-                              {...field} 
-                            />
-                          </FormControl>
+                          <FormLabel>Company Size *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select size" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              {SIZE_CLASSIFICATIONS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-                  <FormDescription>
-                    The financial period being audited (e.g., Jan 1, 2025 to Dec 31, 2025)
-                  </FormDescription>
-                </div>
 
-                <Separator />
-
-                <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
-                  <CollapsibleTrigger asChild>
-                    <Button type="button" variant="ghost" className="w-full justify-between" data-testid="button-advanced-options">
-                      <span className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        Advanced Options
-                      </span>
-                      <ChevronDown className={`h-4 w-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-4 pt-4">
-                    
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="reportingFramework"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Reporting Framework</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select framework" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              {REPORTING_FRAMEWORKS.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={form.control}
                       name="riskRating"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            <AlertTriangle className="h-4 w-4" />
-                            Initial Risk Rating
-                          </FormLabel>
+                          <FormLabel>Initial Risk Rating</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-risk-rating">
-                                <SelectValue placeholder="Select risk level" />
-                              </SelectTrigger>
-                            </FormControl>
+                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                             <SelectContent>
-                              <SelectItem value="LOW">Low Risk</SelectItem>
-                              <SelectItem value="MEDIUM">Medium Risk</SelectItem>
-                              <SelectItem value="HIGH">High Risk</SelectItem>
+                              {RISK_RATINGS.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
                             </SelectContent>
                           </Select>
-                          <FormDescription>
-                            Initial assessment - can be updated during planning phase
-                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                  </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="engagementPartnerId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Engagement Partner</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger data-testid="select-partner">
-                                  <SelectValue placeholder="Select partner" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {partners.map((user) => (
-                                  <SelectItem key={user.id} value={user.id}>
-                                    {user.fullName}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="engagementManagerId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Engagement Manager</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger data-testid="select-manager">
-                                  <SelectValue placeholder="Select manager" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {managers.map((user) => (
-                                  <SelectItem key={user.id} value={user.id}>
-                                    {user.fullName}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
+                  <div className="flex items-center gap-4">
                     <FormField
                       control={form.control}
-                      name="budgetHours"
+                      name="isGroupAudit"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Budget Hours</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="e.g., 120"
-                              data-testid="input-budget-hours"
-                              {...field}
-                              value={field.value ?? ""}
-                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Estimated total hours for this engagement
-                          </FormDescription>
-                          <FormMessage />
+                        <FormItem className="flex items-center gap-2 space-y-0">
+                          <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                          <FormLabel className="text-xs font-normal">Group Audit</FormLabel>
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={form.control}
+                      name="isComponentAudit"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center gap-2 space-y-0">
+                          <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                          <FormLabel className="text-xs font-normal">Component Audit</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
 
-                    <div className="p-4 rounded-md border bg-muted/30">
-                      <div className="flex items-start gap-3">
-                        <Shield className="h-5 w-5 text-primary mt-0.5" />
-                        <div className="space-y-3 flex-1">
-                          <FormField
-                            control={form.control}
-                            name="eqcrRequired"
-                            render={({ field }) => (
-                              <FormItem className="flex items-center gap-3 space-y-0">
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                    data-testid="checkbox-eqcr"
-                                  />
-                                </FormControl>
-                                <div>
-                                  <FormLabel className="font-medium">Engagement Quality Control Review (EQCR)</FormLabel>
-                                  <FormDescription className="text-xs">
-                                    Required for listed entities, public interest entities, or high-risk engagements
-                                  </FormDescription>
-                                </div>
-                              </FormItem>
-                            )}
-                          />
+              <Card>
+                <CardContent className="pt-4 space-y-3">
+                  <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5" /> Period & Timelines
+                  </h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    <FormField control={form.control} name="periodStart" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Period Start *</FormLabel>
+                        <FormControl><Input type="date" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="periodEnd" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Period End *</FormLabel>
+                        <FormControl><Input type="date" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="fiscalYearEnd" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fiscal Year-End</FormLabel>
+                        <FormControl><Input type="date" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
 
-                          {eqcrRequired && (
-                            <FormField
-                              control={form.control}
-                              name="eqcrPartnerUserId"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>EQCR Partner *</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger data-testid="select-eqcr-partner">
-                                        <SelectValue placeholder="Select EQCR reviewer" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      {eqcrPartners.map((user) => (
-                                        <SelectItem key={user.id} value={user.id}>
-                                          {user.fullName} ({user.role})
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormDescription>
-                                    Must be different from the engagement partner
-                                  </FormDescription>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          )}
+                  <Separator />
+                  <h4 className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Clock className="h-3 w-3" /> Audit Timeline & Deadlines
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <FormField control={form.control} name="fieldworkStartDate" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Fieldwork Start</FormLabel>
+                        <FormControl><Input type="date" {...field} /></FormControl>
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="fieldworkEndDate" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Fieldwork End</FormLabel>
+                        <FormControl><Input type="date" {...field} /></FormControl>
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="reportDeadline" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Report Deadline</FormLabel>
+                        <FormControl><Input type="date" {...field} /></FormControl>
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="filingDeadline" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Filing Deadline</FormLabel>
+                        <FormControl><Input type="date" {...field} /></FormControl>
+                      </FormItem>
+                    )} />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-4 space-y-3">
+                  <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Users className="h-3.5 w-3.5" /> Team Assignment
+                  </h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    <FormField control={form.control} name="engagementPartnerId" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Partner *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Select partner" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            {partners.map(u => <SelectItem key={u.id} value={u.id}>{u.fullName}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="engagementManagerId" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Manager *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Select manager" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            {managers.map(u => <SelectItem key={u.id} value={u.id}>{u.fullName}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="teamLeadId" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Team Lead (Senior)</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Select lead" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            {seniors.map(u => <SelectItem key={u.id} value={u.id}>{u.fullName}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  <FormField control={form.control} name="budgetHours" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Budget Hours</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="e.g., 120"
+                          {...field}
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                          className="max-w-xs"
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs">Estimated total audit hours</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-4 space-y-3">
+                  <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Shield className="h-3.5 w-3.5" /> EQCR & Regulatory Flags
+                  </h3>
+                  <div className="p-3 rounded-md border bg-muted/30 space-y-3">
+                    <FormField control={form.control} name="eqcrRequired" render={({ field }) => (
+                      <FormItem className="flex items-center gap-3 space-y-0">
+                        <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                        <div>
+                          <FormLabel className="font-medium">EQCR Required</FormLabel>
+                          <FormDescription className="text-xs">Required for listed, public interest, or high-risk engagements</FormDescription>
                         </div>
+                      </FormItem>
+                    )} />
+
+                    {eqcrRequired && (
+                      <div className="grid grid-cols-2 gap-3 pt-2">
+                        <FormField control={form.control} name="eqcrPartnerUserId" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>EQCR Partner *</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl><SelectTrigger><SelectValue placeholder="Select reviewer" /></SelectTrigger></FormControl>
+                              <SelectContent>
+                                {eqcrPartners.map(u => <SelectItem key={u.id} value={u.id}>{u.fullName} ({u.role})</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription className="text-xs">Must differ from engagement partner</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name="eqcrRationale" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>EQCR Rationale</FormLabel>
+                            <FormControl><Input {...field} placeholder="e.g., Listed entity, high risk" /></FormControl>
+                          </FormItem>
+                        )} />
                       </div>
-                    </div>
-
-                  </CollapsibleContent>
-                </Collapsible>
-
-                <div className="flex justify-between gap-4 pt-4 border-t">
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={() => setLocation("/engagements")}
-                    data-testid="button-cancel"
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={createEngagementMutation.isPending}
-                    data-testid="button-create-engagement"
-                  >
-                    {createEngagementMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Create Engagement
-                      </>
                     )}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-      <Dialog open={newClientOpen} onOpenChange={setNewClientOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" data-testid="dialog-new-client">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <Building2 className="h-4 w-4" />
-              Add New Client
-            </DialogTitle>
-            <DialogDescription className="text-xs">Master Data | Quick Add</DialogDescription>
-          </DialogHeader>
+              <div className="flex items-center justify-between gap-4 pt-2 pb-4">
+                <Button type="button" variant="outline" size="sm" onClick={() => setLocation("/engagements")}>
+                  <ArrowLeft className="h-4 w-4 mr-1.5" />
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createEngagementMutation.isPending} size="sm">
+                  {createEngagementMutation.isPending ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Creating...</>
+                  ) : (
+                    <><Save className="h-4 w-4 mr-1.5" />Create & Open Workspace<ArrowRight className="h-3.5 w-3.5 ml-1.5" /></>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </div>
 
-          <fieldset className="border rounded-lg p-4 space-y-3">
-            <legend className="text-xs font-medium text-muted-foreground px-1">Client Identification</legend>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="space-y-1 col-span-2">
-                <Label htmlFor="nc-legal-name" className="text-xs">Legal Name <span className="text-destructive">*</span></Label>
-                <Input
-                  id="nc-legal-name"
-                  data-testid="input-nc-legal-name"
-                  placeholder="e.g., ABC Private Limited"
-                  value={newClientForm.clientLegalName}
-                  onChange={(e) => setNewClientForm({ ...newClientForm, clientLegalName: e.target.value })}
-                  className="h-8 text-sm"
-                />
+        {showAiPanel && (
+          <div className="w-72 border-l bg-muted/30 flex flex-col shrink-0">
+            <div className="flex items-center justify-between px-3 py-2 border-b">
+              <div className="flex items-center gap-1.5 text-sm font-medium">
+                <Bot className="h-4 w-4 text-primary" /> AI Assistant
               </div>
-              <div className="space-y-1 col-span-2">
-                <Label htmlFor="nc-trade-name" className="text-xs">Trade Name</Label>
-                <Input
-                  id="nc-trade-name"
-                  data-testid="input-nc-trade-name"
-                  value={newClientForm.tradeName}
-                  onChange={(e) => setNewClientForm({ ...newClientForm, tradeName: e.target.value })}
-                  className="h-8 text-sm"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="nc-ntn" className="text-xs">NTN</Label>
-                <Input
-                  id="nc-ntn"
-                  data-testid="input-nc-ntn"
-                  placeholder="7 digits"
-                  value={newClientForm.ntn}
-                  onChange={(e) => setNewClientForm({ ...newClientForm, ntn: e.target.value })}
-                  className="h-8 text-sm"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="nc-secp" className="text-xs">SECP No.</Label>
-                <Input
-                  id="nc-secp"
-                  data-testid="input-nc-secp"
-                  value={newClientForm.secpNo}
-                  onChange={(e) => setNewClientForm({ ...newClientForm, secpNo: e.target.value })}
-                  className="h-8 text-sm"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="nc-incorp-date" className="text-xs">Incorporation Date</Label>
-                <Input
-                  id="nc-incorp-date"
-                  data-testid="input-nc-incorp-date"
-                  type="date"
-                  value={newClientForm.dateOfIncorporation}
-                  onChange={(e) => setNewClientForm({ ...newClientForm, dateOfIncorporation: e.target.value })}
-                  className="h-8 text-sm"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="nc-city" className="text-xs">City</Label>
-                <Select value={newClientForm.city} onValueChange={(v) => setNewClientForm({ ...newClientForm, city: v })}>
-                  <SelectTrigger id="nc-city" data-testid="select-nc-city" className="h-8 text-sm">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PAKISTAN_CITIES.map((city) => (
-                      <SelectItem key={city} value={city}>{city}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1 col-span-2 md:col-span-4">
-                <Label htmlFor="nc-address" className="text-xs">Registered Address</Label>
-                <Textarea
-                  id="nc-address"
-                  data-testid="input-nc-address"
-                  value={newClientForm.registeredAddress}
-                  onChange={(e) => setNewClientForm({ ...newClientForm, registeredAddress: e.target.value })}
-                  rows={2}
-                  className="text-sm resize-none"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="nc-email" className="text-xs">Email</Label>
-                <Input
-                  id="nc-email"
-                  data-testid="input-nc-email"
-                  type="email"
-                  value={newClientForm.contactEmail}
-                  onChange={(e) => setNewClientForm({ ...newClientForm, contactEmail: e.target.value })}
-                  className="h-8 text-sm"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="nc-phone" className="text-xs">Phone</Label>
-                <Input
-                  id="nc-phone"
-                  data-testid="input-nc-phone"
-                  value={newClientForm.contactPhone}
-                  onChange={(e) => setNewClientForm({ ...newClientForm, contactPhone: e.target.value })}
-                  className="h-8 text-sm"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="nc-country" className="text-xs">Country</Label>
-                <Select value={newClientForm.country} onValueChange={(v) => setNewClientForm({ ...newClientForm, country: v })}>
-                  <SelectTrigger id="nc-country" data-testid="select-nc-country" className="h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Pakistan">Pakistan</SelectItem>
-                    <SelectItem value="UAE">UAE</SelectItem>
-                    <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setShowAiPanel(false)}>
+                <X className="h-3.5 w-3.5" />
+              </Button>
             </div>
-          </fieldset>
-
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setNewClientOpen(false)} data-testid="button-cancel-new-client">
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleNewClientSubmit}
-              disabled={newClientLoading || !newClientForm.clientLegalName.trim()}
-              data-testid="button-save-new-client"
-            >
-              {newClientLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Add Client
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <div className="flex-1 p-3 overflow-auto space-y-3">
+              <Button variant="outline" size="sm" className="w-full text-xs" onClick={generateAiSummary} disabled={aiLoading}>
+                {aiLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Bot className="h-3 w-3 mr-1" />}
+                Generate Setup Summary
+              </Button>
+              <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => {
+                if (completeness.missing.length > 0) {
+                  setAiSummary(`Missing mandatory fields:\n${completeness.missing.map(m => `• ${m}`).join("\n")}\n\nComplete these before creating the engagement.`);
+                } else {
+                  setAiSummary("All mandatory fields are complete. Ready to create the engagement.");
+                }
+              }}>
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                Check Missing Fields
+              </Button>
+              {aiSummary && (
+                <div className="p-3 rounded-md bg-background border text-xs whitespace-pre-wrap">
+                  {aiSummary}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

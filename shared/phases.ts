@@ -77,7 +77,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
       { id: "client-exists", label: "Client record created", type: "hard", description: "A client entity must be saved" },
     ],
     rolePermissions: { canPrepare: ALL_ROLES, canReview: SENIOR_UP, canApprove: MANAGER_UP, canView: ALL_ROLES },
-    aiCapabilities: [],
+    aiCapabilities: ["client-summary-draft", "missing-field-alerts"],
     outputArtifacts: ["Client record"],
   },
   {
@@ -95,7 +95,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
       { id: "team-assigned", label: "Engagement team assigned", type: "soft", description: "At least one team member should be assigned" },
     ],
     rolePermissions: { canPrepare: SENIOR_UP, canReview: MANAGER_UP, canApprove: PARTNER_UP, canView: ALL_ROLES },
-    aiCapabilities: [],
+    aiCapabilities: ["engagement-setup-summary", "missing-field-alerts"],
     outputArtifacts: ["Engagement record"],
   },
   {

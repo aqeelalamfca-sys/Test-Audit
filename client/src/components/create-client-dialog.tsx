@@ -24,49 +24,12 @@ import {
 import { Loader2, Plus, Building2 } from "lucide-react";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { useToast } from "@/hooks/use-toast";
-
-const PAKISTAN_CITIES = [
-  "Karachi", "Lahore", "Islamabad", "Rawalpindi", "Faisalabad", "Multan",
-  "Peshawar", "Quetta", "Sialkot", "Gujranwala", "Hyderabad", "Abbottabad",
-  "Bahawalpur", "Sargodha", "Sukkur", "Larkana", "Sheikhupura", "Jhang",
-  "Rahim Yar Khan", "Gujrat", "Mardan", "Kasur", "Dera Ghazi Khan",
-  "Sahiwal", "Nawabshah", "Mirpur Khas", "Chiniot", "Kamoke", "Other",
-];
-
-const ENTITY_TYPES = [
-  { value: "private_limited", label: "Private Limited" },
-  { value: "public_limited", label: "Public Limited" },
-  { value: "single_member", label: "Single Member Company" },
-  { value: "partnership", label: "Partnership" },
-  { value: "sole_proprietor", label: "Sole Proprietorship" },
-  { value: "ngo", label: "NGO / Non-Profit" },
-  { value: "trust", label: "Trust" },
-  { value: "association", label: "Association of Persons" },
-  { value: "government", label: "Government Entity" },
-  { value: "other", label: "Other" },
-];
-
-const INDUSTRIES = [
-  { value: "general", label: "General" },
-  { value: "manufacturing", label: "Manufacturing" },
-  { value: "trading", label: "Trading" },
-  { value: "services", label: "Services" },
-  { value: "banking", label: "Banking & Finance" },
-  { value: "insurance", label: "Insurance" },
-  { value: "real_estate", label: "Real Estate" },
-  { value: "construction", label: "Construction" },
-  { value: "textile", label: "Textile" },
-  { value: "pharmaceutical", label: "Pharmaceutical" },
-  { value: "it_telecom", label: "IT & Telecom" },
-  { value: "energy", label: "Energy & Power" },
-  { value: "agriculture", label: "Agriculture" },
-  { value: "education", label: "Education" },
-  { value: "healthcare", label: "Healthcare" },
-  { value: "hospitality", label: "Hospitality" },
-  { value: "transport", label: "Transport & Logistics" },
-  { value: "retail", label: "Retail" },
-  { value: "other", label: "Other" },
-];
+import {
+  PAKISTAN_CITIES,
+  COUNTRIES,
+  ENTITY_TYPES,
+  INDUSTRY_SECTORS as INDUSTRIES,
+} from "@/lib/form-constants";
 
 const initialFormState = {
   clientLegalName: "",
@@ -312,10 +275,9 @@ export function CreateClientDialog({ onSuccess, trigger }: CreateClientDialogPro
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Pakistan">Pakistan</SelectItem>
-                  <SelectItem value="UAE">UAE</SelectItem>
-                  <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
+                  {COUNTRIES.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
