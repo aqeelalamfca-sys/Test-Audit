@@ -1,7 +1,7 @@
 import { Router, Response } from "express";
 import { prisma } from "./db";
 import { requireAuth, requireMinRole, logAuditTrail, type AuthenticatedRequest } from "./auth";
-import { computePreReportBlockers } from "./finalizationRoutes";
+import { computePreDraftBlockers, computePreReportBlockers } from "./finalizationRoutes";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -317,9 +317,16 @@ router.post("/:id/issue", requireAuth, requireMinRole("PARTNER"), async (req: Au
       return res.status(400).json({ error: "Opinion type is required for Audit Report" });
     }
 
-    const preCheck = await computePreReportBlockers(existing.engagementId);
-    if (!preCheck.readyForRelease) {
-      return res.status(400).json({ error: "Pre-report blockers exist", blockers: preCheck.issues.map(i => i.message) });
+    if (existing.deliverableType === "AUDIT_REPORT") {
+      const releaseCheck = await computePreReportBlockers(existing.engagementId);
+      if (!releaseCheck.readyForRelease) {
+        return res.status(400).json({ error: "Pre-report blockers exist", blockers: releaseCheck.issues.map(i => i.message) });
+      }
+    } else {
+      const draftCheck = await computePreDraftBlockers(existing.engagementId);
+      if (!draftCheck.readyForDraft) {
+        return res.status(400).json({ error: "Completion-phase blockers exist", blockers: draftCheck.issues.map(i => i.message) });
+      }
     }
     
     const deliverable = await prisma.deliverable.update({
