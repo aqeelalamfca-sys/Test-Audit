@@ -1374,7 +1374,7 @@ export async function registerRoutes(
         const userProgress = await prisma.engagementUserProgress.findUnique({
           where: { engagementId_userId: { engagementId: id, userId } },
         });
-        const resumeRoute = userProgress?.lastRoute || engagement.lastRoute || `/engagement/${id}/pre-planning`;
+        const resumeRoute = userProgress?.lastRoute || engagement.lastRoute || `/workspace/${id}/acceptance`;
         return res.json({
           engagementId: id,
           startedAt: engagement.startedAt,
@@ -1385,7 +1385,7 @@ export async function registerRoutes(
       }
 
       // Seed workspace (idempotent - only create if not exists)
-      const defaultRoute = `/workspace/${id}/pre-planning`;
+      const defaultRoute = `/workspace/${id}/acceptance`;
       
       // Create baseline phase progress if not exists
       const existingPhases = await prisma.phaseProgress.findMany({ where: { engagementId: id } });
@@ -1482,11 +1482,11 @@ export async function registerRoutes(
         where: { engagementId_userId: { engagementId: id, userId } },
       });
 
-      const defaultRoute = `/workspace/${id}/pre-planning`;
+      const defaultRoute = `/workspace/${id}/acceptance`;
       let resumeRoute = userProgress?.lastRoute || engagement.lastRoute || defaultRoute;
 
       const validRoutePatterns = [
-        /^\/workspace\/[^\/]+\/(pre-planning|requisition|planning|execution|fs-heads|evidence|finalization|deliverables|eqcr|inspection)$/,
+        /^\/workspace\/[^\/]+\/(acceptance|independence|tb-gl-upload|validation|coa-mapping|materiality|risk-assessment|planning-strategy|procedures-sampling|execution-testing|evidence-linking|observations|adjustments|finalization|opinion-reports|eqcr|inspection|pre-planning|requisition|planning|execution|fs-heads|evidence|deliverables|outputs|onboarding|control|ethics|post-upload-workflow|tb-review|import|evidence-vault|print-view|standards-matrix)/,
         /^\/engagement\/[^\/]+\/(pre-planning|planning|execution|finalization|eqcr|inspection)$/,
         /^\/engagements$/,
       ];

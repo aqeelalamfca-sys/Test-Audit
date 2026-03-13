@@ -647,8 +647,8 @@ export default function PrePlanning() {
       subtitle={`${client?.name || "Select Client"}${engagement?.engagementCode ? ` (${engagement.engagementCode})` : ""}`}
       icon={<ClipboardCheck className="h-6 w-6 text-primary" />}
       useRegistry={true}
-      backHref={`/workspace/${engagementId}/information-requisition`}
-      nextHref={`/workspace/${engagementId}/planning`}
+      backHref={`/workspace/${engagementId}/tb-gl-upload`}
+      nextHref={`/workspace/${engagementId}/materiality`}
       dashboardHref="/engagements"
       signoffPhase="PRE_PLANNING"
       signoffSection="pre-planning"

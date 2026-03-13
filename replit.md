@@ -156,6 +156,19 @@ All 18 workspace phase pages use a standardized prepare → review → approve w
 - `server/services/workflowOrchestrator.ts` — @deprecated, use phaseGateEngine.ts
 - `server/services/phaseEngine.ts` — @deprecated, use phaseGateEngine.ts
 
+### UI Component Consolidation
+- **Canonical StatusBadge**: `client/src/components/ui/status-badge.tsx` — single source of truth for all badge types
+  - Generic: `StatusBadge` (pass/warn/fail/info/neutral/pending)
+  - Phase: `PhaseStatusBadge` (not_started/in_progress/under_review/completed/locked)
+  - Checklist: `ChecklistStatusBadge` (pending/in_progress/completed/not_applicable)
+  - Risk: `RiskBadge` (low/medium/high)
+  - ISA: `IsaReferenceBadge` (reference string)
+  - Role: `RoleBadge` (super_admin through client)
+  - Presets: `AuditStatusBadges` (Balanced, Matched, Approved, etc.)
+- **EntityStatusBadge**: `client/src/components/ui/visual-indicators.tsx` — workflow status (DRAFT/PREPARED/REVIEWED/APPROVED) with tooltip support
+- **Legacy bridge**: `client/src/components/status-badge.tsx` — re-exports from `ui/status-badge.tsx`
+- **EmptyState**: `client/src/components/empty-state.tsx` — reusable variants (NoData, NoItems, NoSearchResults, Error, TableSkeleton, CardSkeleton)
+
 ### Cleanup Report
 - Full cleanup report at `docs/CLEANUP_REPORT.md`
 

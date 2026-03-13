@@ -50,7 +50,6 @@ import { useState, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
-import { PhaseApprovalControl, PhaseLockIndicator } from "@/components/phase-approval-control";
 import { PageShell } from "@/components/page-shell";
 import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 

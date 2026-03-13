@@ -23,7 +23,7 @@ import { PageShell } from "@/components/page-shell";
 import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { AICopilotToggle } from "@/components/ai-copilot-panel";
 import { cn } from "@/lib/utils";
-import AuditProgramSection, { type AccountHeadProgram } from "@/components/AuditProgramSection";
+import { AuditProgramSection, type AccountHeadProgram } from "@/components/AuditProgramSection";
 
 interface ProceduresStats {
   totalProcedures: number;

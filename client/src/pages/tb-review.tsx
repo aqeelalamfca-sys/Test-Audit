@@ -653,8 +653,8 @@ export default function TBReview() {
       showTopBar={false}
       title="TB/GL Review & Mapping"
       subtitle={`${client?.name ? `${client.name} - ` : ""}Canonical mapping and reconciliation page${engagement?.engagementCode ? ` (${engagement.engagementCode})` : ""}`}
-      backHref={`/workspace/${engagementId}/requisition?tab=review-coa&subtab=mapping`}
-      nextHref={`/workspace/${engagementId}/planning`}
+      backHref={`/workspace/${engagementId}/coa-mapping`}
+      nextHref={`/workspace/${engagementId}/materiality`}
       dashboardHref="/engagements"
       saveFn={async () => {
         try {

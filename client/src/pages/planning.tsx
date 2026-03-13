@@ -52,7 +52,6 @@ import {
 } from "@/components/ui/collapsible";
 import { AIAssistButton } from "@/components/ui/ai-assist-button";
 import { Sparkles } from "lucide-react";
-import { PhaseApprovalControl, PhaseLockIndicator } from "@/components/phase-approval-control";
 import { SyncPlanningToExecution } from "@/components/sync-planning-to-execution";
 import { MaterialitySetPanel, AuditPlanPanel, ProceduresMatrixPanel } from "@/components/control-pack";
 import { ISA320MaterialityPanel as ISA320MaterialityPanelNew } from "@/components/planning/isa320-materiality-panel";

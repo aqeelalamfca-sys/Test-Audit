@@ -29,7 +29,6 @@ import {
   ArrowUpDown, Layers
 } from "lucide-react";
 import { AIHelpIcon } from "@/components/ai-help";
-import { PhaseLockIndicator } from "@/components/phase-approval-control";
 import { LockGatePanel } from "@/components/control-pack";
 import { useQuery } from "@tanstack/react-query";
 import { FSSoCF } from "@/components/planning/fs-socf";
@@ -631,7 +630,7 @@ export default function Finalization() {
       title="Finalization"
       subtitle={`${client?.name || ""} ${engagement?.engagementCode ? `(${engagement.engagementCode})` : ""}`}
       icon={<FileCheck className="h-5 w-5 text-primary" />}
-      backHref={`/workspace/${engagementId}/execution`}
+      backHref={`/workspace/${engagementId}/adjustments`}
       nextHref={`/workspace/${engagementId}/opinion-reports`}
       dashboardHref="/engagements"
       saveFn={async () => {
@@ -664,8 +663,6 @@ export default function Finalization() {
     >
       <div className="w-full px-4 py-2 space-y-2">
       <AIAssistantPanel engagementId={engagementId || ""} phaseKey="finalization" className="mb-2" />
-      <PhaseLockIndicator phase="FINALIZATION" />
-
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <SimpleTabNavigation
           activeTab={activeTab}

@@ -194,7 +194,7 @@ export default function Execution() {
       title="Execution Phase"
       subtitle={`${client?.name || ""} ${engagement?.engagementCode ? `(${engagement.engagementCode})` : ""}`}
       icon={<ClipboardList className="h-5 w-5 text-primary" />}
-      backHref={`/workspace/${engagementId}/planning`}
+      backHref={`/workspace/${engagementId}/planning-strategy`}
       nextHref={`/workspace/${engagementId}/finalization`}
       dashboardHref="/engagements"
       canNavigateNext={canProceedToFinalization}
