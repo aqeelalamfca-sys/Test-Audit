@@ -1,31 +1,11 @@
 import { Router, Response } from "express";
 import { prisma } from "./db";
 import { requireAuth, logAuditTrail, AuthenticatedRequest } from "./auth";
+import { validateEngagementAccess } from "./lib/validateEngagementAccess";
 
 const router = Router();
 
-async function validateEngagementAccess(engagementId: string, userId: string, firmId: string | null): Promise<{ valid: boolean; engagement?: any; error?: string }> {
-  if (!firmId) {
-    return { valid: false, error: "User not associated with a firm" };
-  }
-  
-  const engagement = await prisma.engagement.findUnique({
-    where: { id: engagementId },
-    select: { id: true, firmId: true, currentPhase: true, engagementCode: true },
-  });
-  
-  if (!engagement || engagement.firmId !== firmId) {
-    return { valid: false, error: "Engagement not found" };
-  }
-  
-  return { valid: true, engagement };
-}
-
-router.get("/:engagementId/planning-to-execution/preview", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
-    if (!access.valid) {
-      return res.status(access.error === "User not associated with a firm" ? 400 : 404).json({ error: access.error });
+);
     }
     
     const engagementId = req.params.engagementId;
@@ -95,7 +75,7 @@ router.get("/:engagementId/planning-to-execution/preview", requireAuth, async (r
 
 router.post("/:engagementId/planning-to-execution", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(access.error === "User not associated with a firm" ? 400 : 404).json({ error: access.error });
     }
@@ -197,7 +177,7 @@ router.post("/:engagementId/planning-to-execution", requireAuth, async (req: Aut
 
 router.get("/:engagementId/sync-status", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(access.error === "User not associated with a firm" ? 400 : 404).json({ error: access.error });
     }

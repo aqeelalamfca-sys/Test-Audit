@@ -1,11 +1,12 @@
 import { ReactNode, useMemo, useState } from "react";
-import { Redirect } from "wouter";
+import { Redirect, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useWorkspace } from "@/lib/workspace-context";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, Loader2, Bot, X } from "lucide-react";
-import { getPhaseByKey } from "../../../shared/phases";
+import { getPhaseByKey, getWorkspacePhases } from "../../../shared/phases";
 
 interface EngagementWorkspaceShellProps {
   children: ReactNode;
@@ -30,6 +31,7 @@ interface EngagementPhaseState {
 export function EngagementWorkspaceShell({ children, phaseSlug, engagementId }: EngagementWorkspaceShellProps) {
   const { activeEngagement } = useWorkspace();
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [, navigate] = useLocation();
 
   const { data: phaseState, isLoading: phaseStateLoading, isFetched: phaseStateFetched } = useQuery<EngagementPhaseState>({
     queryKey: ["phase-state", engagementId],
@@ -44,6 +46,8 @@ export function EngagementWorkspaceShell({ children, phaseSlug, engagementId }: 
   });
 
   const currentCanonical = phaseSlug ? getPhaseByKey(phaseSlug) : null;
+
+  const workspacePhases = useMemo(() => getWorkspacePhases(), []);
 
   const resumePhaseSlug = useMemo(() => {
     if (!phaseState?.phases || phaseState.phases.length === 0) return "acceptance";
@@ -77,13 +81,30 @@ export function EngagementWorkspaceShell({ children, phaseSlug, engagementId }: 
   return (
     <div className="flex flex-col h-full">
       <div className="sticky top-0 z-20 bg-background border-b border-border/60">
-        <div className="px-4 py-3 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-lg font-semibold tracking-tight truncate">{currentCanonical?.label || "Workspace"}</h1>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-              <span className="font-medium text-foreground/80">{clientName}</span>
-              {engagementCode && <span>{engagementCode}</span>}
-              {periodLabel && <span>{periodLabel}</span>}
+        <div className="px-4 py-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {/* Compact phase-selector dropdown */}
+            <Select
+              value={phaseSlug || ""}
+              onValueChange={(slug) => navigate(`/workspace/${engagementId}/${slug}`)}
+            >
+              <SelectTrigger className="h-7 w-44 text-xs font-medium border-0 bg-muted/50 hover:bg-muted focus:ring-0 shrink-0">
+                <SelectValue placeholder={currentCanonical?.label || "Select phase"} />
+              </SelectTrigger>
+              <SelectContent>
+                {workspacePhases.map((phase) => (
+                  <SelectItem key={phase.routeSlug} value={phase.routeSlug} className="text-xs">
+                    {phase.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Engagement meta */}
+            <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0 overflow-hidden">
+              <span className="font-medium text-foreground/80 truncate">{clientName}</span>
+              {engagementCode && <span className="shrink-0">{engagementCode}</span>}
+              {periodLabel && <span className="hidden sm:inline shrink-0">{periodLabel}</span>}
             </div>
           </div>
 

@@ -5,6 +5,7 @@ import { isaPhaseComplianceService } from "../services/isaPhaseComplianceService
 import { generateAIContent, type AISettings } from "../services/aiService";
 import { prisma } from "../db";
 import { z } from "zod";
+import { validateEngagementAccess } from "../lib/validateEngagementAccess";
 
 const router = Router();
 
@@ -24,22 +25,7 @@ interface AccessResult {
   };
 }
 
-async function validateEngagementAccess(
-  engagementId: string,
-  userId: string,
-  firmId: string | null
-): Promise<AccessResult> {
-  const idResult = engagementIdSchema.safeParse(engagementId);
-  if (!idResult.success) {
-    return { valid: false, error: "Invalid engagement ID format" };
-  }
-  if (!firmId) return { valid: false, error: "User not associated with a firm" };
-  const engagement = await prisma.engagement.findFirst({
-    where: { id: engagementId, firmId },
-  });
-  if (!engagement) return { valid: false, error: "Engagement not found or access denied" };
-  return { valid: true, engagement: engagement as unknown as AccessResult["engagement"] };
-}
+
 
 interface ApiError {
   success: false;
@@ -74,7 +60,7 @@ async function fetchAISettings(firmId: string): Promise<AISettings> {
 
 router.get("/engagements/:engagementId/health-check", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return errorResponse(res, 404, access.error!);
 
     const result = await isaComplianceService.runHealthCheck(req.params.engagementId);
@@ -88,7 +74,7 @@ router.get("/engagements/:engagementId/health-check", requireAuth, async (req: A
 
 router.get("/engagements/:engagementId/isa-scores", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return errorResponse(res, 404, access.error!);
 
     const result = await isaComplianceService.runHealthCheck(req.params.engagementId);
@@ -114,7 +100,7 @@ router.get("/engagements/:engagementId/isa-scores", requireAuth, async (req: Aut
 
 router.get("/engagements/:engagementId/critical-gaps", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return errorResponse(res, 404, access.error!);
 
     const result = await isaComplianceService.runHealthCheck(req.params.engagementId);
@@ -133,7 +119,7 @@ router.get("/engagements/:engagementId/critical-gaps", requireAuth, async (req: 
 
 router.get("/engagements/:engagementId/phase-compliance", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return errorResponse(res, 404, access.error!);
 
     const records = await isaPhaseComplianceService.computeEngagementCompliance(req.params.engagementId);
@@ -147,7 +133,7 @@ router.get("/engagements/:engagementId/phase-compliance", requireAuth, async (re
 
 router.get("/engagements/:engagementId/no-report-blockers", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return errorResponse(res, 404, access.error!);
 
     const blockers = await isaPhaseComplianceService.getNoReportBlockers(req.params.engagementId);
@@ -161,7 +147,7 @@ router.get("/engagements/:engagementId/no-report-blockers", requireAuth, async (
 
 router.get("/engagements/:engagementId/phase-heatbar", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return errorResponse(res, 404, access.error!);
 
     const phases = await isaPhaseComplianceService.getPhaseHeatbar(req.params.engagementId);
@@ -175,7 +161,7 @@ router.get("/engagements/:engagementId/phase-heatbar", requireAuth, async (req: 
 
 router.get("/engagements/:engagementId/compliance-summary", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return errorResponse(res, 404, access.error!);
 
     const summary = await isaPhaseComplianceService.getComplianceSummary(req.params.engagementId);
@@ -314,7 +300,7 @@ const gapResolutionSchema = z.object({
 
 router.post("/engagements/:engagementId/ai-draft", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return errorResponse(res, 404, access.error!);
 
     const bodyResult = aiDraftSchema.safeParse(req.body);
@@ -363,7 +349,7 @@ router.post("/engagements/:engagementId/ai-draft", requireAuth, async (req: Auth
 
 router.post("/engagements/:engagementId/ai-gap-resolution", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return errorResponse(res, 404, access.error!);
 
     const bodyResult = gapResolutionSchema.safeParse(req.body);

@@ -2,23 +2,15 @@ import { Router, Response } from "express";
 import { requireAuth, AuthenticatedRequest } from "../auth";
 import { auditHealthDashboardService } from "../services/auditHealthDashboardService";
 import { reportBlockingService } from "../services/reportBlockingService";
-import { PrismaClient } from "@prisma/client";
+import { validateEngagementAccess } from "../lib/validateEngagementAccess";
 
 const router = Router();
-const prisma = new PrismaClient();
 
-async function validateEngagementAccess(engagementId: string, userId: string, firmId: string | null) {
-  if (!firmId) return { valid: false, error: "User not associated with a firm" };
-  const engagement = await prisma.engagement.findFirst({
-    where: { id: engagementId, firmId }
-  });
-  if (!engagement) return { valid: false, error: "Engagement not found or access denied" };
-  return { valid: true, engagement };
-}
+
 
 router.get("/engagements/:engagementId/dashboard", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const dashboard = await auditHealthDashboardService.getFullDashboard(req.params.engagementId);
@@ -31,7 +23,7 @@ router.get("/engagements/:engagementId/dashboard", requireAuth, async (req: Auth
 
 router.get("/engagements/:engagementId/health-score", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const data = await auditHealthDashboardService.getHealthScorePanel(req.params.engagementId);
@@ -43,7 +35,7 @@ router.get("/engagements/:engagementId/health-score", requireAuth, async (req: A
 
 router.get("/engagements/:engagementId/isa-matrix", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const data = await auditHealthDashboardService.getISAComplianceMatrix(req.params.engagementId);
@@ -55,7 +47,7 @@ router.get("/engagements/:engagementId/isa-matrix", requireAuth, async (req: Aut
 
 router.get("/engagements/:engagementId/alerts", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const data = await auditHealthDashboardService.getCriticalAlerts(req.params.engagementId);
@@ -67,7 +59,7 @@ router.get("/engagements/:engagementId/alerts", requireAuth, async (req: Authent
 
 router.get("/engagements/:engagementId/data-integrity", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const data = await auditHealthDashboardService.getDataIntegrityFlow(req.params.engagementId);
@@ -79,7 +71,7 @@ router.get("/engagements/:engagementId/data-integrity", requireAuth, async (req:
 
 router.get("/engagements/:engagementId/ai-diagnostics", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const data = await auditHealthDashboardService.getAIDiagnostics(req.params.engagementId);
@@ -91,7 +83,7 @@ router.get("/engagements/:engagementId/ai-diagnostics", requireAuth, async (req:
 
 router.get("/engagements/:engagementId/evidence-coverage", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const data = await auditHealthDashboardService.getEvidenceCoverage(req.params.engagementId);
@@ -103,7 +95,7 @@ router.get("/engagements/:engagementId/evidence-coverage", requireAuth, async (r
 
 router.get("/engagements/:engagementId/misstatements", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const data = await auditHealthDashboardService.getMisstatementTracker(req.params.engagementId);
@@ -115,7 +107,7 @@ router.get("/engagements/:engagementId/misstatements", requireAuth, async (req: 
 
 router.get("/engagements/:engagementId/quality-controls", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const data = await auditHealthDashboardService.getQualityControls(req.params.engagementId);
@@ -127,7 +119,7 @@ router.get("/engagements/:engagementId/quality-controls", requireAuth, async (re
 
 router.get("/engagements/:engagementId/auto-fixes", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const data = await auditHealthDashboardService.getAutoFixItems(req.params.engagementId);
@@ -139,7 +131,7 @@ router.get("/engagements/:engagementId/auto-fixes", requireAuth, async (req: Aut
 
 router.get("/engagements/:engagementId/health-certificate", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const data = await auditHealthDashboardService.getHealthCertificate(req.params.engagementId);
@@ -151,7 +143,7 @@ router.get("/engagements/:engagementId/health-certificate", requireAuth, async (
 
 router.post("/engagements/:engagementId/generate-certificate", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const certificate = await auditHealthDashboardService.getHealthCertificate(req.params.engagementId);
@@ -191,7 +183,7 @@ router.post("/engagements/:engagementId/generate-certificate", requireAuth, asyn
 
 router.get("/engagements/:engagementId/report-eligibility", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const result = await reportBlockingService.checkReportIssuanceEligibility(req.params.engagementId);
@@ -220,7 +212,7 @@ router.get("/engagements/:engagementId/report-eligibility", requireAuth, async (
 
 router.post("/engagements/:engagementId/verify-report-issuance", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const result = await reportBlockingService.enforceReportBlocking(req.params.engagementId, req.user!.id);
@@ -240,7 +232,7 @@ router.post("/engagements/:engagementId/verify-report-issuance", requireAuth, as
 
 router.post("/engagements/:engagementId/lock-for-reporting", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     if (req.user!.role !== 'PARTNER' && req.user!.role !== 'FIRM_ADMIN') {
@@ -268,7 +260,7 @@ router.post("/engagements/:engagementId/lock-for-reporting", requireAuth, async 
 
 router.post("/engagements/:engagementId/partner-override", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     if (req.user!.role !== 'PARTNER' && req.user!.role !== 'FIRM_ADMIN') {
@@ -307,7 +299,7 @@ router.post("/engagements/:engagementId/partner-override", requireAuth, async (r
 
 router.post("/engagements/:engagementId/request-eqcr", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     if (req.user!.role !== 'PARTNER' && req.user!.role !== 'FIRM_ADMIN' && req.user!.role !== 'MANAGER') {
@@ -339,7 +331,7 @@ router.post("/engagements/:engagementId/request-eqcr", requireAuth, async (req: 
 
 router.post("/engagements/:engagementId/approve-report-issuance", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     if (req.user!.role !== 'PARTNER' && req.user!.role !== 'FIRM_ADMIN') {
@@ -381,7 +373,7 @@ router.post("/engagements/:engagementId/approve-report-issuance", requireAuth, a
 
 router.post("/engagements/:engagementId/ai-recommendation", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     if (req.user!.role !== 'PARTNER' && req.user!.role !== 'FIRM_ADMIN' && req.user!.role !== 'MANAGER') {
@@ -422,7 +414,7 @@ router.post("/engagements/:engagementId/ai-recommendation", requireAuth, async (
 
 router.post("/engagements/:engagementId/gap/:gapId/mark-fixed", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     if (req.user!.role !== 'PARTNER' && req.user!.role !== 'FIRM_ADMIN' && req.user!.role !== 'MANAGER') {
@@ -454,7 +446,7 @@ router.post("/engagements/:engagementId/gap/:gapId/mark-fixed", requireAuth, asy
 
 router.post("/engagements/:engagementId/gap/:gapId/assign", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     if (req.user!.role !== 'PARTNER' && req.user!.role !== 'FIRM_ADMIN' && req.user!.role !== 'MANAGER') {

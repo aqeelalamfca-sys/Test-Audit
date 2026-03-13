@@ -1,37 +1,15 @@
 import { Router, Response } from "express";
 import { prisma } from "./db";
 import { requireAuth, AuthenticatedRequest } from "./auth";
+import { validateEngagementAccess } from "./lib/validateEngagementAccess";
 
 const router = Router();
 
-async function validateEngagementAccess(engagementId: string, userId: string, firmId: string | null): Promise<{ valid: boolean; engagement?: any; error?: string }> {
-  if (!firmId) {
-    return { valid: false, error: "User not associated with a firm" };
-  }
-  
-  const engagement = await prisma.engagement.findUnique({
-    where: { id: engagementId },
-    select: { id: true, firmId: true, currentPhase: true, engagementCode: true },
-  });
-  
-  if (!engagement || engagement.firmId !== firmId) {
-    return { valid: false, error: "Engagement not found" };
-  }
-  
-  return { valid: true, engagement };
-}
 
-interface MissingItem {
-  phase: string;
-  category: string;
-  description: string;
-  priority: 'HIGH' | 'MEDIUM' | 'LOW';
-  actionRequired: string;
-}
 
 router.get("/:engagementId/comprehensive", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(access.error === "User not associated with a firm" ? 400 : 404).json({ error: access.error });
     }
@@ -281,7 +259,7 @@ router.get("/:engagementId/comprehensive", requireAuth, async (req: Authenticate
 
 router.get("/:engagementId/sign-off-summary", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(access.error === "User not associated with a firm" ? 400 : 404).json({ error: access.error });
     }
@@ -320,7 +298,7 @@ router.get("/:engagementId/sign-off-summary", requireAuth, async (req: Authentic
 
 router.get("/:engagementId/missing-items", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(access.error === "User not associated with a firm" ? 400 : 404).json({ error: access.error });
     }

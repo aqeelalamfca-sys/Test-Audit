@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { prisma } from "./db";
 import { z } from "zod";
 import * as crypto from "crypto";
+import { validateEngagementAccess } from "./lib/validateEngagementAccess";
 
 const router = Router();
 
@@ -33,14 +34,7 @@ function requireMinRole(minRole: string) {
   };
 }
 
-async function validateEngagementAccess(engagementId: string, userId: string, firmId: string | undefined) {
-  if (!firmId) return { valid: false, error: "User not associated with a firm" };
-  const engagement = await prisma.engagement.findFirst({
-    where: { id: engagementId, firmId },
-  });
-  if (!engagement) return { valid: false, error: "Engagement not found" };
-  return { valid: true, engagement };
-}
+
 
 async function logAuditTrail(
   userId: string, action: string, entityType: string, entityId: string | null,
@@ -55,7 +49,7 @@ async function logAuditTrail(
 // Evidence Files
 router.get("/:engagementId/files", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -82,7 +76,7 @@ router.get("/:engagementId/files", requireAuth, async (req: AuthenticatedRequest
 
 router.post("/:engagementId/files", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -136,7 +130,7 @@ router.post("/:engagementId/files", requireAuth, async (req: AuthenticatedReques
 
 router.post("/:engagementId/files/:fileId/supersede", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -194,7 +188,7 @@ router.post("/:engagementId/files/:fileId/supersede", requireAuth, async (req: A
 
 router.post("/:engagementId/files/:fileId/void", requireAuth, requireMinRole("MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -223,7 +217,7 @@ router.post("/:engagementId/files/:fileId/void", requireAuth, requireMinRole("MA
 
 router.post("/:engagementId/files/:fileId/review", requireAuth, requireMinRole("SENIOR"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -247,7 +241,7 @@ router.post("/:engagementId/files/:fileId/review", requireAuth, requireMinRole("
 // Search
 router.get("/:engagementId/files/search", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -285,7 +279,7 @@ router.get("/:engagementId/files/search", requireAuth, async (req: Authenticated
 // Audit File Assembly
 router.get("/:engagementId/assembly", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -330,7 +324,7 @@ router.get("/:engagementId/assembly", requireAuth, async (req: AuthenticatedRequ
 
 router.post("/:engagementId/assembly/start", requireAuth, requireMinRole("SENIOR"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -366,7 +360,7 @@ router.post("/:engagementId/assembly/start", requireAuth, requireMinRole("SENIOR
 
 router.post("/:engagementId/assembly/complete", requireAuth, requireMinRole("PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -411,7 +405,7 @@ router.post("/:engagementId/assembly/complete", requireAuth, requireMinRole("PAR
 // Get all attachments for an engagement (TabAttachment + RequestAttachment)
 router.get("/:engagementId/all-attachments", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -510,7 +504,7 @@ router.get("/:engagementId/all-attachments", requireAuth, async (req: Authentica
 // Update attachment permanence status (TabAttachment)
 router.patch("/:engagementId/tab-attachments/:attachmentId/permanence", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -545,7 +539,7 @@ router.patch("/:engagementId/tab-attachments/:attachmentId/permanence", requireA
 // Update attachment permanence status (RequestAttachment)
 router.patch("/:engagementId/request-attachments/:attachmentId/permanence", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -676,7 +670,7 @@ router.get("/client/:clientId/permanent-documents", requireAuth, async (req: Aut
 // Cross-Phase Links Summary - Get linked risks, tests, and misstatements
 router.get("/:engagementId/cross-phase-links", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }

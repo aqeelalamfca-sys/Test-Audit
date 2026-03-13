@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { z } from "zod";
 import { prisma } from "./db";
 import { requireAuth, requireMinRole, logAuditTrail, AuthenticatedRequest } from "./auth";
+import { validateEngagementAccess } from "./lib/validateEngagementAccess";
 
 
 const router = Router();
@@ -55,15 +56,7 @@ const updateSchema = z.object({
   linkedEvidenceIds: z.array(z.string()).optional(),
 });
 
-async function validateEngagementAccess(engagementId: string, userId: string, firmId: string | null): Promise<{ valid: boolean; engagement?: any; error?: string }> {
-  if (!firmId) return { valid: false, error: "User not associated with a firm" };
-  const engagement = await prisma.engagement.findUnique({
-    where: { id: engagementId },
-    select: { id: true, firmId: true, currentPhase: true },
-  });
-  if (!engagement || engagement.firmId !== firmId) return { valid: false, error: "Engagement not found" };
-  return { valid: true, engagement };
-}
+
 
 router.post("/", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -156,7 +149,7 @@ router.post("/", requireAuth, async (req: AuthenticatedRequest, res: Response) =
 
 router.get("/:engagementId/stats/summary", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(access.error === "User not associated with a firm" ? 400 : 404).json({ error: access.error });
     }
@@ -273,7 +266,7 @@ router.get("/:engagementId", requireAuth, async (req: AuthenticatedRequest, res:
     const firmId = req.user!.firmId;
     const { engagementId } = req.params;
 
-    const access = await validateEngagementAccess(engagementId, req.user!.id, firmId);
+    const access = await validateEngagementAccess(engagementId, firmId);
     if (!access.valid) {
       return res.status(access.error === "User not associated with a firm" ? 400 : 404).json({ error: access.error });
     }
@@ -295,7 +288,7 @@ router.get("/:engagementId", requireAuth, async (req: AuthenticatedRequest, res:
 
 router.get("/:engagementId/:id", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(access.error === "User not associated with a firm" ? 400 : 404).json({ error: access.error });
     }
@@ -317,7 +310,7 @@ router.get("/:engagementId/:id", requireAuth, async (req: AuthenticatedRequest, 
 
 router.patch("/:engagementId/:id", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(access.error === "User not associated with a firm" ? 400 : 404).json({ error: access.error });
     }
@@ -369,7 +362,7 @@ router.patch("/:engagementId/:id", requireAuth, async (req: AuthenticatedRequest
 
 router.delete("/:engagementId/:id", requireAuth, requireMinRole("MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(access.error === "User not associated with a firm" ? 400 : 404).json({ error: access.error });
     }
@@ -410,7 +403,7 @@ router.delete("/:engagementId/:id", requireAuth, requireMinRole("MANAGER"), asyn
 
 router.post("/:engagementId/:id/management-accept", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(access.error === "User not associated with a firm" ? 400 : 404).json({ error: access.error });
     }
@@ -458,7 +451,7 @@ router.post("/:engagementId/:id/management-accept", requireAuth, async (req: Aut
 
 router.post("/:engagementId/:id/review", requireAuth, requireMinRole("MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(access.error === "User not associated with a firm" ? 400 : 404).json({ error: access.error });
     }

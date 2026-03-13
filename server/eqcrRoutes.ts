@@ -6,6 +6,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { nanoid } from "nanoid";
+import { validateEngagementAccess } from "./lib/validateEngagementAccess";
 
 const router = Router();
 
@@ -53,12 +54,7 @@ const DEFAULT_CHECKLIST_ITEMS = [
   { srNo: 7, checklistArea: "Discussion with engagement partner" }
 ];
 
-async function validateEngagementAccess(engagementId: string, firmId: string | null) {
-  if (!firmId) return { valid: false, error: "User not associated with a firm" };
-  const engagement = await prisma.engagement.findFirst({ where: { id: engagementId, firmId } });
-  if (!engagement) return { valid: false, error: "Engagement not found" };
-  return { valid: true, engagement };
-}
+
 
 router.get("/:engagementId/assignment", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {

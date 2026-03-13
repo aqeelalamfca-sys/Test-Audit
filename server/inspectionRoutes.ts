@@ -2,15 +2,11 @@ import { Router, Response } from "express";
 import { createHash } from "crypto";
 import { prisma } from "./db";
 import { requireAuth, requireMinRole, logAuditTrail, type AuthenticatedRequest } from "./auth";
+import { validateEngagementAccess } from "./lib/validateEngagementAccess";
 
 const router = Router();
 
-async function validateEngagementAccess(engagementId: string, userId: string, firmId: string | undefined) {
-  if (!firmId) return { valid: false, error: "User not associated with a firm" };
-  const engagement = await prisma.engagement.findFirst({ where: { id: engagementId, firmId } });
-  if (!engagement) return { valid: false, error: "Engagement not found" };
-  return { valid: true, engagement };
-}
+
 
 async function enforceArchiveImmutability(engagementId: string, res: Response): Promise<boolean> {
   const archive = await prisma.archivePackage.findUnique({ where: { engagementId } });
@@ -23,7 +19,7 @@ async function enforceArchiveImmutability(engagementId: string, res: Response): 
 
 router.get("/:engagementId/stats", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
     const eid = req.params.engagementId;
 
@@ -107,7 +103,7 @@ router.get("/:engagementId/stats", requireAuth, async (req: AuthenticatedRequest
 
 router.get("/:engagementId/readiness", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
     const eid = req.params.engagementId;
 
@@ -200,7 +196,7 @@ router.get("/:engagementId/readiness", requireAuth, async (req: AuthenticatedReq
 
 router.get("/:engagementId/archive", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const archive = await prisma.archivePackage.findUnique({
@@ -219,7 +215,7 @@ router.get("/:engagementId/archive", requireAuth, async (req: AuthenticatedReque
 
 router.post("/:engagementId/archive/build", requireAuth, requireMinRole("PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
     const eid = req.params.engagementId;
 
@@ -310,7 +306,7 @@ router.post("/:engagementId/archive/build", requireAuth, requireMinRole("PARTNER
 
 router.post("/:engagementId/archive/seal", requireAuth, requireMinRole("PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
     const eid = req.params.engagementId;
 
@@ -350,7 +346,7 @@ router.post("/:engagementId/archive/seal", requireAuth, requireMinRole("PARTNER"
 
 router.post("/:engagementId/archive/release", requireAuth, requireMinRole("PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
     const eid = req.params.engagementId;
 
@@ -388,7 +384,7 @@ router.post("/:engagementId/archive/release", requireAuth, requireMinRole("PARTN
 
 router.post("/:engagementId/archive/generate-index", requireAuth, requireMinRole("PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
     const eid = req.params.engagementId;
 
@@ -486,7 +482,7 @@ router.post("/:engagementId/archive/generate-index", requireAuth, requireMinRole
 
 router.get("/:engagementId/final-reports", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
     const eid = req.params.engagementId;
 
@@ -513,7 +509,7 @@ router.get("/:engagementId/final-reports", requireAuth, async (req: Authenticate
 
 router.get("/:engagementId/review-history", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
     const eid = req.params.engagementId;
 
@@ -569,7 +565,7 @@ router.get("/:engagementId/review-history", requireAuth, async (req: Authenticat
 
 router.get("/:engagementId/audit-trail", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const trail = await prisma.auditTrail.findMany({
@@ -586,7 +582,7 @@ router.get("/:engagementId/audit-trail", requireAuth, async (req: AuthenticatedR
 
 router.get("/:engagementId/working-papers", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
     const eid = req.params.engagementId;
 
@@ -621,7 +617,7 @@ router.get("/:engagementId/working-papers", requireAuth, async (req: Authenticat
 
 router.get("/:engagementId/exports", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const exports = await prisma.exportLog.findMany({
@@ -637,7 +633,7 @@ router.get("/:engagementId/exports", requireAuth, async (req: AuthenticatedReque
 
 router.post("/:engagementId/exports", requireAuth, requireMinRole("MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
     const eid = req.params.engagementId;
 
@@ -670,7 +666,7 @@ router.post("/:engagementId/exports", requireAuth, requireMinRole("MANAGER"), as
 
 router.post("/:engagementId/generate-completeness-analysis", requireAuth, requireMinRole("MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
     const eid = req.params.engagementId;
 
@@ -707,7 +703,7 @@ router.post("/:engagementId/generate-completeness-analysis", requireAuth, requir
 
 router.post("/:engagementId/generate-gap-summary", requireAuth, requireMinRole("MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
     const eid = req.params.engagementId;
 
