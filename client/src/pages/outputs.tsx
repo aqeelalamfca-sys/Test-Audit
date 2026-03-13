@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { useWorkspace } from "@/lib/workspace-context";
@@ -690,7 +691,10 @@ export default function OutputsPage() {
                     Deliverables
                   </CardTitle>
                   <CardDescription>
-                    {deliverables.length} deliverable{deliverables.length !== 1 ? "s" : ""} tracked
+                    {deliverables.length} deliverable{deliverables.length !== 1 ? "s" : ""} tracked.{" "}
+                    <Link href={`/workspace/${engagementId}/deliverables`} className="text-primary hover:underline">
+                      Go to Deliverables Register
+                    </Link>
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-3">

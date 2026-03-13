@@ -2649,7 +2649,11 @@ export default function Finalization() {
                 Forming an Opinion & Reporting — ISA 700/705/706
               </CardTitle>
               <CardDescription>
-                Form an opinion on the financial statements and issue the auditor's report.
+                Form an opinion on the financial statements and issue the auditor's report.{" "}
+                To manage formal deliverables and issue reports, go to the{" "}
+                <Link href={`/workspace/${engagementId}/deliverables`} className="text-primary hover:underline">
+                  Deliverables Register
+                </Link>.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">

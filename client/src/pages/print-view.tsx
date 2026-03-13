@@ -179,6 +179,16 @@ export default function PrintView() {
     enabled: !!engagementId
   });
 
+  const { data: preReportCheck } = useQuery<{ readyForRelease: boolean; issues: Array<{ type: string; count?: number; message: string }> }>({
+    queryKey: [`/api/finalization/${engagementId}/pre-report-check`],
+    queryFn: async () => {
+      const res = await fetchWithAuth(`/api/finalization/${engagementId}/pre-report-check`);
+      if (!res.ok) throw new Error("Failed to fetch pre-report check");
+      return res.json();
+    },
+    enabled: !!engagementId
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: typeof newDeliverable) => {
       const res = await fetchWithAuth(`/api/deliverables/${engagementId}`, {
@@ -870,6 +880,25 @@ export default function PrintView() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {preReportCheck && !preReportCheck.readyForRelease && (
+            <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/5 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                <h4 className="font-semibold text-destructive">Pre-Report Blockers</h4>
+              </div>
+              <p className="text-sm text-muted-foreground mb-2">
+                The following items must be resolved before any deliverable can be issued:
+              </p>
+              <ul className="space-y-1">
+                {preReportCheck.issues.map((issue, idx) => (
+                  <li key={idx} className="text-sm flex items-center gap-2">
+                    <AlertCircle className="h-3 w-3 text-destructive flex-shrink-0" />
+                    <span>{issue.message}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">Loading deliverables...</div>
           ) : deliverables.length === 0 ? (
@@ -985,16 +1014,22 @@ export default function PrintView() {
                     )}
 
                     {deliverable.status === "FINAL" && canIssue && (
-                      <div className="flex gap-2 mt-4 pt-4 border-t">
+                      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
                         <Button
                           size="sm"
                           variant="default"
                           onClick={() => workflowMutation.mutate({ id: deliverable.id, action: "issue" })}
-                          disabled={workflowMutation.isPending || !deliverable.deliveredDate || (deliverable.deliverableType === "AUDIT_REPORT" && !deliverable.opinionType)}
+                          disabled={workflowMutation.isPending || !deliverable.deliveredDate || (deliverable.deliverableType === "AUDIT_REPORT" && !deliverable.opinionType) || (preReportCheck && !preReportCheck.readyForRelease)}
                         >
                           <Send className="h-4 w-4 mr-1" />
                           Issue Deliverable
                         </Button>
+                        {preReportCheck && !preReportCheck.readyForRelease && (
+                          <span className="text-sm text-destructive flex items-center gap-1">
+                            <AlertCircle className="h-4 w-4" />
+                            Pre-report blockers must be resolved
+                          </span>
+                        )}
                         {!deliverable.deliveredDate && (
                           <span className="text-sm text-destructive flex items-center gap-1">
                             <AlertCircle className="h-4 w-4" />

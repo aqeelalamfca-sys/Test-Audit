@@ -315,6 +315,22 @@ router.post("/:id/issue", requireAuth, requireMinRole("PARTNER"), async (req: Au
     if (existing.deliverableType === "AUDIT_REPORT" && !existing.opinionType) {
       return res.status(400).json({ error: "Opinion type is required for Audit Report" });
     }
+
+    const [openNotes, unapprovedTests, completionMemo, eqcr] = await Promise.all([
+      prisma.reviewNote.count({ where: { engagementId: existing.engagementId, status: "OPEN" } }),
+      prisma.substantiveTest.count({ where: { engagementId: existing.engagementId, managerApprovedById: null } }),
+      prisma.completionMemo.findUnique({ where: { engagementId: existing.engagementId } }),
+      prisma.eQCRAssignment.findUnique({ where: { engagementId: existing.engagementId } }),
+    ]);
+
+    const blockers: string[] = [];
+    if (openNotes > 0) blockers.push(`${openNotes} open review notes`);
+    if (unapprovedTests > 0) blockers.push(`${unapprovedTests} unapproved substantive tests`);
+    if (!completionMemo?.partnerApprovedById) blockers.push("Completion memo not partner-approved");
+    if (eqcr?.isRequired && eqcr.status !== "CLEARED") blockers.push("EQCR clearance required");
+    if (blockers.length > 0) {
+      return res.status(400).json({ error: "Pre-report blockers exist", blockers });
+    }
     
     const deliverable = await prisma.deliverable.update({
       where: { id },
