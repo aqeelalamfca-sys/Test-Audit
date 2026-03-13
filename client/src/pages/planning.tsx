@@ -3481,15 +3481,37 @@ export default function Planning() {
                   <CardDescription>ISA 315 & ISA 240 Compliant - Identifying and assessing risks of material misstatement</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" data-testid="btn-save-risk">
+                  <Button variant="outline" size="sm" data-testid="btn-save-risk"
+                    onClick={() => { saveEngine.saveDraft(); }}
+                  >
                     <CheckCircle2 className="h-4 w-4 mr-2" />
                     Save
                   </Button>
-                  <Button variant="outline" size="sm" data-testid="btn-ai-suggest-risks">
+                  <Button variant="outline" size="sm" data-testid="btn-ai-suggest-risks"
+                    onClick={runAiRiskAnalysis}
+                    disabled={isRunningAiRiskAnalysis}
+                  >
                     <Brain className="h-4 w-4 mr-2" />
                     AI Suggest Risks
                   </Button>
-                  <Button size="sm" data-testid="btn-generate-risk-response">
+                  <Button size="sm" data-testid="btn-generate-risk-response"
+                    onClick={() => {
+                      const responses = assertionLevelRisks.map(risk => ({
+                        riskId: risk.id,
+                        fsHeadKey: risk.fsHeadKey,
+                        fsHeadLabel: risk.fsHeadLabel || risk.fsHeadKey,
+                        responseType: risk.significantRisk ? 'substantive-only' : 'combined',
+                        procedures: [
+                          `Perform substantive analytical procedures on ${risk.fsHeadLabel || risk.fsHeadKey}.`,
+                          `Obtain third-party confirmations where applicable for ${risk.fsHeadLabel || risk.fsHeadKey}.`,
+                          ...(risk.significantRisk ? [`Design extended procedures specifically addressing significant risk for ${risk.fsHeadLabel || risk.fsHeadKey} per ISA 330.21.`] : [])
+                        ]
+                      }));
+                      setRiskResponses(responses);
+                      saveEngine.signalChange();
+                      toast({ title: "Risk Response Plan Generated", description: `Generated responses for ${responses.length} risks per ISA 330.` });
+                    }}
+                  >
                     <FileText className="h-4 w-4 mr-2" />
                     Generate Risk Response Plan
                   </Button>
@@ -5735,11 +5757,34 @@ export default function Planning() {
                   <Button variant="outline" size="sm" data-testid="btn-calculate-materiality"
                     disabled={!draftFsData && !trialBalance.fileUploaded}
                     title={!draftFsData && !trialBalance.fileUploaded ? "Upload Trial Balance data first to calculate materiality" : "Calculate materiality thresholds"}
+                    onClick={() => {
+                      const pbt = parseFloat(trialBalance.profitBeforeTax.replace(/,/g, '')) || 0;
+                      const rev = parseFloat(trialBalance.revenue.replace(/,/g, '')) || 0;
+                      const assets = parseFloat(trialBalance.totalAssets.replace(/,/g, '')) || 0;
+                      let benchmark = 'pbt';
+                      if (pbt <= 0 && rev > 0) benchmark = 'revenue';
+                      else if (pbt <= 0 && assets > 0) benchmark = 'assets';
+                      setMateriality(prev => ({ ...prev, selectedBenchmark: benchmark, benchmarkPercentage: benchmark === 'pbt' ? '5' : benchmark === 'revenue' ? '2' : '1' }));
+                      saveEngine.signalChange();
+                      toast({ title: "Materiality Calculated", description: `Benchmark set to ${benchmark.toUpperCase()} with standard ISA 320 percentage.` });
+                    }}
                   >
                     <Calculator className="h-4 w-4 mr-2" />
                     Calculate
                   </Button>
-                  <Button size="sm" data-testid="btn-apply-partner-override">
+                  <Button size="sm" data-testid="btn-apply-partner-override"
+                    onClick={() => {
+                      const overrideValue = prompt("Enter Partner Override for Overall Materiality (amount):");
+                      if (overrideValue && !isNaN(Number(overrideValue))) {
+                        const om = Number(overrideValue);
+                        const pbt = parseFloat(trialBalance.profitBeforeTax.replace(/,/g, '')) || parseFloat(trialBalance.revenue.replace(/,/g, '')) || om;
+                        const pct = pbt > 0 ? ((om / pbt) * 100).toFixed(2) : '5';
+                        setMateriality(prev => ({ ...prev, benchmarkPercentage: pct }));
+                        saveEngine.signalChange();
+                        toast({ title: "Partner Override Applied", description: `Overall Materiality overridden to ${Number(overrideValue).toLocaleString()}.` });
+                      }
+                    }}
+                  >
                     <UserCheck className="h-4 w-4 mr-2" />
                     Apply Partner Override
                   </Button>
@@ -5999,15 +6044,37 @@ export default function Planning() {
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" data-testid="btn-ai-generate-program"
                     title="AI-generate audit program procedures"
+                    onClick={() => {
+                      const defaultPrograms = assertionLevelRisks.map(risk => ({
+                        fsHeadKey: risk.fsHeadKey,
+                        fsHeadLabel: risk.fsHeadLabel || risk.fsHeadKey,
+                        procedures: [
+                          { id: `proc-${risk.id}-1`, description: `Obtain and review ${risk.fsHeadLabel || risk.fsHeadKey} supporting documentation.`, type: 'substantive' as const, status: 'not-started' as const },
+                          { id: `proc-${risk.id}-2`, description: `Perform analytical review of ${risk.fsHeadLabel || risk.fsHeadKey} movements.`, type: 'analytical' as const, status: 'not-started' as const },
+                          ...(risk.significantRisk ? [{ id: `proc-${risk.id}-3`, description: `Extended testing for significant risk: ${risk.fsHeadLabel || risk.fsHeadKey}.`, type: 'substantive' as const, status: 'not-started' as const }] : [])
+                        ]
+                      }));
+                      setAuditPrograms(defaultPrograms);
+                      saveEngine.signalChange();
+                      toast({ title: "Audit Program Generated", description: `Generated procedures for ${defaultPrograms.length} FS heads from risk matrix.` });
+                    }}
                   >
                     <Brain className="h-4 w-4 mr-2" />
                     AI Generate
                   </Button>
-                  <Button variant="outline" size="sm" data-testid="btn-edit-program">
+                  <Button variant="outline" size="sm" data-testid="btn-edit-program"
+                    onClick={() => toast({ title: "Edit Mode", description: "Edit procedures directly in the table below." })}
+                  >
                     <FileText className="h-4 w-4 mr-2" />
                     Edit
                   </Button>
-                  <Button size="sm" data-testid="btn-lock-program-reviewed">
+                  <Button size="sm" data-testid="btn-lock-program-reviewed"
+                    onClick={() => {
+                      setAuditPrograms(prev => prev.map(p => ({ ...p, procedures: p.procedures.map((pr: any) => ({ ...pr, status: 'reviewed' })) })));
+                      saveEngine.signalChange();
+                      toast({ title: "Program Locked", description: "Audit program procedures marked as reviewed." });
+                    }}
+                  >
                     <Lock className="h-4 w-4 mr-2" />
                     Lock as Reviewed
                   </Button>
