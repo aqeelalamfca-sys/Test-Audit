@@ -38,6 +38,7 @@ COPY --from=proddeps --chown=appuser:appgroup /app/node_modules ./node_modules
 COPY --from=proddeps --chown=appuser:appgroup /app/prisma ./prisma
 COPY --from=build --chown=appuser:appgroup /app/dist ./dist
 COPY --from=build --chown=appuser:appgroup /app/package.json ./
+COPY --from=build --chown=appuser:appgroup /app/server/template-vault ./server/template-vault
 COPY --chown=appuser:appgroup docker/docker-entrypoint.sh ./docker-entrypoint.sh
 
 RUN curl -sS -o /app/rds-combined-ca-bundle.pem \

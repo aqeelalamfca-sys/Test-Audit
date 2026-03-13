@@ -3,13 +3,11 @@ import { requireAuth, AuthenticatedRequest } from "./auth";
 import { prisma } from "./db";
 import * as fs from "fs";
 import * as path from "path";
-import { fileURLToPath } from "url";
 import ExcelJS from "exceljs";
 
 const router = Router();
 
-const __filename_local = fileURLToPath(import.meta.url);
-const __dirname_local = path.dirname(__filename_local);
+const __dirname_local = path.resolve(process.cwd(), "server");
 
 interface TemplateMeta {
   id: string;
