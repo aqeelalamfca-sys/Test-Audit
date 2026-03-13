@@ -14,11 +14,11 @@ router.get("/:engagementId/readiness", requireAuth, async (req: AuthenticatedReq
     const { engagementId } = req.params;
     const firmId = req.user!.firmId;
 
-    const engagement = await prisma.engagement.findUnique({
+    const engagement = await prisma.engagement.findFirst({
       where: { id: engagementId, firmId },
       include: {
         client: true,
-        team: { include: { user: { select: { id: true, name: true, email: true, role: true } } } },
+        team: { include: { user: { select: { id: true, fullName: true, email: true, role: true } } } },
       },
     });
 
@@ -179,7 +179,7 @@ router.get("/:engagementId/readiness", requireAuth, async (req: AuthenticatedReq
       },
       team: engagement.team.map(t => ({
         userId: t.user.id,
-        name: t.user.name,
+        name: t.user.fullName,
         role: t.user.role,
         teamRole: t.role,
       })),
