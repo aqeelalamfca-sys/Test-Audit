@@ -56,6 +56,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
+import { AIHelpIcon } from "@/components/ai-help";
 
 interface ReviewNoteData {
   id: string;
@@ -883,7 +884,10 @@ export default function ReviewNotesPage() {
 
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="create-subject">Subject</Label>
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="create-subject">Subject</Label>
+                <AIHelpIcon fieldName="reviewNoteCreation" category="reviewNotes" size="sm" />
+              </div>
               <Input
                 id="create-subject"
                 placeholder="Enter note subject..."
@@ -1418,7 +1422,10 @@ export default function ReviewNotesPage() {
           <DialogHeader>
             <DialogTitle>Clear Review Note</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">Provide a resolution note for clearing this review note.</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm text-muted-foreground">Provide a resolution note for clearing this review note.</p>
+            <AIHelpIcon fieldName="reviewNoteResolution" category="reviewNotes" size="sm" />
+          </div>
           <Textarea
             value={resolution}
             onChange={(e) => setResolution(e.target.value)}
