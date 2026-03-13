@@ -1,0 +1,3816 @@
+[1G[0K⠙[1G[0K[Cache] Using in-memory cache backend
+[DB] Checking database readiness (max 90s)...
+5:13:46 PM INFO  [express] serving on 0.0.0.0:5000
+[DB] Database ready after 1 attempt(s).
+Seeding permissions...
+Created/updated 61 permissions
+Role permissions assigned
+5:13:46 PM INFO  [startup] Permissions seeded successfully
+[Seed] SuperAdmin password does not meet policy: Password must be at least 10 characters, Password must contain at least one lowercase letter, Password must contain at least one uppercase letter, Password must contain at least one number, Password must contain at least one special character (@$!%*?&#^)
+[Seed] SuperAdmin will NOT be created. Fix the password and restart.
+5:13:46 PM INFO  [startup] SuperAdmin seeded successfully
+[Seed] Plans seeding complete
+5:13:46 PM INFO  [startup] Plans seeded successfully
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+Test users seeded successfully
+Demo data validation passed:
+  - COA: 96 accounts
+  - GL Entries: 775 transactions
+  - TB Rows: 96
+  - AR Parties: 18
+  - AP Parties: 18
+  - Bank Accounts: 4
+  - Opening Balance: DR=626,750,000 CR=626,750,000
+  - TB Closing: DR=1,682,495,000 CR=1,682,495,000
+Seeding demo data...
+Demo data already exists, checking second client...
+Checking second client (Al-Baraka Textiles)...
+  Second client engagement already exists, skipping...
+  Al-Baraka TB data already exists, skipping TB/GL/CoA seeding...
+  [ENG-2026-003] FSHead/WP data already exists, skipping...
+Checking all-phase data completeness...
+  All-phase data already seeded, skipping...
+Linkage data already exists, skipping...
+  [ENG-2025-001] Import data already exists, skipping...
+  [ENG-2025-002] Import data already exists, skipping...
+  [ENG-2026-003] Import data already exists, skipping...
+[seedCompleteAudit] Data completeness verified for ENG-2026-003.
+5:13:52 PM INFO  [startup] Demo data seeded successfully
+Templates seeded: 0 created, 68 already existed (68 total)
+5:13:52 PM INFO  [startup] Standard templates seeded successfully
+5:13:53 PM INFO  [rls] RLS enabled {"enabled":97,"skipped":30}
+5:14:12 PM INFO  [express] HTTP request {"method":"POST","path":"/api/auth/login","statusCode":200,"durationMs":374}
+5:14:20 PM INFO  [express] HTTP request {"method":"POST","path":"/api/auth/login","statusCode":200,"durationMs":359}
+5:14:27 PM INFO  [express] HTTP request {"method":"POST","path":"/api/auth/login","statusCode":200,"durationMs":355}
+5:14:34 PM INFO  [express] HTTP request {"method":"POST","path":"/api/auth/refresh","statusCode":200,"durationMs":15}
+5:14:34 PM INFO  [express] HTTP request {"method":"GET","path":"/api/auth/ping","statusCode":200,"durationMs":16}
+5:14:34 PM INFO  [express] HTTP request {"method":"GET","path":"/api/auth/me","statusCode":200,"durationMs":17}
+5:14:34 PM INFO  [express] HTTP request {"method":"GET","path":"/api/workspace/engagements","statusCode":200,"durationMs":23}
+5:14:34 PM INFO  [express] HTTP request {"method":"GET","path":"/api/clients/authorized","statusCode":304,"durationMs":15}
+5:14:34 PM INFO  [express] HTTP request {"method":"GET","path":"/api/enforcement/ai-config","statusCode":304,"durationMs":10}
+5:14:34 PM INFO  [express] HTTP request {"method":"GET","path":"/api/review-notes-v2/stats/summary","statusCode":304,"durationMs":27}
+5:14:34 PM INFO  [express] HTTP request {"method":"GET","path":"/api/hard-controls/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":304,"durationMs":25}
+5:14:35 PM INFO  [express] HTTP request {"method":"GET","path":"/api/notifications","statusCode":304,"durationMs":14}
+5:14:35 PM INFO  [express] HTTP request {"method":"GET","path":"/api/tenant/subscription","statusCode":304,"durationMs":26}
+5:14:35 PM INFO  [express] HTTP request {"method":"GET","path":"/api/section-signoffs/1fd02a47-825c-43d7-825e-f86274fd58cb/PRE_PLANNING/acceptance","statusCode":304,"durationMs":23}
+5:14:35 PM INFO  [express] HTTP request {"method":"GET","path":"/api/ai/phase/acceptance/capabilities","statusCode":304,"durationMs":18}
+5:14:35 PM INFO  [express] HTTP request {"method":"GET","path":"/api/enforcement/status/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":304,"durationMs":58}
+[31mprisma:error[39m 
+Invalid `prisma.complianceChecklist.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:931:61
+
+  928 }
+  929 
+  930 case "completion-checklist": {
+→ 931   const checklists = await prisma.complianceChecklist.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb",
+            checklistType: "COMPLETION"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   checklistType?: true,
+        ?   checklistReference?: true,
+        ?   items?: true,
+        ?   totalItems?: true,
+        ?   completedItems?: true,
+        ?   notApplicableItems?: true,
+        ?   isComplete?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `ComplianceChecklist`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.subsequentEvent.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:943:53
+
+  940 }
+  941 
+  942 case "subsequent-events": {
+→ 943   const events = await prisma.subsequentEvent.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            id: true,
+            impactAssessment: true,
+            ~~~~~~~~~~~~~~~~
+            reviewedById: true,
+        ?   engagementId?: true,
+        ?   eventReference?: true,
+        ?   eventDate?: true,
+        ?   identifiedDate?: true,
+        ?   eventType?: true,
+        ?   status?: true,
+        ?   description?: true,
+        ?   financialImpact?: true,
+        ?   affectedAccounts?: true,
+        ?   evaluation?: true,
+        ?   actionTaken?: true,
+        ?   adjustmentReference?: true,
+        ?   disclosureReference?: true,
+        ?   cutoffDate?: true,
+        ?   identifiedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   evidenceLinks?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   identifiedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `impactAssessment` for select statement on model `SubsequentEvent`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:955:66
+
+  952 }
+  953 
+  954 case "going-concern": {
+→ 955   const gcAssessment = await prisma.goingConcernAssessment.findFirst({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            overallConclusion: true,
+            ~~~~~~~~~~~~~~~~~
+            basisForConclusion: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   managementAssessmentPeriod?: true,
+        ?   assessmentDate?: true,
+        ?   altmanZScore?: true,
+        ?   altmanZScoreResult?: true,
+        ?   currentRatio?: true,
+        ?   quickRatio?: true,
+        ?   debtEquityRatio?: true,
+        ?   interestCoverage?: true,
+        ?   netProfitLossTrend?: true,
+        ?   cashFlowTrend?: true,
+        ?   workingCapitalDeficit?: true,
+        ?   defaultOnLoans?: true,
+        ?   adverseKeyRatios?: true,
+        ?   lossOfKeyCustomer?: true,
+        ?   lossOfKeySupplier?: true,
+        ?   laborDifficulties?: true,
+        ?   materialShortages?: true,
+        ?   lossOfMajorMarket?: true,
+        ?   legalProceedings?: true,
+        ?   regulatoryNonCompliance?: true,
+        ?   pendingLegislation?: true,
+        ?   managementPlans?: true,
+        ?   managementPlansFeasibility?: true,
+        ?   auditEvidence?: true,
+        ?   auditConclusion?: true,
+        ?   materialUncertaintyExists?: true,
+        ?   reportingImplications?: true,
+        ?   isaReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true,
+        ?   indicators?: true,
+        ?   _count?: true
+          }
+        })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.writtenRepresentation.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:966:57
+
+  963 }
+  964 
+  965 case "representation-letter": {
+→ 966   const reps = await prisma.writtenRepresentation.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+            representationType: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   representationText?: true,
+        ?   isStandard?: true,
+        ?   isRequired?: true,
+        ?   managementAcknowledged?: true,
+        ?   acknowledgmentDate?: true,
+        ?   signatoryName?: true,
+        ?   signatoryTitle?: true,
+        ?   evidenceReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `WrittenRepresentation`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1030:65
+
+  1027   where: { engagementId },
+  1028   select: { managerReviewedById: true, overallConclusion: true },
+  1029 });
+→ 1030 const gcForReview = await prisma.goingConcernAssessment.findFirst({
+         where: {
+           engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+         },
+         select: {
+           overallConclusion: true,
+           ~~~~~~~~~~~~~~~~~
+       ?   id?: true,
+       ?   engagementId?: true,
+       ?   managementAssessmentPeriod?: true,
+       ?   assessmentDate?: true,
+       ?   altmanZScore?: true,
+       ?   altmanZScoreResult?: true,
+       ?   currentRatio?: true,
+       ?   quickRatio?: true,
+       ?   debtEquityRatio?: true,
+       ?   interestCoverage?: true,
+       ?   netProfitLossTrend?: true,
+       ?   cashFlowTrend?: true,
+       ?   workingCapitalDeficit?: true,
+       ?   defaultOnLoans?: true,
+       ?   adverseKeyRatios?: true,
+       ?   lossOfKeyCustomer?: true,
+       ?   lossOfKeySupplier?: true,
+       ?   laborDifficulties?: true,
+       ?   materialShortages?: true,
+       ?   lossOfMajorMarket?: true,
+       ?   legalProceedings?: true,
+       ?   regulatoryNonCompliance?: true,
+       ?   pendingLegislation?: true,
+       ?   managementPlans?: true,
+       ?   managementPlansFeasibility?: true,
+       ?   auditEvidence?: true,
+       ?   auditConclusion?: true,
+       ?   materialUncertaintyExists?: true,
+       ?   reportingImplications?: true,
+       ?   isaReference?: true,
+       ?   preparedById?: true,
+       ?   preparedDate?: true,
+       ?   reviewedById?: true,
+       ?   reviewedDate?: true,
+       ?   partnerApprovedById?: true,
+       ?   partnerApprovalDate?: true,
+       ?   createdAt?: true,
+       ?   updatedAt?: true,
+       ?   engagement?: true,
+       ?   preparedBy?: true,
+       ?   reviewedBy?: true,
+       ?   partnerApprovedBy?: true,
+       ?   indicators?: true,
+       ?   _count?: true
+         }
+       })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.complianceChecklist.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:931:61
+
+  928 }
+  929 
+  930 case "completion-checklist": {
+→ 931   const checklists = await prisma.complianceChecklist.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb",
+            checklistType: "COMPLETION"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   checklistType?: true,
+        ?   checklistReference?: true,
+        ?   items?: true,
+        ?   totalItems?: true,
+        ?   completedItems?: true,
+        ?   notApplicableItems?: true,
+        ?   isComplete?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `ComplianceChecklist`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.subsequentEvent.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:943:53
+
+  940 }
+  941 
+  942 case "subsequent-events": {
+→ 943   const events = await prisma.subsequentEvent.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            id: true,
+            impactAssessment: true,
+            ~~~~~~~~~~~~~~~~
+            reviewedById: true,
+        ?   engagementId?: true,
+        ?   eventReference?: true,
+        ?   eventDate?: true,
+        ?   identifiedDate?: true,
+        ?   eventType?: true,
+        ?   status?: true,
+        ?   description?: true,
+        ?   financialImpact?: true,
+        ?   affectedAccounts?: true,
+        ?   evaluation?: true,
+        ?   actionTaken?: true,
+        ?   adjustmentReference?: true,
+        ?   disclosureReference?: true,
+        ?   cutoffDate?: true,
+        ?   identifiedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   evidenceLinks?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   identifiedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `impactAssessment` for select statement on model `SubsequentEvent`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:955:66
+
+  952 }
+  953 
+  954 case "going-concern": {
+→ 955   const gcAssessment = await prisma.goingConcernAssessment.findFirst({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            overallConclusion: true,
+            ~~~~~~~~~~~~~~~~~
+            basisForConclusion: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   managementAssessmentPeriod?: true,
+        ?   assessmentDate?: true,
+        ?   altmanZScore?: true,
+        ?   altmanZScoreResult?: true,
+        ?   currentRatio?: true,
+        ?   quickRatio?: true,
+        ?   debtEquityRatio?: true,
+        ?   interestCoverage?: true,
+        ?   netProfitLossTrend?: true,
+        ?   cashFlowTrend?: true,
+        ?   workingCapitalDeficit?: true,
+        ?   defaultOnLoans?: true,
+        ?   adverseKeyRatios?: true,
+        ?   lossOfKeyCustomer?: true,
+        ?   lossOfKeySupplier?: true,
+        ?   laborDifficulties?: true,
+        ?   materialShortages?: true,
+        ?   lossOfMajorMarket?: true,
+        ?   legalProceedings?: true,
+        ?   regulatoryNonCompliance?: true,
+        ?   pendingLegislation?: true,
+        ?   managementPlans?: true,
+        ?   managementPlansFeasibility?: true,
+        ?   auditEvidence?: true,
+        ?   auditConclusion?: true,
+        ?   materialUncertaintyExists?: true,
+        ?   reportingImplications?: true,
+        ?   isaReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true,
+        ?   indicators?: true,
+        ?   _count?: true
+          }
+        })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.writtenRepresentation.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:966:57
+
+  963 }
+  964 
+  965 case "representation-letter": {
+→ 966   const reps = await prisma.writtenRepresentation.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+            representationType: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   representationText?: true,
+        ?   isStandard?: true,
+        ?   isRequired?: true,
+        ?   managementAcknowledged?: true,
+        ?   acknowledgmentDate?: true,
+        ?   signatoryName?: true,
+        ?   signatoryTitle?: true,
+        ?   evidenceReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `WrittenRepresentation`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1030:65
+
+  1027   where: { engagementId },
+  1028   select: { managerReviewedById: true, overallConclusion: true },
+  1029 });
+→ 1030 const gcForReview = await prisma.goingConcernAssessment.findFirst({
+         where: {
+           engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+         },
+         select: {
+           overallConclusion: true,
+           ~~~~~~~~~~~~~~~~~
+       ?   id?: true,
+       ?   engagementId?: true,
+       ?   managementAssessmentPeriod?: true,
+       ?   assessmentDate?: true,
+       ?   altmanZScore?: true,
+       ?   altmanZScoreResult?: true,
+       ?   currentRatio?: true,
+       ?   quickRatio?: true,
+       ?   debtEquityRatio?: true,
+       ?   interestCoverage?: true,
+       ?   netProfitLossTrend?: true,
+       ?   cashFlowTrend?: true,
+       ?   workingCapitalDeficit?: true,
+       ?   defaultOnLoans?: true,
+       ?   adverseKeyRatios?: true,
+       ?   lossOfKeyCustomer?: true,
+       ?   lossOfKeySupplier?: true,
+       ?   laborDifficulties?: true,
+       ?   materialShortages?: true,
+       ?   lossOfMajorMarket?: true,
+       ?   legalProceedings?: true,
+       ?   regulatoryNonCompliance?: true,
+       ?   pendingLegislation?: true,
+       ?   managementPlans?: true,
+       ?   managementPlansFeasibility?: true,
+       ?   auditEvidence?: true,
+       ?   auditConclusion?: true,
+       ?   materialUncertaintyExists?: true,
+       ?   reportingImplications?: true,
+       ?   isaReference?: true,
+       ?   preparedById?: true,
+       ?   preparedDate?: true,
+       ?   reviewedById?: true,
+       ?   reviewedDate?: true,
+       ?   partnerApprovedById?: true,
+       ?   partnerApprovalDate?: true,
+       ?   createdAt?: true,
+       ?   updatedAt?: true,
+       ?   engagement?: true,
+       ?   preparedBy?: true,
+       ?   reviewedBy?: true,
+       ?   partnerApprovedBy?: true,
+       ?   indicators?: true,
+       ?   _count?: true
+         }
+       })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1062:51
+
+  1059 }
+  1060 
+  1061 case "opinion-determined": {
+→ 1062   const engine = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             partnerDecision: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1074:56
+
+  1071 }
+  1072 
+  1073 case "basis-documented": {
+→ 1074   const engineBasis = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             justification: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1062:51
+
+  1059 }
+  1060 
+  1061 case "opinion-determined": {
+→ 1062   const engine = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             partnerDecision: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1074:56
+
+  1071 }
+  1072 
+  1073 case "basis-documented": {
+→ 1074   const engineBasis = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             justification: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+5:14:35 PM INFO  [express] HTTP request {"method":"GET","path":"/api/phase-state/1fd02a47-825c-43d7-825e-f86274fd58cb/state","statusCode":304,"durationMs":309}
+5:14:50 PM INFO  [express] HTTP request {"method":"POST","path":"/api/auth/login","statusCode":200,"durationMs":430}
+5:14:50 PM INFO  [express] HTTP request {"method":"GET","path":"/api/engagements","statusCode":200,"durationMs":23}
+5:14:50 PM INFO  [express] HTTP request {"method":"GET","path":"/api/engagements/1fd02a47-825c-43d7-825e-f86274fd58cb/resume","statusCode":200,"durationMs":21}
+[31mprisma:error[39m 
+Invalid `prisma.complianceChecklist.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:931:61
+
+  928 }
+  929 
+  930 case "completion-checklist": {
+→ 931   const checklists = await prisma.complianceChecklist.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb",
+            checklistType: "COMPLETION"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   checklistType?: true,
+        ?   checklistReference?: true,
+        ?   items?: true,
+        ?   totalItems?: true,
+        ?   completedItems?: true,
+        ?   notApplicableItems?: true,
+        ?   isComplete?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `ComplianceChecklist`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.subsequentEvent.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:943:53
+
+  940 }
+  941 
+  942 case "subsequent-events": {
+→ 943   const events = await prisma.subsequentEvent.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            id: true,
+            impactAssessment: true,
+            ~~~~~~~~~~~~~~~~
+            reviewedById: true,
+        ?   engagementId?: true,
+        ?   eventReference?: true,
+        ?   eventDate?: true,
+        ?   identifiedDate?: true,
+        ?   eventType?: true,
+        ?   status?: true,
+        ?   description?: true,
+        ?   financialImpact?: true,
+        ?   affectedAccounts?: true,
+        ?   evaluation?: true,
+        ?   actionTaken?: true,
+        ?   adjustmentReference?: true,
+        ?   disclosureReference?: true,
+        ?   cutoffDate?: true,
+        ?   identifiedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   evidenceLinks?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   identifiedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `impactAssessment` for select statement on model `SubsequentEvent`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:955:66
+
+  952 }
+  953 
+  954 case "going-concern": {
+→ 955   const gcAssessment = await prisma.goingConcernAssessment.findFirst({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            overallConclusion: true,
+            ~~~~~~~~~~~~~~~~~
+            basisForConclusion: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   managementAssessmentPeriod?: true,
+        ?   assessmentDate?: true,
+        ?   altmanZScore?: true,
+        ?   altmanZScoreResult?: true,
+        ?   currentRatio?: true,
+        ?   quickRatio?: true,
+        ?   debtEquityRatio?: true,
+        ?   interestCoverage?: true,
+        ?   netProfitLossTrend?: true,
+        ?   cashFlowTrend?: true,
+        ?   workingCapitalDeficit?: true,
+        ?   defaultOnLoans?: true,
+        ?   adverseKeyRatios?: true,
+        ?   lossOfKeyCustomer?: true,
+        ?   lossOfKeySupplier?: true,
+        ?   laborDifficulties?: true,
+        ?   materialShortages?: true,
+        ?   lossOfMajorMarket?: true,
+        ?   legalProceedings?: true,
+        ?   regulatoryNonCompliance?: true,
+        ?   pendingLegislation?: true,
+        ?   managementPlans?: true,
+        ?   managementPlansFeasibility?: true,
+        ?   auditEvidence?: true,
+        ?   auditConclusion?: true,
+        ?   materialUncertaintyExists?: true,
+        ?   reportingImplications?: true,
+        ?   isaReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true,
+        ?   indicators?: true,
+        ?   _count?: true
+          }
+        })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.writtenRepresentation.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:966:57
+
+  963 }
+  964 
+  965 case "representation-letter": {
+→ 966   const reps = await prisma.writtenRepresentation.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+            representationType: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   representationText?: true,
+        ?   isStandard?: true,
+        ?   isRequired?: true,
+        ?   managementAcknowledged?: true,
+        ?   acknowledgmentDate?: true,
+        ?   signatoryName?: true,
+        ?   signatoryTitle?: true,
+        ?   evidenceReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `WrittenRepresentation`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1030:65
+
+  1027   where: { engagementId },
+  1028   select: { managerReviewedById: true, overallConclusion: true },
+  1029 });
+→ 1030 const gcForReview = await prisma.goingConcernAssessment.findFirst({
+         where: {
+           engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+         },
+         select: {
+           overallConclusion: true,
+           ~~~~~~~~~~~~~~~~~
+       ?   id?: true,
+       ?   engagementId?: true,
+       ?   managementAssessmentPeriod?: true,
+       ?   assessmentDate?: true,
+       ?   altmanZScore?: true,
+       ?   altmanZScoreResult?: true,
+       ?   currentRatio?: true,
+       ?   quickRatio?: true,
+       ?   debtEquityRatio?: true,
+       ?   interestCoverage?: true,
+       ?   netProfitLossTrend?: true,
+       ?   cashFlowTrend?: true,
+       ?   workingCapitalDeficit?: true,
+       ?   defaultOnLoans?: true,
+       ?   adverseKeyRatios?: true,
+       ?   lossOfKeyCustomer?: true,
+       ?   lossOfKeySupplier?: true,
+       ?   laborDifficulties?: true,
+       ?   materialShortages?: true,
+       ?   lossOfMajorMarket?: true,
+       ?   legalProceedings?: true,
+       ?   regulatoryNonCompliance?: true,
+       ?   pendingLegislation?: true,
+       ?   managementPlans?: true,
+       ?   managementPlansFeasibility?: true,
+       ?   auditEvidence?: true,
+       ?   auditConclusion?: true,
+       ?   materialUncertaintyExists?: true,
+       ?   reportingImplications?: true,
+       ?   isaReference?: true,
+       ?   preparedById?: true,
+       ?   preparedDate?: true,
+       ?   reviewedById?: true,
+       ?   reviewedDate?: true,
+       ?   partnerApprovedById?: true,
+       ?   partnerApprovalDate?: true,
+       ?   createdAt?: true,
+       ?   updatedAt?: true,
+       ?   engagement?: true,
+       ?   preparedBy?: true,
+       ?   reviewedBy?: true,
+       ?   partnerApprovedBy?: true,
+       ?   indicators?: true,
+       ?   _count?: true
+         }
+       })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.complianceChecklist.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:931:61
+
+  928 }
+  929 
+  930 case "completion-checklist": {
+→ 931   const checklists = await prisma.complianceChecklist.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb",
+            checklistType: "COMPLETION"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   checklistType?: true,
+        ?   checklistReference?: true,
+        ?   items?: true,
+        ?   totalItems?: true,
+        ?   completedItems?: true,
+        ?   notApplicableItems?: true,
+        ?   isComplete?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `ComplianceChecklist`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.subsequentEvent.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:943:53
+
+  940 }
+  941 
+  942 case "subsequent-events": {
+→ 943   const events = await prisma.subsequentEvent.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            id: true,
+            impactAssessment: true,
+            ~~~~~~~~~~~~~~~~
+            reviewedById: true,
+        ?   engagementId?: true,
+        ?   eventReference?: true,
+        ?   eventDate?: true,
+        ?   identifiedDate?: true,
+        ?   eventType?: true,
+        ?   status?: true,
+        ?   description?: true,
+        ?   financialImpact?: true,
+        ?   affectedAccounts?: true,
+        ?   evaluation?: true,
+        ?   actionTaken?: true,
+        ?   adjustmentReference?: true,
+        ?   disclosureReference?: true,
+        ?   cutoffDate?: true,
+        ?   identifiedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   evidenceLinks?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   identifiedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `impactAssessment` for select statement on model `SubsequentEvent`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:955:66
+
+  952 }
+  953 
+  954 case "going-concern": {
+→ 955   const gcAssessment = await prisma.goingConcernAssessment.findFirst({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            overallConclusion: true,
+            ~~~~~~~~~~~~~~~~~
+            basisForConclusion: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   managementAssessmentPeriod?: true,
+        ?   assessmentDate?: true,
+        ?   altmanZScore?: true,
+        ?   altmanZScoreResult?: true,
+        ?   currentRatio?: true,
+        ?   quickRatio?: true,
+        ?   debtEquityRatio?: true,
+        ?   interestCoverage?: true,
+        ?   netProfitLossTrend?: true,
+        ?   cashFlowTrend?: true,
+        ?   workingCapitalDeficit?: true,
+        ?   defaultOnLoans?: true,
+        ?   adverseKeyRatios?: true,
+        ?   lossOfKeyCustomer?: true,
+        ?   lossOfKeySupplier?: true,
+        ?   laborDifficulties?: true,
+        ?   materialShortages?: true,
+        ?   lossOfMajorMarket?: true,
+        ?   legalProceedings?: true,
+        ?   regulatoryNonCompliance?: true,
+        ?   pendingLegislation?: true,
+        ?   managementPlans?: true,
+        ?   managementPlansFeasibility?: true,
+        ?   auditEvidence?: true,
+        ?   auditConclusion?: true,
+        ?   materialUncertaintyExists?: true,
+        ?   reportingImplications?: true,
+        ?   isaReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true,
+        ?   indicators?: true,
+        ?   _count?: true
+          }
+        })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.writtenRepresentation.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:966:57
+
+  963 }
+  964 
+  965 case "representation-letter": {
+→ 966   const reps = await prisma.writtenRepresentation.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+            representationType: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   representationText?: true,
+        ?   isStandard?: true,
+        ?   isRequired?: true,
+        ?   managementAcknowledged?: true,
+        ?   acknowledgmentDate?: true,
+        ?   signatoryName?: true,
+        ?   signatoryTitle?: true,
+        ?   evidenceReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `WrittenRepresentation`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1030:65
+
+  1027   where: { engagementId },
+  1028   select: { managerReviewedById: true, overallConclusion: true },
+  1029 });
+→ 1030 const gcForReview = await prisma.goingConcernAssessment.findFirst({
+         where: {
+           engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+         },
+         select: {
+           overallConclusion: true,
+           ~~~~~~~~~~~~~~~~~
+       ?   id?: true,
+       ?   engagementId?: true,
+       ?   managementAssessmentPeriod?: true,
+       ?   assessmentDate?: true,
+       ?   altmanZScore?: true,
+       ?   altmanZScoreResult?: true,
+       ?   currentRatio?: true,
+       ?   quickRatio?: true,
+       ?   debtEquityRatio?: true,
+       ?   interestCoverage?: true,
+       ?   netProfitLossTrend?: true,
+       ?   cashFlowTrend?: true,
+       ?   workingCapitalDeficit?: true,
+       ?   defaultOnLoans?: true,
+       ?   adverseKeyRatios?: true,
+       ?   lossOfKeyCustomer?: true,
+       ?   lossOfKeySupplier?: true,
+       ?   laborDifficulties?: true,
+       ?   materialShortages?: true,
+       ?   lossOfMajorMarket?: true,
+       ?   legalProceedings?: true,
+       ?   regulatoryNonCompliance?: true,
+       ?   pendingLegislation?: true,
+       ?   managementPlans?: true,
+       ?   managementPlansFeasibility?: true,
+       ?   auditEvidence?: true,
+       ?   auditConclusion?: true,
+       ?   materialUncertaintyExists?: true,
+       ?   reportingImplications?: true,
+       ?   isaReference?: true,
+       ?   preparedById?: true,
+       ?   preparedDate?: true,
+       ?   reviewedById?: true,
+       ?   reviewedDate?: true,
+       ?   partnerApprovedById?: true,
+       ?   partnerApprovalDate?: true,
+       ?   createdAt?: true,
+       ?   updatedAt?: true,
+       ?   engagement?: true,
+       ?   preparedBy?: true,
+       ?   reviewedBy?: true,
+       ?   partnerApprovedBy?: true,
+       ?   indicators?: true,
+       ?   _count?: true
+         }
+       })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1062:51
+
+  1059 }
+  1060 
+  1061 case "opinion-determined": {
+→ 1062   const engine = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             partnerDecision: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1074:56
+
+  1071 }
+  1072 
+  1073 case "basis-documented": {
+→ 1074   const engineBasis = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             justification: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1062:51
+
+  1059 }
+  1060 
+  1061 case "opinion-determined": {
+→ 1062   const engine = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             partnerDecision: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1074:56
+
+  1071 }
+  1072 
+  1073 case "basis-documented": {
+→ 1074   const engineBasis = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             justification: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+5:14:51 PM INFO  [express] HTTP request {"method":"GET","path":"/api/phase-gates/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":215}
+5:14:51 PM INFO  [express] HTTP request {"method":"GET","path":"/api/phase-state/1fd02a47-825c-43d7-825e-f86274fd58cb/progress","statusCode":200,"durationMs":42}
+5:14:51 PM INFO  [express] HTTP request {"method":"GET","path":"/api/ethics/1fd02a47-825c-43d7-825e-f86274fd58cb/acceptance-data","statusCode":200,"durationMs":35}
+5:14:51 PM INFO  [express] HTTP request {"method":"GET","path":"/api/ethics/1fd02a47-825c-43d7-825e-f86274fd58cb/declarations","statusCode":200,"durationMs":20}
+5:14:51 PM INFO  [express] HTTP request {"method":"GET","path":"/api/import/1fd02a47-825c-43d7-825e-f86274fd58cb/batches","statusCode":200,"durationMs":18}
+5:14:51 PM INFO  [express] HTTP request {"method":"GET","path":"/api/import/1fd02a47-825c-43d7-825e-f86274fd58cb/validation-results","statusCode":200,"durationMs":16}
+5:14:51 PM INFO  [express] HTTP request {"method":"GET","path":"/api/import/1fd02a47-825c-43d7-825e-f86274fd58cb/coa-accounts","statusCode":200,"durationMs":15}
+5:14:51 PM INFO  [express] HTTP request {"method":"GET","path":"/api/import/1fd02a47-825c-43d7-825e-f86274fd58cb/mapping-stats","statusCode":200,"durationMs":14}
+5:14:51 PM INFO  [express] HTTP request {"method":"GET","path":"/api/materiality/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":18}
+5:14:51 PM INFO  [express] HTTP request {"method":"GET","path":"/api/risk-assessment/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":19}
+5:14:51 PM INFO  [express] HTTP request {"method":"GET","path":"/api/planning/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":18}
+5:14:51 PM INFO  [express] HTTP request {"method":"GET","path":"/api/audit-program/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":17}
+5:14:51 PM INFO  [express] HTTP request {"method":"GET","path":"/api/observations/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":17}
+5:14:51 PM INFO  [express] HTTP request {"method":"GET","path":"/api/adjustments/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":18}
+5:14:51 PM INFO  [express] HTTP request {"method":"GET","path":"/api/evidence/1fd02a47-825c-43d7-825e-f86274fd58cb/files","statusCode":200,"durationMs":17}
+5:14:51 PM INFO  [express] HTTP request {"method":"GET","path":"/api/section-signoff/1fd02a47-825c-43d7-825e-f86274fd58cb/status","statusCode":200,"durationMs":17}
+5:15:11 PM INFO  [express] HTTP request {"method":"GET","path":"/api/section-signoff/1fd02a47-825c-43d7-825e-f86274fd58cb/status","statusCode":200,"durationMs":19}
+5:15:11 PM INFO  [express] HTTP request {"method":"GET","path":"/api/phase-state/1fd02a47-825c-43d7-825e-f86274fd58cb/progress","statusCode":200,"durationMs":24}
+5:15:44 PM INFO  [express] HTTP request {"method":"GET","path":"/api/section-signoffs/1fd02a47-825c-43d7-825e-f86274fd58cb/status","statusCode":200,"durationMs":27}
+5:15:44 PM INFO  [express] HTTP request {"method":"GET","path":"/api/phase-state/1fd02a47-825c-43d7-825e-f86274fd58cb/progress","statusCode":200,"durationMs":16}
+[31mprisma:error[39m 
+Invalid `prisma.complianceChecklist.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:931:61
+
+  928 }
+  929 
+  930 case "completion-checklist": {
+→ 931   const checklists = await prisma.complianceChecklist.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb",
+            checklistType: "COMPLETION"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   checklistType?: true,
+        ?   checklistReference?: true,
+        ?   items?: true,
+        ?   totalItems?: true,
+        ?   completedItems?: true,
+        ?   notApplicableItems?: true,
+        ?   isComplete?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `ComplianceChecklist`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.subsequentEvent.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:943:53
+
+  940 }
+  941 
+  942 case "subsequent-events": {
+→ 943   const events = await prisma.subsequentEvent.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            id: true,
+            impactAssessment: true,
+            ~~~~~~~~~~~~~~~~
+            reviewedById: true,
+        ?   engagementId?: true,
+        ?   eventReference?: true,
+        ?   eventDate?: true,
+        ?   identifiedDate?: true,
+        ?   eventType?: true,
+        ?   status?: true,
+        ?   description?: true,
+        ?   financialImpact?: true,
+        ?   affectedAccounts?: true,
+        ?   evaluation?: true,
+        ?   actionTaken?: true,
+        ?   adjustmentReference?: true,
+        ?   disclosureReference?: true,
+        ?   cutoffDate?: true,
+        ?   identifiedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   evidenceLinks?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   identifiedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `impactAssessment` for select statement on model `SubsequentEvent`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:955:66
+
+  952 }
+  953 
+  954 case "going-concern": {
+→ 955   const gcAssessment = await prisma.goingConcernAssessment.findFirst({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            overallConclusion: true,
+            ~~~~~~~~~~~~~~~~~
+            basisForConclusion: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   managementAssessmentPeriod?: true,
+        ?   assessmentDate?: true,
+        ?   altmanZScore?: true,
+        ?   altmanZScoreResult?: true,
+        ?   currentRatio?: true,
+        ?   quickRatio?: true,
+        ?   debtEquityRatio?: true,
+        ?   interestCoverage?: true,
+        ?   netProfitLossTrend?: true,
+        ?   cashFlowTrend?: true,
+        ?   workingCapitalDeficit?: true,
+        ?   defaultOnLoans?: true,
+        ?   adverseKeyRatios?: true,
+        ?   lossOfKeyCustomer?: true,
+        ?   lossOfKeySupplier?: true,
+        ?   laborDifficulties?: true,
+        ?   materialShortages?: true,
+        ?   lossOfMajorMarket?: true,
+        ?   legalProceedings?: true,
+        ?   regulatoryNonCompliance?: true,
+        ?   pendingLegislation?: true,
+        ?   managementPlans?: true,
+        ?   managementPlansFeasibility?: true,
+        ?   auditEvidence?: true,
+        ?   auditConclusion?: true,
+        ?   materialUncertaintyExists?: true,
+        ?   reportingImplications?: true,
+        ?   isaReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true,
+        ?   indicators?: true,
+        ?   _count?: true
+          }
+        })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.writtenRepresentation.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:966:57
+
+  963 }
+  964 
+  965 case "representation-letter": {
+→ 966   const reps = await prisma.writtenRepresentation.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+            representationType: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   representationText?: true,
+        ?   isStandard?: true,
+        ?   isRequired?: true,
+        ?   managementAcknowledged?: true,
+        ?   acknowledgmentDate?: true,
+        ?   signatoryName?: true,
+        ?   signatoryTitle?: true,
+        ?   evidenceReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `WrittenRepresentation`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1030:65
+
+  1027   where: { engagementId },
+  1028   select: { managerReviewedById: true, overallConclusion: true },
+  1029 });
+→ 1030 const gcForReview = await prisma.goingConcernAssessment.findFirst({
+         where: {
+           engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+         },
+         select: {
+           overallConclusion: true,
+           ~~~~~~~~~~~~~~~~~
+       ?   id?: true,
+       ?   engagementId?: true,
+       ?   managementAssessmentPeriod?: true,
+       ?   assessmentDate?: true,
+       ?   altmanZScore?: true,
+       ?   altmanZScoreResult?: true,
+       ?   currentRatio?: true,
+       ?   quickRatio?: true,
+       ?   debtEquityRatio?: true,
+       ?   interestCoverage?: true,
+       ?   netProfitLossTrend?: true,
+       ?   cashFlowTrend?: true,
+       ?   workingCapitalDeficit?: true,
+       ?   defaultOnLoans?: true,
+       ?   adverseKeyRatios?: true,
+       ?   lossOfKeyCustomer?: true,
+       ?   lossOfKeySupplier?: true,
+       ?   laborDifficulties?: true,
+       ?   materialShortages?: true,
+       ?   lossOfMajorMarket?: true,
+       ?   legalProceedings?: true,
+       ?   regulatoryNonCompliance?: true,
+       ?   pendingLegislation?: true,
+       ?   managementPlans?: true,
+       ?   managementPlansFeasibility?: true,
+       ?   auditEvidence?: true,
+       ?   auditConclusion?: true,
+       ?   materialUncertaintyExists?: true,
+       ?   reportingImplications?: true,
+       ?   isaReference?: true,
+       ?   preparedById?: true,
+       ?   preparedDate?: true,
+       ?   reviewedById?: true,
+       ?   reviewedDate?: true,
+       ?   partnerApprovedById?: true,
+       ?   partnerApprovalDate?: true,
+       ?   createdAt?: true,
+       ?   updatedAt?: true,
+       ?   engagement?: true,
+       ?   preparedBy?: true,
+       ?   reviewedBy?: true,
+       ?   partnerApprovedBy?: true,
+       ?   indicators?: true,
+       ?   _count?: true
+         }
+       })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.complianceChecklist.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:931:61
+
+  928 }
+  929 
+  930 case "completion-checklist": {
+→ 931   const checklists = await prisma.complianceChecklist.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb",
+            checklistType: "COMPLETION"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   checklistType?: true,
+        ?   checklistReference?: true,
+        ?   items?: true,
+        ?   totalItems?: true,
+        ?   completedItems?: true,
+        ?   notApplicableItems?: true,
+        ?   isComplete?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `ComplianceChecklist`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.subsequentEvent.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:943:53
+
+  940 }
+  941 
+  942 case "subsequent-events": {
+→ 943   const events = await prisma.subsequentEvent.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            id: true,
+            impactAssessment: true,
+            ~~~~~~~~~~~~~~~~
+            reviewedById: true,
+        ?   engagementId?: true,
+        ?   eventReference?: true,
+        ?   eventDate?: true,
+        ?   identifiedDate?: true,
+        ?   eventType?: true,
+        ?   status?: true,
+        ?   description?: true,
+        ?   financialImpact?: true,
+        ?   affectedAccounts?: true,
+        ?   evaluation?: true,
+        ?   actionTaken?: true,
+        ?   adjustmentReference?: true,
+        ?   disclosureReference?: true,
+        ?   cutoffDate?: true,
+        ?   identifiedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   evidenceLinks?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   identifiedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `impactAssessment` for select statement on model `SubsequentEvent`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:955:66
+
+  952 }
+  953 
+  954 case "going-concern": {
+→ 955   const gcAssessment = await prisma.goingConcernAssessment.findFirst({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            overallConclusion: true,
+            ~~~~~~~~~~~~~~~~~
+            basisForConclusion: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   managementAssessmentPeriod?: true,
+        ?   assessmentDate?: true,
+        ?   altmanZScore?: true,
+        ?   altmanZScoreResult?: true,
+        ?   currentRatio?: true,
+        ?   quickRatio?: true,
+        ?   debtEquityRatio?: true,
+        ?   interestCoverage?: true,
+        ?   netProfitLossTrend?: true,
+        ?   cashFlowTrend?: true,
+        ?   workingCapitalDeficit?: true,
+        ?   defaultOnLoans?: true,
+        ?   adverseKeyRatios?: true,
+        ?   lossOfKeyCustomer?: true,
+        ?   lossOfKeySupplier?: true,
+        ?   laborDifficulties?: true,
+        ?   materialShortages?: true,
+        ?   lossOfMajorMarket?: true,
+        ?   legalProceedings?: true,
+        ?   regulatoryNonCompliance?: true,
+        ?   pendingLegislation?: true,
+        ?   managementPlans?: true,
+        ?   managementPlansFeasibility?: true,
+        ?   auditEvidence?: true,
+        ?   auditConclusion?: true,
+        ?   materialUncertaintyExists?: true,
+        ?   reportingImplications?: true,
+        ?   isaReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true,
+        ?   indicators?: true,
+        ?   _count?: true
+          }
+        })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.writtenRepresentation.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:966:57
+
+  963 }
+  964 
+  965 case "representation-letter": {
+→ 966   const reps = await prisma.writtenRepresentation.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+            representationType: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   representationText?: true,
+        ?   isStandard?: true,
+        ?   isRequired?: true,
+        ?   managementAcknowledged?: true,
+        ?   acknowledgmentDate?: true,
+        ?   signatoryName?: true,
+        ?   signatoryTitle?: true,
+        ?   evidenceReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `WrittenRepresentation`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1030:65
+
+  1027   where: { engagementId },
+  1028   select: { managerReviewedById: true, overallConclusion: true },
+  1029 });
+→ 1030 const gcForReview = await prisma.goingConcernAssessment.findFirst({
+         where: {
+           engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+         },
+         select: {
+           overallConclusion: true,
+           ~~~~~~~~~~~~~~~~~
+       ?   id?: true,
+       ?   engagementId?: true,
+       ?   managementAssessmentPeriod?: true,
+       ?   assessmentDate?: true,
+       ?   altmanZScore?: true,
+       ?   altmanZScoreResult?: true,
+       ?   currentRatio?: true,
+       ?   quickRatio?: true,
+       ?   debtEquityRatio?: true,
+       ?   interestCoverage?: true,
+       ?   netProfitLossTrend?: true,
+       ?   cashFlowTrend?: true,
+       ?   workingCapitalDeficit?: true,
+       ?   defaultOnLoans?: true,
+       ?   adverseKeyRatios?: true,
+       ?   lossOfKeyCustomer?: true,
+       ?   lossOfKeySupplier?: true,
+       ?   laborDifficulties?: true,
+       ?   materialShortages?: true,
+       ?   lossOfMajorMarket?: true,
+       ?   legalProceedings?: true,
+       ?   regulatoryNonCompliance?: true,
+       ?   pendingLegislation?: true,
+       ?   managementPlans?: true,
+       ?   managementPlansFeasibility?: true,
+       ?   auditEvidence?: true,
+       ?   auditConclusion?: true,
+       ?   materialUncertaintyExists?: true,
+       ?   reportingImplications?: true,
+       ?   isaReference?: true,
+       ?   preparedById?: true,
+       ?   preparedDate?: true,
+       ?   reviewedById?: true,
+       ?   reviewedDate?: true,
+       ?   partnerApprovedById?: true,
+       ?   partnerApprovalDate?: true,
+       ?   createdAt?: true,
+       ?   updatedAt?: true,
+       ?   engagement?: true,
+       ?   preparedBy?: true,
+       ?   reviewedBy?: true,
+       ?   partnerApprovedBy?: true,
+       ?   indicators?: true,
+       ?   _count?: true
+         }
+       })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1062:51
+
+  1059 }
+  1060 
+  1061 case "opinion-determined": {
+→ 1062   const engine = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             partnerDecision: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1074:56
+
+  1071 }
+  1072 
+  1073 case "basis-documented": {
+→ 1074   const engineBasis = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             justification: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1062:51
+
+  1059 }
+  1060 
+  1061 case "opinion-determined": {
+→ 1062   const engine = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             partnerDecision: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1074:56
+
+  1071 }
+  1072 
+  1073 case "basis-documented": {
+→ 1074   const engineBasis = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             justification: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+5:15:44 PM INFO  [express] HTTP request {"method":"GET","path":"/api/phase-gates/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":209}
+5:15:44 PM INFO  [express] HTTP request {"method":"GET","path":"/api/ai/phases/capabilities","statusCode":200,"durationMs":15}
+5:15:44 PM INFO  [express] HTTP request {"method":"GET","path":"/api/finalization/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":16}
+5:15:44 PM INFO  [express] HTTP request {"method":"GET","path":"/api/opinion/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":17}
+5:15:44 PM INFO  [express] HTTP request {"method":"GET","path":"/api/eqcr/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":19}
+5:15:44 PM INFO  [express] HTTP request {"method":"GET","path":"/api/checklists/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":18}
+5:15:44 PM INFO  [express] HTTP request {"method":"GET","path":"/api/review-notes/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":17}
+5:15:44 PM INFO  [express] HTTP request {"method":"GET","path":"/api/evidence/1fd02a47-825c-43d7-825e-f86274fd58cb/links","statusCode":200,"durationMs":17}
+5:15:44 PM INFO  [express] HTTP request {"method":"GET","path":"/api/clients","statusCode":200,"durationMs":22}
+5:15:44 PM INFO  [express] HTTP request {"method":"GET","path":"/api/users","statusCode":200,"durationMs":16}
+5:15:45 PM INFO  [express] HTTP request {"method":"POST","path":"/api/auth/login","statusCode":200,"durationMs":342}
+5:15:45 PM INFO  [express] HTTP request {"method":"POST","path":"/api/section-signoffs/1fd02a47-825c-43d7-825e-f86274fd58cb/approve","statusCode":200,"durationMs":17}
+5:15:45 PM INFO  [express] HTTP request {"method":"GET","path":"/api/engagements","statusCode":200,"durationMs":19}
+5:15:45 PM INFO  [express] HTTP request {"method":"POST","path":"/api/auth/login","statusCode":429,"durationMs":1}
+5:16:26 PM INFO  [express] HTTP request {"method":"GET","path":"/api/section-signoffs/1fd02a47-825c-43d7-825e-f86274fd58cb/PRE_PLANNING/summary","statusCode":200,"durationMs":23}
+5:16:26 PM INFO  [express] HTTP request {"method":"GET","path":"/api/section-signoffs/1fd02a47-825c-43d7-825e-f86274fd58cb/PRE_PLANNING/pre-planning","statusCode":200,"durationMs":20}
+5:16:26 PM INFO  [express] HTTP request {"method":"GET","path":"/api/phase-state/1fd02a47-825c-43d7-825e-f86274fd58cb/state","statusCode":200,"durationMs":18}
+5:16:26 PM INFO  [express] HTTP request {"method":"GET","path":"/api/phase-state/registry","statusCode":200,"durationMs":14}
+5:16:26 PM INFO  [express] HTTP request {"method":"GET","path":"/api/finalization/1fd02a47-825c-43d7-825e-f86274fd58cb/data","statusCode":200,"durationMs":22}
+5:16:26 PM INFO  [express] HTTP request {"method":"GET","path":"/api/eqcr/1fd02a47-825c-43d7-825e-f86274fd58cb/checklist","statusCode":200,"durationMs":17}
+5:16:26 PM INFO  [express] HTTP request {"method":"GET","path":"/api/evidence/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":18}
+5:16:26 PM INFO  [express] HTTP request {"method":"GET","path":"/api/review-notes-v2/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":404,"durationMs":15}
+5:16:27 PM INFO  [express] HTTP request {"method":"GET","path":"/api/opinion-engine/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":138}
+[31mprisma:error[39m 
+Invalid `prisma.complianceChecklist.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:931:61
+
+  928 }
+  929 
+  930 case "completion-checklist": {
+→ 931   const checklists = await prisma.complianceChecklist.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb",
+            checklistType: "COMPLETION"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   checklistType?: true,
+        ?   checklistReference?: true,
+        ?   items?: true,
+        ?   totalItems?: true,
+        ?   completedItems?: true,
+        ?   notApplicableItems?: true,
+        ?   isComplete?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `ComplianceChecklist`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.subsequentEvent.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:943:53
+
+  940 }
+  941 
+  942 case "subsequent-events": {
+→ 943   const events = await prisma.subsequentEvent.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            id: true,
+            impactAssessment: true,
+            ~~~~~~~~~~~~~~~~
+            reviewedById: true,
+        ?   engagementId?: true,
+        ?   eventReference?: true,
+        ?   eventDate?: true,
+        ?   identifiedDate?: true,
+        ?   eventType?: true,
+        ?   status?: true,
+        ?   description?: true,
+        ?   financialImpact?: true,
+        ?   affectedAccounts?: true,
+        ?   evaluation?: true,
+        ?   actionTaken?: true,
+        ?   adjustmentReference?: true,
+        ?   disclosureReference?: true,
+        ?   cutoffDate?: true,
+        ?   identifiedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   evidenceLinks?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   identifiedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `impactAssessment` for select statement on model `SubsequentEvent`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:955:66
+
+  952 }
+  953 
+  954 case "going-concern": {
+→ 955   const gcAssessment = await prisma.goingConcernAssessment.findFirst({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            overallConclusion: true,
+            ~~~~~~~~~~~~~~~~~
+            basisForConclusion: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   managementAssessmentPeriod?: true,
+        ?   assessmentDate?: true,
+        ?   altmanZScore?: true,
+        ?   altmanZScoreResult?: true,
+        ?   currentRatio?: true,
+        ?   quickRatio?: true,
+        ?   debtEquityRatio?: true,
+        ?   interestCoverage?: true,
+        ?   netProfitLossTrend?: true,
+        ?   cashFlowTrend?: true,
+        ?   workingCapitalDeficit?: true,
+        ?   defaultOnLoans?: true,
+        ?   adverseKeyRatios?: true,
+        ?   lossOfKeyCustomer?: true,
+        ?   lossOfKeySupplier?: true,
+        ?   laborDifficulties?: true,
+        ?   materialShortages?: true,
+        ?   lossOfMajorMarket?: true,
+        ?   legalProceedings?: true,
+        ?   regulatoryNonCompliance?: true,
+        ?   pendingLegislation?: true,
+        ?   managementPlans?: true,
+        ?   managementPlansFeasibility?: true,
+        ?   auditEvidence?: true,
+        ?   auditConclusion?: true,
+        ?   materialUncertaintyExists?: true,
+        ?   reportingImplications?: true,
+        ?   isaReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true,
+        ?   indicators?: true,
+        ?   _count?: true
+          }
+        })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.writtenRepresentation.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:966:57
+
+  963 }
+  964 
+  965 case "representation-letter": {
+→ 966   const reps = await prisma.writtenRepresentation.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+            representationType: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   representationText?: true,
+        ?   isStandard?: true,
+        ?   isRequired?: true,
+        ?   managementAcknowledged?: true,
+        ?   acknowledgmentDate?: true,
+        ?   signatoryName?: true,
+        ?   signatoryTitle?: true,
+        ?   evidenceReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `WrittenRepresentation`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1030:65
+
+  1027   where: { engagementId },
+  1028   select: { managerReviewedById: true, overallConclusion: true },
+  1029 });
+→ 1030 const gcForReview = await prisma.goingConcernAssessment.findFirst({
+         where: {
+           engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+         },
+         select: {
+           overallConclusion: true,
+           ~~~~~~~~~~~~~~~~~
+       ?   id?: true,
+       ?   engagementId?: true,
+       ?   managementAssessmentPeriod?: true,
+       ?   assessmentDate?: true,
+       ?   altmanZScore?: true,
+       ?   altmanZScoreResult?: true,
+       ?   currentRatio?: true,
+       ?   quickRatio?: true,
+       ?   debtEquityRatio?: true,
+       ?   interestCoverage?: true,
+       ?   netProfitLossTrend?: true,
+       ?   cashFlowTrend?: true,
+       ?   workingCapitalDeficit?: true,
+       ?   defaultOnLoans?: true,
+       ?   adverseKeyRatios?: true,
+       ?   lossOfKeyCustomer?: true,
+       ?   lossOfKeySupplier?: true,
+       ?   laborDifficulties?: true,
+       ?   materialShortages?: true,
+       ?   lossOfMajorMarket?: true,
+       ?   legalProceedings?: true,
+       ?   regulatoryNonCompliance?: true,
+       ?   pendingLegislation?: true,
+       ?   managementPlans?: true,
+       ?   managementPlansFeasibility?: true,
+       ?   auditEvidence?: true,
+       ?   auditConclusion?: true,
+       ?   materialUncertaintyExists?: true,
+       ?   reportingImplications?: true,
+       ?   isaReference?: true,
+       ?   preparedById?: true,
+       ?   preparedDate?: true,
+       ?   reviewedById?: true,
+       ?   reviewedDate?: true,
+       ?   partnerApprovedById?: true,
+       ?   partnerApprovalDate?: true,
+       ?   createdAt?: true,
+       ?   updatedAt?: true,
+       ?   engagement?: true,
+       ?   preparedBy?: true,
+       ?   reviewedBy?: true,
+       ?   partnerApprovedBy?: true,
+       ?   indicators?: true,
+       ?   _count?: true
+         }
+       })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.complianceChecklist.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:931:61
+
+  928 }
+  929 
+  930 case "completion-checklist": {
+→ 931   const checklists = await prisma.complianceChecklist.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb",
+            checklistType: "COMPLETION"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   checklistType?: true,
+        ?   checklistReference?: true,
+        ?   items?: true,
+        ?   totalItems?: true,
+        ?   completedItems?: true,
+        ?   notApplicableItems?: true,
+        ?   isComplete?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `ComplianceChecklist`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.subsequentEvent.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:943:53
+
+  940 }
+  941 
+  942 case "subsequent-events": {
+→ 943   const events = await prisma.subsequentEvent.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            id: true,
+            impactAssessment: true,
+            ~~~~~~~~~~~~~~~~
+            reviewedById: true,
+        ?   engagementId?: true,
+        ?   eventReference?: true,
+        ?   eventDate?: true,
+        ?   identifiedDate?: true,
+        ?   eventType?: true,
+        ?   status?: true,
+        ?   description?: true,
+        ?   financialImpact?: true,
+        ?   affectedAccounts?: true,
+        ?   evaluation?: true,
+        ?   actionTaken?: true,
+        ?   adjustmentReference?: true,
+        ?   disclosureReference?: true,
+        ?   cutoffDate?: true,
+        ?   identifiedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   evidenceLinks?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   identifiedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `impactAssessment` for select statement on model `SubsequentEvent`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:955:66
+
+  952 }
+  953 
+  954 case "going-concern": {
+→ 955   const gcAssessment = await prisma.goingConcernAssessment.findFirst({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            overallConclusion: true,
+            ~~~~~~~~~~~~~~~~~
+            basisForConclusion: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   managementAssessmentPeriod?: true,
+        ?   assessmentDate?: true,
+        ?   altmanZScore?: true,
+        ?   altmanZScoreResult?: true,
+        ?   currentRatio?: true,
+        ?   quickRatio?: true,
+        ?   debtEquityRatio?: true,
+        ?   interestCoverage?: true,
+        ?   netProfitLossTrend?: true,
+        ?   cashFlowTrend?: true,
+        ?   workingCapitalDeficit?: true,
+        ?   defaultOnLoans?: true,
+        ?   adverseKeyRatios?: true,
+        ?   lossOfKeyCustomer?: true,
+        ?   lossOfKeySupplier?: true,
+        ?   laborDifficulties?: true,
+        ?   materialShortages?: true,
+        ?   lossOfMajorMarket?: true,
+        ?   legalProceedings?: true,
+        ?   regulatoryNonCompliance?: true,
+        ?   pendingLegislation?: true,
+        ?   managementPlans?: true,
+        ?   managementPlansFeasibility?: true,
+        ?   auditEvidence?: true,
+        ?   auditConclusion?: true,
+        ?   materialUncertaintyExists?: true,
+        ?   reportingImplications?: true,
+        ?   isaReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true,
+        ?   indicators?: true,
+        ?   _count?: true
+          }
+        })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.writtenRepresentation.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:966:57
+
+  963 }
+  964 
+  965 case "representation-letter": {
+→ 966   const reps = await prisma.writtenRepresentation.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+            representationType: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   representationText?: true,
+        ?   isStandard?: true,
+        ?   isRequired?: true,
+        ?   managementAcknowledged?: true,
+        ?   acknowledgmentDate?: true,
+        ?   signatoryName?: true,
+        ?   signatoryTitle?: true,
+        ?   evidenceReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `WrittenRepresentation`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1030:65
+
+  1027   where: { engagementId },
+  1028   select: { managerReviewedById: true, overallConclusion: true },
+  1029 });
+→ 1030 const gcForReview = await prisma.goingConcernAssessment.findFirst({
+         where: {
+           engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+         },
+         select: {
+           overallConclusion: true,
+           ~~~~~~~~~~~~~~~~~
+       ?   id?: true,
+       ?   engagementId?: true,
+       ?   managementAssessmentPeriod?: true,
+       ?   assessmentDate?: true,
+       ?   altmanZScore?: true,
+       ?   altmanZScoreResult?: true,
+       ?   currentRatio?: true,
+       ?   quickRatio?: true,
+       ?   debtEquityRatio?: true,
+       ?   interestCoverage?: true,
+       ?   netProfitLossTrend?: true,
+       ?   cashFlowTrend?: true,
+       ?   workingCapitalDeficit?: true,
+       ?   defaultOnLoans?: true,
+       ?   adverseKeyRatios?: true,
+       ?   lossOfKeyCustomer?: true,
+       ?   lossOfKeySupplier?: true,
+       ?   laborDifficulties?: true,
+       ?   materialShortages?: true,
+       ?   lossOfMajorMarket?: true,
+       ?   legalProceedings?: true,
+       ?   regulatoryNonCompliance?: true,
+       ?   pendingLegislation?: true,
+       ?   managementPlans?: true,
+       ?   managementPlansFeasibility?: true,
+       ?   auditEvidence?: true,
+       ?   auditConclusion?: true,
+       ?   materialUncertaintyExists?: true,
+       ?   reportingImplications?: true,
+       ?   isaReference?: true,
+       ?   preparedById?: true,
+       ?   preparedDate?: true,
+       ?   reviewedById?: true,
+       ?   reviewedDate?: true,
+       ?   partnerApprovedById?: true,
+       ?   partnerApprovalDate?: true,
+       ?   createdAt?: true,
+       ?   updatedAt?: true,
+       ?   engagement?: true,
+       ?   preparedBy?: true,
+       ?   reviewedBy?: true,
+       ?   partnerApprovedBy?: true,
+       ?   indicators?: true,
+       ?   _count?: true
+         }
+       })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1062:51
+
+  1059 }
+  1060 
+  1061 case "opinion-determined": {
+→ 1062   const engine = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             partnerDecision: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1074:56
+
+  1071 }
+  1072 
+  1073 case "basis-documented": {
+→ 1074   const engineBasis = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             justification: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1062:51
+
+  1059 }
+  1060 
+  1061 case "opinion-determined": {
+→ 1062   const engine = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             partnerDecision: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1074:56
+
+  1071 }
+  1072 
+  1073 case "basis-documented": {
+→ 1074   const engineBasis = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             justification: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+5:16:27 PM INFO  [express] HTTP request {"method":"GET","path":"/api/phase-gates/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":223}
+5:16:27 PM INFO  [express] HTTP request {"method":"GET","path":"/api/ai/phases/capabilities","statusCode":200,"durationMs":16}
+5:16:27 PM INFO  [express] HTTP request {"method":"GET","path":"/api/materiality/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":21}
+5:16:27 PM INFO  [express] HTTP request {"method":"GET","path":"/api/risk-assessment/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":26}
+5:16:27 PM INFO  [express] HTTP request {"method":"GET","path":"/api/planning/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":21}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/finalization/1fd02a47-825c-43d7-825e-f86274fd58cb/subsequent-events","statusCode":200,"durationMs":36}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/finalization/1fd02a47-825c-43d7-825e-f86274fd58cb/representations","statusCode":200,"durationMs":19}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/finalization/1fd02a47-825c-43d7-825e-f86274fd58cb/report","statusCode":200,"durationMs":20}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/finalization/1fd02a47-825c-43d7-825e-f86274fd58cb/management-letter","statusCode":200,"durationMs":27}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/eqcr/1fd02a47-825c-43d7-825e-f86274fd58cb/assignment","statusCode":200,"durationMs":26}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/eqcr/1fd02a47-825c-43d7-825e-f86274fd58cb/checklist-items","statusCode":200,"durationMs":16}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/eqcr/1fd02a47-825c-43d7-825e-f86274fd58cb/stats","statusCode":200,"durationMs":17}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/evidence/1fd02a47-825c-43d7-825e-f86274fd58cb/files","statusCode":200,"durationMs":17}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/evidence/1fd02a47-825c-43d7-825e-f86274fd58cb/assembly","statusCode":200,"durationMs":52}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/opinion-engine/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":27}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/audit-program/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":25}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/observations/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":27}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/adjustments/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":18}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/pre-planning/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":17}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/workspace/1fd02a47-825c-43d7-825e-f86274fd58cb/status","statusCode":200,"durationMs":22}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/tb/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":200,"durationMs":29}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/fs/1fd02a47-825c-43d7-825e-f86274fd58cb/heads","statusCode":200,"durationMs":20}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/phase-state/1fd02a47-825c-43d7-825e-f86274fd58cb/state","statusCode":200,"durationMs":20}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/clients","statusCode":200,"durationMs":18}
+5:16:59 PM INFO  [express] HTTP request {"method":"GET","path":"/api/engagements","statusCode":200,"durationMs":28}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m5:19:21 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m5:19:55 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mdist/public/health.html[22m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m5:19:57 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mdist/public/index.html[22m
+5:20:22 PM INFO  [express] HTTP request {"method":"POST","path":"/api/auth/refresh","statusCode":200,"durationMs":55}
+5:20:22 PM INFO  [express] HTTP request {"method":"GET","path":"/api/auth/ping","statusCode":200,"durationMs":22}
+5:20:22 PM INFO  [express] HTTP request {"method":"GET","path":"/api/auth/me","statusCode":304,"durationMs":17}
+5:20:22 PM INFO  [express] HTTP request {"method":"GET","path":"/api/workspace/engagements","statusCode":304,"durationMs":23}
+5:20:23 PM INFO  [express] HTTP request {"method":"GET","path":"/api/clients/authorized","statusCode":304,"durationMs":16}
+5:20:23 PM INFO  [express] HTTP request {"method":"GET","path":"/api/enforcement/ai-config","statusCode":304,"durationMs":28}
+5:20:23 PM INFO  [express] HTTP request {"method":"GET","path":"/api/review-notes-v2/stats/summary","statusCode":304,"durationMs":35}
+5:20:23 PM INFO  [express] HTTP request {"method":"GET","path":"/api/notifications","statusCode":304,"durationMs":23}
+5:20:23 PM INFO  [express] HTTP request {"method":"GET","path":"/api/hard-controls/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":304,"durationMs":48}
+5:20:23 PM INFO  [express] HTTP request {"method":"GET","path":"/api/tenant/subscription","statusCode":304,"durationMs":23}
+5:20:23 PM INFO  [express] HTTP request {"method":"GET","path":"/api/enforcement/status/1fd02a47-825c-43d7-825e-f86274fd58cb","statusCode":304,"durationMs":29}
+5:20:23 PM INFO  [express] HTTP request {"method":"GET","path":"/api/ai/phase/inspection/capabilities","statusCode":304,"durationMs":19}
+5:20:23 PM INFO  [express] HTTP request {"method":"GET","path":"/api/section-signoffs/1fd02a47-825c-43d7-825e-f86274fd58cb/INSPECTION/inspection","statusCode":304,"durationMs":16}
+[31mprisma:error[39m 
+Invalid `prisma.complianceChecklist.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:931:61
+
+  928 }
+  929 
+  930 case "completion-checklist": {
+→ 931   const checklists = await prisma.complianceChecklist.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb",
+            checklistType: "COMPLETION"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   checklistType?: true,
+        ?   checklistReference?: true,
+        ?   items?: true,
+        ?   totalItems?: true,
+        ?   completedItems?: true,
+        ?   notApplicableItems?: true,
+        ?   isComplete?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `ComplianceChecklist`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.subsequentEvent.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:943:53
+
+  940 }
+  941 
+  942 case "subsequent-events": {
+→ 943   const events = await prisma.subsequentEvent.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            id: true,
+            impactAssessment: true,
+            ~~~~~~~~~~~~~~~~
+            reviewedById: true,
+        ?   engagementId?: true,
+        ?   eventReference?: true,
+        ?   eventDate?: true,
+        ?   identifiedDate?: true,
+        ?   eventType?: true,
+        ?   status?: true,
+        ?   description?: true,
+        ?   financialImpact?: true,
+        ?   affectedAccounts?: true,
+        ?   evaluation?: true,
+        ?   actionTaken?: true,
+        ?   adjustmentReference?: true,
+        ?   disclosureReference?: true,
+        ?   cutoffDate?: true,
+        ?   identifiedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   evidenceLinks?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   identifiedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `impactAssessment` for select statement on model `SubsequentEvent`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:955:66
+
+  952 }
+  953 
+  954 case "going-concern": {
+→ 955   const gcAssessment = await prisma.goingConcernAssessment.findFirst({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            overallConclusion: true,
+            ~~~~~~~~~~~~~~~~~
+            basisForConclusion: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   managementAssessmentPeriod?: true,
+        ?   assessmentDate?: true,
+        ?   altmanZScore?: true,
+        ?   altmanZScoreResult?: true,
+        ?   currentRatio?: true,
+        ?   quickRatio?: true,
+        ?   debtEquityRatio?: true,
+        ?   interestCoverage?: true,
+        ?   netProfitLossTrend?: true,
+        ?   cashFlowTrend?: true,
+        ?   workingCapitalDeficit?: true,
+        ?   defaultOnLoans?: true,
+        ?   adverseKeyRatios?: true,
+        ?   lossOfKeyCustomer?: true,
+        ?   lossOfKeySupplier?: true,
+        ?   laborDifficulties?: true,
+        ?   materialShortages?: true,
+        ?   lossOfMajorMarket?: true,
+        ?   legalProceedings?: true,
+        ?   regulatoryNonCompliance?: true,
+        ?   pendingLegislation?: true,
+        ?   managementPlans?: true,
+        ?   managementPlansFeasibility?: true,
+        ?   auditEvidence?: true,
+        ?   auditConclusion?: true,
+        ?   materialUncertaintyExists?: true,
+        ?   reportingImplications?: true,
+        ?   isaReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true,
+        ?   indicators?: true,
+        ?   _count?: true
+          }
+        })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.writtenRepresentation.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:966:57
+
+  963 }
+  964 
+  965 case "representation-letter": {
+→ 966   const reps = await prisma.writtenRepresentation.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+            representationType: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   representationText?: true,
+        ?   isStandard?: true,
+        ?   isRequired?: true,
+        ?   managementAcknowledged?: true,
+        ?   acknowledgmentDate?: true,
+        ?   signatoryName?: true,
+        ?   signatoryTitle?: true,
+        ?   evidenceReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `WrittenRepresentation`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1030:65
+
+  1027   where: { engagementId },
+  1028   select: { managerReviewedById: true, overallConclusion: true },
+  1029 });
+→ 1030 const gcForReview = await prisma.goingConcernAssessment.findFirst({
+         where: {
+           engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+         },
+         select: {
+           overallConclusion: true,
+           ~~~~~~~~~~~~~~~~~
+       ?   id?: true,
+       ?   engagementId?: true,
+       ?   managementAssessmentPeriod?: true,
+       ?   assessmentDate?: true,
+       ?   altmanZScore?: true,
+       ?   altmanZScoreResult?: true,
+       ?   currentRatio?: true,
+       ?   quickRatio?: true,
+       ?   debtEquityRatio?: true,
+       ?   interestCoverage?: true,
+       ?   netProfitLossTrend?: true,
+       ?   cashFlowTrend?: true,
+       ?   workingCapitalDeficit?: true,
+       ?   defaultOnLoans?: true,
+       ?   adverseKeyRatios?: true,
+       ?   lossOfKeyCustomer?: true,
+       ?   lossOfKeySupplier?: true,
+       ?   laborDifficulties?: true,
+       ?   materialShortages?: true,
+       ?   lossOfMajorMarket?: true,
+       ?   legalProceedings?: true,
+       ?   regulatoryNonCompliance?: true,
+       ?   pendingLegislation?: true,
+       ?   managementPlans?: true,
+       ?   managementPlansFeasibility?: true,
+       ?   auditEvidence?: true,
+       ?   auditConclusion?: true,
+       ?   materialUncertaintyExists?: true,
+       ?   reportingImplications?: true,
+       ?   isaReference?: true,
+       ?   preparedById?: true,
+       ?   preparedDate?: true,
+       ?   reviewedById?: true,
+       ?   reviewedDate?: true,
+       ?   partnerApprovedById?: true,
+       ?   partnerApprovalDate?: true,
+       ?   createdAt?: true,
+       ?   updatedAt?: true,
+       ?   engagement?: true,
+       ?   preparedBy?: true,
+       ?   reviewedBy?: true,
+       ?   partnerApprovedBy?: true,
+       ?   indicators?: true,
+       ?   _count?: true
+         }
+       })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.complianceChecklist.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:931:61
+
+  928 }
+  929 
+  930 case "completion-checklist": {
+→ 931   const checklists = await prisma.complianceChecklist.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb",
+            checklistType: "COMPLETION"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   checklistType?: true,
+        ?   checklistReference?: true,
+        ?   items?: true,
+        ?   totalItems?: true,
+        ?   completedItems?: true,
+        ?   notApplicableItems?: true,
+        ?   isComplete?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `ComplianceChecklist`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.subsequentEvent.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:943:53
+
+  940 }
+  941 
+  942 case "subsequent-events": {
+→ 943   const events = await prisma.subsequentEvent.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            id: true,
+            impactAssessment: true,
+            ~~~~~~~~~~~~~~~~
+            reviewedById: true,
+        ?   engagementId?: true,
+        ?   eventReference?: true,
+        ?   eventDate?: true,
+        ?   identifiedDate?: true,
+        ?   eventType?: true,
+        ?   status?: true,
+        ?   description?: true,
+        ?   financialImpact?: true,
+        ?   affectedAccounts?: true,
+        ?   evaluation?: true,
+        ?   actionTaken?: true,
+        ?   adjustmentReference?: true,
+        ?   disclosureReference?: true,
+        ?   cutoffDate?: true,
+        ?   identifiedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   evidenceLinks?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   identifiedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true
+          }
+        })
+
+Unknown field `impactAssessment` for select statement on model `SubsequentEvent`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:955:66
+
+  952 }
+  953 
+  954 case "going-concern": {
+→ 955   const gcAssessment = await prisma.goingConcernAssessment.findFirst({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            overallConclusion: true,
+            ~~~~~~~~~~~~~~~~~
+            basisForConclusion: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   managementAssessmentPeriod?: true,
+        ?   assessmentDate?: true,
+        ?   altmanZScore?: true,
+        ?   altmanZScoreResult?: true,
+        ?   currentRatio?: true,
+        ?   quickRatio?: true,
+        ?   debtEquityRatio?: true,
+        ?   interestCoverage?: true,
+        ?   netProfitLossTrend?: true,
+        ?   cashFlowTrend?: true,
+        ?   workingCapitalDeficit?: true,
+        ?   defaultOnLoans?: true,
+        ?   adverseKeyRatios?: true,
+        ?   lossOfKeyCustomer?: true,
+        ?   lossOfKeySupplier?: true,
+        ?   laborDifficulties?: true,
+        ?   materialShortages?: true,
+        ?   lossOfMajorMarket?: true,
+        ?   legalProceedings?: true,
+        ?   regulatoryNonCompliance?: true,
+        ?   pendingLegislation?: true,
+        ?   managementPlans?: true,
+        ?   managementPlansFeasibility?: true,
+        ?   auditEvidence?: true,
+        ?   auditConclusion?: true,
+        ?   materialUncertaintyExists?: true,
+        ?   reportingImplications?: true,
+        ?   isaReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   partnerApprovedById?: true,
+        ?   partnerApprovalDate?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true,
+        ?   partnerApprovedBy?: true,
+        ?   indicators?: true,
+        ?   _count?: true
+          }
+        })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.writtenRepresentation.findMany()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:966:57
+
+  963 }
+  964 
+  965 case "representation-letter": {
+→ 966   const reps = await prisma.writtenRepresentation.findMany({
+          where: {
+            engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+          },
+          select: {
+            status: true,
+            ~~~~~~
+            representationType: true,
+        ?   id?: true,
+        ?   engagementId?: true,
+        ?   representationText?: true,
+        ?   isStandard?: true,
+        ?   isRequired?: true,
+        ?   managementAcknowledged?: true,
+        ?   acknowledgmentDate?: true,
+        ?   signatoryName?: true,
+        ?   signatoryTitle?: true,
+        ?   evidenceReference?: true,
+        ?   preparedById?: true,
+        ?   preparedDate?: true,
+        ?   reviewedById?: true,
+        ?   reviewedDate?: true,
+        ?   isaReference?: true,
+        ?   createdAt?: true,
+        ?   updatedAt?: true,
+        ?   engagement?: true,
+        ?   preparedBy?: true,
+        ?   reviewedBy?: true
+          }
+        })
+
+Unknown field `status` for select statement on model `WrittenRepresentation`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.goingConcernAssessment.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1030:65
+
+  1027   where: { engagementId },
+  1028   select: { managerReviewedById: true, overallConclusion: true },
+  1029 });
+→ 1030 const gcForReview = await prisma.goingConcernAssessment.findFirst({
+         where: {
+           engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+         },
+         select: {
+           overallConclusion: true,
+           ~~~~~~~~~~~~~~~~~
+       ?   id?: true,
+       ?   engagementId?: true,
+       ?   managementAssessmentPeriod?: true,
+       ?   assessmentDate?: true,
+       ?   altmanZScore?: true,
+       ?   altmanZScoreResult?: true,
+       ?   currentRatio?: true,
+       ?   quickRatio?: true,
+       ?   debtEquityRatio?: true,
+       ?   interestCoverage?: true,
+       ?   netProfitLossTrend?: true,
+       ?   cashFlowTrend?: true,
+       ?   workingCapitalDeficit?: true,
+       ?   defaultOnLoans?: true,
+       ?   adverseKeyRatios?: true,
+       ?   lossOfKeyCustomer?: true,
+       ?   lossOfKeySupplier?: true,
+       ?   laborDifficulties?: true,
+       ?   materialShortages?: true,
+       ?   lossOfMajorMarket?: true,
+       ?   legalProceedings?: true,
+       ?   regulatoryNonCompliance?: true,
+       ?   pendingLegislation?: true,
+       ?   managementPlans?: true,
+       ?   managementPlansFeasibility?: true,
+       ?   auditEvidence?: true,
+       ?   auditConclusion?: true,
+       ?   materialUncertaintyExists?: true,
+       ?   reportingImplications?: true,
+       ?   isaReference?: true,
+       ?   preparedById?: true,
+       ?   preparedDate?: true,
+       ?   reviewedById?: true,
+       ?   reviewedDate?: true,
+       ?   partnerApprovedById?: true,
+       ?   partnerApprovalDate?: true,
+       ?   createdAt?: true,
+       ?   updatedAt?: true,
+       ?   engagement?: true,
+       ?   preparedBy?: true,
+       ?   reviewedBy?: true,
+       ?   partnerApprovedBy?: true,
+       ?   indicators?: true,
+       ?   _count?: true
+         }
+       })
+
+Unknown field `overallConclusion` for select statement on model `GoingConcernAssessment`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1062:51
+
+  1059 }
+  1060 
+  1061 case "opinion-determined": {
+→ 1062   const engine = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             partnerDecision: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1074:56
+
+  1071 }
+  1072 
+  1073 case "basis-documented": {
+→ 1074   const engineBasis = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             justification: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1062:51
+
+  1059 }
+  1060 
+  1061 case "opinion-determined": {
+→ 1062   const engine = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             partnerDecision: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+[31mprisma:error[39m 
+Invalid `prisma.opinionEngine.findFirst()` invocation in
+/home/runner/workspace/server/services/phaseGateEngine.ts:1074:56
+
+  1071 }
+  1072 
+  1073 case "basis-documented": {
+→ 1074   const engineBasis = await prisma.opinionEngine.findFirst({
+           where: {
+             engagementId: "1fd02a47-825c-43d7-825e-f86274fd58cb"
+           },
+           orderBy: {
+             version: "desc"
+           },
+           select: {
+             recommendedCategory: true,
+             ~~~~~~~~~~~~~~~~~~~
+             justification: true,
+         ?   id?: true,
+         ?   firmId?: true,
+         ?   engagementId?: true,
+         ?   version?: true,
+         ?   status?: true,
+         ?   overallScore?: true,
+         ?   aiCategory?: true,
+         ?   partnerCategory?: true,
+         ?   partnerConclusion?: true,
+         ?   partnerSignedAt?: true,
+         ?   partnerSignedBy?: true,
+         ?   reviewerNotes?: true,
+         ?   reviewerSignedAt?: true,
+         ?   reviewerSignedBy?: true,
+         ?   dataReliability?: true,
+         ?   reliabilityNotes?: true,
+         ?   sectionsData?: true,
+         ?   findingsData?: true,
+         ?   scoresData?: true,
+         ?   memoData?: true,
+         ?   lastAiRunAt?: true,
+         ?   lastAiRunBy?: true,
+         ?   lockedAt?: true,
+         ?   lockedBy?: true,
+         ?   createdBy?: true,
+         ?   updatedBy?: true,
+         ?   createdAt?: true,
+         ?   updatedAt?: true,
+         ?   firm?: true,
+         ?   engagement?: true,
+         ?   findings?: true,
+         ?   aiRuns?: true,
+         ?   _count?: true
+           }
+         })
+
+Unknown field `recommendedCategory` for select statement on model `OpinionEngine`. Available options are marked with ?.
+5:20:23 PM INFO  [express] HTTP request {"method":"GET","path":"/api/phase-state/1fd02a47-825c-43d7-825e-f86274fd58cb/state","statusCode":200,"durationMs":264}
