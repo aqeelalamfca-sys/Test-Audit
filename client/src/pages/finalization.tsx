@@ -2170,7 +2170,13 @@ export default function Finalization() {
                     <FileCheck className="h-5 w-5" />
                     Generate Finalization Documents
                   </CardTitle>
-                  <CardDescription>Generate deliverable documents for the finalization phase</CardDescription>
+                  <CardDescription>
+                    Generate deliverable documents for the finalization phase.{" "}
+                    See also:{" "}
+                    <Link href={`/workspace/${engagementId}/outputs`} className="text-primary hover:underline">Outputs Registry</Link>
+                    {" | "}
+                    <Link href={`/workspace/${engagementId}/deliverables`} className="text-primary hover:underline">Deliverables Register</Link>
+                  </CardDescription>
                 </div>
               </div>
             </CardHeader>

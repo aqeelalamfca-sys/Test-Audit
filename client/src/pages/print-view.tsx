@@ -876,7 +876,11 @@ export default function PrintView() {
             Deliverables Register
           </CardTitle>
           <CardDescription>
-            All audit deliverables with status tracking, metadata, and supporting documents
+            All audit deliverables with status tracking, metadata, and supporting documents.{" "}
+            See also:{" "}
+            <Link href={`/workspace/${engagementId}/finalization`} className="text-primary hover:underline">Finalization</Link>
+            {" | "}
+            <Link href={`/workspace/${engagementId}/outputs`} className="text-primary hover:underline">Outputs Registry</Link>
           </CardDescription>
         </CardHeader>
         <CardContent>
