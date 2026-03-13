@@ -760,8 +760,21 @@ router.post("/api/engagements/:engagementId/fs-heads/:fsHeadKey/fs-program/ai-ge
       ]
     };
     
-    const key = fsHeadKey.toLowerCase().replace(/-/g, '');
-    const matched = commonSuggestions[key] || commonSuggestions['revenue'];
+    const rawKey = fsHeadKey.toLowerCase().replace(/-/g, '').replace(/_/g, '');
+    const keyAliases: Record<string, string> = {
+      'traderecievables': 'receivables', 'tradereceivables': 'receivables', 'debtors': 'receivables',
+      'tradepayables': 'payables', 'creditors': 'payables', 'accountspayable': 'payables', 'accruals': 'payables',
+      'cashandbank': 'cash', 'cashequivalents': 'cash', 'cashcashequivalents': 'cash', 'bankbalances': 'cash',
+      'propertyplantequipment': 'ppe', 'fixedassets': 'ppe', 'fixedasset': 'ppe',
+      'inventories': 'inventory', 'stock': 'inventory', 'stockinhand': 'inventory',
+      'operatingexpenses': 'expenses', 'costofsales': 'expenses', 'adminexpenses': 'expenses',
+      'intangibleassets': 'intangibles', 'goodwill': 'intangibles', 'software': 'intangibles',
+      'loansborrowings': 'borrowings', 'loans': 'borrowings', 'debt': 'borrowings', 'longtermborrowing': 'borrowings',
+      'sharecapital': 'equity', 'reserves': 'equity', 'retainedearnings': 'equity',
+      'provisionforliabilities': 'provisions', 'contingencies': 'provisions',
+    };
+    const key = keyAliases[rawKey] || rawKey;
+    const matched = commonSuggestions[key] || commonSuggestions[Object.keys(commonSuggestions).find(k => rawKey.includes(k)) || ''] || commonSuggestions['revenue'];
     
     // Map fsHeadKey to FSArea enum for linking
     const fsAreaMapping: Record<string, string> = {
@@ -778,7 +791,7 @@ router.post("/api/engagements/:engagementId/fs-heads/:fsHeadKey/fs-program/ai-ge
       'borrowings': 'BORROWINGS',
       'intangibles': 'INTANGIBLES'
     };
-    const mappedFsArea = fsAreaMapping[key] || 'REVENUE';
+    const mappedFsArea = fsAreaMapping[key] || fsAreaMapping[rawKey] || 'REVENUE';
     
     // Create the suggestions as RiskAssessment records linked to the FS Head via fsArea
     const createdItems = [];
@@ -1003,33 +1016,36 @@ router.post("/api/engagements/:engagementId/fs-heads/:fsHeadKey/signoff", async 
     
     let updateData: any = {};
     
+    const ROLE_HIERARCHY = ["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"];
+    const userRoleIndex = ROLE_HIERARCHY.indexOf(userRole);
+
     if (action === 'prepare') {
-      if (!['STAFF', 'SENIOR'].includes(userRole)) {
-        return res.status(403).json({ error: "Only Associate/Senior can mark as prepared" });
+      if (userRoleIndex < ROLE_HIERARCHY.indexOf("STAFF")) {
+        return res.status(403).json({ error: "STAFF role or above required to mark as prepared" });
       }
-      if (workingPaper.status !== 'DRAFT') {
-        return res.status(400).json({ error: "Working paper must be in draft status to prepare" });
+      if (!['DRAFT', 'IN_PROGRESS'].includes(workingPaper.status)) {
+        return res.status(400).json({ error: "Working paper must be in draft/in-progress status to prepare" });
       }
       updateData = { preparedById: userId, preparedAt: new Date(), status: 'PREPARED' };
     } else if (action === 'review') {
-      if (userRole !== 'MANAGER') {
-        return res.status(403).json({ error: "Only Manager can mark as reviewed" });
+      if (userRoleIndex < ROLE_HIERARCHY.indexOf("SENIOR")) {
+        return res.status(403).json({ error: "SENIOR role or above required to mark as reviewed" });
       }
       if (workingPaper.status !== 'PREPARED') {
         return res.status(400).json({ error: "Working paper must be prepared before review" });
       }
       updateData = { reviewedById: userId, reviewedAt: new Date(), status: 'REVIEWED' };
     } else if (action === 'approve') {
-      if (userRole !== 'PARTNER') {
-        return res.status(403).json({ error: "Only Partner can approve" });
+      if (userRoleIndex < ROLE_HIERARCHY.indexOf("MANAGER")) {
+        return res.status(403).json({ error: "MANAGER role or above required to approve" });
       }
       if (workingPaper.status !== 'REVIEWED') {
         return res.status(400).json({ error: "Working paper must be reviewed before approval" });
       }
       updateData = { approvedById: userId, approvedAt: new Date(), status: 'APPROVED', isLocked: true, lockedAt: new Date(), lockedById: userId };
     } else if (action === 'unlock') {
-      if (userRole !== 'PARTNER') {
-        return res.status(403).json({ error: "Only Partner can unlock" });
+      if (userRoleIndex < ROLE_HIERARCHY.indexOf("PARTNER")) {
+        return res.status(403).json({ error: "Only Partner or above can unlock" });
       }
       if (!reason) {
         return res.status(400).json({ error: "Unlock reason is required" });
@@ -2461,11 +2477,19 @@ router.get("/api/engagements/:engagementId/fs-heads/:fsHeadKey/compliance-check"
       }
     }) : [];
 
+    const procedures = workingPaper.procedures || [];
     const risksWithProcedures = linkedRisks.filter((r: any) => {
-      const hasLinkedProcedure = (workingPaper.procedures || []).some((p: any) =>
-        p.riskLevel || (p.assertions && p.assertions.length > 0)
-      );
-      return hasLinkedProcedure;
+      const riskDesc = (r.riskDescription || '').toLowerCase();
+      const riskAccount = (r.accountOrClass || '').toLowerCase();
+      return procedures.some((p: any) => {
+        const procDesc = ((p.description || '') + ' ' + (p.testObjective || '')).toLowerCase();
+        const procRisk = (p.riskLevel || '').toLowerCase();
+        const procAssertions = (p.assertions || []).join(' ').toLowerCase();
+        const riskWord = riskAccount.split(' ')[0];
+        return (riskWord && procDesc.includes(riskWord)) ||
+               (riskDesc && procDesc.includes(riskDesc.split(' ')[0])) ||
+               (procRisk && procAssertions);
+      });
     });
 
     const isa330 = {
@@ -2676,6 +2700,13 @@ router.patch("/api/engagements/:engagementId/fs-heads/:fsHeadKey/status", async 
         + (workingPaper.analyticalProcedures?.length || 0);
       if (totalProcedures === 0) {
         return res.status(400).json({ error: "Cannot mark as Prepared — at least one procedure must be executed" });
+      }
+      const completedTOC = (workingPaper.testOfControls || []).filter((t: any) => t.result === "SATISFACTORY" || t.result === "COMPLETED" || t.result === "DEVIATION_NOTED").length;
+      const completedTOD = (workingPaper.testOfDetails || []).filter((t: any) => t.result === "SATISFACTORY" || t.result === "COMPLETED" || t.result === "EXCEPTION").length;
+      const completedAnalytics = (workingPaper.analyticalProcedures || []).filter((a: any) => a.auditorConclusion?.trim()?.length > 0 || a.conclusion?.trim()?.length > 0).length;
+      const completedProcedures = completedTOC + completedTOD + completedAnalytics;
+      if (completedProcedures === 0) {
+        return res.status(400).json({ error: "Cannot mark as Prepared — at least one procedure must have a recorded result/conclusion" });
       }
     }
 
