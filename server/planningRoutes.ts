@@ -228,7 +228,7 @@ router.post("/:engagementId/materiality", requireAuth, requirePhaseUnlocked("PLA
       include: { approvedBy: { select: { id: true, fullName: true, role: true } } },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "MATERIALITY_CREATED",
       "materiality_assessment",
@@ -239,7 +239,7 @@ router.post("/:engagementId/materiality", requireAuth, requirePhaseUnlocked("PLA
       `Created materiality assessment with OM: ${overallMateriality}`,
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.status(201).json(assessment);
   } catch (error: any) {
@@ -261,7 +261,7 @@ router.post("/:engagementId/materiality/:materialityId/approve", requireAuth, re
       include: { approvedBy: { select: { id: true, fullName: true, role: true } } },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "MATERIALITY_APPROVED",
       "materiality_assessment",
@@ -272,7 +272,7 @@ router.post("/:engagementId/materiality/:materialityId/approve", requireAuth, re
       "Partner approved materiality assessment",
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(assessment);
   } catch (error: any) {
@@ -398,7 +398,7 @@ router.post("/:engagementId/risks", requireAuth, requirePhaseUnlocked("PLANNING"
       },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "RISK_ASSESSED",
       "risk_assessment",
@@ -409,7 +409,7 @@ router.post("/:engagementId/risks", requireAuth, requirePhaseUnlocked("PLANNING"
       `Risk assessed for ${data.accountOrClass} - ${data.assertion}${data.isFraudRisk ? " [FRAUD RISK]" : ""}${data.isLawsRegulationsRisk ? " [L&R RISK]" : ""}`,
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.status(201).json(risk);
   } catch (error: any) {
@@ -506,7 +506,7 @@ router.patch("/:engagementId/risks/:riskId", requireAuth, requirePhaseUnlocked("
       },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "RISK_UPDATED",
       "risk_assessment",
@@ -517,7 +517,7 @@ router.patch("/:engagementId/risks/:riskId", requireAuth, requirePhaseUnlocked("
       "Risk assessment updated",
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(risk);
   } catch (error: any) {
@@ -556,7 +556,7 @@ router.post("/:engagementId/risks/:riskId/partner-approve", requireAuth, require
       },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "SIGNIFICANT_RISK_PARTNER_APPROVED",
       "risk_assessment",
@@ -567,7 +567,7 @@ router.post("/:engagementId/risks/:riskId/partner-approve", requireAuth, require
       `Partner approved significant risk: ${existing.accountOrClass}`,
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(risk);
   } catch (error: any) {
@@ -589,7 +589,7 @@ router.post("/:engagementId/risks/:riskId/review", requireAuth, requireMinRole("
       },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "RISK_REVIEWED",
       "risk_assessment",
@@ -600,7 +600,7 @@ router.post("/:engagementId/risks/:riskId/review", requireAuth, requireMinRole("
       "Risk assessment reviewed by manager",
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(risk);
   } catch (error: any) {
@@ -656,7 +656,7 @@ router.post("/:engagementId/going-concern", requireAuth, requirePhaseUnlocked("P
       },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "GOING_CONCERN_UPDATED",
       "going_concern_assessment",
@@ -667,7 +667,7 @@ router.post("/:engagementId/going-concern", requireAuth, requirePhaseUnlocked("P
       "Going concern assessment updated",
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(assessment);
   } catch (error: any) {
@@ -746,7 +746,7 @@ router.post("/:engagementId/planning-memo", requireAuth, requirePhaseUnlocked("P
       },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "PLANNING_MEMO_UPDATED",
       "planning_memo",
@@ -757,7 +757,7 @@ router.post("/:engagementId/planning-memo", requireAuth, requirePhaseUnlocked("P
       "Planning memo updated",
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(memo);
   } catch (error: any) {
@@ -783,7 +783,7 @@ router.post("/:engagementId/planning-memo/manager-review", requireAuth, requireM
       },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "PLANNING_MEMO_REVIEWED",
       "planning_memo",
@@ -794,7 +794,7 @@ router.post("/:engagementId/planning-memo/manager-review", requireAuth, requireM
       "Planning memo reviewed by manager",
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(memo);
   } catch (error: any) {
@@ -817,7 +817,7 @@ router.post("/:engagementId/planning-memo/partner-approve", requireAuth, require
       },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "PLANNING_MEMO_APPROVED",
       "planning_memo",
@@ -828,7 +828,7 @@ router.post("/:engagementId/planning-memo/partner-approve", requireAuth, require
       "Planning memo approved by partner",
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(memo);
   } catch (error: any) {
@@ -1178,7 +1178,7 @@ router.post("/:engagementId/risks/:riskId/override-request", requireAuth, requir
       },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "RISK_OVERRIDE_REQUESTED",
       "risk_override_request",
@@ -1189,7 +1189,7 @@ router.post("/:engagementId/risks/:riskId/override-request", requireAuth, requir
       `Override requested for risk: ${risk.accountOrClass}`,
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.status(201).json(override);
   } catch (error: any) {
@@ -1249,7 +1249,7 @@ router.post("/:engagementId/override-requests/:overrideId/partner-approve", requ
       },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "RISK_OVERRIDE_PARTNER_APPROVED",
       "risk_override_request",
@@ -1260,7 +1260,7 @@ router.post("/:engagementId/override-requests/:overrideId/partner-approve", requ
       "Partner approved risk override request",
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(updated);
   } catch (error: any) {
@@ -1321,7 +1321,7 @@ router.post("/:engagementId/override-requests/:overrideId/eqcr-approve", require
       data: safeChanges,
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "RISK_OVERRIDE_EQCR_APPROVED",
       "risk_override_request",
@@ -1332,7 +1332,7 @@ router.post("/:engagementId/override-requests/:overrideId/eqcr-approve", require
       `EQCR approved risk override - changes applied to risk: ${override.riskAssessment.accountOrClass}`,
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json({ override: updated, updatedRisk });
   } catch (error: any) {
@@ -1369,7 +1369,7 @@ router.post("/:engagementId/override-requests/:overrideId/reject", requireAuth, 
       },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "RISK_OVERRIDE_REJECTED",
       "risk_override_request",
@@ -1380,7 +1380,7 @@ router.post("/:engagementId/override-requests/:overrideId/reject", requireAuth, 
       `Override request rejected: ${req.body.reason}`,
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(updated);
   } catch (error: any) {
@@ -1543,7 +1543,7 @@ router.patch("/:engagementId/entity-understanding", requireAuth, requirePhaseUnl
       },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       existing ? "ENTITY_UNDERSTANDING_UPDATED" : "ENTITY_UNDERSTANDING_CREATED",
       "entity_understanding",
@@ -1554,7 +1554,7 @@ router.patch("/:engagementId/entity-understanding", requireAuth, requirePhaseUnl
       "Entity understanding documented per ISA 315",
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(understanding);
   } catch (error: any) {
@@ -1575,7 +1575,7 @@ router.post("/:engagementId/entity-understanding/partner-approve", requireAuth, 
       },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "ENTITY_UNDERSTANDING_PARTNER_APPROVED",
       "entity_understanding",
@@ -1586,7 +1586,7 @@ router.post("/:engagementId/entity-understanding/partner-approve", requireAuth, 
       "Partner approved entity understanding",
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(understanding);
   } catch (error: any) {
@@ -1650,7 +1650,7 @@ router.post("/:engagementId/related-parties", requireAuth, requirePhaseUnlocked(
       },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "RELATED_PARTY_IDENTIFIED",
       "related_party",
@@ -1661,7 +1661,7 @@ router.post("/:engagementId/related-parties", requireAuth, requirePhaseUnlocked(
       "Related party identified: " + data.partyName,
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.status(201).json(party);
   } catch (error: any) {
@@ -1689,7 +1689,7 @@ router.patch("/:engagementId/related-parties/:partyId", requireAuth, requirePhas
       data,
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "RELATED_PARTY_UPDATED",
       "related_party",
@@ -1700,7 +1700,7 @@ router.patch("/:engagementId/related-parties/:partyId", requireAuth, requirePhas
       "Related party updated: " + party.partyName,
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(party);
   } catch (error: any) {
@@ -1722,7 +1722,7 @@ router.delete("/:engagementId/related-parties/:partyId", requireAuth, requireMin
       where: { id: req.params.partyId },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "RELATED_PARTY_DELETED",
       "related_party",
@@ -1733,7 +1733,7 @@ router.delete("/:engagementId/related-parties/:partyId", requireAuth, requireMin
       "Related party deleted: " + existing.partyName,
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json({ message: "Related party deleted successfully" });
   } catch (error: any) {
@@ -1871,7 +1871,7 @@ router.patch("/:engagementId/industry-analysis", requireAuth, requirePhaseUnlock
       update: data,
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       existing ? "INDUSTRY_ANALYSIS_UPDATED" : "INDUSTRY_ANALYSIS_CREATED",
       "industry_analysis",
@@ -1882,7 +1882,7 @@ router.patch("/:engagementId/industry-analysis", requireAuth, requirePhaseUnlock
       "Industry analysis documented per ISA 315",
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(analysis);
   } catch (error: any) {
@@ -2019,7 +2019,7 @@ router.patch("/:engagementId/audit-strategy", requireAuth, requirePhaseUnlocked(
       update: data,
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       existing ? "AUDIT_STRATEGY_UPDATED" : "AUDIT_STRATEGY_CREATED",
       "audit_strategy",
@@ -2030,7 +2030,7 @@ router.patch("/:engagementId/audit-strategy", requireAuth, requirePhaseUnlocked(
       "Audit strategy documented per ISA 300/330",
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(strategy);
   } catch (error: any) {
@@ -2051,7 +2051,7 @@ router.post("/:engagementId/audit-strategy/partner-approve", requireAuth, requir
       },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "AUDIT_STRATEGY_PARTNER_APPROVED",
       "audit_strategy",
@@ -2062,7 +2062,7 @@ router.post("/:engagementId/audit-strategy/partner-approve", requireAuth, requir
       "Partner approved audit strategy",
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(strategy);
   } catch (error: any) {
@@ -2146,7 +2146,7 @@ router.post("/:engagementId/internal-control-assessment", requireAuth, requirePh
       },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "INTERNAL_CONTROL_ASSESSMENT_CREATED",
       "internal_control_assessment",
@@ -2157,7 +2157,7 @@ router.post("/:engagementId/internal-control-assessment", requireAuth, requirePh
       "Internal control assessment documented - Overall: " + overallRating,
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.status(201).json(assessment);
   } catch (error: any) {
@@ -2283,7 +2283,7 @@ router.post("/:engagementId/ai-risk-assessment", requireAuth, requirePhaseUnlock
       ],
     };
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id,
       "AI_RISK_ASSESSMENT_PERFORMED",
       "engagement",
@@ -2294,7 +2294,7 @@ router.post("/:engagementId/ai-risk-assessment", requireAuth, requirePhaseUnlock
       "AI-assisted risk assessment performed - Score: " + result.score,
       req.ip,
       req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(aiInsights);
   } catch (error: any) {

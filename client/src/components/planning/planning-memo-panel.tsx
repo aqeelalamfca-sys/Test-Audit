@@ -91,9 +91,19 @@ export function PlanningMemoPanel({ engagementId, readOnly, onFieldChange, plann
         `High/Significant Inherent Risks: ${riskSummary.highRisks || 0}`,
       ].join("\n");
 
+      const materialityInfo = dashboard.planningCompletion || {};
+      const draftFs = dashboard.draftFsSummary || {};
+      const generatedMateriality = materialityInfo.materialityDone
+        ? [
+            `Materiality calculated and ${materialityInfo.materialityApproved ? "approved by Partner" : "pending Partner approval"}.`,
+            `Benchmark basis and thresholds established per ISA 320.`,
+          ].join("\n")
+        : "Materiality not yet calculated. Complete materiality tab before finalizing memo.";
+
       onFieldChange?.("memoOverview", generatedOverview);
       onFieldChange?.("memoFinancialHighlights", generatedHighlights);
       onFieldChange?.("memoRiskSummary", generatedRisks);
+      onFieldChange?.("memoMateriality", generatedMateriality);
 
       toast({ title: "Memo Sections Generated", description: "Key sections auto-populated from planning data." });
     } catch (error) {
