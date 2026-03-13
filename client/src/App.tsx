@@ -19,7 +19,6 @@ import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts-dialog"
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import { WorkspaceAccessGuard } from "@/components/workspace-access-guard";
-import { WorkspaceRibbon } from "@/components/workspace-ribbon";
 import { TrialBanner } from "@/components/trial-banner";
 import { AlphaRibbon } from "@/components/alpha-ribbon";
 
@@ -452,7 +451,6 @@ function EnforcedAppContent({ user, firm, sidebarStyle, initials }: {
             />
             <AlphaRibbon />
             <TrialBanner />
-            <WorkspaceRibbon />
             
             <main className="flex-1 overflow-auto bg-background scroll-smooth">
               <div className="min-h-full">
