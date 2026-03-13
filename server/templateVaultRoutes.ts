@@ -354,7 +354,11 @@ router.get("/download/:templateId", requireAuth, (req: AuthenticatedRequest, res
 
     const isIsqm = template.category === "ISQM" || template.category === "ISQM_REFERENCE";
     const dir = isIsqm ? ISQM_DIR : WORKING_PAPERS_DIR;
-    const filePath = path.join(dir, template.fileName);
+    const filePath = path.resolve(dir, template.fileName);
+
+    if (!filePath.startsWith(path.resolve(dir))) {
+      return res.status(403).json({ error: "Access denied" });
+    }
 
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: "Template file not found on disk" });
