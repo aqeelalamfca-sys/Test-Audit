@@ -325,8 +325,16 @@ router.get("/:engagementId/pre-report-check", requireAuth, async (req: Authentic
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
-    const result = await computePreReportBlockers(req.params.engagementId);
-    res.json(result);
+    const [draftResult, releaseResult] = await Promise.all([
+      computePreDraftBlockers(req.params.engagementId),
+      computePreReportBlockers(req.params.engagementId),
+    ]);
+    res.json({
+      readyForDraft: draftResult.readyForDraft,
+      readyForRelease: releaseResult.readyForRelease,
+      draftIssues: draftResult.issues,
+      issues: releaseResult.issues,
+    });
   } catch (error: any) {
     res.status(500).json({ error: "Failed to check", details: error.message });
   }

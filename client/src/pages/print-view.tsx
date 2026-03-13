@@ -181,7 +181,7 @@ export default function PrintView() {
     enabled: !!engagementId
   });
 
-  const { data: preReportCheck } = useQuery<{ readyForRelease: boolean; issues: Array<{ type: string; count?: number; message: string }> }>({
+  const { data: preReportCheck } = useQuery<{ readyForDraft: boolean; readyForRelease: boolean; draftIssues: Array<{ type: string; count?: number; message: string }>; issues: Array<{ type: string; count?: number; message: string }> }>({
     queryKey: [`/api/finalization/${engagementId}/pre-report-check`],
     queryFn: async () => {
       const res = await fetchWithAuth(`/api/finalization/${engagementId}/pre-report-check`);
@@ -882,14 +882,14 @@ export default function PrintView() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {preReportCheck && !preReportCheck.readyForRelease && (
+          {preReportCheck && !preReportCheck.readyForDraft && (
             <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/5 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <AlertCircle className="h-5 w-5 text-destructive" />
-                <h4 className="font-semibold text-destructive">Pre-Report Blockers</h4>
+                <h4 className="font-semibold text-destructive">Completion-Phase Blockers</h4>
               </div>
               <p className="text-sm text-muted-foreground mb-2">
-                The following items must be resolved before any deliverable can be issued:
+                The following completion-phase items must be resolved before deliverables can be issued:
               </p>
               <ul className="space-y-1">
                 {preReportCheck.issues.map((issue, idx) => (
@@ -1021,15 +1021,15 @@ export default function PrintView() {
                           size="sm"
                           variant="default"
                           onClick={() => workflowMutation.mutate({ id: deliverable.id, action: "issue" })}
-                          disabled={workflowMutation.isPending || !deliverable.deliveredDate || (deliverable.deliverableType === "AUDIT_REPORT" && !deliverable.opinionType) || (preReportCheck && !preReportCheck.readyForRelease)}
+                          disabled={workflowMutation.isPending || !deliverable.deliveredDate || (deliverable.deliverableType === "AUDIT_REPORT" && !deliverable.opinionType) || (preReportCheck && (deliverable.deliverableType === "AUDIT_REPORT" ? !preReportCheck.readyForRelease : !preReportCheck.readyForDraft))}
                         >
                           <Send className="h-4 w-4 mr-1" />
                           Issue Deliverable
                         </Button>
-                        {preReportCheck && !preReportCheck.readyForRelease && (
+                        {preReportCheck && (deliverable.deliverableType === "AUDIT_REPORT" ? !preReportCheck.readyForRelease : !preReportCheck.readyForDraft) && (
                           <span className="text-sm text-destructive flex items-center gap-1">
                             <AlertCircle className="h-4 w-4" />
-                            Pre-report blockers must be resolved
+                            {deliverable.deliverableType === "AUDIT_REPORT" ? "Report approval required" : "Completion blockers exist"}
                           </span>
                         )}
                         {!deliverable.deliveredDate && (
