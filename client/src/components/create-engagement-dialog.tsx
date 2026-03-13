@@ -199,7 +199,7 @@ export function EngagementDialog({
         setFormData({
           engagementCode: engagement.engagementCode || "",
           clientId: engagement.clientId || "",
-          engagementType: engagement.engagementType || "statutory_audit",
+          engagementType: engagement.engagementType || "",
           taxPeriod: "",
           authorizedCapital: engagement.authorizedCapital?.toString() || "",
           paidUpCapital: engagement.paidUpCapital?.toString() || engagement.shareCapital?.toString() || "",
@@ -264,7 +264,7 @@ export function EngagementDialog({
       const payload = {
         engagementCode: formData.engagementCode,
         clientId: formData.clientId,
-        engagementType: formData.engagementType || "statutory_audit",
+        engagementType: formData.engagementType,
         reportingFramework: "IFRS",
         fiscalYearEnd: formData.periodEnd,
         periodStart: formData.periodStart,
