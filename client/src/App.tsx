@@ -314,7 +314,8 @@ const ShelledEvidenceLinking = createShelledComponent(EvidenceLinking, "Evidence
 const ShelledObservations = createShelledComponent(Observations, "Observations", "observations");
 const ShelledAdjustments = createShelledComponent(AdjustmentsPage, "Adjustments", "adjustments");
 const ShelledFinalization = createShelledComponent(Finalization, "Finalization", "finalization");
-const ShelledOpinionReports = createShelledComponent(PrintView, "OpinionReports", "opinion-reports");
+const OpinionReportsPage = lazy(() => retryImport(() => import("@/pages/opinion-reports")));
+const ShelledOpinionReports = createShelledComponent(OpinionReportsPage, "OpinionReports", "opinion-reports");
 const ShelledEQCR = createShelledComponent(EQCR, "EQCR", "eqcr");
 const ShelledInspection = createShelledComponent(Inspection, "Inspection", "inspection");
 

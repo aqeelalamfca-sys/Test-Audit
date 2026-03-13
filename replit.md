@@ -89,7 +89,7 @@ The canonical audit workflow uses 19 phases defined in `shared/phases.ts` (singl
 - **Data Import** (4-6): tb-gl-upload, validation, coa-mapping
 - **Planning** (7-9): materiality, risk-assessment, planning-strategy
 - **Fieldwork** (10-14): procedures-sampling, execution-testing, evidence-linking, observations, adjustments
-- **Completion** (15-16): finalization (11-section completion phase with enhanced gate enforcement), opinion-reports
+- **Completion** (15-16): finalization (11-section completion phase with enhanced gate enforcement), opinion-reports (9-tab reporting phase with ISA 700/701/705/706/265 coverage)
 - **Quality & Archive** (17-18): eqcr, inspection
 
 Key files:
@@ -243,13 +243,23 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - **Prerequisite**: Observations phase must be complete
 
 ### Finalization / Completion (Phase 15)
-- **Page**: `client/src/pages/finalization.tsx` — comprehensive completion phase with 15 tabs
-- **Tabs**: Control Board (with completion dashboard), Adjusted FS, Completion Checklist, Subsequent Events, Going Concern, Legal & Claims, Related Parties, Disclosure Review, Representation Letter, Final Analytics, Final Conclusion, Completion Memo, Partner Review Readiness, Reporting Opinion, Lock Gate
+- **Page**: `client/src/pages/finalization.tsx` — comprehensive completion phase with 14 tabs
+- **Tabs**: Control Board (with completion dashboard), Adjusted FS, Completion Checklist, Subsequent Events, Going Concern, Legal & Claims, Related Parties, Disclosure Review, Representation Letter, Final Analytics, Final Conclusion, Completion Memo, Partner Review Readiness, Lock Gate
 - **Backend**: `server/finalizationRoutes.ts` — CRUD for subsequent events, going concern, representations, completion memo, checklists + finalization-stats endpoint
 - **Stats endpoint**: `GET /api/finalization/:engagementId/finalization-stats` (completion progress, findings/adjustments status, report readiness)
 - **Gates**: completion-checklist, subsequent-events, going-concern, representation-letter, findings-addressed, required-signoffs, disclosure-reviewed, final-analytics-done, completion-memo-done, partner-review-ready (10 gates total)
 - **AI capabilities**: completion-memo-drafting, subsequent-events-narration, going-concern-wording, unresolved-matters-summary
 - **Enhanced gate enforcement**: checks observations/adjustments status, required manager+partner sign-offs, checklist completion
+
+### Opinion / Reports (Phase 16)
+- **Page**: `client/src/pages/opinion-reports.tsx` — dedicated 9-tab reporting phase
+- **Tabs**: Dashboard, Report Type & Opinion (ISA 700/705), Emphasis/Other Matter (ISA 706/720), Key Audit Matters (ISA 701), FS Pack Readiness, Management Letter (ISA 265), Deliverables Checklist, Report Package, Release Controls
+- **Backend**: `server/opinionEngineRoutes.ts` — opinion engine, deliverables CRUD, opinion-reports-stats endpoint
+- **Stats endpoint**: `GET /api/opinion-engine/:engagementId/opinion-reports-stats` (opinion status, deliverables progress, KAMs, control deficiencies, release readiness)
+- **Gates**: finalization-approved, opinion-determined, basis-documented, kam-documented, fs-pack-ready, management-letter-done, deliverables-checklist-complete, report-package-generated, release-approved (9 gates)
+- **AI capabilities**: report-drafting-support, basis-paragraph-support, management-letter-wording, deliverable-summary
+- **Features**: AI Opinion Engine (reused from finalization), deliverables register with CRUD/upload/approval/issuance workflow, readiness checklist, release controls with partner-only issuance
+- **Routing**: `App.tsx` routes `/workspace/:engagementId/opinion-reports` to `OpinionReportsPage` (previously routed to `PrintView`/print-view.tsx)
 
 ## Feature Status
 
@@ -272,4 +282,5 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - Independence / Ethics: Complete (8-section form, declaration tracking, partner approval, AI, audit trail)
 - TB/GL Upload: Complete (batch tracking, source/period tagging, import logs, template checks)
 - Validation & Parsing: Complete (structured results panel, AI analysis, blocker enforcement)
-- Finalization / Completion: Complete (11-section completion phase, 15-tab UI, completion dashboard, enhanced gate enforcement with 10 gates, 4 AI capabilities, partner review readiness tracking)
+- Finalization / Completion: Complete (11-section completion phase, 14-tab UI, completion dashboard, enhanced gate enforcement with 10 gates, 4 AI capabilities, partner review readiness tracking)
+- Opinion / Reports: Complete (9-tab reporting phase, ISA 700/701/705/706/265 coverage, AI opinion engine, deliverables register, 9 gates, 4 AI capabilities, release controls)

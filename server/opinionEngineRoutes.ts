@@ -473,4 +473,81 @@ router.get("/:engagementId/data-sources", requireAuth, async (req: Authenticated
   }
 });
 
+router.get("/:engagementId/opinion-reports-stats", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    if (!access.valid) return res.status(404).json({ error: access.error });
+
+    const eid = req.params.engagementId;
+    const [engine, deliverables, completionMemo, observations] = await Promise.all([
+      prisma.opinionEngine.findFirst({
+        where: { engagementId: eid },
+        orderBy: { version: "desc" },
+        include: { findings: true },
+      }),
+      prisma.deliverable.findMany({
+        where: { engagementId: eid },
+        select: { id: true, deliverableType: true, status: true, opinionType: true, approvedById: true, issuedById: true, issuedAt: true },
+      }),
+      prisma.completionMemo.findUnique({
+        where: { engagementId: eid },
+        select: { partnerApprovedById: true, managerReviewedById: true },
+      }),
+      prisma.observation.findMany({
+        where: { engagementId: eid, type: { in: ["CONTROL_DEFICIENCY", "MATERIAL_WEAKNESS", "SIGNIFICANT_DEFICIENCY"] } },
+        select: { id: true, status: true, severity: true, type: true },
+      }),
+    ]);
+
+    const kamFindings = engine?.findings?.filter((f: any) => f.category === "KEY_AUDIT_MATTER") || [];
+    const auditReport = deliverables.find(d => d.deliverableType === "AUDIT_REPORT");
+    const managementLetter = deliverables.find(d => d.deliverableType === "MANAGEMENT_LETTER");
+    const allDeliverablesFinal = deliverables.length > 0 && deliverables.every(d => d.status === "FINAL" || d.status === "ISSUED");
+    const reportIssued = !!(auditReport?.status === "ISSUED" && auditReport?.issuedById);
+    const finalizationApproved = !!(completionMemo?.partnerApprovedById);
+    const opinionDetermined = !!(engine?.recommendedCategory || engine?.partnerDecision === "ACCEPTED");
+
+    res.json({
+      opinion: {
+        determined: opinionDetermined,
+        category: engine?.recommendedCategory || null,
+        partnerDecision: engine?.partnerDecision || null,
+        justification: engine?.justification || null,
+        evidenceReliability: engine?.evidenceReliability || null,
+      },
+      keyAuditMatters: {
+        count: kamFindings.length,
+        items: kamFindings.map((f: any) => ({ id: f.id, title: f.title, category: f.category })),
+      },
+      deliverables: {
+        total: deliverables.length,
+        byType: {
+          auditReport: auditReport ? { status: auditReport.status, opinionType: auditReport.opinionType } : null,
+          managementLetter: managementLetter ? { status: managementLetter.status } : null,
+        },
+        draft: deliverables.filter(d => d.status === "DRAFT").length,
+        final: deliverables.filter(d => d.status === "FINAL").length,
+        issued: deliverables.filter(d => d.status === "ISSUED").length,
+        allFinal: allDeliverablesFinal,
+      },
+      controlDeficiencies: {
+        total: observations.length,
+        significant: observations.filter(o => o.type === "SIGNIFICANT_DEFICIENCY" || o.type === "MATERIAL_WEAKNESS").length,
+        open: observations.filter(o => ["OPEN", "UNDER_REVIEW"].includes(o.status)).length,
+      },
+      readiness: {
+        finalizationApproved,
+        opinionDetermined,
+        reportGenerated: !!(auditReport),
+        managementLetterPrepared: !!(managementLetter),
+        deliverablesComplete: allDeliverablesFinal,
+        reportIssued,
+        releaseReady: finalizationApproved && opinionDetermined && allDeliverablesFinal,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: "Failed to fetch opinion-reports stats" });
+  }
+});
+
 export default router;

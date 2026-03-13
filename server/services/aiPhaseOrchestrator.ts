@@ -468,6 +468,45 @@ const AI_CAPABILITY_REGISTRY: Record<string, PhaseAICapability[]> = {
       isaReference: "ISA 700",
     },
   ],
+  "report-drafting-support": [
+    {
+      id: "report-drafting-support",
+      label: "Draft Audit Report",
+      description: "Generate an ISA 700-compliant audit report draft based on the determined opinion and audit results",
+      promptType: "report_draft",
+      requiresContext: ["opinion_type", "entity_info", "financial_period", "basis_for_opinion", "key_audit_matters"],
+      isaReference: "ISA 700",
+    },
+  ],
+  "basis-paragraph-support": [
+    {
+      id: "basis-paragraph-support",
+      label: "Draft Basis Paragraph",
+      description: "Generate the basis for opinion paragraph including modifications per ISA 705 where applicable",
+      promptType: "basis_paragraph",
+      requiresContext: ["opinion_type", "misstatements", "scope_limitations", "going_concern"],
+      isaReference: "ISA 705",
+    },
+  ],
+  "management-letter-wording": [
+    {
+      id: "management-letter-wording",
+      label: "Draft Management Letter",
+      description: "Generate ISA 265-compliant management letter wording for internal control deficiencies and recommendations",
+      promptType: "management_letter",
+      requiresContext: ["control_deficiencies", "observations", "recommendations", "entity_info"],
+      isaReference: "ISA 265",
+    },
+  ],
+  "deliverable-summary": [
+    {
+      id: "deliverable-summary",
+      label: "Summarize Deliverables",
+      description: "Generate a summary of all engagement deliverables, their status, and any outstanding items",
+      promptType: "deliverable_summary",
+      requiresContext: ["deliverables_list", "engagement_status", "report_package"],
+    },
+  ],
   "eqcr-readiness-summary": [
     {
       id: "eqcr-readiness-summary",
@@ -559,9 +598,15 @@ Consider the impact on the financial statements and audit opinion.`,
 - ISA 700: Disclosure completeness review
 Help the auditor summarize overall audit results, evaluate evidence sufficiency, identify unresolved matters, draft the completion memo, assess partner review readiness, and ensure all completion procedures are properly documented before opinion formation.`,
 
-  "opinion-reports": `You are assisting with audit opinion formation per ISA 700-706.
-Focus on the basis for opinion, key audit matters, and report modifications.
-Never determine the opinion - only provide supporting analysis for the auditor's judgment.`,
+  "opinion-reports": `You are assisting with audit opinion formation, report generation, and deliverable management per ISA 700/701/705/706/265.
+Focus on:
+- ISA 700: Forming the auditor's opinion and structuring the audit report
+- ISA 705: Modifications to the opinion (qualified, adverse, disclaimer) with proper basis paragraphs
+- ISA 706: Emphasis of Matter and Other Matter paragraphs
+- ISA 701: Key Audit Matters identification and communication for listed entities
+- ISA 265: Communication of internal control deficiencies (management letter)
+- Deliverable management and report package assembly
+Never determine the opinion — only provide supporting analysis, draft wording, and report structure for the auditor's professional judgment. Ensure all generated content references applicable ISA standards.`,
 
   eqcr: `You are assisting with engagement quality control review.
 Focus on identifying unresolved significant matters and completeness of documentation.

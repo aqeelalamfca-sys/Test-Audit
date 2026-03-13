@@ -1048,15 +1048,126 @@ async function evaluateSingleGate(
       }
 
       case "finalization-approved": {
-        passed = isBackendPhaseCompleted(statusMap, "FINALIZATION");
-        if (passed) message = "Finalization completed";
+        const finMemo = await prisma.completionMemo.findUnique({
+          where: { engagementId },
+          select: { partnerApprovedById: true },
+        });
+        passed = !!(finMemo?.partnerApprovedById) || isBackendPhaseCompleted(statusMap, "FINALIZATION");
+        if (passed) message = "Finalization approved — ready for opinion formation";
+        else message = "Finalization phase must be completed and approved before generating opinion";
         break;
       }
 
-      case "opinion-determined":
+      case "opinion-determined": {
+        const engine = await prisma.opinionEngine.findFirst({
+          where: { engagementId },
+          orderBy: { version: "desc" },
+          select: { recommendedCategory: true, partnerDecision: true },
+        });
+        passed = !!(engine?.recommendedCategory || engine?.partnerDecision === "ACCEPTED");
+        if (passed) message = `Opinion type determined: ${engine?.recommendedCategory || "pending partner decision"}`;
+        else message = "Audit opinion type must be selected and documented";
+        break;
+      }
+
+      case "basis-documented": {
+        const engineBasis = await prisma.opinionEngine.findFirst({
+          where: { engagementId },
+          orderBy: { version: "desc" },
+          select: { recommendedCategory: true, justification: true },
+        });
+        if (!engineBasis) {
+          passed = false;
+          message = "No opinion engine record — run opinion analysis first";
+        } else if (engineBasis.recommendedCategory === "UNMODIFIED") {
+          passed = true;
+          message = "Unmodified opinion — standard basis paragraph applies";
+        } else {
+          passed = !!(engineBasis.justification && engineBasis.justification.length > 20);
+          if (passed) message = "Basis for modification documented";
+          else message = "Modified opinion requires a documented basis for modification (ISA 705)";
+        }
+        break;
+      }
+
+      case "kam-documented": {
+        const engineKam = await prisma.opinionEngine.findFirst({
+          where: { engagementId },
+          orderBy: { version: "desc" },
+          select: { id: true },
+        });
+        const kamFindings = engineKam ? await prisma.opinionEngineFinding.count({
+          where: { engineId: engineKam.id, category: "KEY_AUDIT_MATTER" },
+        }) : 0;
+        passed = kamFindings > 0;
+        if (passed) message = `${kamFindings} key audit matter(s) documented`;
+        else message = "Key audit matters should be identified (ISA 701) — soft requirement";
+        break;
+      }
+
+      case "fs-pack-ready": {
+        const fsDeliverables = await prisma.deliverable.count({
+          where: { engagementId, deliverableType: { in: ["AUDIT_REPORT", "ENGAGEMENT_SUMMARY"] }, status: { in: ["FINAL", "ISSUED"] } },
+        });
+        passed = fsDeliverables > 0;
+        if (passed) message = `${fsDeliverables} financial statement deliverable(s) finalized`;
+        else message = "Complete financial statement pack must be assembled before report issuance";
+        break;
+      }
+
+      case "management-letter-done": {
+        const mgmtLetter = await prisma.deliverable.findFirst({
+          where: { engagementId, deliverableType: "MANAGEMENT_LETTER" },
+          select: { status: true },
+        });
+        passed = !!(mgmtLetter && (mgmtLetter.status === "DRAFT" || mgmtLetter.status === "FINAL" || mgmtLetter.status === "ISSUED"));
+        if (passed) message = `Management letter prepared (${mgmtLetter!.status})`;
+        else message = "Management letter / internal control letter should be prepared (ISA 265)";
+        break;
+      }
+
+      case "deliverables-checklist-complete": {
+        const allDeliverables = await prisma.deliverable.findMany({
+          where: { engagementId },
+          select: { status: true, deliverableType: true },
+        });
+        const requiredTypes = ["AUDIT_REPORT"];
+        const hasRequired = requiredTypes.every(type => allDeliverables.some(d => d.deliverableType === type));
+        passed = hasRequired && allDeliverables.length > 0;
+        if (passed) message = `${allDeliverables.length} deliverable(s) tracked — all required types present`;
+        else message = allDeliverables.length === 0 ? "No deliverables created" : "Required deliverable types missing (AUDIT_REPORT)";
+        break;
+      }
+
+      case "report-package-generated": {
+        const reportDelivs = await prisma.deliverable.count({
+          where: { engagementId, status: { in: ["FINAL", "ISSUED"] } },
+        });
+        passed = reportDelivs > 0;
+        if (passed) message = `${reportDelivs} deliverable(s) in final/issued status`;
+        else message = "Report package should be generated and reviewed";
+        break;
+      }
+
+      case "release-approved": {
+        const issuedReport = await prisma.deliverable.findFirst({
+          where: { engagementId, deliverableType: "AUDIT_REPORT", status: "ISSUED" },
+          select: { issuedById: true, approvedById: true },
+        });
+        passed = !!(issuedReport?.approvedById && issuedReport?.issuedById);
+        if (passed) message = "Audit report approved and issued";
+        else if (issuedReport?.approvedById) message = "Report approved but not yet issued";
+        else message = "Partner must approve the final report for release";
+        break;
+      }
+
       case "reports-generated": {
-        passed = isBackendPhaseActive(statusMap, "REPORTING");
-        if (passed) message = "Reporting phase active";
+        const reportsGen = await prisma.deliverable.count({
+          where: { engagementId, status: { in: ["DRAFT", "FINAL", "ISSUED"] } },
+        });
+        passed = reportsGen > 0;
+        if (passed) message = `${reportsGen} report(s) generated`;
+        else message = "Final audit report should be generated";
         break;
       }
 
