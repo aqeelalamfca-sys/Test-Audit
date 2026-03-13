@@ -350,12 +350,7 @@ function Router() {
       
       {/* Workspace routes (require engagementId + access check) */}
       <Route path="/workspace/:engagementId/requisition" component={GuardedInformationRequisition} />
-      <Route path="/workspace/:engagementId/pre-planning">
-        {(params: any) => {
-          window.location.replace(`/workspace/${params.engagementId}/planning`);
-          return null;
-        }}
-      </Route>
+      <Route path="/workspace/:engagementId/pre-planning" component={GuardedPrePlanning} />
       <Route path="/workspace/:engagementId/planning" component={GuardedPlanning} />
       <Route path="/workspace/:engagementId/execution" component={GuardedExecution} />
       <Route path="/workspace/:engagementId/fs-heads" component={GuardedFSHeadsPage} />
