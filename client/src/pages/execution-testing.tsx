@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -17,8 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   ClipboardList, Shield, Target, BarChart3, AlertTriangle,
   CheckCircle2, AlertCircle, XCircle, ChevronRight, Info,
-  Layers, Brain, FileText, Users, ArrowRight, Sparkles,
-  Filter, Search, PlayCircle, PauseCircle, Clock, Eye,
+  Brain, FileText, Users, ArrowRight, Sparkles,
+  Search, PlayCircle, Clock, Eye,
   FileCheck, MessageSquare, Database, Briefcase, TrendingUp
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -291,23 +291,23 @@ export default function ExecutionTesting() {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="dashboard" className="text-xs sm:text-sm">
-              <Layers className="h-3.5 w-3.5 mr-1" /> Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="procedures" className="text-xs sm:text-sm">
-              <ClipboardList className="h-3.5 w-3.5 mr-1" /> Procedures
-            </TabsTrigger>
-            <TabsTrigger value="testing" className="text-xs sm:text-sm">
-              <Shield className="h-3.5 w-3.5 mr-1" /> Testing
-            </TabsTrigger>
-            <TabsTrigger value="workpapers" className="text-xs sm:text-sm">
-              <FileText className="h-3.5 w-3.5 mr-1" /> Workpapers
-            </TabsTrigger>
-            <TabsTrigger value="review" className="text-xs sm:text-sm">
-              <MessageSquare className="h-3.5 w-3.5 mr-1" /> Review
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex items-center gap-2 mb-3">
+            <label htmlFor="execution-section-select" className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+              Section:
+            </label>
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger id="execution-section-select" className="w-52 h-8 text-sm" aria-label="Select execution section">
+                <SelectValue placeholder="Select section" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dashboard">Dashboard</SelectItem>
+                <SelectItem value="procedures">Procedures</SelectItem>
+                <SelectItem value="testing">Testing</SelectItem>
+                <SelectItem value="workpapers">Workpapers</SelectItem>
+                <SelectItem value="review">Review</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           <TabsContent value="dashboard" className="space-y-4 mt-3">
             <ExecutionDashboard stats={stats} fsAreasList={fsAreasList} engagementId={engagementId} />

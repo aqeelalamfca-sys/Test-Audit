@@ -1,10 +1,12 @@
 import { ReactNode, useMemo, useState } from "react";
-import { Redirect } from "wouter";
+import { Redirect, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { useWorkspace } from "@/lib/workspace-context";
+import { useWorkspace, WORKSPACE_PHASES, isPhaseVisible } from "@/lib/workspace-context";
+import { useAuth } from "@/lib/auth";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Loader2, Bot, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertTriangle, Loader2, Bot, X, ChevronRight } from "lucide-react";
 import { getPhaseByKey } from "../../../shared/phases";
 
 interface EngagementWorkspaceShellProps {
@@ -29,7 +31,12 @@ interface EngagementPhaseState {
 
 export function EngagementWorkspaceShell({ children, phaseSlug, engagementId }: EngagementWorkspaceShellProps) {
   const { activeEngagement } = useWorkspace();
+  const { user } = useAuth();
+  const [, navigate] = useLocation();
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
+
+  const userRole = user?.role?.toUpperCase() || "STAFF";
+  const visiblePhases = WORKSPACE_PHASES.filter((phase) => isPhaseVisible(phase.key, userRole));
 
   const { data: phaseState, isLoading: phaseStateLoading, isFetched: phaseStateFetched } = useQuery<EngagementPhaseState>({
     queryKey: ["phase-state", engagementId],
@@ -77,14 +84,37 @@ export function EngagementWorkspaceShell({ children, phaseSlug, engagementId }: 
   return (
     <div className="flex flex-col h-full">
       <div className="sticky top-0 z-20 bg-background border-b border-border/60">
-        <div className="px-4 py-3 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-lg font-semibold tracking-tight truncate">{currentCanonical?.label || "Workspace"}</h1>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-              <span className="font-medium text-foreground/80">{clientName}</span>
-              {engagementCode && <span>{engagementCode}</span>}
-              {periodLabel && <span>{periodLabel}</span>}
+        <div className="px-4 py-2 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="font-medium text-foreground/80">{clientName}</span>
+                {engagementCode && <><ChevronRight className="h-3 w-3 opacity-40 shrink-0" /><span>{engagementCode}</span></>}
+                {periodLabel && <><ChevronRight className="h-3 w-3 opacity-40 shrink-0" /><span>{periodLabel}</span></>}
+              </div>
             </div>
+            {currentCanonical && phaseSlug && visiblePhases.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <label htmlFor="phase-nav-select" className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">
+                  Phase:
+                </label>
+                <Select
+                  value={phaseSlug}
+                  onValueChange={(val) => navigate(`/workspace/${engagementId}/${val}`)}
+                >
+                  <SelectTrigger id="phase-nav-select" className="h-7 w-52 text-xs font-medium border-primary/30 bg-primary/5" aria-label="Navigate to phase">
+                    <SelectValue placeholder="Select phase" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {visiblePhases.map((phase) => (
+                      <SelectItem key={phase.key} value={phase.key} className="text-xs">
+                        {phase.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {currentCanonical && (
@@ -103,7 +133,7 @@ export function EngagementWorkspaceShell({ children, phaseSlug, engagementId }: 
 
       <div className="flex flex-1 min-h-0">
         <div className="flex-1 overflow-auto">
-          <div className="p-4">
+          <div className="p-3 pt-2">
             {currentCanonical && (
               <div className="mb-4 flex items-center gap-2 text-sm">
                 {(() => {
