@@ -21,6 +21,20 @@ export interface TrendAnalysisItem {
   explanation?: string;
 }
 
+export interface VerticalAnalysisItem {
+  fsHeadKey: string;
+  fsHeadLabel: string;
+  currentYear: number;
+  priorYear: number;
+  pctOfRevenue: number | null;
+  pctOfTotalAssets: number | null;
+  pctOfTotalExpenses: number | null;
+  priorPctOfRevenue: number | null;
+  priorPctOfTotalAssets: number | null;
+  priorPctOfTotalExpenses: number | null;
+  compositionShift: number | null;
+}
+
 export interface RatioAnalysisItem {
   id: string;
   ratioName: string;
@@ -32,6 +46,17 @@ export interface RatioAnalysisItem {
   status: 'Expected' | 'Requires Explanation' | 'Risk-Indicative';
   linkedFsHeads: string[];
   interpretation: string;
+  formula?: string;
+}
+
+export interface ReasonablenessItem {
+  id: string;
+  testName: string;
+  description: string;
+  expectedRelationship: string;
+  actualResult: string;
+  status: 'Consistent' | 'Inconsistent' | 'Insufficient Data';
+  auditImplication: string;
 }
 
 export interface SignificantFluctuation {
@@ -67,15 +92,34 @@ export interface AuditStrategyImpact {
   planningConclusion: string;
 }
 
+export interface PlanningNarration {
+  overallConclusion: string;
+  significantMovements: string;
+  possibleReasons: string;
+  planningImplications: string;
+  proposedAuditResponse: string;
+  riskAssessmentLinkage: string;
+  lastUpdated: string;
+  updatedBy?: string;
+}
+
 export interface PlanningAnalyticsResult {
   fsHeadExpectations: FsHeadExpectation[];
   trendAnalysis: TrendAnalysisItem[];
+  verticalAnalysis: VerticalAnalysisItem[];
   ratioAnalysis: RatioAnalysisItem[];
+  reasonablenessTests: ReasonablenessItem[];
   significantFluctuations: SignificantFluctuation[];
   riskMatrixUpdates: RiskMatrixUpdate[];
   auditStrategyImpact: AuditStrategyImpact[];
+  narration?: PlanningNarration;
   analysisDate: string;
+  analyzedBy?: string;
+  totalAccountsAnalyzed: number;
   totalFluctuationsIdentified: number;
   riskIndicativeCount: number;
   riskMatrixUpdatesCount: number;
+  ratiosOutOfRange: number;
+  overallMateriality: number;
+  performanceMateriality: number;
 }
