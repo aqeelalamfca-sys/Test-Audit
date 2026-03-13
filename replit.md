@@ -93,8 +93,10 @@ The canonical audit workflow uses 19 phases defined in `shared/phases.ts` (singl
 - **Quality & Archive** (17-18): eqcr, inspection
 
 Key files:
-- `shared/phases.ts` — Canonical phase registry with gates, roles, AI capabilities, ISA refs
+- `shared/phases.ts` — Canonical phase registry with gates, roles, AI capabilities, ISA refs, descriptions
 - `server/services/phaseGateEngine.ts` — Backend gate evaluation engine
+- `server/services/phaseStateService.ts` — Unified phase-state service (read/update progress, status transitions, initialization)
+- `server/routes/phaseStateRoutes.ts` — Phase state API (`/api/phase-state/...`)
 - `server/routes.ts` — Phase gate API endpoints (`/api/phase-gates/:engagementId`)
 - `client/src/lib/workspace-context.tsx` — Frontend phase routing (imports from shared/phases.ts)
 - `client/src/lib/navigation.ts` — Smart routing and phase helpers

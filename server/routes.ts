@@ -57,6 +57,7 @@ import outputsRoutes from "./outputsRoutes";
 import fieldRegistryRoutes from "./fieldRegistryRoutes";
 import reconciliationRoutes from "./reconciliationRoutes";
 import reviewMappingRoutes from "./routes/reviewMappingRoutes";
+import phaseStateRoutes from "./routes/phaseStateRoutes";
 import dataHubRoutes from "./dataHubRoutes";
 import observationRoutes from "./observationRoutes";
 import auditAdjustmentRoutes from "./auditAdjustmentRoutes";
@@ -211,6 +212,7 @@ export async function registerRoutes(
   app.use("/api/push", pushRoutes);
   app.use("/api/mapping", mappingRoutes);
   app.use("/api/review-mapping", reviewMappingRoutes);
+  app.use("/api/phase-state", phaseStateRoutes);
   app.use("/api/field-orchestration", fieldOrchestrationRoutes);
   app.use("/api/fetch-engine", fetchEngineRouter);
   app.use("/api/linkage-engine", linkageEngineRoutes);

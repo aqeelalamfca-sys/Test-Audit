@@ -1,6 +1,7 @@
 export interface CanonicalPhase {
   key: string;
   label: string;
+  description: string;
   routeSlug: string;
   order: number;
   group: "onboarding" | "data" | "planning" | "fieldwork" | "completion" | "quality";
@@ -65,6 +66,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "client-creation",
     label: "Client Creation",
+    description: "Register new audit client with KYC, industry classification, and contact details",
     routeSlug: "client-creation",
     order: 0,
     group: "onboarding",
@@ -81,6 +83,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "engagement-setup",
     label: "Engagement Setup",
+    description: "Create the engagement record with period, type, team assignment, and budget",
     routeSlug: "engagement-setup",
     order: 1,
     group: "onboarding",
@@ -98,6 +101,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "acceptance",
     label: "Acceptance & Continuance",
+    description: "Evaluate client acceptance or continuance, complete checklists, and issue engagement letter per ISA 220/210",
     routeSlug: "acceptance",
     order: 2,
     group: "onboarding",
@@ -115,6 +119,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "independence",
     label: "Independence / Ethics",
+    description: "Collect independence declarations, conflict-of-interest checks, and IESBA ethics confirmations from all team members",
     routeSlug: "independence",
     order: 3,
     group: "onboarding",
@@ -132,6 +137,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "tb-gl-upload",
     label: "TB / GL Upload",
+    description: "Upload Trial Balance, General Ledger, sub-ledgers (AR/AP/Bank), and supporting schedules",
     routeSlug: "tb-gl-upload",
     order: 4,
     group: "data",
@@ -149,6 +155,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "validation",
     label: "Validation & Parsing",
+    description: "Validate uploaded data integrity — check TB balances (DR=CR), GL reconciliation, and data quality",
     routeSlug: "validation",
     order: 5,
     group: "data",
@@ -166,6 +173,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "coa-mapping",
     label: "CoA / FS Mapping",
+    description: "Map Chart of Accounts to Financial Statement line items, generate lead schedules and draft financial statements",
     routeSlug: "coa-mapping",
     order: 6,
     group: "data",
@@ -183,6 +191,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "materiality",
     label: "Materiality",
+    description: "Calculate overall materiality, performance materiality, and trivial threshold per ISA 320 with partner approval",
     routeSlug: "materiality",
     order: 7,
     group: "planning",
@@ -200,6 +209,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "risk-assessment",
     label: "Risk Assessment",
+    description: "Identify and assess risks of material misstatement at FS and assertion level per ISA 315, including fraud risk assessment per ISA 240",
     routeSlug: "risk-assessment",
     order: 8,
     group: "planning",
@@ -217,6 +227,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "planning-strategy",
     label: "Planning Strategy",
+    description: "Document overall audit strategy and detailed audit plan including planning analytics per ISA 300",
     routeSlug: "planning-strategy",
     order: 9,
     group: "planning",
@@ -234,6 +245,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "procedures-sampling",
     label: "Procedures & Sampling",
+    description: "Design audit procedures responsive to assessed risks and determine sampling parameters per ISA 330/530",
     routeSlug: "procedures-sampling",
     order: 10,
     group: "fieldwork",
@@ -251,6 +263,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "execution-testing",
     label: "Execution Testing",
+    description: "Execute planned audit procedures, document test results in workpapers, and record exceptions per ISA 230/500",
     routeSlug: "execution-testing",
     order: 11,
     group: "fieldwork",
@@ -268,6 +281,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "evidence-linking",
     label: "Evidence Linking",
+    description: "Link supporting documents and source evidence to workpapers, verify sufficiency and appropriateness per ISA 500",
     routeSlug: "evidence-linking",
     order: 12,
     group: "fieldwork",
@@ -285,6 +299,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "observations",
     label: "Observations / Findings",
+    description: "Document audit findings, internal control deficiencies, and management letter points per ISA 265",
     routeSlug: "observations",
     order: 13,
     group: "fieldwork",
@@ -302,6 +317,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "adjustments",
     label: "Adjustments / Misstatements",
+    description: "Evaluate and classify misstatements, prepare summary of adjusted and unadjusted differences per ISA 450",
     routeSlug: "adjustments",
     order: 14,
     group: "fieldwork",
@@ -319,6 +335,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "finalization",
     label: "Finalization",
+    description: "Complete subsequent events review, going concern assessment, representation letter, and completion checklist per ISA 560/570/580",
     routeSlug: "finalization",
     order: 15,
     group: "completion",
@@ -338,6 +355,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "opinion-reports",
     label: "Opinion / Reports",
+    description: "Form audit opinion, generate audit report, management letter, and deliverables pack per ISA 700/705/706",
     routeSlug: "opinion-reports",
     order: 16,
     group: "completion",
@@ -356,6 +374,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "eqcr",
     label: "EQCR Review",
+    description: "Engagement Quality Control Review — independent reviewer evaluates significant judgments and conclusions per ISQM-1",
     routeSlug: "eqcr",
     order: 17,
     group: "quality",
@@ -374,6 +393,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
   {
     key: "inspection",
     label: "Inspection Archive",
+    description: "Create immutable archive snapshot of completed engagement for regulatory inspection and firm quality review",
     routeSlug: "inspection",
     order: 18,
     group: "quality",
