@@ -465,12 +465,10 @@ export default function PrintView() {
       <div className="flex gap-2 print:hidden flex-wrap">
         <Button 
           variant="outline" 
-          onClick={() => {
-            toast({ title: "Exporting Package", description: "Preparing complete audit deliverables package..." });
-          }}
+          onClick={() => {}}
           data-testid="button-export-package"
-          disabled={deliverables.length === 0}
-          title={deliverables.length === 0 ? "No deliverables to export" : "Export complete audit deliverables package"}
+          disabled={true}
+          title="Package export will be available in a future release"
         >
           <Package className="h-4 w-4 mr-2" />
           Export Package
@@ -487,12 +485,10 @@ export default function PrintView() {
         </Button>
         <Button 
           variant="outline"
-          onClick={() => {
-            toast({ title: "Marked as Reviewed", description: "All deliverables marked as reviewed." });
-          }}
+          onClick={() => {}}
           data-testid="button-mark-reviewed"
-          disabled={deliverables.length === 0}
-          title={deliverables.length === 0 ? "No deliverables to review" : "Mark all deliverables as reviewed"}
+          disabled={true}
+          title="Bulk review will be available in a future release"
         >
           <CheckSquare className="h-4 w-4 mr-2" />
           Mark as Reviewed
