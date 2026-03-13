@@ -270,6 +270,16 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - **Security**: All mutating routes enforce finalization lock server-side; comment respond/clear routes verify comment belongs to engagement's assignment (IDOR protection)
 - **Navigation**: backHref → opinion-reports, nextHref → inspection
 
+### Inspection Archive (Phase 18)
+- **Page**: `client/src/pages/inspection.tsx` — 8-tab archive phase (Dashboard, Final Reports, Key Documents, Audit Trail, Working Papers, Review History, Archive Index, Export & Release)
+- **Backend**: `server/inspectionRoutes.ts` — stats, readiness scoring, archive lifecycle (build/seal/release), archive index generation, final reports, review history, working papers, audit trail, export logs, AI analysis endpoints
+- **Prisma models**: `ArchivePackage` (status: PENDING→BUILDING→SEALED→RELEASED, archiveIndex, packageManifest, frozenSnapshot, packageHash), reuses `InspectionReadiness`, `ExportLog`
+- **Gates**: eqcr-released (real), archive-readiness-checked (real: ≥80% readiness), archive-sealed (real: checks archive status), archive-index-generated (soft), archive-released (real: checks RELEASED status)
+- **AI capabilities**: archive-completeness-analysis, inspection-gap-summary
+- **Immutability**: After seal, all mutating routes blocked via `enforceArchiveImmutability()`; release transitions engagement status to ARCHIVED
+- **Archive Index**: Structured by sections (A-F) with ISA references for AOB/ICAP regulator retrieval
+- **Navigation**: backHref → eqcr (final phase in workflow)
+
 ## Feature Status
 
 - ISA 320 Materiality: Complete
@@ -294,3 +304,4 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - Finalization / Completion: Complete (11-section completion phase, 14-tab UI, completion dashboard, enhanced gate enforcement with 10 gates, 4 AI capabilities, partner review readiness tracking)
 - Opinion / Reports: Complete (9-tab reporting phase, ISA 700/701/705/706/265 coverage, AI opinion engine, deliverables register, 9 gates, 4 AI capabilities, release controls)
 - EQCR Review: Complete (7-tab focused view: Dashboard, Open Matters, Report Pack, Key Judgments, Independence, EQCR Checklist, Clearance & Conclusion; 3 real gate evaluators, 2 AI capabilities, IDOR-protected comment routes, finalization lock enforcement)
+- Inspection Archive: Complete (8-tab view: Dashboard, Final Reports, Key Documents, Audit Trail, Working Papers, Review History, Archive Index, Export & Release; 5 real gate evaluators, 2 AI capabilities, immutable archive lifecycle PENDING→BUILDING→SEALED→RELEASED, archive indexing for regulators, active/archived engagement separation)

@@ -1246,9 +1246,58 @@ async function evaluateSingleGate(
         break;
       }
 
-      case "archive-snapshot": {
-        passed = isBackendPhaseActive(statusMap, "INSPECTION");
-        if (passed) message = "Inspection phase active";
+      case "archive-readiness-checked": {
+        const readiness = await prisma.inspectionReadiness.findUnique({
+          where: { engagementId },
+        });
+        if (!readiness) {
+          passed = false;
+          message = "Inspection readiness has not been checked yet";
+        } else {
+          passed = readiness.overallReadiness >= 80;
+          if (passed) message = `Archive readiness verified (${readiness.overallReadiness}%)`;
+          else message = `Readiness score too low (${readiness.overallReadiness}%) — must be ≥80%`;
+        }
+        break;
+      }
+
+      case "archive-sealed": {
+        const archiveSeal = await prisma.archivePackage.findUnique({
+          where: { engagementId },
+        });
+        if (!archiveSeal) {
+          passed = false;
+          message = "Archive package has not been created";
+        } else {
+          passed = archiveSeal.status === "SEALED" || archiveSeal.status === "RELEASED";
+          if (passed) message = `Archive sealed on ${archiveSeal.sealedAt?.toISOString().split("T")[0] || "N/A"}`;
+          else message = `Archive status is "${archiveSeal.status}" — must be sealed first`;
+        }
+        break;
+      }
+
+      case "archive-index-generated": {
+        const archiveIndex = await prisma.archivePackage.findUnique({
+          where: { engagementId },
+        });
+        passed = !!archiveIndex?.archiveIndex;
+        if (passed) message = "Archive index has been generated";
+        else message = "Archive index has not been generated yet";
+        break;
+      }
+
+      case "archive-released": {
+        const archiveRelease = await prisma.archivePackage.findUnique({
+          where: { engagementId },
+        });
+        if (!archiveRelease) {
+          passed = false;
+          message = "Archive package has not been created";
+        } else {
+          passed = archiveRelease.status === "RELEASED";
+          if (passed) message = `Archive released on ${archiveRelease.releasedAt?.toISOString().split("T")[0] || "N/A"}`;
+          else message = `Archive status is "${archiveRelease.status}" — must be released`;
+        }
         break;
       }
 

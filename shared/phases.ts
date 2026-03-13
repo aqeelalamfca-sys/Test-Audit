@@ -467,11 +467,14 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
     requiredInputs: [],
     completionGates: [
       { id: "eqcr-released", label: "EQCR released", type: "hard", description: "EQCR must be released before archiving" },
-      { id: "archive-snapshot", label: "Archive snapshot created", type: "hard", description: "Immutable archive snapshot must be created" },
+      { id: "archive-readiness-checked", label: "Archive readiness verified", type: "hard", description: "Inspection readiness score must be above threshold" },
+      { id: "archive-sealed", label: "Archive sealed", type: "hard", description: "Immutable archive package must be sealed" },
+      { id: "archive-index-generated", label: "Archive index generated", type: "soft", description: "Inspection-ready index should be generated for regulator retrieval" },
+      { id: "archive-released", label: "Archive released", type: "hard", description: "Archive must be released for post-issuance preservation" },
     ],
     rolePermissions: { canPrepare: PARTNER_UP, canReview: PARTNER_UP, canApprove: PARTNER_UP, canView: MANAGER_UP },
-    aiCapabilities: [],
-    outputArtifacts: ["Inspection archive pack"],
+    aiCapabilities: ["archive-completeness-analysis", "inspection-gap-summary"],
+    outputArtifacts: ["Inspection archive pack", "Archive index"],
   },
 ];
 

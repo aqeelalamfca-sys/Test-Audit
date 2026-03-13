@@ -605,6 +605,8 @@ model User {
 
   inspectionChecks InspectionReadiness[] @relation("InspectionCheckedBy")
   exports          ExportLog[]           @relation("ExportedBy")
+  archivesSealed   ArchivePackage[]      @relation("ArchiveSealedBy")
+  archivesReleased ArchivePackage[]      @relation("ArchiveReleasedBy")
   reviewThreads    ReviewThread[]        @relation("ReviewThreadAuthor")
 
   sectionsPrepared        SectionSignOff[] @relation("SectionPreparedBy")
@@ -1475,6 +1477,7 @@ model Engagement {
   eqcrAssignment      EQCRAssignment?
   inspectionReadiness InspectionReadiness?
   exportLogs          ExportLog[]
+  archivePackage      ArchivePackage?
   sectionSignOffs     SectionSignOff[]
 
   engagementLetters    EngagementLetter[]
@@ -4128,6 +4131,31 @@ model ExportLog {
   engagement Engagement @relation(fields: [engagementId], references: [id])
   exportedBy User       @relation("ExportedBy", fields: [exportedById], references: [id])
   @@index([engagementId])
+}
+
+model ArchivePackage {
+  id           String @id @default(uuid())
+  engagementId String @unique
+
+  status       String @default("PENDING")
+
+  archiveIndex   Json?
+  packageManifest Json?
+  packageHash    String?
+  frozenSnapshot Json?
+  notes          String?
+
+  sealedAt     DateTime?
+  sealedById   String?
+  releasedAt   DateTime?
+  releasedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  engagement Engagement @relation(fields: [engagementId], references: [id])
+  sealedBy   User?      @relation("ArchiveSealedBy", fields: [sealedById], references: [id])
+  releasedBy User?      @relation("ArchiveReleasedBy", fields: [releasedById], references: [id])
 }
 
 // ============================================

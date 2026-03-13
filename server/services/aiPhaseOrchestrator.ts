@@ -525,6 +525,24 @@ const AI_CAPABILITY_REGISTRY: Record<string, PhaseAICapability[]> = {
       requiresContext: ["eqcr_comments", "checklist_status", "clearance_status"],
     },
   ],
+  "archive-completeness-analysis": [
+    {
+      id: "archive-completeness-analysis",
+      label: "Archive Completeness Analysis",
+      description: "Analyze the completeness of the audit archive package, identifying any missing documentation, unsigned deliverables, or gaps that could pose issues during regulatory inspection",
+      promptType: "archive_completeness",
+      requiresContext: ["phase_completion", "deliverables_status", "sign_off_status", "evidence_count", "readiness_score"],
+    },
+  ],
+  "inspection-gap-summary": [
+    {
+      id: "inspection-gap-summary",
+      label: "Inspection Gap Summary",
+      description: "Generate a summary of potential gaps or weaknesses that regulators (AOB/ICAP) might flag during an inspection, referencing ISA 220/230 and ISQM 1 requirements",
+      promptType: "inspection_gap",
+      requiresContext: ["readiness_issues", "open_items", "risk_coverage", "checklist_completion"],
+    },
+  ],
 };
 
 const PHASE_SYSTEM_PROMPTS: Record<string, string> = {
@@ -620,6 +638,11 @@ Never determine the opinion — only provide supporting analysis, draft wording,
   eqcr: `You are assisting with engagement quality control review.
 Focus on identifying unresolved significant matters and completeness of documentation.
 Summarize readiness for EQCR reviewer consideration.`,
+
+  inspection: `You are assisting with the final inspection archive phase of a statutory audit engagement.
+Focus on ISA 220 (Quality Management for an Audit), ISA 230 (Audit Documentation), and ISQM 1 (Quality Management for Firms).
+Analyze archive completeness, identify documentation gaps, and flag potential regulatory inspection concerns.
+Reference specific ISA requirements when identifying issues. Consider AOB/ICAP inspection standards and expectations.`,
 };
 
 export function getPhaseAIConfig(phaseKey: string): PhaseAIConfig | null {
