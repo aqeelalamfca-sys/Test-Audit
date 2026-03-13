@@ -25,7 +25,7 @@ import {
   GitMerge, Link2, ArrowRight, Loader2, Play, Edit2, AlertTriangle,
   CheckCheck, XCircle, TrendingDown, Percent, MoreVertical
 } from "lucide-react";
-import { DataIntakeProgressRibbon } from "@/components/data-intake-progress-ribbon";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -638,7 +638,6 @@ export default function ReviewMapping() {
 
   return (
     <div className="flex flex-col h-full">
-      {engagementId && <DataIntakeProgressRibbon engagementId={engagementId} />}
       <div className="flex flex-col gap-2 p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

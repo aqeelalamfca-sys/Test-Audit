@@ -20,7 +20,7 @@ import {
   FileCheck, AlertCircle, Eye, Database, Users, Loader2
 } from "lucide-react";
 import { formatAccounting } from '@/lib/formatters';
-import { DataIntakeProgressRibbon } from "@/components/data-intake-progress-ribbon";
+
 
 type ImportBatchStatus = 
   | "UPLOADED" 
@@ -422,7 +422,6 @@ export default function ImportWizard() {
 
   return (
     <div className="space-y-0">
-      {engagementId && <DataIntakeProgressRibbon engagementId={engagementId} />}
     <div className="p-4 md:p-4 space-y-4">
       <div className="flex items-center gap-4">
         <Link href={`/workspace/${engagementId}/planning`} data-testid="link-back">
