@@ -835,7 +835,7 @@ async function evaluateSingleGate(
       }
 
       case "critical-findings-resolved": {
-        const criticalObs = await db.observation.count({
+        const criticalObs = await prisma.observation.count({
           where: {
             engagementId,
             severity: { in: ["CRITICAL", "HIGH"] },
@@ -849,7 +849,7 @@ async function evaluateSingleGate(
       }
 
       case "management-responses-obtained": {
-        const obsNeedingResponse = await db.observation.count({
+        const obsNeedingResponse = await prisma.observation.count({
           where: {
             engagementId,
             status: { in: ["OPEN", "UNDER_REVIEW"] },
@@ -864,7 +864,7 @@ async function evaluateSingleGate(
       }
 
       case "partner-review-observations": {
-        const critHighObs = await db.observation.findMany({
+        const critHighObs = await prisma.observation.findMany({
           where: {
             engagementId,
             severity: { in: ["CRITICAL", "HIGH"] },
@@ -879,7 +879,7 @@ async function evaluateSingleGate(
       }
 
       case "adjustments-summarized": {
-        const adjCount = await db.auditAdjustment.count({
+        const adjCount = await prisma.auditAdjustment.count({
           where: { engagementId },
         });
         passed = adjCount > 0;
@@ -889,7 +889,7 @@ async function evaluateSingleGate(
       }
 
       case "sad-classified": {
-        const uncorrected = await db.auditAdjustment.findMany({
+        const uncorrected = await prisma.auditAdjustment.findMany({
           where: {
             engagementId,
             adjustmentType: "UNCORRECTED",
@@ -905,8 +905,8 @@ async function evaluateSingleGate(
       }
 
       case "management-acceptance-recorded": {
-        const adjTotal = await db.auditAdjustment.count({ where: { engagementId } });
-        const adjPending = await db.auditAdjustment.count({
+        const adjTotal = await prisma.auditAdjustment.count({ where: { engagementId } });
+        const adjPending = await prisma.auditAdjustment.count({
           where: { engagementId, managementAccepted: null },
         });
         passed = adjPending === 0 || adjTotal === 0;
@@ -916,7 +916,7 @@ async function evaluateSingleGate(
       }
 
       case "cumulative-effect-assessed": {
-        const uncorrectedAdj = await db.auditAdjustment.findMany({
+        const uncorrectedAdj = await prisma.auditAdjustment.findMany({
           where: { engagementId, adjustmentType: "UNCORRECTED" },
           select: { netImpact: true },
         });
@@ -927,12 +927,123 @@ async function evaluateSingleGate(
         break;
       }
 
-      case "completion-checklist":
-      case "subsequent-events":
-      case "going-concern":
+      case "completion-checklist": {
+        const checklists = await prisma.complianceChecklist.findMany({
+          where: { engagementId, checklistType: "COMPLETION" },
+          select: { status: true },
+        });
+        const allDone = checklists.length > 0 && checklists.every((c: any) => c.status === "COMPLETED" || c.status === "REVIEWED" || c.status === "APPROVED");
+        passed = allDone;
+        if (passed) message = `${checklists.length} completion checklist item(s) addressed`;
+        else message = checklists.length === 0 ? "No completion checklist created" : `${checklists.filter((c: any) => c.status !== "COMPLETED" && c.status !== "REVIEWED" && c.status !== "APPROVED").length} checklist item(s) still pending`;
+        break;
+      }
+
+      case "subsequent-events": {
+        const events = await prisma.subsequentEvent.findMany({
+          where: { engagementId },
+          select: { id: true, impactAssessment: true, reviewedById: true },
+        });
+        passed = events.length === 0 || events.every((e: any) => e.impactAssessment && e.reviewedById);
+        if (events.length === 0) message = "No subsequent events identified (review documented)";
+        else if (passed) message = `${events.length} subsequent event(s) reviewed and assessed`;
+        else message = `${events.filter((e: any) => !e.impactAssessment || !e.reviewedById).length} event(s) pending assessment/review`;
+        break;
+      }
+
+      case "going-concern": {
+        const gcAssessment = await prisma.goingConcernAssessment.findFirst({
+          where: { engagementId },
+          select: { overallConclusion: true, basisForConclusion: true },
+        });
+        passed = !!(gcAssessment?.overallConclusion && gcAssessment?.basisForConclusion);
+        if (passed) message = "Going concern assessment documented with conclusion";
+        else message = gcAssessment ? "Going concern assessment incomplete — conclusion or basis missing" : "No going concern assessment documented";
+        break;
+      }
+
       case "representation-letter": {
+        const reps = await prisma.writtenRepresentation.findMany({
+          where: { engagementId },
+          select: { status: true, representationType: true },
+        });
+        const mgmtRep = reps.find((r: any) => r.representationType === "MANAGEMENT" || r.representationType === "GENERAL");
+        passed = !!(mgmtRep && (mgmtRep.status === "OBTAINED" || mgmtRep.status === "SIGNED" || mgmtRep.status === "COMPLETED"));
+        if (passed) message = "Management representation letter obtained";
+        else message = reps.length === 0 ? "No representation letters created" : "Management representation letter not yet obtained/signed";
+        break;
+      }
+
+      case "findings-addressed": {
+        const openObs = await prisma.observation.count({
+          where: { engagementId, status: { in: ["OPEN", "UNDER_REVIEW"] }, severity: { in: ["HIGH", "CRITICAL"] } },
+        });
+        const pendingAdj = await prisma.auditAdjustment.count({
+          where: { engagementId, status: "IDENTIFIED" },
+        });
+        passed = openObs === 0 && pendingAdj === 0;
+        if (passed) message = "All critical findings resolved and adjustments finalized";
+        else {
+          const parts = [];
+          if (openObs > 0) parts.push(`${openObs} critical/high finding(s) unresolved`);
+          if (pendingAdj > 0) parts.push(`${pendingAdj} adjustment(s) still at identified status`);
+          message = parts.join("; ");
+        }
+        break;
+      }
+
+      case "required-signoffs": {
+        const memo = await prisma.completionMemo.findUnique({
+          where: { engagementId },
+          select: { managerReviewedById: true, partnerApprovedById: true },
+        });
+        passed = !!(memo?.managerReviewedById && memo?.partnerApprovedById);
+        if (passed) message = "Manager and partner sign-offs obtained";
+        else if (memo?.managerReviewedById) message = "Manager signed off — partner approval pending";
+        else message = "Completion memo not yet reviewed by manager";
+        break;
+      }
+
+      case "disclosure-reviewed":
+      case "final-analytics-done": {
         passed = isBackendPhaseActive(statusMap, "FINALIZATION");
-        if (passed) message = "Finalization phase active";
+        if (passed) message = gate.id === "disclosure-reviewed" ? "Disclosure review in progress" : "Final analytics in progress";
+        break;
+      }
+
+      case "completion-memo-done": {
+        const memoExists = await prisma.completionMemo.findUnique({
+          where: { engagementId },
+          select: { id: true, overallConclusion: true },
+        });
+        passed = !!(memoExists?.overallConclusion);
+        if (passed) message = "Completion memo prepared with overall conclusion";
+        else message = memoExists ? "Completion memo started but overall conclusion missing" : "No completion memo created";
+        break;
+      }
+
+      case "partner-review-ready": {
+        const memoForReview = await prisma.completionMemo.findUnique({
+          where: { engagementId },
+          select: { managerReviewedById: true, overallConclusion: true },
+        });
+        const gcForReview = await prisma.goingConcernAssessment.findFirst({
+          where: { engagementId },
+          select: { overallConclusion: true },
+        });
+        const openCritical = await prisma.observation.count({
+          where: { engagementId, status: { in: ["OPEN", "UNDER_REVIEW"] }, severity: { in: ["HIGH", "CRITICAL"] } },
+        });
+        passed = !!(memoForReview?.managerReviewedById && memoForReview?.overallConclusion && gcForReview?.overallConclusion && openCritical === 0);
+        if (passed) message = "All completion procedures done — ready for partner review";
+        else {
+          const issues = [];
+          if (!memoForReview?.overallConclusion) issues.push("completion memo incomplete");
+          if (!memoForReview?.managerReviewedById) issues.push("manager review pending");
+          if (!gcForReview?.overallConclusion) issues.push("going concern not concluded");
+          if (openCritical > 0) issues.push(`${openCritical} critical findings unresolved`);
+          message = `Not ready: ${issues.join(", ")}`;
+        }
         break;
       }
 

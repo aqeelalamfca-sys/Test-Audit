@@ -429,6 +429,35 @@ const AI_CAPABILITY_REGISTRY: Record<string, PhaseAICapability[]> = {
       requiresContext: ["findings_summary", "going_concern", "subsequent_events", "overall_conclusion"],
     },
   ],
+  "subsequent-events-narration": [
+    {
+      id: "subsequent-events-narration",
+      label: "Narrate Subsequent Events",
+      description: "Generate ISA 560-compliant narration for subsequent events review including adjusting and non-adjusting events",
+      promptType: "subsequent_events_narration",
+      requiresContext: ["events_list", "balance_sheet_date", "report_date"],
+      isaReference: "ISA 560",
+    },
+  ],
+  "going-concern-wording": [
+    {
+      id: "going-concern-wording",
+      label: "Draft Going Concern Wording",
+      description: "Generate ISA 570-compliant going concern assessment wording based on financial indicators and management plans",
+      promptType: "going_concern_wording",
+      requiresContext: ["financial_indicators", "management_plans", "mitigating_factors"],
+      isaReference: "ISA 570",
+    },
+  ],
+  "unresolved-matters-summary": [
+    {
+      id: "unresolved-matters-summary",
+      label: "Summarize Unresolved Matters",
+      description: "Generate a summary of all unresolved audit matters for partner review and completion memo",
+      promptType: "unresolved_matters",
+      requiresContext: ["open_findings", "uncorrected_misstatements", "pending_responses", "outstanding_items"],
+    },
+  ],
   "audit-opinion-support-text": [
     {
       id: "audit-opinion-support-text",
@@ -521,9 +550,14 @@ Draft findings suitable for management letters and governance communications.`,
 Focus on classifying misstatements (clearly trivial, individually significant, aggregated).
 Consider the impact on the financial statements and audit opinion.`,
 
-  finalization: `You are assisting with audit completion per ISA 560, 570, and 580.
-Focus on subsequent events, going concern assessment, and representation letters.
-Ensure all completion procedures are properly documented.`,
+  finalization: `You are assisting with audit finalization and completion procedures. Focus on:
+- ISA 560: Subsequent events review (adjusting vs non-adjusting events up to report date)
+- ISA 570: Going concern assessment (financial/operating/external indicators, management plans, audit conclusions)
+- ISA 580: Written representations (management representation letter completeness and dating)
+- ISA 450: Evaluation of misstatements and resolution of findings
+- ISA 520: Final analytical procedures (overall reasonableness check)
+- ISA 700: Disclosure completeness review
+Help the auditor summarize overall audit results, evaluate evidence sufficiency, identify unresolved matters, draft the completion memo, assess partner review readiness, and ensure all completion procedures are properly documented before opinion formation.`,
 
   "opinion-reports": `You are assisting with audit opinion formation per ISA 700-706.
 Focus on the basis for opinion, key audit matters, and report modifications.

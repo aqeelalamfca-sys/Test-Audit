@@ -214,6 +214,17 @@ export default function Finalization() {
   });
   const coaAccounts = coaAccountsRaw || [];
 
+  const { data: finStats } = useQuery<any>({
+    queryKey: [`/api/finalization/${engagementId}/finalization-stats`],
+    queryFn: async () => {
+      const res = await fetchWithAuth(`/api/finalization/${engagementId}/finalization-stats`);
+      if (!res.ok) throw new Error("Failed to fetch finalization stats");
+      return res.json();
+    },
+    enabled: !!engagementId,
+    staleTime: 30000,
+  });
+
   const { data: preReportCheck } = useQuery<{ readyForDraft: boolean; readyForRelease: boolean; draftIssues: Array<{ type: string; count?: number; message: string }>; issues: Array<{ type: string; count?: number; message: string }> }>({
     queryKey: [`/api/finalization/${engagementId}/pre-report-check`],
     queryFn: async () => {
@@ -629,17 +640,20 @@ export default function Finalization() {
     approvals[1].status === "approved";
 
   const finalizationTabs = [
-    { id: "control-board", label: "Control Board" },
-    { id: "adjusted-fs", label: "Adj. F.S" },
+    { id: "control-board", label: "Completion Dashboard" },
     { id: "checklist", label: "Completion Checklist" },
     { id: "events", label: "Subsequent Events" },
     { id: "going-concern", label: "Going Concern" },
-    { id: "ai-opinion-engine", label: "AI Opinion Engine" },
-    { id: "reports", label: "Reports" },
-    { id: "notes", label: "Notes & Disclosures" },
-    { id: "written-representations", label: "Written Representations (ISA 580)" },
-    { id: "reporting-opinion", label: "Reporting & Opinion (ISA 700/705)" },
-    { id: "other-information", label: "Other Information (ISA 720)" },
+    { id: "legal-claims", label: "Legal & Claims" },
+    { id: "related-parties", label: "Related Parties" },
+    { id: "notes", label: "Disclosure Review" },
+    { id: "written-representations", label: "Representation Letter" },
+    { id: "final-analytics", label: "Final Analytics" },
+    { id: "final-conclusion", label: "Final Conclusion" },
+    { id: "completion-memo", label: "Completion Memo" },
+    { id: "partner-review", label: "Partner Review" },
+    { id: "adjusted-fs", label: "Adj. F.S" },
+    { id: "reporting-opinion", label: "Reporting & Opinion" },
     { id: "lock-gate", label: "Lock Gate" }
   ];
 
@@ -693,6 +707,68 @@ export default function Finalization() {
 
         {/* Finalization Control Board */}
         <TabsContent value="control-board" className="space-y-4 mt-3">
+          {finStats && (
+            <Card className="mb-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <ClipboardCheck className="h-5 w-5 text-primary" />
+                  Completion Progress — {finStats.completionPercent}%
+                </CardTitle>
+                <CardDescription>
+                  {finStats.reportReady
+                    ? "All completion procedures done — ready for opinion formation"
+                    : "Complete all items below before proceeding to opinion"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  <div className="p-3 border rounded-md text-center">
+                    <p className="text-xl font-bold">{finStats.subsequentEvents?.total || 0}</p>
+                    <p className="text-xs text-muted-foreground">Subsequent Events</p>
+                    <Badge variant={finStats.completionProgress?.subsequentEventsReviewed ? "default" : "secondary"} className="text-[10px] mt-1">
+                      {finStats.completionProgress?.subsequentEventsReviewed ? "Reviewed" : "Pending"}
+                    </Badge>
+                  </div>
+                  <div className="p-3 border rounded-md text-center">
+                    <Badge variant={finStats.completionProgress?.goingConcernAssessed ? "default" : "destructive"} className="text-xs">
+                      {finStats.completionProgress?.goingConcernAssessed ? "Assessed" : "Not Done"}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-1">Going Concern</p>
+                  </div>
+                  <div className="p-3 border rounded-md text-center">
+                    <Badge variant={finStats.completionProgress?.representationObtained ? "default" : "destructive"} className="text-xs">
+                      {finStats.completionProgress?.representationObtained ? "Obtained" : "Pending"}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-1">Rep. Letter</p>
+                  </div>
+                  <div className="p-3 border rounded-md text-center">
+                    <Badge variant={finStats.completionProgress?.findingsAddressed ? "default" : "destructive"} className="text-xs">
+                      {finStats.completionProgress?.findingsAddressed ? "Addressed" : "Open Items"}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-1">Findings</p>
+                  </div>
+                </div>
+                {finStats.findings?.criticalOpen > 0 && (
+                  <div className="flex items-start gap-2 p-3 rounded-md border bg-red-50 dark:bg-red-950/20 border-red-200 mb-3">
+                    <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-red-700 dark:text-red-400">{finStats.findings.criticalOpen} Critical/High Finding(s) Unresolved</p>
+                      <p className="text-xs text-muted-foreground">These must be resolved before finalization can be approved</p>
+                    </div>
+                  </div>
+                )}
+                {finStats.adjustments?.pending > 0 && (
+                  <div className="flex items-start gap-2 p-3 rounded-md border bg-amber-50 dark:bg-amber-950/20 border-amber-200">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-700 dark:text-amber-400">{finStats.adjustments.pending} Adjustment(s) at Identified Status</p>
+                      <p className="text-xs text-muted-foreground">Adjustments should be proposed, agreed, or waived before finalization</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
           <FinalizationControlBoard />
         </TabsContent>
 
@@ -2140,8 +2216,360 @@ export default function Finalization() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="ai-opinion-engine" className="space-y-4">
-          <AIOpinionEngine engagementId={engagementId!} />
+        {/* Legal & Claims Status */}
+        <TabsContent value="legal-claims" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Scale className="h-5 w-5" />
+                Legal & Claims Status
+              </CardTitle>
+              <CardDescription>Review status of litigation, claims, and assessments — ISA 501</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-medium">Outstanding Litigation</Label>
+                  <Textarea
+                    placeholder="Describe any known litigation or claims against the entity..."
+                    rows={3}
+                    disabled={fileStatus === "locked"}
+                    data-testid="textarea-litigation"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium">Legal Confirmations</Label>
+                  <Textarea
+                    placeholder="Status of legal confirmations received from attorneys..."
+                    rows={3}
+                    disabled={fileStatus === "locked"}
+                    data-testid="textarea-legal-confirmations"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Impact on Financial Statements</Label>
+                <Textarea
+                  placeholder="Assess whether any provisions, contingent liabilities, or disclosures are required..."
+                  rows={3}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-legal-impact"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Conclusion</Label>
+                <Textarea
+                  placeholder="Overall conclusion on legal and claims status..."
+                  rows={2}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-legal-conclusion"
+                />
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-md border bg-blue-50/50 dark:bg-blue-950/20">
+                <Info className="h-4 w-4 text-blue-500" />
+                <span className="text-xs text-muted-foreground">ISA 501 requires inquiry of management and legal counsel regarding litigation and claims</span>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Related Parties Completion Review */}
+        <TabsContent value="related-parties" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Related Parties Completion Review
+              </CardTitle>
+              <CardDescription>Completion review of related party transactions and disclosures — ISA 550</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label className="font-medium">Related Party Transactions Identified</Label>
+                <Textarea
+                  placeholder="Summarize all related party transactions identified during the audit..."
+                  rows={3}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-rp-transactions"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Disclosure Adequacy</Label>
+                <Textarea
+                  placeholder="Are related party disclosures complete and adequate per the applicable framework?"
+                  rows={2}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-rp-disclosure"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Conclusion on Related Parties</Label>
+                <Textarea
+                  placeholder="Overall conclusion on related party matters..."
+                  rows={2}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-rp-conclusion"
+                />
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-md border bg-blue-50/50 dark:bg-blue-950/20">
+                <Info className="h-4 w-4 text-blue-500" />
+                <span className="text-xs text-muted-foreground">ISA 550 requires evaluation of whether identified related party relationships and transactions have been appropriately accounted for and disclosed</span>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Final Analytics */}
+        <TabsContent value="final-analytics" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Final Analytical Procedures
+              </CardTitle>
+              <CardDescription>Overall analytical review near end of audit — ISA 520</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label className="font-medium">Overall Analytical Review</Label>
+                <Textarea
+                  placeholder="Describe the overall analytical review performed near the end of the audit. Consider whether the financial statements are consistent with your understanding of the entity..."
+                  rows={4}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-final-analytics"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-medium">Key Ratios / Trends Noted</Label>
+                  <Textarea
+                    placeholder="Document significant ratios or trends identified..."
+                    rows={3}
+                    disabled={fileStatus === "locked"}
+                    data-testid="textarea-key-ratios"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium">Unusual Fluctuations</Label>
+                  <Textarea
+                    placeholder="Document any unusual or unexpected fluctuations and investigation results..."
+                    rows={3}
+                    disabled={fileStatus === "locked"}
+                    data-testid="textarea-unusual-fluctuations"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Conclusion on Final Analytics</Label>
+                <Textarea
+                  placeholder="Overall conclusion: Are the financial statements consistent with your understanding?"
+                  rows={2}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-analytics-conclusion"
+                />
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-md border bg-blue-50/50 dark:bg-blue-950/20">
+                <Info className="h-4 w-4 text-blue-500" />
+                <span className="text-xs text-muted-foreground">ISA 520 requires final analytical procedures to form an overall conclusion on whether the financial statements are consistent with the auditor's understanding of the entity</span>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Final Overall Conclusion */}
+        <TabsContent value="final-conclusion" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5" />
+                Final Overall Conclusion
+              </CardTitle>
+              <CardDescription>Document the overall audit conclusion before forming the opinion</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {finStats && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  <div className="p-3 border rounded-md text-center">
+                    <p className="text-2xl font-bold">{finStats.findings?.total || 0}</p>
+                    <p className="text-xs text-muted-foreground">Total Findings</p>
+                  </div>
+                  <div className="p-3 border rounded-md text-center">
+                    <p className="text-2xl font-bold text-red-600">{finStats.findings?.criticalOpen || 0}</p>
+                    <p className="text-xs text-muted-foreground">Critical Open</p>
+                  </div>
+                  <div className="p-3 border rounded-md text-center">
+                    <p className="text-2xl font-bold">{finStats.adjustments?.total || 0}</p>
+                    <p className="text-xs text-muted-foreground">Adjustments</p>
+                  </div>
+                  <div className="p-3 border rounded-md text-center">
+                    <p className="text-2xl font-bold text-amber-600">{finStats.adjustments?.uncorrected || 0}</p>
+                    <p className="text-xs text-muted-foreground">Uncorrected</p>
+                  </div>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label className="font-medium">Sufficiency & Appropriateness of Evidence</Label>
+                <Textarea
+                  placeholder="Has sufficient appropriate audit evidence been obtained to form the opinion?"
+                  rows={3}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-evidence-sufficiency"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Unresolved Matters</Label>
+                <Textarea
+                  placeholder="Are there any unresolved matters? If so, what is their impact on the opinion?"
+                  rows={3}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-unresolved-matters"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Overall Audit Conclusion</Label>
+                <Textarea
+                  placeholder="State the overall audit conclusion and basis for the proposed opinion type..."
+                  rows={4}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-overall-conclusion"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Completion Memo */}
+        <TabsContent value="completion-memo" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Completion Memo
+              </CardTitle>
+              <CardDescription>Audit completion memorandum summarizing the audit — ISA 230</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label className="font-medium">Executive Summary</Label>
+                <Textarea
+                  placeholder="Provide a summary of the audit including scope, key matters, and overall results..."
+                  rows={4}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-memo-summary"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-medium">Subsequent Events Conclusion</Label>
+                  <Textarea
+                    placeholder="Conclusion on subsequent events review..."
+                    rows={2}
+                    disabled={fileStatus === "locked"}
+                    data-testid="textarea-memo-events"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium">Going Concern Conclusion</Label>
+                  <Textarea
+                    placeholder="Conclusion on going concern..."
+                    rows={2}
+                    disabled={fileStatus === "locked"}
+                    data-testid="textarea-memo-gc"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Unresolved Matters</Label>
+                <Textarea
+                  placeholder="Document any unresolved matters or open items at the time of completion..."
+                  rows={3}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-memo-unresolved"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Overall Conclusion</Label>
+                <Textarea
+                  placeholder="Overall audit conclusion for the completion memo..."
+                  rows={3}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-memo-overall"
+                />
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-md border bg-blue-50/50 dark:bg-blue-950/20">
+                <Info className="h-4 w-4 text-blue-500" />
+                <span className="text-xs text-muted-foreground">ISA 230 requires audit documentation sufficient to enable an experienced auditor to understand the nature, timing and extent of procedures performed, results obtained, and significant matters arising</span>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Partner Review Readiness */}
+        <TabsContent value="partner-review" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Partner Review Readiness
+              </CardTitle>
+              <CardDescription>Assess readiness for partner final review and approval</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {finStats ? (
+                <>
+                  <div className="space-y-3">
+                    {[
+                      { label: "Completion Checklist Done", done: finStats.completionProgress?.checklistDone, icon: <ClipboardCheck className="h-4 w-4" /> },
+                      { label: "Subsequent Events Reviewed", done: finStats.completionProgress?.subsequentEventsReviewed, icon: <Calendar className="h-4 w-4" /> },
+                      { label: "Going Concern Assessed", done: finStats.completionProgress?.goingConcernAssessed, icon: <TrendingDown className="h-4 w-4" /> },
+                      { label: "Representation Letter Obtained", done: finStats.completionProgress?.representationObtained, icon: <FileSignature className="h-4 w-4" /> },
+                      { label: "Findings & Adjustments Addressed", done: finStats.completionProgress?.findingsAddressed, icon: <AlertCircle className="h-4 w-4" /> },
+                      { label: "Completion Memo Complete", done: finStats.completionProgress?.memoComplete, icon: <FileText className="h-4 w-4" /> },
+                      { label: "Manager Review Done", done: finStats.completionProgress?.managerReviewed, icon: <User className="h-4 w-4" /> },
+                      { label: "Partner Approved", done: finStats.completionProgress?.partnerApproved, icon: <Shield className="h-4 w-4" /> },
+                    ].map((item, i) => (
+                      <div key={i} className={`flex items-center gap-3 p-3 rounded-md border ${item.done ? "bg-green-50 dark:bg-green-950/20 border-green-200" : "bg-red-50 dark:bg-red-950/20 border-red-200"}`}>
+                        {item.done ? <CheckCircle2 className="h-5 w-5 text-green-600" /> : <AlertTriangle className="h-5 w-5 text-red-600" />}
+                        <div className="flex items-center gap-2">
+                          {item.icon}
+                          <span className="text-sm font-medium">{item.label}</span>
+                        </div>
+                        <Badge variant={item.done ? "default" : "destructive"} className="ml-auto text-xs">
+                          {item.done ? "Done" : "Pending"}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between p-4 rounded-md border">
+                    <div>
+                      <p className="font-medium">Completion Progress</p>
+                      <p className="text-sm text-muted-foreground">{finStats.completionPercent}% complete</p>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant={finStats.reportReady ? "default" : "secondary"} className="text-sm px-3 py-1">
+                        {finStats.reportReady ? "Ready for Report" : "Not Ready"}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {finStats.findings?.criticalOpen > 0 && (
+                    <div className="flex items-start gap-2 p-3 rounded-md border bg-red-50 dark:bg-red-950/20 border-red-200">
+                      <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-red-700 dark:text-red-400">Critical Findings Blocking Report</p>
+                        <p className="text-xs text-muted-foreground">{finStats.findings.criticalOpen} critical/high finding(s) remain open — must be resolved before partner can approve</p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">Loading completion status...</div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-4">
