@@ -101,7 +101,9 @@ Key files:
 - `client/src/components/app-sidebar.tsx` — Sidebar with grouped 19-phase navigation
 - `client/src/App.tsx` — All workspace routes (canonical + legacy backward-compat)
 
-Old route slugs (pre-planning, requisition, planning, execution, etc.) are preserved as legacy routes that redirect to canonical slugs.
+Old route slugs (pre-planning, requisition, planning, execution, etc.) are now **redirects** to canonical slugs. Legacy workspace routes (`/workspace/:id/requisition`, `/workspace/:id/pre-planning`, etc.) redirect to their canonical equivalents. Only standalone tool routes (checklists, audit-health, workflow-health, standards-matrix, compliance-simulation, qcr-dashboard) remain as direct component routes.
+
+**Phase order derivation**: All frontend UI components (workspace-ribbon, global-status-bar, phase-gates-panel, global-progress-panel, standards-matrix) now reference the canonical 19-phase system. Backend PHASE_ORDER arrays remain aligned with Prisma's `AuditPhase` enum (8 high-level storage phases) with cross-reference comments to `shared/phases.ts`.
 
 ### AI Phase Orchestration
 - `server/services/aiPhaseOrchestrator.ts` — Maps each canonical phase to AI capabilities

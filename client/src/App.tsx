@@ -183,6 +183,16 @@ function createLegacyRedirect(legacyPath: string, workspacePath: string) {
   };
 }
 
+function createWorkspaceSlugRedirect(canonicalSlug: string) {
+  return function WorkspaceSlugRedirect({ params }: { params?: { engagementId?: string } }) {
+    const engagementId = params?.engagementId || "";
+    if (!engagementId) {
+      return <Redirect to="/engagements" />;
+    }
+    return <Redirect to={`/workspace/${engagementId}/${canonicalSlug}`} />;
+  };
+}
+
 const ROLE_HIERARCHY: Record<string, number> = {
   "SUPER_ADMIN": 100,
   "FIRM_ADMIN": 90,
@@ -365,25 +375,26 @@ function Router() {
       <Route path="/workspace/:engagementId/eqcr" component={GuardedEQCR} />
       <Route path="/workspace/:engagementId/inspection" component={GuardedInspection} />
 
-      {/* Legacy workspace routes (backward compat) */}
-      <Route path="/workspace/:engagementId/requisition" component={GuardedInformationRequisition} />
-      <Route path="/workspace/:engagementId/pre-planning" component={GuardedPrePlanning} />
-      <Route path="/workspace/:engagementId/planning" component={GuardedPlanning} />
-      <Route path="/workspace/:engagementId/execution" component={GuardedExecution} />
-      <Route path="/workspace/:engagementId/fs-heads" component={GuardedFSHeadsPage} />
+      {/* Legacy workspace slug redirects to canonical slugs */}
+      <Route path="/workspace/:engagementId/requisition" component={createWorkspaceSlugRedirect("tb-gl-upload")} />
+      <Route path="/workspace/:engagementId/pre-planning" component={createWorkspaceSlugRedirect("acceptance")} />
+      <Route path="/workspace/:engagementId/planning" component={createWorkspaceSlugRedirect("materiality")} />
+      <Route path="/workspace/:engagementId/execution" component={createWorkspaceSlugRedirect("execution-testing")} />
+      <Route path="/workspace/:engagementId/fs-heads" component={createWorkspaceSlugRedirect("coa-mapping")} />
+      <Route path="/workspace/:engagementId/deliverables" component={createWorkspaceSlugRedirect("opinion-reports")} />
+      <Route path="/workspace/:engagementId/evidence" component={createWorkspaceSlugRedirect("evidence-linking")} />
+      <Route path="/workspace/:engagementId/onboarding" component={createWorkspaceSlugRedirect("acceptance")} />
+      <Route path="/workspace/:engagementId/control" component={createWorkspaceSlugRedirect("acceptance")} />
+      <Route path="/workspace/:engagementId/ethics" component={createWorkspaceSlugRedirect("independence")} />
+      <Route path="/workspace/:engagementId/post-upload-workflow" component={createWorkspaceSlugRedirect("validation")} />
+      <Route path="/workspace/:engagementId/tb-review" component={createWorkspaceSlugRedirect("validation")} />
+      <Route path="/workspace/:engagementId/import" component={createWorkspaceSlugRedirect("tb-gl-upload")} />
+      <Route path="/workspace/:engagementId/outputs" component={createWorkspaceSlugRedirect("opinion-reports")} />
+      {/* Standalone tools — no canonical equivalent, keep as component routes */}
       <Route path="/workspace/:engagementId/checklists" component={GuardedComplianceChecklists} />
-      <Route path="/workspace/:engagementId/deliverables" component={GuardedPrintView} />
-      <Route path="/workspace/:engagementId/evidence" component={GuardedEvidenceVault} />
       <Route path="/workspace/:engagementId/qcr-dashboard" component={GuardedInspectionDashboard} />
       <Route path="/workspace/:engagementId/audit-health" component={GuardedAuditHealthDashboard} />
       <Route path="/workspace/:engagementId/workflow-health" component={GuardedWorkflowHealthPage} />
-      <Route path="/workspace/:engagementId/onboarding" component={GuardedEngagementControl} />
-      <Route path="/workspace/:engagementId/control" component={GuardedEngagementControl} />
-      <Route path="/workspace/:engagementId/ethics" component={GuardedEthicsIndependence} />
-      <Route path="/workspace/:engagementId/tb-review" component={GuardedTBReview} />
-      <Route path="/workspace/:engagementId/import" component={GuardedImportWizard} />
-      <Route path="/workspace/:engagementId/outputs" component={GuardedOutputsPage} />
-      <Route path="/workspace/:engagementId/post-upload-workflow" component={GuardedPostUploadWorkflow} />
       <Route path="/workspace/:engagementId/standards-matrix" component={GuardedStandardsMatrix} />
       <Route path="/workspace/:engagementId/compliance-simulation" component={GuardedComplianceSimulation} />
       

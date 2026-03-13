@@ -182,14 +182,19 @@ interface ResolutionDialogState {
   resolution: string;
 }
 
+/**
+ * ISA compliance phase order for standards matrix.
+ * These match the phase keys emitted by isaPhaseComplianceService.
+ * See shared/phases.ts for the canonical 19-phase workflow.
+ */
 const PHASE_ORDER = ["pre-planning", "planning", "execution", "finalization", "deliverables", "eqcr"];
 
 const PHASE_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  "pre-planning": { bg: "bg-blue-500", text: "text-blue-600", label: "Pre-Planning" },
-  "planning": { bg: "bg-purple-500", text: "text-purple-600", label: "Planning" },
-  "execution": { bg: "bg-emerald-500", text: "text-emerald-600", label: "Execution" },
+  "pre-planning": { bg: "bg-blue-500", text: "text-blue-600", label: "Acceptance & Independence" },
+  "planning": { bg: "bg-purple-500", text: "text-purple-600", label: "Planning & Materiality" },
+  "execution": { bg: "bg-emerald-500", text: "text-emerald-600", label: "Execution & Testing" },
   "finalization": { bg: "bg-rose-500", text: "text-rose-600", label: "Finalization" },
-  "deliverables": { bg: "bg-sky-500", text: "text-sky-600", label: "Deliverables" },
+  "deliverables": { bg: "bg-sky-500", text: "text-sky-600", label: "Opinion / Reports" },
   "eqcr": { bg: "bg-amber-600", text: "text-amber-600", label: "EQCR" },
 };
 

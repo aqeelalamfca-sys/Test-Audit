@@ -92,6 +92,10 @@ import { subscriptionGuard } from "./middleware/subscriptionGuard";
 import { z } from "zod";
 import type { AuditPhase } from "@prisma/client";
 
+/**
+ * Backend storage phases (Prisma AuditPhase enum values).
+ * For the canonical 19-phase workflow, see shared/phases.ts CANONICAL_PHASES.
+ */
 const PHASE_ORDER = [
   "ONBOARDING",
   "PRE_PLANNING",

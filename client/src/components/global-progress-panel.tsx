@@ -65,27 +65,40 @@ interface GlobalProgressPanelProps {
   engagementId: string;
 }
 
+/**
+ * Phase labels and routes for progress panel.
+ * Backend API returns these keys; routes point to canonical slugs.
+ * See shared/phases.ts for full canonical 19-phase workflow.
+ */
 const phaseLabels: Record<string, string> = {
-  INFO_REQUISITION: 'Data Intake',
-  PRE_PLANNING: 'Pre-Planning',
-  PLANNING: 'Planning',
-  EXECUTION: 'Execution',
-  EVIDENCE: 'Evidence',
+  ONBOARDING: 'Client Creation',
+  PRE_PLANNING: 'Acceptance & Independence',
+  INFO_REQUISITION: 'TB / GL Upload',
+  PLANNING: 'Planning & Materiality',
+  EXECUTION: 'Execution & Testing',
+  EVIDENCE: 'Evidence Linking',
   FINALIZATION: 'Finalization',
-  DELIVERABLES: 'Deliverables',
-  QR: 'Quality Review',
-  INSPECTION: 'Inspection',
+  DELIVERABLES: 'Opinion / Reports',
+  REPORTING: 'Opinion / Reports',
+  QR: 'EQCR Review',
+  QR_EQCR: 'EQCR Review',
+  EQCR: 'EQCR Review',
+  INSPECTION: 'Inspection Archive',
 };
 
 const phaseRoutes: Record<string, string> = {
-  INFO_REQUISITION: 'information-requisition',
-  PRE_PLANNING: 'pre-planning',
-  PLANNING: 'planning',
-  EXECUTION: 'execution',
-  EVIDENCE: 'evidence-vault',
+  ONBOARDING: 'acceptance',
+  PRE_PLANNING: 'acceptance',
+  INFO_REQUISITION: 'tb-gl-upload',
+  PLANNING: 'materiality',
+  EXECUTION: 'execution-testing',
+  EVIDENCE: 'evidence-linking',
   FINALIZATION: 'finalization',
-  DELIVERABLES: 'deliverables',
-  QR: 'qr',
+  DELIVERABLES: 'opinion-reports',
+  REPORTING: 'opinion-reports',
+  QR: 'eqcr',
+  QR_EQCR: 'eqcr',
+  EQCR: 'eqcr',
   INSPECTION: 'inspection',
 };
 
