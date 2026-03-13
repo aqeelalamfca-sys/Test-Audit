@@ -37,7 +37,6 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Download, Eye, Trash2, Package, FileText, Filter, Link2, Unlink, Calendar, CheckCircle2, Clock, Send, FileCheck, Shield, History, User } from "lucide-react";
 import { DataQualityDashboard } from "@/components/data-quality-dashboard";
-import { AIAssistBanner, PHASE_AI_CONFIGS } from "@/components/ai-assist-banner";
 import { PhaseApprovalControl, PhaseLockIndicator } from "@/components/phase-approval-control";
 
 interface EvidenceLink {
@@ -368,16 +367,6 @@ export default function OutputsPage() {
           </Button>
         </div>
       </div>
-
-      <AIAssistBanner
-        engagementId={engagementId}
-        config={{
-          ...PHASE_AI_CONFIGS.finalization,
-          phase: "DELIVERABLES",
-          contextBuilder: () => `Outputs registry with ${outputs.length} outputs`,
-        }}
-      />
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="summary-cards">
         <Card data-testid="card-total-outputs">
           <CardContent className="p-4">

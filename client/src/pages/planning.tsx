@@ -49,7 +49,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { AIAssistBanner, PHASE_AI_CONFIGS } from "@/components/ai-assist-banner";
 import { AIAssistButton } from "@/components/ui/ai-assist-button";
 import { Sparkles } from "lucide-react";
 import { PhaseApprovalControl, PhaseLockIndicator } from "@/components/phase-approval-control";
@@ -3135,33 +3134,6 @@ export default function Planning() {
       headerActions={null}
     >
       <div className="px-4 py-2 space-y-2">
-
-
-      {engagementId && (
-        <AIAssistBanner
-          engagementId={engagementId}
-          config={{
-            ...PHASE_AI_CONFIGS.planning,
-            contextBuilder: () => JSON.stringify({
-              phase: "planning",
-              engagementName: engagement?.engagementCode || "Unknown Engagement",
-              clientName: client?.name || "Unknown Client",
-              engagementType: engagement?.engagementType || "Not specified",
-              materiality: contextMateriality,
-              planningInitiation,
-              riskAssessment,
-            }),
-            onActionComplete: (actionId, content) => {
-              toast({
-                title: "AI Content Generated",
-                description: `${actionId} content has been generated. Apply it to relevant fields.`,
-              });
-            },
-          }}
-        />
-      )}
-
-
       {engagementId && <PlanningProgressRibbon engagementId={engagementId} />}
 
       <Tabs value={activeTab} onValueChange={handleTabSwitch}>

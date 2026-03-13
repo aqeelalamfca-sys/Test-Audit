@@ -51,7 +51,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
-import { AIAssistBanner, PHASE_AI_CONFIGS } from "@/components/ai-assist-banner";
 import { PhaseApprovalControl, PhaseLockIndicator } from "@/components/phase-approval-control";
 import { PageShell } from "@/components/page-shell";
 import { useEvidenceSaveBridge } from "@/hooks/use-evidence-save-bridge";
@@ -900,32 +899,6 @@ export default function EvidenceVault() {
       showSaveClose={true}
     >
     <div className="w-full px-4 py-3 space-y-3">
-      {engagementId && (
-        <AIAssistBanner
-          engagementId={engagementId}
-          config={{
-            ...PHASE_AI_CONFIGS.evidence,
-            contextBuilder: () => JSON.stringify({
-              phase: "evidence",
-              engagementName: engagement?.engagementCode || "Unknown Engagement",
-              clientName: client?.name || "Unknown Client",
-              totalEvidence: stats.total,
-              permanentDocs: stats.permanent,
-              yearlyDocs: stats.yearly,
-              linkedRisks: links.risks.length,
-              linkedTests: links.tests.length,
-            }),
-            onActionComplete: (actionId, content) => {
-              toast({
-                title: "AI Content Generated",
-                description: `${actionId} content has been generated. Apply it to relevant fields.`,
-              });
-            },
-          }}
-        />
-      )}
-
-
       <Card data-testid="card-isa230-compliance">
         <CardContent className="pt-4 pb-4">
           <div className="flex items-start gap-3">

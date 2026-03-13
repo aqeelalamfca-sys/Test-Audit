@@ -17,7 +17,6 @@ import {
   BookOpen, ClipboardList,
   History, Clock, UserCheck, ArrowRight, Activity
 } from "lucide-react";
-import { AIAssistBanner, PHASE_AI_CONFIGS } from "@/components/ai-assist-banner";
 import { useAuth } from "@/lib/auth";
 import { getDocumentHeaderHtml } from "@/lib/pdf-logo";
 
@@ -379,16 +378,6 @@ export default function Inspection() {
           </Badge>
         </div>
       </div>
-
-      <AIAssistBanner
-        engagementId={engagementId || ""}
-        config={{
-          ...PHASE_AI_CONFIGS.finalization,
-          contextBuilder: () => `Inspection archive for engagement ${engagementId}. Client: ${client?.name || data.engagementInfo.clientName}. Code: ${engagement?.engagementCode || data.engagementInfo.code}.`,
-        }}
-        data-testid="ai-assist-banner-inspection"
-      />
-
       <Card className="border-purple-200 bg-purple-50/30 dark:bg-purple-950/20">
         <CardContent className="py-3">
           <div className="flex items-start gap-3">

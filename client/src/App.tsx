@@ -20,7 +20,6 @@ import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import { WorkspaceAccessGuard } from "@/components/workspace-access-guard";
 import { TrialBanner } from "@/components/trial-banner";
-import { AlphaRibbon } from "@/components/alpha-ribbon";
 
 import { ErrorBoundary } from "@/components/error-boundary";
 import { SystemStatusOverlay } from "@/components/system-status-overlay";
@@ -449,7 +448,6 @@ function EnforcedAppContent({ user, firm, sidebarStyle, initials }: {
               currentPhase="onboarding"
               phaseStatus="not_started"
             />
-            <AlphaRibbon />
             <TrialBanner />
             
             <main className="flex-1 overflow-auto bg-background scroll-smooth">

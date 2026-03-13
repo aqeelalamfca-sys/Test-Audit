@@ -19,7 +19,6 @@ import { PageShell } from "@/components/page-shell";
 import { useModuleReadOnly } from "@/components/sign-off-bar";
 import { useExecutionSaveBridge } from "@/hooks/use-execution-save-bridge";
 import { useToast } from "@/hooks/use-toast";
-import { AIAssistBanner, PHASE_AI_CONFIGS } from "@/components/ai-assist-banner";
 import { AICopilotToggle } from "@/components/ai-copilot-panel";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -597,30 +596,6 @@ export default function Execution() {
             </div>
           )}
         </div>
-
-        {engagementId && (
-          <AIAssistBanner
-            engagementId={engagementId}
-            config={{
-              ...PHASE_AI_CONFIGS.execution,
-              contextBuilder: () => JSON.stringify({
-                phase: "execution",
-                engagementName: engagement?.engagementCode || "Unknown Engagement",
-                clientName: client?.name || "Unknown Client",
-                totalFsHeads: totalHeads,
-                completedFsHeads: completedHeads,
-                overallCompletion,
-              }),
-              onActionComplete: (actionId) => {
-                toast({
-                  title: "AI Content Generated",
-                  description: `${actionId} content has been generated. Apply it to relevant fields.`,
-                });
-              },
-            }}
-          />
-        )}
-
         <Card data-testid="card-isa-reference">
           <CardContent className="py-3">
             <div className="flex items-start gap-2">

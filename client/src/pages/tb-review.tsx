@@ -26,7 +26,6 @@ import {
 import { PageShell } from "@/components/page-shell";
 import { useTBReviewSaveBridge } from "@/hooks/use-tb-review-save-bridge";
 import { SourceDrilldownModal, GLSourceEntry, TBSourceEntry } from "@/components/source-drilldown-modal";
-import { AIAssistBanner, PHASE_AI_CONFIGS } from "@/components/ai-assist-banner";
 import { GLCodeReconciliation } from "@/components/glcode-reconciliation";
 
 import { formatAccounting } from "@/lib/formatters";
@@ -687,28 +686,6 @@ export default function TBReview() {
       }
     >
     <div className="page-container">
-      {engagementId && (
-        <AIAssistBanner
-          engagementId={engagementId}
-          config={{
-            ...PHASE_AI_CONFIGS["trial-balance"],
-            contextBuilder: () => JSON.stringify({
-              phase: "trial-balance",
-              engagementName: engagement?.engagementCode || "Unknown Engagement",
-              clientName: client?.name || "Unknown Client",
-              totalItems: trialBalance?.lineItems?.length || 0,
-              mappedCount: trialBalance?.summary?.mappedCount || 0,
-            }),
-            onActionComplete: (actionId, content) => {
-              toast({
-                title: "AI Content Generated",
-                description: `${actionId} content has been generated. Apply it to relevant fields.`,
-              });
-            },
-          }}
-        />
-      )}
-
       {/* OUTPUTS SECTION - Stats Tiles */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
         <Card data-testid="card-total-accounts">
