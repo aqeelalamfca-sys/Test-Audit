@@ -1498,7 +1498,7 @@ export async function registerRoutes(
       const createSchema = z.object({
         phase: z.enum(PHASE_ORDER),
         content: z.string().min(1),
-        severity: z.enum(["INFO", "WARNING", "CRITICAL"]).default("INFO"),
+        severity: z.enum(["INFO", "LOW", "MEDIUM", "WARNING", "HIGH", "CRITICAL"]).default("INFO"),
         checklistItemId: z.string().uuid().optional(),
       });
 
