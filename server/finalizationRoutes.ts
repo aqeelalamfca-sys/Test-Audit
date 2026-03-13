@@ -136,9 +136,9 @@ router.post("/:engagementId/report", requireAuth, requirePhaseUnlocked("REPORTIN
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
-    const blockers = await computePreReportBlockers(req.params.engagementId);
-    if (blockers.length > 0) {
-      return res.status(400).json({ error: "Pre-report blockers must be resolved", blockers });
+    const preCheck = await computePreReportBlockers(req.params.engagementId);
+    if (!preCheck.readyForRelease) {
+      return res.status(400).json({ error: "Pre-report blockers must be resolved", blockers: preCheck.issues });
     }
 
     const report = await prisma.auditReport.upsert({
@@ -159,9 +159,9 @@ router.post("/:engagementId/report/partner-approve", requireAuth, requireMinRole
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
-    const blockers = await computePreReportBlockers(req.params.engagementId);
-    if (blockers.length > 0) {
-      return res.status(400).json({ error: "Pre-report blockers must be resolved before approval", blockers });
+    const preCheck = await computePreReportBlockers(req.params.engagementId);
+    if (!preCheck.readyForRelease) {
+      return res.status(400).json({ error: "Pre-report blockers must be resolved before approval", blockers: preCheck.issues });
     }
 
     const report = await prisma.auditReport.update({
@@ -181,9 +181,9 @@ router.post("/:engagementId/report/sign", requireAuth, requireMinRole("PARTNER")
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
-    const blockers = await computePreReportBlockers(req.params.engagementId);
-    if (blockers.length > 0) {
-      return res.status(400).json({ error: "Pre-report blockers must be resolved before signing", blockers });
+    const preCheck = await computePreReportBlockers(req.params.engagementId);
+    if (!preCheck.readyForRelease) {
+      return res.status(400).json({ error: "Pre-report blockers must be resolved before signing", blockers: preCheck.issues });
     }
 
     const existing = await prisma.auditReport.findUnique({ where: { engagementId: req.params.engagementId } });
