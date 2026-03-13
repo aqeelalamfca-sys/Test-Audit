@@ -369,7 +369,7 @@ function FirmProfileTab() {
   const [saving, setSaving] = useState(false);
   const [firmData, setFirmData] = useState({ name: "", licenseNo: "", address: "", phone: "", email: "" });
 
-  const { data: firm, isLoading } = useQuery({
+  const { data: firm, isLoading, error: firmError } = useQuery({
     queryKey: ["/api/firms/current"],
     queryFn: async () => {
       const res = await fetchWithAuth("/api/firms/current");
@@ -421,6 +421,16 @@ function FirmProfileTab() {
       <Card>
         <CardContent className="py-8 flex justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (firmError || !firm) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center">
+          <p className="text-red-500">Failed to load firm profile. Please try again later.</p>
         </CardContent>
       </Card>
     );
