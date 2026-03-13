@@ -48,7 +48,10 @@ export type ReviewNoteStatus = (typeof ReviewNoteStatus)[keyof typeof ReviewNote
 
 export const ReviewNoteSeverity = {
   INFO: "INFO",
+  LOW: "LOW",
+  MEDIUM: "MEDIUM",
   WARNING: "WARNING",
+  HIGH: "HIGH",
   CRITICAL: "CRITICAL",
 } as const;
 export type ReviewNoteSeverity = (typeof ReviewNoteSeverity)[keyof typeof ReviewNoteSeverity];

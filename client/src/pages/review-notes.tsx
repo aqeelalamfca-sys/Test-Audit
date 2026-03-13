@@ -221,6 +221,14 @@ function NoteCard({ note, onStatusChange, onReply, userId }: {
               </Link>
               <span>&middot;</span>
               <span>{note.phase.replace(/_/g, " ")}</span>
+              {note.sectionKey && (
+                <>
+                  <span>&middot;</span>
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">
+                    {note.sectionKey}
+                  </Badge>
+                </>
+              )}
               {note.dueDate && (
                 <>
                   <span>&middot;</span>
@@ -444,6 +452,7 @@ export default function ReviewNotesPage() {
     phase: "PLANNING",
     noteType: "ISSUE",
     severity: "INFO",
+    sectionKey: "",
     dueDate: "",
     assigneeIds: [] as string[],
   });
@@ -510,13 +519,14 @@ export default function ReviewNotesPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof createForm) => {
-      const body: any = {
+      const body: Record<string, unknown> = {
         engagementId: data.engagementId,
         phase: data.phase,
         title: data.title,
         content: data.content,
         noteType: data.noteType,
         severity: data.severity,
+        sectionKey: data.sectionKey || undefined,
         assigneeIds: data.assigneeIds.length > 0 ? data.assigneeIds : undefined,
         dueDate: data.dueDate || undefined,
       };
@@ -530,7 +540,7 @@ export default function ReviewNotesPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/review-notes-v2/stats/summary"] });
       toast({ title: "Review note created successfully" });
       setCreateOpen(false);
-      setCreateForm({ title: "", content: "", engagementId: "", phase: "PLANNING", noteType: "ISSUE", severity: "INFO", dueDate: "", assigneeIds: [] });
+      setCreateForm({ title: "", content: "", engagementId: "", phase: "PLANNING", noteType: "ISSUE", severity: "INFO", sectionKey: "", dueDate: "", assigneeIds: [] });
       setAttachments([]);
     },
     onError: (err: any) => {
@@ -829,7 +839,10 @@ export default function ReviewNotesPage() {
               <SelectContent>
                 <SelectItem value="all">All Severity</SelectItem>
                 <SelectItem value="INFO">Info</SelectItem>
+                <SelectItem value="LOW">Low</SelectItem>
+                <SelectItem value="MEDIUM">Medium</SelectItem>
                 <SelectItem value="WARNING">Warning</SelectItem>
+                <SelectItem value="HIGH">High</SelectItem>
                 <SelectItem value="CRITICAL">Critical</SelectItem>
               </SelectContent>
             </Select>
@@ -944,6 +957,18 @@ export default function ReviewNotesPage() {
             </div>
 
             <div className="space-y-1.5">
+              <Label htmlFor="create-section-key">Working Paper / Section Reference</Label>
+              <Input
+                id="create-section-key"
+                placeholder="e.g. BS.01, PL.03, WP-Cash, Control-Revenue..."
+                value={createForm.sectionKey}
+                onChange={(e) => setCreateForm({ ...createForm, sectionKey: e.target.value })}
+                data-testid="input-section-key"
+              />
+              <p className="text-[11px] text-muted-foreground">Links this note to a specific working paper, FS head, or procedure area</p>
+            </div>
+
+            <div className="space-y-1.5">
               <Label>To (Assign to team members)</Label>
               <MultiSelectUsers
                 users={usersQuery.data || []}
@@ -981,7 +1006,10 @@ export default function ReviewNotesPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="INFO">Info</SelectItem>
+                    <SelectItem value="LOW">Low</SelectItem>
+                    <SelectItem value="MEDIUM">Medium</SelectItem>
                     <SelectItem value="WARNING">Warning</SelectItem>
+                    <SelectItem value="HIGH">High</SelectItem>
                     <SelectItem value="CRITICAL">Critical</SelectItem>
                   </SelectContent>
                 </Select>

@@ -24,7 +24,7 @@ export interface AIHelpGuidance {
 
 interface AIHelpProps {
   fieldName: string;
-  category: "planning" | "execution" | "evidence" | "compliance" | "qc";
+  category: "planning" | "execution" | "evidence" | "compliance" | "qc" | "reviewNotes" | "completion";
   onSuggestionApply?: (value: string) => void;
   className?: string;
   size?: "sm" | "md" | "lg";
@@ -490,6 +490,135 @@ const AUDIT_GUIDANCE_DATABASE: Record<
         "Inadequate cross-referencing and indexing",
         "File not ready for quality review or inspection",
         "Key conclusions not clearly documented",
+      ],
+    },
+  },
+  reviewNotes: {
+    reviewNoteCreation: {
+      title: "Creating Effective Review Notes",
+      description:
+        "Draft clear, actionable review notes that facilitate efficient communication between team members and ensure audit issues are properly tracked and resolved.",
+      standardReference: "ISA 220 - Quality Management for an Audit | ISA 230 - Audit Documentation",
+      suggestions: [
+        "State the issue clearly with specific reference to the account, balance, or procedure affected",
+        "Include the working paper or section reference (e.g., BS.01, PL.03) for traceability",
+        "Specify the expected resolution and deadline for the assignee",
+        "Classify severity accurately: INFO for observations, LOW/MEDIUM for routine matters, WARNING/HIGH for significant issues, CRITICAL for items affecting the audit opinion",
+        "Attach supporting evidence or screenshots where applicable",
+      ],
+      examples: [
+        { label: "Issue - Missing confirmation", value: "Bank confirmation for Account #4521 at MCB not received. Follow up required before finalization." },
+        { label: "Question - Accounting treatment", value: "Management capitalized PKR 2.5M repair costs to PPE. Verify whether this meets IAS 16 recognition criteria." },
+        { label: "To-Do - Procedure pending", value: "Complete subsequent events review for period 01-Jul to date of report. Check board minutes and post-period transactions." },
+      ],
+      tips: [
+        "Use specific subject lines that identify the account and nature of the issue",
+        "Assign notes to the team member responsible for the working paper area",
+        "Set realistic due dates aligned with the audit timeline",
+        "Reference the relevant ISA or accounting standard when applicable",
+        "Include quantitative impact where possible (PKR amount, % of materiality)",
+      ],
+      commonMistakes: [
+        "Vague subject lines like 'Please check' without identifying the issue",
+        "Not assigning the note to a specific team member",
+        "Missing the working paper reference, making it hard to locate the related work",
+        "Setting all notes as CRITICAL when most are routine matters",
+        "Not including enough context for the assignee to act without further clarification",
+      ],
+    },
+    reviewNoteResolution: {
+      title: "Resolving and Clearing Review Notes",
+      description:
+        "Document adequate resolution of review points, ensuring proper evidence trail and sign-off by the appropriate reviewer level.",
+      standardReference: "ISA 220 - Quality Management for an Audit",
+      suggestions: [
+        "Provide specific resolution details: what was done, what evidence was obtained, and the conclusion reached",
+        "Reference additional working papers or evidence gathered to address the point",
+        "Ensure the resolution addresses the root cause, not just the symptom",
+        "Only mark as ADDRESSED when the work is complete; a manager must CLEAR the note",
+        "Document any changes to audit procedures resulting from the review note",
+      ],
+      examples: [
+        { label: "Confirmation resolved", value: "Bank confirmation received 15-Jan. Balance confirmed at PKR 12.5M, no variance. Filed in BS.01." },
+        { label: "Accounting treatment resolved", value: "Discussed with management. PKR 1.8M relates to capacity enhancement (capitalize per IAS 16). PKR 0.7M is routine maintenance (expense). Adjustment proposed." },
+      ],
+      tips: [
+        "Always include the date and reference to evidence when resolving",
+        "If the original issue led to an audit adjustment, reference the adjustment entry",
+        "Escalate unresolved critical notes to the engagement partner before report issuance",
+        "Ensure all notes are cleared before the audit file assembly deadline",
+        "Use the reply thread to document interim progress on complex issues",
+      ],
+      commonMistakes: [
+        "Marking notes as addressed without documenting what was done",
+        "Clearing notes without manager-level review",
+        "Leaving critical notes open past the report issuance date",
+        "Not linking the resolution back to the working paper where the fix was applied",
+        "Insufficient resolution detail for regulatory inspection purposes",
+      ],
+    },
+  },
+  completion: {
+    goingConcern: {
+      title: "Going Concern Assessment",
+      description:
+        "Evaluate whether the entity can continue as a going concern for at least 12 months from the reporting date, considering financial, operational, and other indicators.",
+      standardReference: "ISA 570 - Going Concern",
+      suggestions: [
+        "Review financial indicators: recurring losses, negative working capital, inability to pay creditors on time",
+        "Assess operating indicators: loss of key management, labor difficulties, loss of major market",
+        "Evaluate management's plans to address going concern doubts",
+        "Obtain management representations regarding going concern",
+        "Consider adequacy of related disclosures in financial statements",
+      ],
+      examples: [
+        { label: "No GC doubt", value: "Entity profitable, positive working capital, no adverse indicators identified. Going concern basis appropriate." },
+        { label: "Material uncertainty", value: "Entity has net current liabilities of PKR 50M and recurring losses. Management plans include asset disposal and refinancing. Material uncertainty disclosure required." },
+      ],
+      tips: [
+        "Look at post-period events that may affect going concern assessment",
+        "Challenge management's assumptions in cash flow forecasts",
+        "Consider the impact on audit opinion if going concern is in doubt",
+        "Document the assessment even when no concerns are identified",
+        "Review loan covenants and debt maturity schedules",
+      ],
+      commonMistakes: [
+        "Not performing going concern assessment for seemingly healthy entities",
+        "Relying solely on management representations without corroboration",
+        "Failing to consider post-period events",
+        "Inadequate documentation of the assessment process",
+        "Not modifying the audit opinion when material uncertainty exists",
+      ],
+    },
+    subsequentEvents: {
+      title: "Subsequent Events Review",
+      description:
+        "Identify and evaluate events occurring between the period end and the date of the auditor's report that may require adjustment or disclosure.",
+      standardReference: "ISA 560 - Subsequent Events",
+      suggestions: [
+        "Review post-period board minutes and management committee meetings",
+        "Examine significant transactions after the reporting period",
+        "Inquire about litigation, claims, and contingencies arising after period end",
+        "Review latest interim financial information and management accounts",
+        "Assess impact of post-period events on financial statement assertions",
+      ],
+      examples: [
+        { label: "Adjusting event", value: "Major customer declared insolvent in January (PKR 8M receivable). Provision required as condition existed at period end." },
+        { label: "Non-adjusting event", value: "Acquisition of subsidiary announced in February for PKR 100M. Disclosure required, no adjustment needed." },
+      ],
+      tips: [
+        "Extend subsequent events procedures as close as possible to the report date",
+        "Distinguish between adjusting and non-adjusting events per IAS 10",
+        "Document all inquiries made and responses received",
+        "Obtain written representations covering the period to the report date",
+        "Consider the impact on the auditor's report if events are not properly reflected",
+      ],
+      commonMistakes: [
+        "Stopping subsequent events review too early before the report date",
+        "Treating all post-period events as non-adjusting",
+        "Not updating the going concern assessment for post-period events",
+        "Failing to document nil responses to inquiries",
+        "Not communicating significant subsequent events to those charged with governance",
       ],
     },
   },

@@ -146,7 +146,7 @@ router.get("/:id", requireAuth, async (req: AuthenticatedRequest, res: Response)
 
 const VALID_PHASES = ["ONBOARDING", "PRE_PLANNING", "PLANNING", "EXECUTION", "FINALIZATION", "REPORTING", "EQCR", "INSPECTION"] as const;
 const VALID_STATUSES = ["OPEN", "ADDRESSED", "CLEARED"] as const;
-const VALID_SEVERITIES = ["INFO", "WARNING", "CRITICAL"] as const;
+const VALID_SEVERITIES = ["INFO", "LOW", "MEDIUM", "WARNING", "HIGH", "CRITICAL"] as const;
 
 function isAuthorAssigneeOrPrivileged(note: any, userId: string, userRole: string): boolean {
   if (PRIVILEGED_ROLES.includes(userRole)) return true;
