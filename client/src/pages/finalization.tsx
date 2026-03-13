@@ -2186,17 +2186,17 @@ export default function Finalization() {
               </div>
             </CardHeader>
             <CardContent>
-              {preReportCheck && !preReportCheck.readyForRelease && (
+              {preReportCheck && !preReportCheck.readyForDraft && (
                 <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/5 p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <AlertCircle className="h-5 w-5 text-destructive" />
                     <h4 className="font-semibold text-destructive">Pre-Report Blockers</h4>
                   </div>
                   <p className="text-sm text-muted-foreground mb-2">
-                    The following items must be resolved before finalization outputs can be generated or deliverables issued:
+                    The following completion-phase items must be resolved before finalization outputs can be generated:
                   </p>
                   <ul className="space-y-1">
-                    {preReportCheck.issues.map((issue, idx) => (
+                    {(preReportCheck.draftIssues || preReportCheck.issues).map((issue: { message: string }, idx: number) => (
                       <li key={idx} className="text-sm flex items-center gap-2">
                         <AlertCircle className="h-3 w-3 text-destructive flex-shrink-0" />
                         <span>{issue.message}</span>
@@ -2219,7 +2219,7 @@ export default function Finalization() {
                     });
                     generateFinalizationOutputs();
                   }}
-                  disabled={isGeneratingOutputs || fileStatus === "locked" || (preReportCheck && !preReportCheck.readyForRelease)}
+                  disabled={isGeneratingOutputs || fileStatus === "locked" || (preReportCheck && !preReportCheck.readyForDraft)}
                   data-testid="button-generate-all-outputs"
                 >
                   <div className="flex items-center gap-3">
