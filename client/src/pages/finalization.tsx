@@ -21,7 +21,7 @@ import { useFinalizationSaveBridge } from "@/hooks/use-finalization-save-bridge"
 import { useToast } from "@/hooks/use-toast";
 import { 
   ArrowRight, FileCheck, FileText, MessageSquare, Lock, CheckCircle2, 
-  Plus, Upload, Eye, Trash2, Brain, RefreshCw, AlertTriangle, Database,
+  Plus, Upload, Eye, Trash2, Brain, RefreshCw, AlertTriangle, AlertCircle, Database,
   FileCheck2, Calendar, User, Shield, ClipboardCheck, TrendingDown,
   Building, ExternalLink, Users, FileSignature, Sparkles,
   Info, Edit, Save, Download, Scale, TrendingUp, FileSpreadsheet,
@@ -213,6 +213,17 @@ export default function Finalization() {
     staleTime: 10000,
   });
   const coaAccounts = coaAccountsRaw || [];
+
+  const { data: preReportCheck } = useQuery<{ readyForRelease: boolean; issues: Array<{ type: string; count?: number; message: string }> }>({
+    queryKey: [`/api/finalization/${engagementId}/pre-report-check`],
+    queryFn: async () => {
+      const res = await fetchWithAuth(`/api/finalization/${engagementId}/pre-report-check`);
+      if (!res.ok) throw new Error("Failed to fetch pre-report check");
+      return res.json();
+    },
+    enabled: !!engagementId,
+    staleTime: 30000,
+  });
 
   const [fsSubTab, setFsSubTab] = useState("adjusted-bs");
 
@@ -543,9 +554,11 @@ export default function Finalization() {
       });
       const result = await response.json();
       if (result.success) {
+        const warningCount = result.preReportWarnings?.length || 0;
         toast({
           title: "Finalization Outputs Generated",
-          description: `Created ${result.outputsCreated} outputs, ${result.outputsSkipped} already existed.`,
+          description: `Created ${result.outputsCreated} outputs, ${result.outputsSkipped} already existed.${warningCount > 0 ? ` Warning: ${warningCount} pre-report blocker(s) remain — resolve before issuance.` : ""}`,
+          variant: warningCount > 0 ? "destructive" : "default",
         });
       } else {
         toast({
@@ -2157,11 +2170,36 @@ export default function Finalization() {
                     <FileCheck className="h-5 w-5" />
                     Generate Finalization Documents
                   </CardTitle>
-                  <CardDescription>Generate deliverable documents for the finalization phase</CardDescription>
+                  <CardDescription>
+                    Generate deliverable documents for the finalization phase.{" "}
+                    See also:{" "}
+                    <Link href={`/workspace/${engagementId}/outputs`} className="text-primary hover:underline">Outputs Registry</Link>
+                    {" | "}
+                    <Link href={`/workspace/${engagementId}/deliverables`} className="text-primary hover:underline">Deliverables Register</Link>
+                  </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
+              {preReportCheck && !preReportCheck.readyForRelease && (
+                <div className="mb-4 rounded-lg border border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertCircle className="h-5 w-5 text-yellow-600" />
+                    <h4 className="font-semibold text-yellow-700 dark:text-yellow-500">Pre-Report Warnings</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    You can generate draft outputs, but these items must be resolved before deliverables can be issued:
+                  </p>
+                  <ul className="space-y-1">
+                    {preReportCheck.issues.map((issue, idx) => (
+                      <li key={idx} className="text-sm flex items-center gap-2">
+                        <AlertCircle className="h-3 w-3 text-yellow-600 flex-shrink-0" />
+                        <span>{issue.message}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <Button
                   variant="outline"

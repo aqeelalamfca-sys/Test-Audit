@@ -1,6 +1,7 @@
 import { Router, Response } from "express";
 import { prisma } from "./db";
 import { requireAuth, logAuditTrail, type AuthenticatedRequest } from "./auth";
+import { computePreReportBlockers } from "./finalizationRoutes";
 import { z } from "zod";
 import path from "path";
 import fs from "fs";
@@ -270,6 +271,7 @@ router.get("/engagements/:engagementId/outputs/:outputId/download", requireAuth,
 
     const engagement = await prisma.engagement.findFirst({
       where: { id: engagementId, firmId: req.user!.firmId! },
+      include: { client: { select: { name: true } } },
     });
 
     if (!engagement) {
@@ -294,7 +296,9 @@ router.get("/engagements/:engagementId/outputs/:outputId/download", requireAuth,
       return res.status(404).json({ error: "File not found on server" });
     }
 
-    const filename = `${output.outputCode}-v${output.version}.${output.outputFormat.toLowerCase()}`;
+    const clientSlug = (engagement as any).client?.name?.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30) || "Client";
+    const engCode = engagement.engagementCode?.replace(/[^a-zA-Z0-9-]/g, "") || "";
+    const filename = `${clientSlug}_${engCode}_${output.outputCode}-v${output.version}.${output.outputFormat.toLowerCase()}`;
     
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.sendFile(filePath);
@@ -419,6 +423,8 @@ router.post("/engagements/:engagementId/outputs/generate-phase5", requireAuth, a
       return res.status(404).json({ error: "Engagement not found" });
     }
 
+    const preCheck = await computePreReportBlockers(engagementId);
+
     const result = await generatePhase5Outputs(engagementId, req.user!.id);
 
     logAuditTrail(
@@ -433,6 +439,7 @@ router.post("/engagements/:engagementId/outputs/generate-phase5", requireAuth, a
       outputsCreated: result.outputsCreated,
       outputsSkipped: result.outputsSkipped,
       details: result.details,
+      preReportWarnings: preCheck.readyForRelease ? [] : preCheck.issues.map(i => i.message),
     });
   } catch (error) {
     console.error("Error generating Phase 5 outputs:", error);
