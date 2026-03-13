@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ModuleTemplates } from "@/components/module-templates";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -4292,6 +4293,11 @@ export default function FirmWideControls() {
 
         {/* Documentation Library Tab */}
         <TabsContent value="docs" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ModuleTemplates moduleName="isqm-governance" title="ISQM Governance Templates" collapsible={false} defaultExpanded />
+            <ModuleTemplates moduleName="isqm-resources" title="ISQM HR & Resources" collapsible={false} defaultExpanded />
+            <ModuleTemplates moduleName="isqm-monitoring" title="ISQM Monitoring" collapsible={false} defaultExpanded />
+          </div>
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">

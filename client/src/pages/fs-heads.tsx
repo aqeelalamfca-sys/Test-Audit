@@ -1,5 +1,6 @@
 import { useParams } from "wouter";
 import { useEngagement } from "@/lib/workspace-context";
+import { ModuleTemplates } from "@/components/module-templates";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -509,6 +510,7 @@ function FSHeadsContent({ engagementId, saveRef }: { engagementId: string; saveR
             </Accordion>
           </CardContent>
         </Card>
+        <ModuleTemplates moduleName="execution-fs-heads" engagementId={engagementId} title="FS Head Templates" />
       </div>
 
       <div className="col-span-9">
