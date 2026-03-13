@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, Link } from "wouter";
 import { useEngagement } from "@/lib/workspace-context";
+import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -779,6 +780,9 @@ export default function ReviewMapping() {
         </div>
       </div>
 
+      <div className="px-4 pt-3">
+        <AIAssistantPanel engagementId={engagementId || ""} phaseKey="coa-mapping" />
+      </div>
       <div className="flex flex-1 overflow-hidden">
         <div className="w-72 border-r flex flex-col">
           <div className="p-3 border-b flex items-center justify-between">

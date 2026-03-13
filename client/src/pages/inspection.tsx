@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "wouter";
+import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { useEngagement } from "@/lib/workspace-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -334,6 +335,7 @@ export default function Inspection() {
 
   return (
     <div className="w-full px-4 py-3 space-y-4">
+      <AIAssistantPanel engagementId={engagementId || ""} phaseKey="inspection" className="mb-2" />
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <div className="p-1.5 rounded-lg bg-primary/10 flex-shrink-0">

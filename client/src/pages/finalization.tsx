@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, Fragment } from "react";
 import { useParams, Link } from "wouter";
+import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { useEngagement } from "@/lib/workspace-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -662,6 +663,7 @@ export default function Finalization() {
       }
     >
       <div className="w-full px-4 py-2 space-y-2">
+      <AIAssistantPanel engagementId={engagementId || ""} phaseKey="finalization" className="mb-2" />
       <PhaseLockIndicator phase="FINALIZATION" />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>

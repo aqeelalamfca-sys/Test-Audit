@@ -1,5 +1,6 @@
 import { useParams } from "wouter";
 import { useState, useRef, useEffect } from "react";
+import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -385,6 +386,7 @@ export default function OpinionReportsPage() {
       showSaveClose={true}
     >
       <div className="px-5 py-3 space-y-3 max-w-[1400px] mx-auto w-full">
+        <AIAssistantPanel engagementId={engagementId || ""} phaseKey="opinion-reports" className="mb-2" />
         <input
           type="file"
           ref={fileInputRef}

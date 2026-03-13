@@ -352,7 +352,8 @@ export async function registerRoutes(
           return res.status(403).json({ error: "Not a member of this engagement team" });
         }
       }
-      const { generatePhaseAIContent } = await import("./services/aiPhaseOrchestrator");
+      const { generatePhaseAIContent, getPhaseAIConfig } = await import("./services/aiPhaseOrchestrator");
+      const { getPhaseByKey } = await import("../shared/phases");
       const result = await generatePhaseAIContent({
         engagementId,
         phaseKey: req.params.phaseKey,
@@ -360,11 +361,299 @@ export async function registerRoutes(
         additionalContext,
         firmId,
       });
+
+      const phase = getPhaseByKey(req.params.phaseKey);
+      if (!phase?.backendPhase) {
+        return res.status(400).json({ error: "Invalid phase key" });
+      }
+      const backendPhase = phase.backendPhase;
+      const confidence = typeof result.confidence === "number" ? result.confidence : 0.75;
+      try {
+        await prisma.aISuggestion.upsert({
+          where: {
+            engagementId_phase_section_fieldKey: {
+              engagementId,
+              phase: backendPhase as any,
+              section: req.params.phaseKey,
+              fieldKey: capabilityId,
+            },
+          },
+          create: {
+            engagementId,
+            phase: backendPhase as any,
+            section: req.params.phaseKey,
+            fieldKey: capabilityId,
+            aiValue: result.content,
+            confidence,
+            rationale: result.disclaimer,
+            citations: [],
+            status: "AI_SUGGESTED",
+            modelVersion: result.provider || "gpt-4o",
+            modelProvider: result.provider?.split("-")[0] || "openai",
+            generatedById: userId,
+          },
+          update: {
+            aiValue: result.content,
+            confidence,
+            rationale: result.disclaimer,
+            modelVersion: result.provider || "gpt-4o",
+            generatedAt: new Date(),
+          },
+        });
+        await prisma.aIAuditLog.create({
+          data: {
+            engagementId,
+            phase: backendPhase as any,
+            section: req.params.phaseKey,
+            fieldKey: capabilityId,
+            action: "AI_GENERATE",
+            newValue: result.content?.substring(0, 2000),
+            newStatus: "AI_SUGGESTED",
+            aiConfidence: confidence,
+            aiRationale: result.disclaimer,
+            userId,
+            userName: req.user?.username,
+            userRole,
+          },
+        });
+      } catch (persistErr) {
+        console.error("AI suggestion persist warning:", persistErr);
+      }
+
       res.json(result);
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : "AI generation failed";
       console.error("AI phase generation error:", error);
       res.status(500).json({ error: errMsg });
+    }
+  });
+
+  app.get("/api/ai/phase-suggestions/:engagementId/:phaseKey", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { engagementId, phaseKey } = req.params;
+      const firmId = req.user!.firmId;
+      const engagement = await prisma.engagement.findFirst({
+        where: { id: engagementId, firmId },
+        select: { id: true },
+      });
+      if (!engagement) {
+        return res.status(404).json({ error: "Engagement not found" });
+      }
+      const { getPhaseByKey } = await import("../shared/phases");
+      const phase = getPhaseByKey(phaseKey);
+      const backendPhase = phase?.backendPhase;
+
+      const suggestions = await prisma.aISuggestion.findMany({
+        where: {
+          engagementId,
+          ...(backendPhase ? { phase: backendPhase as any } : {}),
+          section: phaseKey,
+        },
+        orderBy: { generatedAt: "desc" },
+        include: {
+          generatedBy: { select: { fullName: true, role: true } },
+          overriddenBy: { select: { fullName: true, role: true } },
+        },
+      });
+
+      const auditLogs = await prisma.aIAuditLog.findMany({
+        where: {
+          engagementId,
+          section: phaseKey,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        include: {
+          user: { select: { fullName: true, role: true } },
+        },
+      });
+
+      res.json({
+        success: true,
+        suggestions: suggestions.map((s: any) => ({
+          id: s.id,
+          fieldKey: s.fieldKey,
+          aiValue: s.aiValue,
+          userValue: s.userValue,
+          status: s.status,
+          confidence: s.confidence,
+          rationale: s.rationale,
+          citations: s.citations,
+          isaReference: s.isaReference,
+          modelVersion: s.modelVersion,
+          generatedAt: s.generatedAt,
+          generatedBy: s.generatedBy?.fullName,
+          overriddenAt: s.overriddenAt,
+          overriddenBy: s.overriddenBy?.fullName,
+          overrideReason: s.overrideReason,
+        })),
+        auditLog: auditLogs.map((l: any) => ({
+          id: l.id,
+          fieldKey: l.fieldKey,
+          action: l.action,
+          previousValue: l.previousValue?.substring(0, 200),
+          newValue: l.newValue?.substring(0, 200),
+          previousStatus: l.previousStatus,
+          newStatus: l.newStatus,
+          aiConfidence: l.aiConfidence,
+          userName: l.user?.fullName || l.userName,
+          userRole: l.user?.role || l.userRole,
+          createdAt: l.createdAt,
+        })),
+      });
+    } catch (error: unknown) {
+      console.error("Phase suggestions error:", error);
+      res.status(500).json({ error: "Failed to fetch phase suggestions" });
+    }
+  });
+
+  app.post("/api/ai/phase-suggestions/:engagementId/:phaseKey/accept", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { engagementId, phaseKey } = req.params;
+      const { fieldKey, userValue, overrideReason } = req.body;
+      if (!fieldKey) return res.status(400).json({ error: "fieldKey is required" });
+
+      const firmId = req.user!.firmId;
+      const engagement = await prisma.engagement.findFirst({
+        where: { id: engagementId, firmId },
+        select: { id: true },
+      });
+      if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
+      const { getPhaseByKey } = await import("../shared/phases");
+      const phase = getPhaseByKey(phaseKey);
+      if (!phase?.backendPhase) return res.status(400).json({ error: "Invalid phase key" });
+      const backendPhase = phase.backendPhase as any;
+
+      const existing = await prisma.aISuggestion.findUnique({
+        where: {
+          engagementId_phase_section_fieldKey: {
+            engagementId,
+            phase: backendPhase,
+            section: phaseKey,
+            fieldKey,
+          },
+        },
+      });
+
+      const isEdited = userValue && existing?.aiValue && userValue !== existing.aiValue;
+      const finalStatus = isEdited ? "USER_OVERRIDE" : "USER_ACCEPTED";
+
+      await prisma.aISuggestion.upsert({
+        where: {
+          engagementId_phase_section_fieldKey: {
+            engagementId,
+            phase: backendPhase,
+            section: phaseKey,
+            fieldKey,
+          },
+        },
+        create: {
+          engagementId,
+          phase: backendPhase,
+          section: phaseKey,
+          fieldKey,
+          userValue: userValue || existing?.aiValue,
+          status: finalStatus,
+          confidence: 1,
+          rationale: overrideReason || "Accepted by user",
+          overriddenAt: new Date(),
+          overriddenById: req.user!.id,
+          overrideReason,
+        },
+        update: {
+          userValue: userValue || undefined,
+          status: finalStatus,
+          overriddenAt: new Date(),
+          overriddenById: req.user!.id,
+          overrideReason,
+        },
+      });
+
+      await prisma.aIAuditLog.create({
+        data: {
+          engagementId,
+          phase: backendPhase,
+          section: phaseKey,
+          fieldKey,
+          action: isEdited ? "USER_OVERRIDE" : "USER_ACCEPT",
+          previousValue: existing?.aiValue?.substring(0, 2000),
+          newValue: (userValue || existing?.aiValue)?.substring(0, 2000),
+          previousStatus: existing?.status as any,
+          newStatus: finalStatus,
+          userId: req.user!.id,
+          userName: req.user?.username,
+          userRole: req.user?.role,
+        },
+      });
+
+      res.json({ success: true, status: finalStatus });
+    } catch (error: unknown) {
+      console.error("Accept suggestion error:", error);
+      res.status(500).json({ error: "Failed to accept suggestion" });
+    }
+  });
+
+  app.post("/api/ai/phase-suggestions/:engagementId/:phaseKey/reject", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { engagementId, phaseKey } = req.params;
+      const { fieldKey } = req.body;
+      if (!fieldKey) return res.status(400).json({ error: "fieldKey is required" });
+
+      const firmId = req.user!.firmId;
+      const engagement = await prisma.engagement.findFirst({
+        where: { id: engagementId, firmId },
+        select: { id: true },
+      });
+      if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
+      const { getPhaseByKey } = await import("../shared/phases");
+      const phase = getPhaseByKey(phaseKey);
+      if (!phase?.backendPhase) return res.status(400).json({ error: "Invalid phase key" });
+      const backendPhase = phase.backendPhase as any;
+
+      const existing = await prisma.aISuggestion.findUnique({
+        where: {
+          engagementId_phase_section_fieldKey: {
+            engagementId,
+            phase: backendPhase,
+            section: phaseKey,
+            fieldKey,
+          },
+        },
+      });
+
+      if (existing) {
+        await prisma.aISuggestion.update({
+          where: { id: existing.id },
+          data: {
+            status: "MANUAL",
+            revertedAt: new Date(),
+            revertedById: req.user!.id,
+          },
+        });
+      }
+
+      await prisma.aIAuditLog.create({
+        data: {
+          engagementId,
+          phase: backendPhase,
+          section: phaseKey,
+          fieldKey,
+          action: "USER_REJECT",
+          previousValue: existing?.aiValue?.substring(0, 2000),
+          previousStatus: existing?.status as any,
+          newStatus: "MANUAL",
+          userId: req.user!.id,
+          userName: req.user?.username,
+          userRole: req.user?.role,
+        },
+      });
+
+      res.json({ success: true, status: "MANUAL" });
+    } catch (error: unknown) {
+      console.error("Reject suggestion error:", error);
+      res.status(500).json({ error: "Failed to reject suggestion" });
     }
   });
 

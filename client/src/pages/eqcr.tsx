@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "wouter";
+import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { useEngagement } from "@/lib/workspace-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -648,6 +649,7 @@ export default function EQCR() {
       showSaveClose={true}
     >
     <div className="w-full px-4 py-3 space-y-3">
+      <AIAssistantPanel engagementId={engagementId || ""} phaseKey="eqcr" className="mb-2" />
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-shrink-0">
           {getStatusBadge()}

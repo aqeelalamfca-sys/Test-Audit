@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams } from "wouter";
+import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -817,6 +818,7 @@ export default function PostUploadWorkflow() {
 
   return (
     <div className="page-container">
+      <AIAssistantPanel engagementId={engagementId} phaseKey="validation" className="mb-3" />
       <ValidationResultsPanel engagementId={engagementId} />
 
       <div className="flex items-center justify-between gap-2">

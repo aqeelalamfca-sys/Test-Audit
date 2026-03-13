@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useParams } from "wouter";
 import { useEngagement } from "@/lib/workspace-context";
+import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -531,6 +532,9 @@ export default function Observations() {
         </div>
       </div>
 
+      <div className="px-4 pt-3">
+        <AIAssistantPanel engagementId={engagementId || ""} phaseKey="observations" />
+      </div>
       <div className="flex-1 overflow-auto p-4 space-y-4">
         <div className="flex items-center gap-2 mb-2">
           <Badge variant="outline" className="text-xs" data-testid="badge-isa-reference">

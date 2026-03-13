@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useParams, useLocation, useSearch } from "wouter";
+import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -3311,6 +3312,7 @@ export default function InformationRequisition() {
       onTabChange={setDataIntakeSubTab}
     >
       <div className="w-full px-4 py-1 space-y-2">
+      <AIAssistantPanel engagementId={effectiveEngagementId} phaseKey="tb-gl-upload" className="mb-2" />
       <div className="space-y-2 mt-1">
         <ReviewCoaSection
           engagementId={effectiveEngagementId}

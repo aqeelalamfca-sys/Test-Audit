@@ -118,12 +118,24 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 
 **Phase order derivation**: All frontend UI components (workspace-ribbon, global-status-bar, phase-gates-panel, global-progress-panel, standards-matrix) now reference the canonical 19-phase system. Backend PHASE_ORDER arrays remain aligned with Prisma's `AuditPhase` enum (8 high-level storage phases) with cross-reference comments to `shared/phases.ts`.
 
-### AI Phase Orchestration
-- `server/services/aiPhaseOrchestrator.ts` — Maps each canonical phase to AI capabilities
-- API: `GET /api/ai/phase/:phaseKey/capabilities`, `GET /api/ai/phases/capabilities`, `POST /api/ai/phase/:phaseKey/generate`
-- Frontend: `client/src/hooks/use-phase-ai.ts` — `usePhaseAI(phaseKey)` hook for phase-aware AI
-- 18 phases have AI capabilities (only inspection does not)
-- Existing AI services retained: `aiService.ts`, `aiCopilotService.ts`, `aiAuditUtilities.ts`
+### AI Native Assistant (Unified Across All Phases)
+- **Orchestrator**: `server/services/aiPhaseOrchestrator.ts` — Registry of AI capabilities per phase (all 19 phases)
+- **Generation API**: `POST /api/ai/phase/:phaseKey/generate` — generates content AND persists to `AISuggestion` + `AIAuditLog`
+- **Suggestions API**: `GET /api/ai/phase-suggestions/:engagementId/:phaseKey` — fetch stored suggestions + audit trail per phase
+- **Accept/Reject API**: `POST /api/ai/phase-suggestions/:engagementId/:phaseKey/accept|reject` — human-in-the-loop approval
+- **Capabilities API**: `GET /api/ai/phase/:phaseKey/capabilities`, `GET /api/ai/phases/capabilities`
+- **Field-level suggestions**: `server/routes/ai-suggest.ts` — `/suggest`, `/override`, `/revert`, `/suggestions/:engagementId/:phase/:section`
+- **Frontend Hooks**: `use-phase-ai.ts` (capabilities + generation), `use-ai-suggestions.ts` (stored suggestions + accept/reject)
+- **UI Component**: `client/src/components/ai-assistant-panel.tsx` — unified panel integrated into all 16 phase pages with:
+  - Phase-specific AI capability buttons (generate drafts, analysis, summaries)
+  - Stored suggestion history with status badges (AI Draft / User Edited / Rejected)
+  - Confidence badges + low-confidence warnings (< 60%)
+  - AI-generated content clearly labeled with "AI-Generated Draft" + "Subject to Professional Judgment"
+  - Human-in-the-loop enforcement: Professional Judgment Confirmation checkbox required before accepting
+  - Edit/Accept/Reject/Regenerate workflow with audit trail
+  - AI Audit Trail section (collapsible history of all AI interactions)
+- **Storage Models**: `AISuggestion` (unique per engagementId+phase+section+fieldKey), `AIAuditLog` (immutable interaction log)
+- **Existing AI services retained**: `aiService.ts`, `aiCopilotService.ts`, `aiAuditUtilities.ts`, `ai-suggest.ts`
 
 ### Legacy Engines (Deprecated, Retained)
 - `server/services/auditChainStateMachine.ts` — @deprecated, use phaseGateEngine.ts

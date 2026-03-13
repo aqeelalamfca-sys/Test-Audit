@@ -1,4 +1,5 @@
 import { useParams } from "wouter";
+import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { AgentsLoadingInline } from "@/components/agents-loading";
 import { useEngagement } from "@/lib/workspace-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -351,6 +352,7 @@ export default function EvidenceLinking() {
       showSaveClose={true}
     >
     <div className="w-full px-4 py-3 space-y-3">
+      <AIAssistantPanel engagementId={engagementId || ""} phaseKey="evidence-linking" className="mb-2" />
       <Card>
         <CardContent className="pt-4 pb-4">
           <div className="flex items-start gap-3">
