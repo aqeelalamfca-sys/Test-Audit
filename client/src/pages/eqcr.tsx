@@ -17,7 +17,6 @@ import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { formatAccounting } from '@/lib/formatters';
 import { PageShell } from "@/components/page-shell";
 import { useEQCRSaveBridge } from "@/hooks/use-eqcr-save-bridge";
-import { AIAssistBanner, PHASE_AI_CONFIGS } from "@/components/ai-assist-banner";
 import { useAuth } from "@/lib/auth";
 import { getDocumentHeaderHtml } from "@/lib/pdf-logo";
 
@@ -527,6 +526,7 @@ export default function EQCR() {
 
   return (
     <PageShell
+      showTopBar={false}
       title="EQCR - Engagement Quality Control Review"
       subtitle={`ISQM 1, ISQM 2${client?.name ? ` | ${client.name}` : ""}${engagement?.engagementCode ? ` (${engagement.engagementCode})` : ""}`}
       icon={<Shield className="h-5 w-5 text-primary" />}
@@ -556,29 +556,6 @@ export default function EQCR() {
           {isFinalized && <Lock className="h-4 w-4 text-muted-foreground" />}
         </div>
       </div>
-
-      {engagementId && (
-        <AIAssistBanner
-          engagementId={engagementId}
-          config={{
-            ...PHASE_AI_CONFIGS.eqcr,
-            contextBuilder: () => JSON.stringify({
-              phase: "eqcr",
-              engagementName: engagement?.engagementCode || "Unknown Engagement",
-              clientName: client?.name || "Unknown Client",
-              isFinalized,
-              checklistItems: assignment?.checklistItems?.length || 0,
-            }),
-            onActionComplete: (actionId, content) => {
-              toast({
-                title: "AI Content Generated",
-                description: `${actionId} content has been generated. Apply it to relevant fields.`,
-              });
-            },
-          }}
-        />
-      )}
-
       <Card className="border-0 shadow-sm">
         <CardContent className="py-1.5 px-3">
           <div className="flex items-center flex-wrap divide-x">

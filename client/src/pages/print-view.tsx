@@ -432,6 +432,7 @@ export default function PrintView() {
 
   return (
     <PageShell
+      showTopBar={false}
       title="Deliverables"
       subtitle={`Audit deliverables register & print view${client?.name ? ` | ${client.name}` : ""}${engagement?.engagementCode ? ` (${engagement.engagementCode})` : ""}`}
       icon={<Printer className="h-6 w-6 text-primary" />}
@@ -453,7 +454,7 @@ export default function PrintView() {
       showSaveNext={true}
       showSaveClose={true}
     >
-    <div className="page-container">
+    <div className="px-5 py-3 space-y-3 max-w-[1400px] mx-auto w-full">
       <input
         type="file"
         ref={fileInputRef}
@@ -462,36 +463,17 @@ export default function PrintView() {
         onChange={handleFileChange}
       />
 
-      <div className="flex gap-2 print:hidden flex-wrap">
+      <div className="flex gap-2 print:hidden flex-wrap items-center">
         <Button 
-          variant="outline" 
-          onClick={() => {}}
-          data-testid="button-export-package"
-          disabled={true}
-          title="Package export will be available in a future release"
-        >
-          <Package className="h-4 w-4 mr-2" />
-          Export Package
-        </Button>
-        <Button 
-          variant="outline" 
+          variant="outline"
+          size="sm"
           onClick={() => window.print()}
           data-testid="button-print-all"
           disabled={deliverables.length === 0}
           title={deliverables.length === 0 ? "No deliverables to print" : "Print all deliverables"}
         >
-          <Printer className="h-4 w-4 mr-2" />
+          <Printer className="h-4 w-4 mr-1" />
           Print All
-        </Button>
-        <Button 
-          variant="outline"
-          onClick={() => {}}
-          data-testid="button-mark-reviewed"
-          disabled={true}
-          title="Bulk review will be available in a future release"
-        >
-          <CheckSquare className="h-4 w-4 mr-2" />
-          Mark as Reviewed
         </Button>
           {canCreate && (
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -601,48 +583,9 @@ export default function PrintView() {
           )}
       </div>
 
-      {engagement && (
-        <Card className="print:hidden">
-          <CardContent className="pt-2">
-            <div className="flex items-center gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{engagement.client?.name}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <span>{engagement.engagementCode}</span>
-              </div>
-              {engagement.fiscalYearEnd && (
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>FY {format(new Date(engagement.fiscalYearEnd), "yyyy")}</span>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <Card>
-        <CardHeader className="bg-gradient-to-r from-muted/50 to-transparent border-b border-border/50 pb-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-green-500/10 text-green-600 flex-shrink-0">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <div className="space-y-1">
-                <CardTitle className="text-base font-semibold">Auto-Generated Outputs</CardTitle>
-                <CardDescription className="text-sm">
-                  Read-only deliverables automatically generated from earlier engagement phases
-                </CardDescription>
-              </div>
-            </div>
-            <Badge variant="outline" className="text-xs">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Data pulled from phases
-            </Badge>
-          </div>
+        <CardHeader className="pb-3 pt-3">
+          <CardTitle className="text-sm font-semibold">Auto-Generated Outputs</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

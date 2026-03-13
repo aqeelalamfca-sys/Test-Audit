@@ -1,970 +1,996 @@
 import { Router, Response } from "express";
 import { prisma } from "./db";
-import { requireAuth, type AuthenticatedRequest } from "./auth";
-import { Decimal } from "@prisma/client/runtime/library";
+import { requireAuth, logAuditTrail, type AuthenticatedRequest } from "./auth";
 
 const router = Router();
 
-interface BenchmarkConfig {
-  type: 'PBT' | 'REVENUE' | 'ASSETS' | 'EQUITY';
-  name: string;
-  minPercentage: number;
-  maxPercentage: number;
-  defaultPercentage: number;
-  applicableEntityTypes: string[];
-  description: string;
-}
-
-const BENCHMARK_CONFIGS: BenchmarkConfig[] = [
-  {
-    type: 'PBT',
-    name: 'Profit Before Tax',
-    minPercentage: 5,
-    maxPercentage: 10,
-    defaultPercentage: 7.5,
-    applicableEntityTypes: ['PRIVATE', 'PUBLIC'],
-    description: 'Commonly used for profit-oriented entities with stable earnings'
-  },
-  {
-    type: 'REVENUE',
-    name: 'Total Revenue',
-    minPercentage: 0.5,
-    maxPercentage: 2,
-    defaultPercentage: 1,
-    applicableEntityTypes: ['PRIVATE', 'PUBLIC', 'NFP'],
-    description: 'Appropriate when profit is volatile or entity is revenue-focused'
-  },
-  {
-    type: 'ASSETS',
-    name: 'Total Assets',
-    minPercentage: 1,
-    maxPercentage: 2,
-    defaultPercentage: 1.5,
-    applicableEntityTypes: ['PRIVATE', 'PUBLIC', 'NFP', 'FINANCIAL'],
-    description: 'Suitable for asset-intensive industries or financial institutions'
-  },
-  {
-    type: 'EQUITY',
-    name: 'Total Equity',
-    minPercentage: 1,
-    maxPercentage: 5,
-    defaultPercentage: 2,
-    applicableEntityTypes: ['PRIVATE', 'PUBLIC'],
-    description: 'Used when equity is a primary focus for stakeholders'
-  }
-];
-
-const SENSITIVE_INDUSTRIES = [
-  'BANKING', 'INSURANCE', 'FINANCIAL_SERVICES', 'HEALTHCARE',
-  'PHARMACEUTICALS', 'GOVERNMENT', 'UTILITIES', 'REGULATED'
-];
-
-const HIGH_FRAUD_RISK_INDUSTRIES = [
-  'CONSTRUCTION', 'REAL_ESTATE', 'RETAIL', 'HOSPITALITY'
-];
-
-interface RiskAdjustment {
-  factor: string;
-  description: string;
-  adjustment: number;
-  applied: boolean;
-  rationale: string;
-}
-
-interface QualitativeFactor {
-  factor: string;
-  present: boolean;
-  assessment: string;
-  impactLevel: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
-}
-
-interface AlternativeBenchmark {
-  benchmark: string;
-  value: number;
-  percentageRange: string;
-  reasonNotSelected: string;
-}
-
-interface SignificantFSHead {
-  accountName: string;
-  balance: number;
-  percentOfMateriality: number;
-  riskRating: string;
-}
-
-interface PartnerOverrideStructure {
-  overrideEnabled: boolean;
-  overrideFields: string[];
-  requiredFields: string[];
-  currentOverride: {
-    reason?: string;
-    revisedValue?: number;
-    impactAssessment?: string;
-    approvalTimestamp?: string;
-    approverUserId?: string;
-  } | null;
-}
-
-interface DocumentationOutput {
-  benchmarkSelectionRationale: string;
-  selectedBenchmarkAndPercentage: string;
-  overallMaterialitySummary: string;
-  performanceMaterialitySummary: string;
-  trivialThresholdSummary: string;
-  qualitativeFactorsConsidered: string[];
-  impactOnAuditPlanning: string;
-  isaReferences: string[];
-}
-
-interface ISA320MaterialityResult {
-  engagementId: string;
-  analysisTimestamp: string;
-  step1_dataIngestion: {
-    revenue: number;
-    totalAssets: number;
-    totalEquity: number;
-    profitBeforeTax: number;
-    priorYearRevenue: number | null;
-    priorYearAssets: number | null;
-    priorYearPBT: number | null;
-    entityType: string | null;
-    industry: string | null;
-    ownershipStructure: string | null;
-    regulatoryEnvironment: string | null;
-    fraudRisksIdentified: number;
-    significantRisksIdentified: number;
-    fsLevelRisks: string[];
-  };
-  step2_benchmarkSelection: {
-    selectedBenchmark: string;
-    benchmarkValue: number;
-    percentageRange: { min: number; max: number };
-    justification: string;
-    alternativeBenchmarks: AlternativeBenchmark[];
-  };
-  step3_riskAdjustedPercentage: {
-    basePercentage: number;
-    adjustments: RiskAdjustment[];
-    finalPercentage: number;
-    adjustmentRationale: string;
-  };
-  step4_materialityLevels: {
-    overallMateriality: number;
-    performanceMateriality: number;
-    performanceMaterialityPercentage: number;
-    trivialThreshold: number;
-    trivialThresholdPercentage: number;
-    calculationFormulas: {
-      overall: string;
-      performance: string;
-      trivial: string;
-    };
-  };
-  step5_qualitativeFactors: {
-    factors: QualitativeFactor[];
-    impactAssessment: string;
-    adjustmentRecommendation: string;
-  };
-  step6_riskAssessmentLinkage: {
-    significantFSHeads: SignificantFSHead[];
-    riskRatingsImpact: string;
-    analyticalProcedureThresholds: {
-      significantVariance: number;
-      investigationThreshold: number;
-    };
-    samplingParameters: {
-      suggestedConfidenceLevel: number;
-      tolerableMisstatement: number;
-      expectedError: number;
-    };
-  };
-  step7_partnerOverride: PartnerOverrideStructure;
-  step8_documentation: DocumentationOutput;
-}
-
-function calculateTotalsFromCoA(accounts: any[]): {
+interface SourceDataSnapshot {
   revenue: number;
   totalAssets: number;
   totalEquity: number;
   profitBeforeTax: number;
-} {
-  let revenue = 0;
-  let totalAssets = 0;
-  let totalEquity = 0;
-  let totalIncome = 0;
-  let totalExpenses = 0;
+  grossProfit: number;
+  totalExpenses: number;
+  priorYearRevenue: number | null;
+  priorYearAssets: number | null;
+  priorYearPBT: number | null;
+  priorYearEquity: number | null;
+  entityType: string | null;
+  industry: string | null;
+  engagementType: string | null;
+  ownershipStructure: string | null;
+  regulatoryCategory: string | null;
+  tbImported: boolean;
+  fsMapped: boolean;
+  riskAssessmentDone: boolean;
+  fraudRiskCount: number;
+  significantRiskCount: number;
+  goingConcernFlag: boolean;
+  relatedPartyFlag: boolean;
+  covenantFlag: boolean;
+  publicInterestFlag: boolean;
+  accountCount: number;
+  snapshotDate: string;
+}
 
+interface BenchmarkRecommendation {
+  recommended: string;
+  recommendedValue: number;
+  recommendedPercentage: number;
+  recommendedRange: { min: number; max: number };
+  justification: string;
+  alternates: Array<{
+    type: string;
+    value: number;
+    range: { min: number; max: number };
+    reason: string;
+  }>;
+  warnings: string[];
+}
+
+interface QualitativeFactorItem {
+  id: string;
+  title: string;
+  present: boolean;
+  severity: "LOW" | "MODERATE" | "HIGH";
+  explanation: string;
+  impact: "NO_CHANGE" | "REDUCE_OM" | "REDUCE_PM" | "SET_SPECIFIC";
+  isaRef: string;
+}
+
+interface SpecificMaterialityItem {
+  id: string;
+  area: string;
+  fsHead: string;
+  amount: number;
+  rationale: string;
+  linkedRiskId: string | null;
+}
+
+interface OverrideRecord {
+  id: string;
+  field: string;
+  systemValue: number;
+  overriddenValue: number;
+  reason: string;
+  effectOnTesting: string;
+  userId: string;
+  userName: string;
+  userRole: string;
+  timestamp: string;
+  reverted: boolean;
+  revertedAt: string | null;
+  revertedBy: string | null;
+}
+
+const BENCHMARK_CONFIGS: Record<string, { name: string; min: number; max: number; default: number; description: string }> = {
+  PBT: { name: "Profit Before Tax", min: 5, max: 10, default: 5, description: "Standard for profit-oriented entities with stable earnings" },
+  REVENUE: { name: "Total Revenue", min: 0.5, max: 2, default: 1, description: "Appropriate when profit is volatile or entity is revenue-focused" },
+  TOTAL_ASSETS: { name: "Total Assets", min: 0.5, max: 2, default: 1, description: "Suitable for asset-intensive industries or financial institutions" },
+  EQUITY: { name: "Total Equity", min: 1, max: 5, default: 2, description: "Used when equity is primary stakeholder focus" },
+  GROSS_PROFIT: { name: "Gross Profit", min: 2, max: 5, default: 3, description: "Used for trading entities with thin margins" },
+  TOTAL_EXPENSES: { name: "Total Expenditure", min: 0.5, max: 2, default: 1, description: "Appropriate for NPOs, grant-funded, or government entities" },
+};
+
+function formatPKR(amount: number): string {
+  return new Intl.NumberFormat("en-PK", { style: "currency", currency: "PKR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+}
+
+function calculateTotalsFromAccounts(accounts: Array<Record<string, unknown>>): {
+  revenue: number; totalAssets: number; totalEquity: number; profitBeforeTax: number; grossProfit: number; totalExpenses: number;
+} {
+  let revenue = 0, totalAssets = 0, totalEquity = 0, totalIncome = 0, totalExpenses = 0, costOfSales = 0;
   for (const acc of accounts) {
     const balance = Number(acc.closingBalance) || 0;
-    const accountClass = (acc.accountClass || '').toUpperCase();
-    const tbGroup = (acc.tbGroup || '').toUpperCase();
-    const fsLineItem = (acc.fsLineItem || '').toUpperCase();
-
-    if (accountClass.includes('ASSET') || tbGroup.includes('ASSET')) {
-      totalAssets += Math.abs(balance);
+    const nature = String(acc.nature || "").toUpperCase();
+    const cls = String(acc.accountClass || "").toUpperCase();
+    const grp = String(acc.tbGroup || "").toUpperCase();
+    const fsLine = String(acc.fsLineItem || "").toUpperCase();
+    const sign = nature === "CR" ? -1 : 1;
+    const absBalance = Math.abs(balance);
+    if (cls.includes("ASSET") || grp.includes("ASSET")) totalAssets += absBalance;
+    if (cls.includes("EQUITY") || grp.includes("EQUITY") || fsLine.includes("EQUITY") || fsLine.includes("CAPITAL")) {
+      totalEquity += balance * sign;
     }
-
-    if (accountClass.includes('EQUITY') || tbGroup.includes('EQUITY') || 
-        fsLineItem.includes('EQUITY') || fsLineItem.includes('CAPITAL')) {
-      totalEquity += balance;
-    }
-
-    if (accountClass.includes('REVENUE') || accountClass.includes('INCOME') || 
-        tbGroup.includes('REVENUE') || tbGroup.includes('INCOME') ||
-        fsLineItem.includes('REVENUE') || fsLineItem.includes('SALES')) {
-      if (!fsLineItem.includes('EXPENSE') && !fsLineItem.includes('COST')) {
-        revenue += Math.abs(balance);
-        totalIncome += Math.abs(balance);
+    if (cls.includes("REVENUE") || cls.includes("INCOME") || grp.includes("REVENUE") || grp.includes("INCOME") || fsLine.includes("REVENUE") || fsLine.includes("SALES")) {
+      if (!fsLine.includes("EXPENSE") && !fsLine.includes("COST")) {
+        revenue += absBalance;
+        totalIncome += absBalance;
       }
     }
-
-    if (accountClass.includes('EXPENSE') || accountClass.includes('COST') ||
-        tbGroup.includes('EXPENSE') || tbGroup.includes('COST')) {
-      totalExpenses += Math.abs(balance);
-    }
-  }
-
-  const profitBeforeTax = totalIncome - totalExpenses;
-
-  return { revenue, totalAssets, totalEquity, profitBeforeTax };
-}
-
-function selectBestBenchmark(
-  data: { revenue: number; totalAssets: number; totalEquity: number; profitBeforeTax: number },
-  entityType: string | null,
-  industry: string | null,
-  priorYearPBT: number | null
-): { selected: BenchmarkConfig; value: number; justification: string; alternatives: AlternativeBenchmark[] } {
-  const alternatives: AlternativeBenchmark[] = [];
-  let selected: BenchmarkConfig = BENCHMARK_CONFIGS[0];
-  let selectedValue = data.profitBeforeTax;
-  let justification = '';
-
-  const pbtVolatility = priorYearPBT !== null && priorYearPBT !== 0
-    ? Math.abs((data.profitBeforeTax - priorYearPBT) / priorYearPBT)
-    : 0;
-
-  const isFinancialInstitution = industry && 
-    ['BANKING', 'INSURANCE', 'FINANCIAL_SERVICES'].includes(industry.toUpperCase());
-
-  const isProfitMakingEntity = data.profitBeforeTax > 0;
-  const isPBTStable = pbtVolatility < 0.5;
-
-  if (isProfitMakingEntity && isPBTStable && !isFinancialInstitution) {
-    selected = BENCHMARK_CONFIGS.find(b => b.type === 'PBT')!;
-    selectedValue = data.profitBeforeTax;
-    justification = `Profit Before Tax selected as the entity is profit-making with stable earnings (volatility: ${(pbtVolatility * 100).toFixed(1)}%). ` +
-      `PBT of ${formatCurrency(data.profitBeforeTax)} represents a reliable and commonly accepted benchmark per ISA 320.A4. ` +
-      `Users of financial statements typically focus on profitability measures.`;
-  } else if (isFinancialInstitution) {
-    selected = BENCHMARK_CONFIGS.find(b => b.type === 'ASSETS')!;
-    selectedValue = data.totalAssets;
-    justification = `Total Assets selected as the entity operates in the financial services industry. ` +
-      `For financial institutions, total assets of ${formatCurrency(data.totalAssets)} provides a more stable and relevant benchmark ` +
-      `as users focus on the asset base rather than volatile profit margins.`;
-  } else if (!isProfitMakingEntity || pbtVolatility > 0.5) {
-    selected = BENCHMARK_CONFIGS.find(b => b.type === 'REVENUE')!;
-    selectedValue = data.revenue;
-    justification = isProfitMakingEntity 
-      ? `Revenue selected due to significant PBT volatility (${(pbtVolatility * 100).toFixed(1)}%). ` +
-        `Revenue of ${formatCurrency(data.revenue)} provides a more stable benchmark when earnings fluctuate significantly.`
-      : `Revenue selected as the entity is not profit-making or has minimal profit. ` +
-        `Revenue of ${formatCurrency(data.revenue)} provides a meaningful benchmark for loss-making or break-even entities.`;
-  }
-
-  for (const config of BENCHMARK_CONFIGS) {
-    if (config.type !== selected.type) {
-      let value = 0;
-      let reason = '';
-
-      switch (config.type) {
-        case 'PBT':
-          value = data.profitBeforeTax;
-          if (!isProfitMakingEntity) {
-            reason = 'Entity is not profit-making; PBT would not be a meaningful benchmark';
-          } else if (!isPBTStable) {
-            reason = `PBT volatility of ${(pbtVolatility * 100).toFixed(1)}% exceeds acceptable threshold; unstable benchmark`;
-          } else if (isFinancialInstitution) {
-            reason = 'For financial institutions, total assets is more appropriate than profit-based measures';
-          }
-          break;
-        case 'REVENUE':
-          value = data.revenue;
-          reason = isProfitMakingEntity && isPBTStable 
-            ? 'PBT is available and stable; provides more direct relevance to users' 
-            : 'Revenue could be considered but current selection is more appropriate';
-          break;
-        case 'ASSETS':
-          value = data.totalAssets;
-          reason = !isFinancialInstitution 
-            ? 'Entity is not a financial institution; asset-based benchmark less relevant' 
-            : 'Assets could be considered but current selection is more appropriate';
-          break;
-        case 'EQUITY':
-          value = data.totalEquity;
-          reason = 'Equity benchmark typically used only when equity is primary stakeholder focus; other benchmarks more relevant';
-          break;
+    if (cls.includes("EXPENSE") || cls.includes("COST") || grp.includes("EXPENSE") || grp.includes("COST")) {
+      totalExpenses += absBalance;
+      if (fsLine.includes("COST OF SALES") || fsLine.includes("COST OF GOODS") || cls.includes("COST OF SALES")) {
+        costOfSales += absBalance;
       }
-
-      alternatives.push({
-        benchmark: config.name,
-        value,
-        percentageRange: `${config.minPercentage}% - ${config.maxPercentage}%`,
-        reasonNotSelected: reason || 'Selected benchmark deemed more appropriate for current circumstances'
-      });
     }
   }
-
-  return { selected, value: selectedValue, justification, alternatives };
+  return { revenue, totalAssets, totalEquity, profitBeforeTax: totalIncome - totalExpenses, grossProfit: revenue - costOfSales, totalExpenses };
 }
 
-function calculateRiskAdjustments(
-  basePercentage: number,
-  fraudRisksCount: number,
-  significantRisksCount: number,
-  entityType: string | null,
-  industry: string | null,
-  controlsRating: string | null
-): { adjustments: RiskAdjustment[]; finalPercentage: number; rationale: string } {
-  const adjustments: RiskAdjustment[] = [];
-  let totalAdjustment = 0;
+function recommendBenchmark(data: SourceDataSnapshot): BenchmarkRecommendation {
+  const warnings: string[] = [];
+  const alternates: BenchmarkRecommendation["alternates"] = [];
+  let recommended = "PBT";
+  let recommendedValue = data.profitBeforeTax;
+  const isProfitable = data.profitBeforeTax > 0;
+  const isLoss = data.profitBeforeTax < 0;
+  const pbtVolatility = data.priorYearPBT !== null && data.priorYearPBT !== 0
+    ? Math.abs((data.profitBeforeTax - data.priorYearPBT) / data.priorYearPBT) : 0;
+  const isFinancial = data.industry && ["BANKING", "INSURANCE", "FINANCIAL_SERVICES", "NBFC", "MICROFINANCE"].includes(data.industry.toUpperCase());
+  const isNPO = data.entityType && ["NPO", "NFP", "NGO", "TRUST", "SOCIETY", "SECTION42"].includes(data.entityType.toUpperCase());
+  const isRegulated = data.regulatoryCategory && ["REGULATED", "LISTED", "PUBLIC_INTEREST"].includes(data.regulatoryCategory.toUpperCase());
 
-  if (fraudRisksCount > 0) {
-    const adjustment = -0.5 * Math.min(fraudRisksCount, 3);
-    adjustments.push({
-      factor: 'Fraud Risk Presence',
-      description: `${fraudRisksCount} fraud risk(s) identified in risk assessment`,
-      adjustment,
-      applied: true,
-      rationale: 'ISA 240 requires heightened professional skepticism; lower materiality ensures more rigorous testing'
-    });
-    totalAdjustment += adjustment;
+  if (data.revenue === 0 && data.totalAssets === 0) {
+    warnings.push("No financial data available — Trial Balance may not be imported.");
+  }
+  if (data.profitBeforeTax === 0) warnings.push("Profit Before Tax is zero — cannot use PBT as benchmark.");
+  if (isLoss) warnings.push("Entity is loss-making — PBT is not a suitable benchmark.");
+  if (pbtVolatility > 0.5 && isProfitable) warnings.push(`PBT volatility is ${(pbtVolatility * 100).toFixed(0)}% — profits are unstable.`);
+
+  if (isNPO) {
+    recommended = "TOTAL_EXPENSES";
+    recommendedValue = data.totalExpenses;
+  } else if (isFinancial) {
+    recommended = "TOTAL_ASSETS";
+    recommendedValue = data.totalAssets;
+  } else if (isLoss) {
+    recommended = data.revenue > 0 ? "REVENUE" : "TOTAL_ASSETS";
+    recommendedValue = data.revenue > 0 ? data.revenue : data.totalAssets;
+  } else if (isProfitable && pbtVolatility > 0.5) {
+    recommended = "REVENUE";
+    recommendedValue = data.revenue;
+  } else if (isProfitable) {
+    recommended = "PBT";
+    recommendedValue = data.profitBeforeTax;
   } else {
-    adjustments.push({
-      factor: 'Fraud Risk Presence',
-      description: 'No specific fraud risks identified beyond presumed risks',
-      adjustment: 0,
-      applied: false,
-      rationale: 'No adjustment required for standard fraud risk considerations'
-    });
+    recommended = data.totalAssets > data.revenue ? "TOTAL_ASSETS" : "REVENUE";
+    recommendedValue = data.totalAssets > data.revenue ? data.totalAssets : data.revenue;
   }
 
-  if (significantRisksCount > 2) {
-    const adjustment = -0.3 * Math.min(significantRisksCount - 2, 3);
-    adjustments.push({
-      factor: 'Significant Judgment Areas',
-      description: `${significantRisksCount} significant risks requiring special audit consideration`,
-      adjustment,
-      applied: true,
-      rationale: 'High number of significant risks indicates areas requiring extensive judgment; lower materiality prudent'
-    });
-    totalAdjustment += adjustment;
-  } else {
-    adjustments.push({
-      factor: 'Significant Judgment Areas',
-      description: `${significantRisksCount} significant risks identified`,
-      adjustment: 0,
-      applied: false,
-      rationale: 'Number of significant risks within normal range'
-    });
+  const cfg = BENCHMARK_CONFIGS[recommended];
+  const justifications: Record<string, string> = {
+    PBT: `Profit Before Tax of ${formatPKR(data.profitBeforeTax)} selected as the entity is profit-making with stable earnings. PBT is the most commonly used benchmark per ISA 320.A4 as users of financial statements focus on profitability.`,
+    REVENUE: `Revenue of ${formatPKR(data.revenue)} selected as ${isLoss ? "the entity is loss-making" : "PBT is volatile"}. Revenue provides a stable and meaningful benchmark when profits are unreliable.`,
+    TOTAL_ASSETS: `Total Assets of ${formatPKR(data.totalAssets)} selected as ${isFinancial ? "the entity is a financial institution where users focus on the asset base" : "other benchmarks are not meaningful"}. Asset-based benchmarks are standard for capital-intensive and financial entities.`,
+    EQUITY: `Total Equity of ${formatPKR(data.totalEquity)} selected as equity is the primary stakeholder focus for this entity type.`,
+    GROSS_PROFIT: `Gross Profit of ${formatPKR(data.grossProfit)} selected for this trading entity. Gross profit reflects operational performance better than revenue for thin-margin businesses.`,
+    TOTAL_EXPENSES: `Total Expenditure of ${formatPKR(data.totalExpenses)} selected as the entity is a not-for-profit organization. Expenditure is the most relevant benchmark for NPOs where users focus on how funds are utilized.`,
+  };
+
+  for (const [type, config] of Object.entries(BENCHMARK_CONFIGS)) {
+    if (type === recommended) continue;
+    let value = 0;
+    switch (type) {
+      case "PBT": value = data.profitBeforeTax; break;
+      case "REVENUE": value = data.revenue; break;
+      case "TOTAL_ASSETS": value = data.totalAssets; break;
+      case "EQUITY": value = data.totalEquity; break;
+      case "GROSS_PROFIT": value = data.grossProfit; break;
+      case "TOTAL_EXPENSES": value = data.totalExpenses; break;
+    }
+    let reason = `${config.name} available at ${formatPKR(value)} but ${BENCHMARK_CONFIGS[recommended].name} is more appropriate for this entity.`;
+    if (type === "PBT" && isLoss) reason = "Entity is loss-making; PBT is not a meaningful benchmark.";
+    if (type === "PBT" && pbtVolatility > 0.5) reason = `PBT volatility of ${(pbtVolatility * 100).toFixed(0)}% makes it unreliable.`;
+    alternates.push({ type, value, range: { min: config.min, max: config.max }, reason });
   }
-
-  const isPublicEntity = entityType?.toUpperCase() === 'PUBLIC';
-  if (isPublicEntity) {
-    adjustments.push({
-      factor: 'Public Interest Entity',
-      description: 'Entity is a public interest entity with wider stakeholder base',
-      adjustment: -0.5,
-      applied: true,
-      rationale: 'Public entities require lower materiality due to wider user base and regulatory scrutiny'
-    });
-    totalAdjustment += -0.5;
-  } else {
-    adjustments.push({
-      factor: 'Public Interest Entity',
-      description: 'Private entity with limited stakeholder base',
-      adjustment: 0,
-      applied: false,
-      rationale: 'No adjustment required for non-public entities'
-    });
-  }
-
-  const isSensitiveIndustry = industry && SENSITIVE_INDUSTRIES.includes(industry.toUpperCase());
-  if (isSensitiveIndustry) {
-    adjustments.push({
-      factor: 'Regulatory Sensitivity',
-      description: `Entity operates in regulated industry: ${industry}`,
-      adjustment: -0.3,
-      applied: true,
-      rationale: 'Regulated industries face heightened scrutiny; conservative materiality approach required'
-    });
-    totalAdjustment += -0.3;
-  } else {
-    adjustments.push({
-      factor: 'Regulatory Sensitivity',
-      description: 'Entity operates in non-regulated industry',
-      adjustment: 0,
-      applied: false,
-      rationale: 'No additional regulatory sensitivity considerations'
-    });
-  }
-
-  const weakControls = controlsRating?.toUpperCase() === 'WEAK' || controlsRating?.toUpperCase() === 'INEFFECTIVE';
-  if (weakControls) {
-    adjustments.push({
-      factor: 'Control Environment',
-      description: 'Internal control environment assessed as weak or ineffective',
-      adjustment: -0.5,
-      applied: true,
-      rationale: 'Weak controls increase risk of material misstatement; compensating with lower materiality'
-    });
-    totalAdjustment += -0.5;
-  } else {
-    adjustments.push({
-      factor: 'Control Environment',
-      description: 'Internal control environment adequate',
-      adjustment: 0,
-      applied: false,
-      rationale: 'No adjustment required for adequate control environment'
-    });
-  }
-
-  const finalPercentage = Math.max(basePercentage + totalAdjustment, basePercentage * 0.5);
-  const appliedAdjustments = adjustments.filter(a => a.applied);
-
-  const rationale = appliedAdjustments.length > 0
-    ? `Base percentage of ${basePercentage}% adjusted by ${totalAdjustment.toFixed(2)}% due to: ${appliedAdjustments.map(a => a.factor).join(', ')}. ` +
-      `Final percentage of ${finalPercentage.toFixed(2)}% reflects a risk-adjusted approach per ISA 320.`
-    : `Base percentage of ${basePercentage}% maintained as no significant risk adjustments required.`;
-
-  return { adjustments, finalPercentage, rationale };
-}
-
-function assessQualitativeFactors(
-  fraudRisksCount: number,
-  industry: string | null,
-  entityType: string | null,
-  fsLevelRisks: string[]
-): { factors: QualitativeFactor[]; impactAssessment: string; adjustmentRecommendation: string } {
-  const factors: QualitativeFactor[] = [];
-
-  factors.push({
-    factor: 'fraudRiskPresent',
-    present: fraudRisksCount > 0,
-    assessment: fraudRisksCount > 0
-      ? `${fraudRisksCount} fraud risk(s) identified requiring enhanced audit procedures per ISA 240`
-      : 'Standard fraud risk considerations apply; no specific fraud risks identified beyond presumed risks',
-    impactLevel: fraudRisksCount > 2 ? 'HIGH' : fraudRisksCount > 0 ? 'MEDIUM' : 'LOW'
-  });
-
-  const hasGCRisk = fsLevelRisks.some(r => 
-    r.toLowerCase().includes('going concern') || r.toLowerCase().includes('liquidity')
-  );
-  factors.push({
-    factor: 'goingConcernUncertainty',
-    present: hasGCRisk,
-    assessment: hasGCRisk
-      ? 'Going concern indicators or uncertainties identified; requires disclosure evaluation per ISA 570'
-      : 'No material going concern uncertainties identified based on current risk assessment',
-    impactLevel: hasGCRisk ? 'HIGH' : 'NONE'
-  });
-
-  const isRegulated = !!(industry && SENSITIVE_INDUSTRIES.includes(industry.toUpperCase()));
-  factors.push({
-    factor: 'regulatorySensitivity',
-    present: isRegulated,
-    assessment: isRegulated
-      ? `Entity operates in regulated industry (${industry}); enhanced scrutiny by regulators expected`
-      : 'Entity not subject to specific industry regulation affecting materiality',
-    impactLevel: isRegulated ? 'MEDIUM' : 'NONE'
-  });
-
-  const hasDebtCovenant = fsLevelRisks.some(r => 
-    r.toLowerCase().includes('covenant') || r.toLowerCase().includes('debt') || r.toLowerCase().includes('borrowing')
-  );
-  factors.push({
-    factor: 'debtCovenantCompliance',
-    present: hasDebtCovenant,
-    assessment: hasDebtCovenant
-      ? 'Debt covenant compliance is a sensitive matter; users may focus on specific thresholds'
-      : 'No specific debt covenant concerns identified affecting materiality considerations',
-    impactLevel: hasDebtCovenant ? 'MEDIUM' : 'NONE'
-  });
-
-  const hasRelatedParty = fsLevelRisks.some(r => r.toLowerCase().includes('related party'));
-  factors.push({
-    factor: 'relatedPartyDominance',
-    present: hasRelatedParty,
-    assessment: hasRelatedParty
-      ? 'Significant related party relationships identified; enhanced disclosure testing required per ISA 550'
-      : 'No dominant related party relationships affecting materiality considerations',
-    impactLevel: hasRelatedParty ? 'MEDIUM' : 'NONE'
-  });
-
-  const isHighRiskIndustry = !!(industry && HIGH_FRAUD_RISK_INDUSTRIES.includes(industry.toUpperCase()));
-  factors.push({
-    factor: 'industrySpecificSensitivity',
-    present: isHighRiskIndustry,
-    assessment: isHighRiskIndustry
-      ? `Industry (${industry}) has elevated inherent risk characteristics`
-      : 'Industry does not present specific sensitivity concerns',
-    impactLevel: isHighRiskIndustry ? 'MEDIUM' : 'NONE'
-  });
-
-  const isPublic = entityType?.toUpperCase() === 'PUBLIC';
-  factors.push({
-    factor: 'publicInterestConsiderations',
-    present: isPublic,
-    assessment: isPublic
-      ? 'Public entity with diverse stakeholder base requiring conservative materiality approach'
-      : 'Private entity; public interest considerations limited to standard requirements',
-    impactLevel: isPublic ? 'HIGH' : 'NONE'
-  });
-
-  const highImpactFactors = factors.filter(f => f.impactLevel === 'HIGH').length;
-  const mediumImpactFactors = factors.filter(f => f.impactLevel === 'MEDIUM').length;
-
-  const impactAssessment = highImpactFactors > 0
-    ? `${highImpactFactors} high-impact and ${mediumImpactFactors} medium-impact qualitative factors identified. ` +
-      `These factors suggest a conservative approach to materiality is warranted.`
-    : mediumImpactFactors > 0
-    ? `${mediumImpactFactors} medium-impact qualitative factors identified. ` +
-      `Standard materiality approach is appropriate with heightened awareness of identified factors.`
-    : 'No significant qualitative factors identified that would require adjustment to calculated materiality.';
-
-  const adjustmentRecommendation = highImpactFactors > 1
-    ? 'Consider reducing overall materiality by 10-20% or using lower end of percentage range'
-    : highImpactFactors === 1 || mediumImpactFactors > 2
-    ? 'Consider using lower end of percentage range for selected benchmark'
-    : 'Calculated materiality levels appear appropriate based on qualitative assessment';
-
-  return { factors, impactAssessment, adjustmentRecommendation };
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'PKR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(amount);
-}
-
-function generateDocumentation(
-  result: Omit<ISA320MaterialityResult, 'step8_documentation'>
-): DocumentationOutput {
-  const { step2_benchmarkSelection, step3_riskAdjustedPercentage, step4_materialityLevels, step5_qualitativeFactors } = result;
 
   return {
-    benchmarkSelectionRationale: 
-      `In determining materiality for the audit of the financial statements, we evaluated the available benchmarks ` +
-      `in accordance with ISA 320. ${step2_benchmarkSelection.justification} ` +
-      `Alternative benchmarks considered were: ${step2_benchmarkSelection.alternativeBenchmarks.map(a => 
-        `${a.benchmark} (${formatCurrency(a.value)}) - not selected because: ${a.reasonNotSelected}`
-      ).join('; ')}.`,
-
-    selectedBenchmarkAndPercentage:
-      `${step2_benchmarkSelection.selectedBenchmark} of ${formatCurrency(step2_benchmarkSelection.benchmarkValue)} ` +
-      `at ${step3_riskAdjustedPercentage.finalPercentage.toFixed(2)}% ` +
-      `(acceptable range: ${step2_benchmarkSelection.percentageRange.min}% - ${step2_benchmarkSelection.percentageRange.max}%)`,
-
-    overallMaterialitySummary:
-      `Overall materiality has been set at ${formatCurrency(step4_materialityLevels.overallMateriality)} ` +
-      `(${step3_riskAdjustedPercentage.finalPercentage.toFixed(2)}% of ${step2_benchmarkSelection.selectedBenchmark}). ` +
-      `This amount represents our judgment of the maximum misstatement that could exist without affecting ` +
-      `the economic decisions of users taken on the basis of the financial statements.`,
-
-    performanceMaterialitySummary:
-      `Performance materiality has been set at ${formatCurrency(step4_materialityLevels.performanceMateriality)} ` +
-      `(${step4_materialityLevels.performanceMaterialityPercentage}% of overall materiality). ` +
-      `This level has been determined considering the assessed risks of material misstatement and our understanding ` +
-      `of the entity, including results of audit procedures performed in prior periods.`,
-
-    trivialThresholdSummary:
-      `The threshold below which misstatements are considered clearly trivial has been set at ` +
-      `${formatCurrency(step4_materialityLevels.trivialThreshold)} ` +
-      `(${step4_materialityLevels.trivialThresholdPercentage}% of performance materiality). ` +
-      `Misstatements below this threshold will not be accumulated unless they indicate potential fraud or ` +
-      `systematic error per ISA 450.`,
-
-    qualitativeFactorsConsidered: step5_qualitativeFactors.factors
-      .filter(f => f.present)
-      .map(f => `${f.factor}: ${f.assessment}`),
-
-    impactOnAuditPlanning:
-      `The determined materiality levels will inform: (1) Risk assessment - accounts with balances exceeding ` +
-      `${formatCurrency(step4_materialityLevels.overallMateriality)} require detailed testing; ` +
-      `(2) Sampling - sample sizes calibrated using tolerable misstatement of ` +
-      `${formatCurrency(step4_materialityLevels.performanceMateriality)}; ` +
-      `(3) Analytical procedures - variances exceeding ${formatCurrency(step4_materialityLevels.performanceMateriality * 0.5)} ` +
-      `require investigation; (4) Evaluation - accumulated misstatements approaching ` +
-      `${formatCurrency(step4_materialityLevels.overallMateriality)} require management adjustment or audit report modification.`,
-
-    isaReferences: [
-      'ISA 320.10 - Materiality in planning and performing an audit',
-      'ISA 320.11 - Performance materiality for risk assessment',
-      'ISA 320.A3 - Benchmarks for determining materiality',
-      'ISA 320.A4 - Percentage ranges for benchmarks',
-      'ISA 450.A2 - Clearly trivial threshold',
-      'ISA 450.5 - Accumulating identified misstatements'
-    ]
+    recommended,
+    recommendedValue,
+    recommendedPercentage: cfg.default,
+    recommendedRange: { min: cfg.min, max: cfg.max },
+    justification: justifications[recommended] || `${cfg.name} selected as the most appropriate benchmark.`,
+    alternates,
+    warnings,
   };
 }
 
-router.post("/:engagementId/analyze", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+function calculateRiskAdjustments(
+  basePercentage: number, sourceData: SourceDataSnapshot
+): { adjustments: Array<{ factor: string; description: string; adjustment: number; applied: boolean; rationale: string }>; finalPercentage: number } {
+  const adjustments: Array<{ factor: string; description: string; adjustment: number; applied: boolean; rationale: string }> = [];
+  let total = 0;
+  if (sourceData.fraudRiskCount > 0) {
+    const adj = -0.5 * Math.min(sourceData.fraudRiskCount, 3);
+    adjustments.push({ factor: "Fraud Risk", description: `${sourceData.fraudRiskCount} fraud risk(s) identified`, adjustment: adj, applied: true, rationale: "ISA 240 requires lower materiality when fraud risks are present" });
+    total += adj;
+  }
+  if (sourceData.significantRiskCount > 2) {
+    const adj = -0.3 * Math.min(sourceData.significantRiskCount - 2, 3);
+    adjustments.push({ factor: "Significant Risks", description: `${sourceData.significantRiskCount} significant risks identified`, adjustment: adj, applied: true, rationale: "High number of significant risks warrants conservative materiality" });
+    total += adj;
+  }
+  if (sourceData.publicInterestFlag) {
+    adjustments.push({ factor: "Public Interest Entity", description: "Entity has public interest considerations", adjustment: -0.5, applied: true, rationale: "Wider stakeholder base requires lower materiality" });
+    total += -0.5;
+  }
+  if (sourceData.goingConcernFlag) {
+    adjustments.push({ factor: "Going Concern", description: "Going concern indicators identified", adjustment: -0.3, applied: true, rationale: "Going concern uncertainty increases inherent risk" });
+    total += -0.3;
+  }
+  if (sourceData.covenantFlag) {
+    adjustments.push({ factor: "Debt Covenants", description: "Debt covenant compliance is sensitive", adjustment: -0.2, applied: true, rationale: "Users focus on specific threshold compliance" });
+    total += -0.2;
+  }
+  const final = Math.max(basePercentage + total, basePercentage * 0.4);
+  return { adjustments, finalPercentage: Math.round(final * 100) / 100 };
+}
+
+const DEFAULT_QUALITATIVE_FACTORS: Omit<QualitativeFactorItem, "present" | "severity" | "explanation" | "impact">[] = [
+  { id: "fraudRisk", title: "Fraud Risk Present", isaRef: "ISA 240" },
+  { id: "goingConcern", title: "Going Concern Uncertainty", isaRef: "ISA 570" },
+  { id: "regulatory", title: "Regulatory Reporting Requirements", isaRef: "ISA 250" },
+  { id: "publicInterest", title: "Public Interest Entity", isaRef: "ISA 320.A4" },
+  { id: "debtCovenant", title: "Debt Covenant Compliance", isaRef: "ISA 320.A6" },
+  { id: "sensitiveDisclosures", title: "Sensitive Industry Disclosures", isaRef: "ISA 315" },
+  { id: "relatedParty", title: "Related Party Sensitivity", isaRef: "ISA 550" },
+  { id: "directorsRemuneration", title: "Directors' Remuneration Sensitivity", isaRef: "ISA 320.A10" },
+  { id: "keyEstimates", title: "Key Management Estimates", isaRef: "ISA 540" },
+  { id: "litigation", title: "Litigation / Contingent Liabilities", isaRef: "ISA 501" },
+  { id: "grantRestrictions", title: "Grant / Donor Restrictions", isaRef: "ISA 800" },
+  { id: "taxExposure", title: "Tax Exposure", isaRef: "ISA 320.A10" },
+  { id: "priorMisstatements", title: "Prior Year Corrected/Uncorrected Misstatements", isaRef: "ISA 450" },
+];
+
+router.get("/:engagementId/source-data", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { engagementId } = req.params;
-    const userId = req.user!.id;
     const firmId = req.user!.firmId;
-
-    if (!firmId) {
-      return res.status(400).json({ error: "User not associated with a firm" });
-    }
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
     const engagement = await prisma.engagement.findFirst({
       where: { id: engagementId, firmId },
-      include: {
-        client: true
-      }
+      include: { client: true },
     });
+    if (!engagement) return res.status(404).json({ error: "Engagement not found" });
 
-    if (!engagement) {
-      return res.status(404).json({ error: "Engagement not found" });
-    }
+    const coaAccounts = await prisma.coAAccount.findMany({ where: { engagementId } });
+    const riskAssessments = await prisma.riskAssessment.findMany({ where: { engagementId } });
+    const totals = calculateTotalsFromAccounts(coaAccounts);
+    const fsLevelRisks = riskAssessments.map(r => (r.accountOrClass || "").toLowerCase());
 
-    const coaAccounts = await prisma.coAAccount.findMany({
-      where: { engagementId }
-    });
-
-    const riskAssessments = await prisma.riskAssessment.findMany({
-      where: { engagementId }
-    });
-
-    const financialTotals = calculateTotalsFromCoA(coaAccounts);
-
-    const priorYearRevenue = engagement.previousYearRevenue || null;
-    const priorYearAssets: number | null = null;
-    const priorYearPBT: number | null = null;
-
-    const entityType = engagement.client?.entityType || null;
-    const industry = engagement.client?.industry || null;
-    const ownershipStructure = engagement.client?.ownershipStructure || null;
-    const regulatoryCategory = engagement.client?.regulatoryCategory || null;
-
-    const fraudRisks = riskAssessments.filter(r => r.isFraudRisk);
-    const significantRisks = riskAssessments.filter(r => r.isSignificantRisk);
-    const fsLevelRisks = [...new Set(riskAssessments.map(r => r.accountOrClass))];
-
-    const step1_dataIngestion = {
-      revenue: financialTotals.revenue,
-      totalAssets: financialTotals.totalAssets,
-      totalEquity: financialTotals.totalEquity,
-      profitBeforeTax: financialTotals.profitBeforeTax,
-      priorYearRevenue,
-      priorYearAssets,
-      priorYearPBT,
-      entityType,
-      industry,
-      ownershipStructure,
-      regulatoryEnvironment: regulatoryCategory,
-      fraudRisksIdentified: fraudRisks.length,
-      significantRisksIdentified: significantRisks.length,
-      fsLevelRisks
+    const snapshot: SourceDataSnapshot = {
+      ...totals,
+      priorYearRevenue: engagement.previousYearRevenue ? Number(engagement.previousYearRevenue) : null,
+      priorYearAssets: null,
+      priorYearPBT: null,
+      priorYearEquity: null,
+      entityType: engagement.client?.entityType || null,
+      industry: engagement.client?.industry || null,
+      engagementType: engagement.engagementType || null,
+      ownershipStructure: engagement.client?.ownershipStructure || null,
+      regulatoryCategory: engagement.client?.regulatoryCategory || null,
+      tbImported: coaAccounts.length > 0,
+      fsMapped: coaAccounts.some(a => a.fsLineItem !== null && a.fsLineItem !== ""),
+      riskAssessmentDone: riskAssessments.length > 0,
+      fraudRiskCount: riskAssessments.filter(r => r.isFraudRisk).length,
+      significantRiskCount: riskAssessments.filter(r => r.isSignificantRisk).length,
+      goingConcernFlag: fsLevelRisks.some(r => r.includes("going concern") || r.includes("liquidity")),
+      relatedPartyFlag: fsLevelRisks.some(r => r.includes("related party")),
+      covenantFlag: fsLevelRisks.some(r => r.includes("covenant") || r.includes("borrowing")),
+      publicInterestFlag: engagement.client?.regulatoryCategory === "PUBLIC_INTEREST" || engagement.client?.entityType === "PUBLIC",
+      accountCount: coaAccounts.length,
+      snapshotDate: new Date().toISOString(),
     };
 
-    const benchmarkResult = selectBestBenchmark(
-      financialTotals,
-      entityType,
-      industry,
-      priorYearPBT
-    );
-
-    const step2_benchmarkSelection = {
-      selectedBenchmark: benchmarkResult.selected.name,
-      benchmarkValue: benchmarkResult.value,
-      percentageRange: {
-        min: benchmarkResult.selected.minPercentage,
-        max: benchmarkResult.selected.maxPercentage
-      },
-      justification: benchmarkResult.justification,
-      alternativeBenchmarks: benchmarkResult.alternatives
-    };
-
-    const controlsRating: string | null = null;
-    const riskAdjustmentResult = calculateRiskAdjustments(
-      benchmarkResult.selected.defaultPercentage,
-      fraudRisks.length,
-      significantRisks.length,
-      entityType,
-      industry,
-      controlsRating
-    );
-
-    const step3_riskAdjustedPercentage = {
-      basePercentage: benchmarkResult.selected.defaultPercentage,
-      adjustments: riskAdjustmentResult.adjustments,
-      finalPercentage: riskAdjustmentResult.finalPercentage,
-      adjustmentRationale: riskAdjustmentResult.rationale
-    };
-
-    const overallMateriality = benchmarkResult.value * (riskAdjustmentResult.finalPercentage / 100);
-    const hasHighRisk = fraudRisks.length > 0 || significantRisks.length > 3;
-    const pmPercentage = hasHighRisk ? 65 : 75;
-    const performanceMateriality = overallMateriality * (pmPercentage / 100);
-    const trivialPercentage = hasHighRisk ? 3 : 5;
-    const trivialThreshold = performanceMateriality * (trivialPercentage / 100);
-
-    const step4_materialityLevels = {
-      overallMateriality: Math.round(overallMateriality),
-      performanceMateriality: Math.round(performanceMateriality),
-      performanceMaterialityPercentage: pmPercentage,
-      trivialThreshold: Math.round(trivialThreshold),
-      trivialThresholdPercentage: trivialPercentage,
-      calculationFormulas: {
-        overall: `${formatCurrency(benchmarkResult.value)} × ${riskAdjustmentResult.finalPercentage.toFixed(2)}% = ${formatCurrency(Math.round(overallMateriality))}`,
-        performance: `${formatCurrency(Math.round(overallMateriality))} × ${pmPercentage}% = ${formatCurrency(Math.round(performanceMateriality))}`,
-        trivial: `${formatCurrency(Math.round(performanceMateriality))} × ${trivialPercentage}% = ${formatCurrency(Math.round(trivialThreshold))}`
-      }
-    };
-
-    const qualitativeResult = assessQualitativeFactors(
-      fraudRisks.length,
-      industry,
-      entityType,
-      fsLevelRisks
-    );
-
-    const step5_qualitativeFactors = qualitativeResult;
-
-    const significantFSHeads: SignificantFSHead[] = coaAccounts
-      .filter(acc => Math.abs(Number(acc.closingBalance)) > overallMateriality)
-      .map(acc => ({
-        accountName: acc.accountName,
-        balance: Number(acc.closingBalance),
-        percentOfMateriality: Math.round((Math.abs(Number(acc.closingBalance)) / overallMateriality) * 100),
-        riskRating: Math.abs(Number(acc.closingBalance)) > overallMateriality * 2 ? 'HIGH' : 'MEDIUM'
-      }))
-      .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
-      .slice(0, 20);
-
-    const step6_riskAssessmentLinkage = {
-      significantFSHeads,
-      riskRatingsImpact: 
-        `Materiality of ${formatCurrency(Math.round(overallMateriality))} identifies ${significantFSHeads.length} significant account(s) ` +
-        `requiring detailed substantive testing. These accounts collectively warrant enhanced risk assessment focus.`,
-      analyticalProcedureThresholds: {
-        significantVariance: Math.round(performanceMateriality * 0.5),
-        investigationThreshold: Math.round(performanceMateriality * 0.25)
-      },
-      samplingParameters: {
-        suggestedConfidenceLevel: hasHighRisk ? 95 : 90,
-        tolerableMisstatement: Math.round(performanceMateriality),
-        expectedError: Math.round(performanceMateriality * 0.1)
-      }
-    };
-
-    const step7_partnerOverride: PartnerOverrideStructure = {
-      overrideEnabled: true,
-      overrideFields: [
-        'overallMateriality',
-        'performanceMateriality',
-        'trivialThreshold',
-        'benchmark',
-        'percentage'
-      ],
-      requiredFields: [
-        'reason',
-        'revisedValue',
-        'impactAssessment',
-        'approvalTimestamp',
-        'approverUserId'
-      ],
-      currentOverride: null
-    };
-
-    const partialResult = {
-      engagementId,
-      analysisTimestamp: new Date().toISOString(),
-      step1_dataIngestion,
-      step2_benchmarkSelection,
-      step3_riskAdjustedPercentage,
-      step4_materialityLevels,
-      step5_qualitativeFactors,
-      step6_riskAssessmentLinkage,
-      step7_partnerOverride
-    };
-
-    const step8_documentation = generateDocumentation(partialResult);
-
-    const result: ISA320MaterialityResult = {
-      ...partialResult,
-      step8_documentation
-    };
-
-    res.json(result);
-  } catch (error) {
-    console.error("ISA 320 Materiality Analysis Error:", error);
-    res.status(500).json({
-      error: "Failed to perform materiality analysis",
-      details: error instanceof Error ? error.message : "Unknown error"
-    });
-  }
-});
-
-router.get("/:engagementId", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { engagementId } = req.params;
-    const firmId = req.user!.firmId;
-
-    if (!firmId) {
-      return res.status(400).json({ error: "User not associated with a firm" });
-    }
-
-    const engagement = await prisma.engagement.findFirst({
-      where: { id: engagementId, firmId }
-    });
-
-    if (!engagement) {
-      return res.status(404).json({ error: "Engagement not found" });
-    }
-
-    const materialityAssessments = await prisma.materialityAssessment.findMany({
+    const recommendation = recommendBenchmark(snapshot);
+    const existingSet = await prisma.materialitySet.findFirst({
       where: { engagementId },
+      orderBy: { versionId: "desc" },
       include: {
-        approvedBy: { select: { id: true, fullName: true, role: true } }
+        preparedBy: { select: { id: true, fullName: true, role: true } },
+        reviewedBy: { select: { id: true, fullName: true, role: true } },
+        approvedBy: { select: { id: true, fullName: true, role: true } },
+        lockedBy: { select: { id: true, fullName: true, role: true } },
       },
-      orderBy: { createdAt: 'desc' }
     });
 
-    const planningMemo = await prisma.planningMemo.findFirst({
-      where: { engagementId }
-    });
-
-    let isa320Analysis = null;
-    if (planningMemo?.teamBriefingNotes) {
-      try {
-        const briefingData = JSON.parse(planningMemo.teamBriefingNotes);
-        if (briefingData.isa320MaterialityAnalysis) {
-          isa320Analysis = briefingData.isa320MaterialityAnalysis;
-        }
-      } catch {
-        // Not JSON or doesn't contain ISA 320 data
+    let isStale = false;
+    let staleReason = "";
+    if (existingSet && existingSet.sourceDataSnapshot) {
+      const prev = existingSet.sourceDataSnapshot as unknown as SourceDataSnapshot;
+      if (Math.abs(prev.revenue - snapshot.revenue) > 1 || Math.abs(prev.totalAssets - snapshot.totalAssets) > 1 ||
+          Math.abs(prev.profitBeforeTax - snapshot.profitBeforeTax) > 1) {
+        isStale = true;
+        staleReason = "Source financial data has changed since materiality was last calculated. Reanalysis is recommended.";
       }
     }
 
     res.json({
-      materialityAssessments,
-      isa320Analysis,
-      hasAnalysis: isa320Analysis !== null
+      sourceData: snapshot,
+      recommendation,
+      existingSet,
+      isStale,
+      staleReason,
+      qualitativeFactorDefaults: DEFAULT_QUALITATIVE_FACTORS,
+      engagementInfo: {
+        name: engagement.engagementCode || engagement.id,
+        clientName: engagement.client?.name || "Unknown",
+        financialYear: engagement.auditEndDate ? new Date(engagement.auditEndDate).getFullYear() : null,
+        periodStart: engagement.auditStartDate,
+        periodEnd: engagement.auditEndDate,
+      },
     });
   } catch (error) {
-    console.error("Get ISA 320 Materiality Error:", error);
-    res.status(500).json({
-      error: "Failed to retrieve materiality data",
-      details: error instanceof Error ? error.message : "Unknown error"
+    console.error("ISA 320 Source Data Error:", error);
+    res.status(500).json({ error: "Failed to fetch source data", details: error instanceof Error ? error.message : "Unknown error" });
+  }
+});
+
+router.post("/:engagementId/calculate", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
+
+    const { benchmarkType, benchmarkAmount, percentApplied, pmPercentage = 75, trivialPercentage = 5, sourceData, qualitativeFactors, riskAdjustments: clientRiskAdj } = req.body;
+    if (!benchmarkType || benchmarkAmount === undefined || !percentApplied) {
+      return res.status(400).json({ error: "benchmarkType, benchmarkAmount, and percentApplied are required" });
+    }
+
+    const engagement = await prisma.engagement.findFirst({ where: { id: engagementId, firmId } });
+    if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
+    const om = Math.round(Number(benchmarkAmount) * (Number(percentApplied) / 100));
+    const pm = Math.round(om * (Number(pmPercentage) / 100));
+    const trivial = Math.round(om * (Number(trivialPercentage) / 100));
+
+    let riskAdj = clientRiskAdj;
+    if (!riskAdj && sourceData) {
+      riskAdj = calculateRiskAdjustments(Number(percentApplied), sourceData);
+    }
+
+    res.json({
+      benchmarkType,
+      benchmarkAmount: Number(benchmarkAmount),
+      percentApplied: Number(percentApplied),
+      overallMateriality: om,
+      performanceMateriality: pm,
+      trivialThreshold: trivial,
+      pmPercentage: Number(pmPercentage),
+      trivialPercentage: Number(trivialPercentage),
+      formulas: {
+        overall: `${formatPKR(Number(benchmarkAmount))} × ${percentApplied}% = ${formatPKR(om)}`,
+        performance: `${formatPKR(om)} × ${pmPercentage}% = ${formatPKR(pm)}`,
+        trivial: `${formatPKR(om)} × ${trivialPercentage}% = ${formatPKR(trivial)}`,
+      },
+      riskAdjustments: riskAdj,
     });
+  } catch (error) {
+    console.error("ISA 320 Calculate Error:", error);
+    res.status(500).json({ error: "Failed to calculate materiality" });
   }
 });
 
 router.post("/:engagementId/save", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { engagementId } = req.params;
-    const { analysisResult, applyToMaterialityAssessment } = req.body;
     const userId = req.user!.id;
     const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
-    if (!firmId) {
-      return res.status(400).json({ error: "User not associated with a firm" });
+    const engagement = await prisma.engagement.findFirst({ where: { id: engagementId, firmId } });
+    if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
+    const {
+      benchmarkType, benchmarkAmount, percentApplied, overallMateriality, performanceMateriality,
+      trivialThreshold, pmPercentage, trivialPercentage, rationale, benchmarkJustification,
+      sourceDataSnapshot, qualitativeFactors, riskAdjustments, specificMateriality,
+      stepProgress,
+    } = req.body;
+
+    if (!benchmarkType || overallMateriality === undefined) {
+      return res.status(400).json({ error: "benchmarkType and overallMateriality are required" });
     }
+
+    const existing = await prisma.materialitySet.findFirst({
+      where: { engagementId, status: { not: "SUPERSEDED" } },
+      orderBy: { versionId: "desc" },
+    });
+
+    if (existing && existing.isLocked) {
+      return res.status(403).json({ error: "Materiality is locked. Unlock or create a new version to make changes." });
+    }
+
+    if (existing && ["APPROVED", "PENDING_APPROVAL"].includes(existing.status)) {
+      return res.status(403).json({ error: "Materiality is approved/pending approval. Only partners can modify via override." });
+    }
+
+    let result;
+    if (existing) {
+      result = await prisma.materialitySet.update({
+        where: { id: existing.id },
+        data: {
+          benchmarkType, benchmarkAmount: Number(benchmarkAmount),
+          percentApplied: Number(percentApplied),
+          overallMateriality: Number(overallMateriality),
+          performanceMateriality: Number(performanceMateriality),
+          trivialThreshold: Number(trivialThreshold),
+          pmPercentage: pmPercentage != null ? Number(pmPercentage) : undefined,
+          trivialPercentage: trivialPercentage != null ? Number(trivialPercentage) : undefined,
+          rationale, benchmarkJustification,
+          sourceDataSnapshot: sourceDataSnapshot || undefined,
+          qualitativeFactors: qualitativeFactors || undefined,
+          riskAdjustments: riskAdjustments || undefined,
+          specificMateriality: specificMateriality || undefined,
+          stepProgress: stepProgress || undefined,
+          isStale: false, staleReason: null,
+          preparedById: userId, preparedAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+    } else {
+      result = await prisma.materialitySet.create({
+        data: {
+          engagementId, versionId: 1, status: "DRAFT",
+          benchmarkType, benchmarkAmount: Number(benchmarkAmount),
+          percentApplied: Number(percentApplied),
+          overallMateriality: Number(overallMateriality),
+          performanceMateriality: Number(performanceMateriality),
+          trivialThreshold: Number(trivialThreshold),
+          pmPercentage: pmPercentage != null ? Number(pmPercentage) : 75,
+          trivialPercentage: trivialPercentage != null ? Number(trivialPercentage) : 5,
+          rationale, benchmarkJustification,
+          sourceDataSnapshot: sourceDataSnapshot || undefined,
+          qualitativeFactors: qualitativeFactors || undefined,
+          riskAdjustments: riskAdjustments || undefined,
+          specificMateriality: specificMateriality || undefined,
+          stepProgress: stepProgress || undefined,
+          preparedById: userId, preparedAt: new Date(),
+        },
+      });
+    }
+
+    logAuditTrail(
+      userId, "MATERIALITY_SAVED", "MaterialitySet", result.id,
+      undefined, JSON.stringify({ benchmarkType, overallMateriality: Number(overallMateriality), version: result.versionId }),
+      engagementId
+    ).catch(err => console.error("Audit trail error:", err));
+
+    res.json({ success: true, materialitySet: result });
+  } catch (error) {
+    console.error("ISA 320 Save Error:", error);
+    res.status(500).json({ error: "Failed to save materiality", details: error instanceof Error ? error.message : "Unknown error" });
+  }
+});
+
+router.post("/:engagementId/partner-override", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
+
+    if (!["PARTNER", "FIRM_ADMIN"].includes(userRole)) {
+      return res.status(403).json({ error: "Only partners can apply materiality overrides" });
+    }
+
+    const engagement = await prisma.engagement.findFirst({ where: { id: engagementId, firmId } });
+    if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
+    const { overrides, reason, effectOnTesting } = req.body;
+    if (!overrides || !reason) {
+      return res.status(400).json({ error: "overrides and reason are required" });
+    }
+
+    const existing = await prisma.materialitySet.findFirst({
+      where: { engagementId, status: { not: "SUPERSEDED" } },
+      orderBy: { versionId: "desc" },
+    });
+    if (!existing) return res.status(404).json({ error: "No materiality set found to override" });
+    if (existing.isLocked) return res.status(403).json({ error: "Cannot override locked materiality" });
+
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { fullName: true, role: true } });
+    const prevHistory = (existing.overrideHistory as OverrideRecord[] | null) || [];
+    const newRecords: OverrideRecord[] = [];
+
+    const updateData: Record<string, unknown> = {};
+    for (const ov of overrides) {
+      const record: OverrideRecord = {
+        id: crypto.randomUUID(),
+        field: ov.field,
+        systemValue: ov.systemValue,
+        overriddenValue: ov.overriddenValue,
+        reason, effectOnTesting: effectOnTesting || "",
+        userId, userName: user?.fullName || "", userRole: user?.role || userRole,
+        timestamp: new Date().toISOString(), reverted: false, revertedAt: null, revertedBy: null,
+      };
+      newRecords.push(record);
+      if (ov.field === "overallMateriality") updateData.overallMateriality = Number(ov.overriddenValue);
+      if (ov.field === "performanceMateriality") updateData.performanceMateriality = Number(ov.overriddenValue);
+      if (ov.field === "trivialThreshold") updateData.trivialThreshold = Number(ov.overriddenValue);
+    }
+
+    updateData.overrideHistory = [...prevHistory, ...newRecords];
+    updateData.approvedById = userId;
+    updateData.approvedAt = new Date();
+    updateData.status = "APPROVED";
+
+    const result = await prisma.materialitySet.update({ where: { id: existing.id }, data: updateData });
+
+    logAuditTrail(
+      userId, "MATERIALITY_OVERRIDE", "MaterialitySet", result.id,
+      undefined, JSON.stringify({ overrides, reason }),
+      engagementId
+    ).catch(err => console.error("Audit trail error:", err));
+
+    res.json({ success: true, materialitySet: result });
+  } catch (error) {
+    console.error("ISA 320 Override Error:", error);
+    res.status(500).json({ error: "Failed to apply partner override" });
+  }
+});
+
+router.post("/:engagementId/revert-override", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
+    if (!["PARTNER", "FIRM_ADMIN"].includes(userRole)) {
+      return res.status(403).json({ error: "Only partners can revert overrides" });
+    }
+
+    const engagement = await prisma.engagement.findFirst({ where: { id: engagementId, firmId } });
+    if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
+    const { overrideId } = req.body;
+    if (!overrideId) return res.status(400).json({ error: "overrideId is required" });
+
+    const existing = await prisma.materialitySet.findFirst({
+      where: { engagementId, status: { not: "SUPERSEDED" } },
+      orderBy: { versionId: "desc" },
+    });
+    if (!existing) return res.status(404).json({ error: "No materiality set found" });
+    if (existing.isLocked) return res.status(403).json({ error: "Cannot revert override on locked materiality" });
+
+    const history = (existing.overrideHistory as OverrideRecord[] | null) || [];
+    const target = history.find(h => h.id === overrideId);
+    if (!target) return res.status(404).json({ error: "Override record not found" });
+
+    target.reverted = true;
+    target.revertedAt = new Date().toISOString();
+    target.revertedBy = userId;
+
+    const updateData: Record<string, unknown> = { overrideHistory: history };
+    if (target.field === "overallMateriality") updateData.overallMateriality = Number(target.systemValue);
+    if (target.field === "performanceMateriality") updateData.performanceMateriality = Number(target.systemValue);
+    if (target.field === "trivialThreshold") updateData.trivialThreshold = Number(target.systemValue);
+
+    const result = await prisma.materialitySet.update({ where: { id: existing.id }, data: updateData });
+
+    logAuditTrail(
+      userId, "MATERIALITY_OVERRIDE_REVERTED", "MaterialitySet", result.id,
+      undefined, JSON.stringify({ overrideId, field: target.field, revertedTo: target.systemValue }),
+      engagementId
+    ).catch(err => console.error("Audit trail error:", err));
+
+    res.json({ success: true, materialitySet: result });
+  } catch (error) {
+    console.error("ISA 320 Revert Override Error:", error);
+    res.status(500).json({ error: "Failed to revert override" });
+  }
+});
+
+router.post("/:engagementId/finalize", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
+
+    const engagement = await prisma.engagement.findFirst({ where: { id: engagementId, firmId } });
+    if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
+    const { action } = req.body;
+
+    const existing = await prisma.materialitySet.findFirst({
+      where: { engagementId, status: { not: "SUPERSEDED" } },
+      orderBy: { versionId: "desc" },
+    });
+    if (!existing) return res.status(404).json({ error: "No materiality set found" });
+
+    const VALID_TRANSITIONS: Record<string, string[]> = {
+      submit_review: ["DRAFT"],
+      review: ["PENDING_REVIEW"],
+      approve: ["PENDING_APPROVAL"],
+      lock: ["APPROVED"],
+      unlock: ["LOCKED"],
+    };
+
+    if (!VALID_TRANSITIONS[action]) {
+      return res.status(400).json({ error: "Invalid action. Use: submit_review, review, approve, lock, unlock" });
+    }
+
+    if (!VALID_TRANSITIONS[action].includes(existing.status)) {
+      return res.status(400).json({ error: `Cannot ${action} from status '${existing.status}'. Required: ${VALID_TRANSITIONS[action].join("/")}` });
+    }
+
+    const updateData: Record<string, unknown> = {};
+
+    if (action === "submit_review") {
+      updateData.status = "PENDING_REVIEW";
+    } else if (action === "review") {
+      if (!["SENIOR", "MANAGER", "PARTNER", "FIRM_ADMIN"].includes(userRole)) {
+        return res.status(403).json({ error: "Insufficient role to review" });
+      }
+      updateData.status = "PENDING_APPROVAL";
+      updateData.reviewedById = userId;
+      updateData.reviewedAt = new Date();
+    } else if (action === "approve") {
+      if (!["PARTNER", "FIRM_ADMIN"].includes(userRole)) {
+        return res.status(403).json({ error: "Only partners can approve materiality" });
+      }
+      updateData.status = "APPROVED";
+      updateData.approvedById = userId;
+      updateData.approvedAt = new Date();
+    } else if (action === "lock") {
+      if (!["PARTNER", "FIRM_ADMIN"].includes(userRole)) {
+        return res.status(403).json({ error: "Only partners can lock materiality" });
+      }
+      updateData.status = "LOCKED";
+      updateData.isLocked = true;
+      updateData.lockedAt = new Date();
+      updateData.lockedById = userId;
+    } else if (action === "unlock") {
+      if (!["PARTNER", "FIRM_ADMIN"].includes(userRole)) {
+        return res.status(403).json({ error: "Only partners can unlock materiality" });
+      }
+      updateData.status = "APPROVED";
+      updateData.isLocked = false;
+      updateData.lockedAt = null;
+      updateData.lockedById = null;
+    }
+
+    const result = await prisma.materialitySet.update({ where: { id: existing.id }, data: updateData });
+
+    logAuditTrail(
+      userId, `MATERIALITY_${action.toUpperCase()}`, "MaterialitySet", result.id,
+      JSON.stringify({ status: existing.status }), JSON.stringify({ status: updateData.status }),
+      engagementId
+    ).catch(err => console.error("Audit trail error:", err));
+
+    res.json({ success: true, materialitySet: result });
+  } catch (error) {
+    console.error("ISA 320 Finalize Error:", error);
+    res.status(500).json({ error: "Failed to finalize materiality" });
+  }
+});
+
+router.get("/:engagementId/memo", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
     const engagement = await prisma.engagement.findFirst({
-      where: { id: engagementId, firmId }
+      where: { id: engagementId, firmId },
+      include: { client: true },
     });
+    if (!engagement) return res.status(404).json({ error: "Engagement not found" });
 
-    if (!engagement) {
-      return res.status(404).json({ error: "Engagement not found" });
-    }
-
-    if (!analysisResult) {
-      return res.status(400).json({ error: "Analysis result is required" });
-    }
-
-    const existingPlanningMemo = await prisma.planningMemo.findFirst({
-      where: { engagementId }
+    const matSet = await prisma.materialitySet.findFirst({
+      where: { engagementId, status: { not: "SUPERSEDED" } },
+      orderBy: { versionId: "desc" },
+      include: {
+        preparedBy: { select: { fullName: true, role: true } },
+        reviewedBy: { select: { fullName: true, role: true } },
+        approvedBy: { select: { fullName: true, role: true } },
+      },
     });
+    if (!matSet) return res.status(404).json({ error: "No materiality set found" });
 
-    let existingBriefingData: Record<string, unknown> = {};
-    if (existingPlanningMemo?.teamBriefingNotes) {
+    const source = matSet.sourceDataSnapshot as SourceDataSnapshot | null;
+    const quals = (matSet.qualitativeFactors as QualitativeFactorItem[] | null) || [];
+    const specifics = (matSet.specificMateriality as SpecificMaterialityItem[] | null) || [];
+    const overrides = (matSet.overrideHistory as OverrideRecord[] | null) || [];
+    const cfg = BENCHMARK_CONFIGS[matSet.benchmarkType] || BENCHMARK_CONFIGS.PBT;
+    const activeOverrides = overrides.filter(o => !o.reverted);
+
+    const memo = {
+      title: "ISA 320 — Planning Materiality Memo",
+      engagementDetails: {
+        engagementName: engagement.engagementCode || engagement.id,
+        clientName: engagement.client?.name || "Unknown",
+        financialYearEnd: engagement.auditEndDate ? new Date(engagement.auditEndDate).toLocaleDateString("en-GB") : "N/A",
+        periodStart: engagement.auditStartDate ? new Date(engagement.auditStartDate).toLocaleDateString("en-GB") : "N/A",
+        periodEnd: engagement.auditEndDate ? new Date(engagement.auditEndDate).toLocaleDateString("en-GB") : "N/A",
+        entityType: engagement.client?.entityType || "N/A",
+        industry: engagement.client?.industry || "N/A",
+      },
+      sourceFinancialData: source ? {
+        revenue: formatPKR(source.revenue),
+        profitBeforeTax: formatPKR(source.profitBeforeTax),
+        totalAssets: formatPKR(source.totalAssets),
+        totalEquity: formatPKR(source.totalEquity),
+        grossProfit: formatPKR(source.grossProfit),
+        totalExpenses: formatPKR(source.totalExpenses),
+        priorYearPBT: source.priorYearPBT ? formatPKR(source.priorYearPBT) : "N/A",
+      } : null,
+      benchmarkSelection: {
+        selectedBenchmark: cfg.name,
+        benchmarkValue: formatPKR(Number(matSet.benchmarkAmount)),
+        percentageApplied: `${matSet.percentApplied}%`,
+        acceptableRange: `${cfg.min}% - ${cfg.max}%`,
+        rationale: matSet.benchmarkJustification || matSet.rationale || "As determined by the engagement team.",
+      },
+      materialityCalculation: {
+        overallMateriality: formatPKR(Number(matSet.overallMateriality)),
+        formula: `${cfg.name} ${formatPKR(Number(matSet.benchmarkAmount))} × ${matSet.percentApplied}%`,
+        performanceMateriality: formatPKR(Number(matSet.performanceMateriality)),
+        pmBasis: `${matSet.pmPercentage || 75}% of Overall Materiality`,
+        trivialThreshold: formatPKR(Number(matSet.trivialThreshold)),
+        trivialBasis: `${matSet.trivialPercentage || 5}% of Overall Materiality`,
+      },
+      qualitativeFactors: quals.filter(q => q.present).map(q => ({
+        factor: q.title,
+        severity: q.severity,
+        explanation: q.explanation,
+        impact: q.impact,
+        isaReference: q.isaRef,
+      })),
+      specificMateriality: specifics.map(s => ({
+        area: s.area,
+        amount: formatPKR(s.amount),
+        rationale: s.rationale,
+      })),
+      partnerOverride: activeOverrides.length > 0 ? {
+        hasOverride: true,
+        overrides: activeOverrides.map(o => ({
+          field: o.field,
+          systemValue: formatPKR(o.systemValue),
+          overriddenValue: formatPKR(o.overriddenValue),
+          reason: o.reason,
+          approvedBy: o.userName,
+          date: new Date(o.timestamp).toLocaleDateString("en-GB"),
+        })),
+      } : { hasOverride: false, overrides: [] },
+      signOff: {
+        preparedBy: matSet.preparedBy?.fullName || "N/A",
+        preparedAt: matSet.preparedAt ? new Date(matSet.preparedAt).toLocaleDateString("en-GB") : "N/A",
+        reviewedBy: matSet.reviewedBy?.fullName || "N/A",
+        reviewedAt: matSet.reviewedAt ? new Date(matSet.reviewedAt).toLocaleDateString("en-GB") : "N/A",
+        approvedBy: matSet.approvedBy?.fullName || "N/A",
+        approvedAt: matSet.approvedAt ? new Date(matSet.approvedAt).toLocaleDateString("en-GB") : "N/A",
+      },
+      isaReferences: [
+        "ISA 320.10 — Materiality in planning and performing an audit",
+        "ISA 320.11 — Performance materiality for risk assessment",
+        "ISA 320.A3 — Benchmarks for determining materiality",
+        "ISA 320.A4 — Percentage ranges for benchmarks",
+        "ISA 450.A2 — Clearly trivial threshold",
+        "ISA 450.5 — Accumulating identified misstatements",
+      ],
+      conclusion: `Based on our assessment, overall materiality for the audit of ${engagement.client?.name || "the entity"} ` +
+        `for the period ending ${engagement.auditEndDate ? new Date(engagement.auditEndDate).toLocaleDateString("en-GB") : "N/A"} ` +
+        `has been determined at ${formatPKR(Number(matSet.overallMateriality))} using ${cfg.name} as the benchmark. ` +
+        `Performance materiality has been set at ${formatPKR(Number(matSet.performanceMateriality))} and the clearly trivial ` +
+        `threshold at ${formatPKR(Number(matSet.trivialThreshold))}. These levels will be applied throughout the audit for ` +
+        `risk assessment, sampling, analytical procedures, and evaluation of misstatements.`,
+      status: matSet.status,
+      version: matSet.versionId,
+      generatedAt: new Date().toISOString(),
+    };
+
+    res.json(memo);
+  } catch (error) {
+    console.error("ISA 320 Memo Error:", error);
+    res.status(500).json({ error: "Failed to generate memo" });
+  }
+});
+
+router.post("/:engagementId/push-downstream", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const userId = req.user!.id;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
+
+    const engagement = await prisma.engagement.findFirst({ where: { id: engagementId, firmId } });
+    if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
+    const matSet = await prisma.materialitySet.findFirst({
+      where: { engagementId, status: { in: ["APPROVED", "LOCKED"] } },
+      orderBy: { versionId: "desc" },
+    });
+    if (!matSet) return res.status(400).json({ error: "No approved/locked materiality to push downstream" });
+
+    const om = Number(matSet.overallMateriality);
+    const pm = Number(matSet.performanceMateriality);
+    const trivial = Number(matSet.trivialThreshold);
+
+    const coaAccounts = await prisma.coAAccount.findMany({ where: { engagementId } });
+    const significantAccounts = coaAccounts
+      .filter(a => Math.abs(Number(a.closingBalance)) > om)
+      .map(a => ({ id: a.id, name: a.accountName, balance: Number(a.closingBalance), percentOfOM: Math.round((Math.abs(Number(a.closingBalance)) / om) * 100) }));
+
+    const fsHeadWPs = await prisma.fSHeadWorkingPaper.findMany({ where: { engagementId } });
+    let allocationsUpdated = 0;
+    for (const wp of fsHeadWPs) {
+      const balance = Number(wp.currentBalance) || 0;
+      const isSignificant = Math.abs(balance) > om;
+      const allocatedPM = isSignificant ? pm : pm * 0.5;
       try {
-        existingBriefingData = JSON.parse(existingPlanningMemo.teamBriefingNotes);
+        await prisma.materialityAllocation.upsert({
+          where: { engagementId_fsHeadId: { engagementId, fsHeadId: wp.id } },
+          update: { allocatedPM, trivialAmount: trivial, rationale: `Auto-allocated from ISA 320 v${matSet.versionId}` },
+          create: { engagementId, fsHeadId: wp.id, allocatedPM, trivialAmount: trivial, rationale: `Auto-allocated from ISA 320 v${matSet.versionId}` },
+        });
+        allocationsUpdated++;
       } catch {
-        existingBriefingData = {};
+        // skip if relation constraints fail
       }
     }
 
-    const updatedBriefingData = {
-      ...existingBriefingData,
-      isa320MaterialityAnalysis: analysisResult,
-      isa320AnalysisTimestamp: new Date().toISOString(),
-      isa320AnalyzedBy: userId
-    };
-
-    if (existingPlanningMemo) {
-      await prisma.planningMemo.update({
-        where: { id: existingPlanningMemo.id },
-        data: {
-          teamBriefingNotes: JSON.stringify(updatedBriefingData),
-          updatedAt: new Date()
-        }
-      });
-    } else {
-      await prisma.planningMemo.create({
-        data: {
-          engagementId,
-          preparedById: userId,
-          teamBriefingNotes: JSON.stringify(updatedBriefingData)
-        }
-      });
-    }
-
-    if (applyToMaterialityAssessment && analysisResult.step4_materialityLevels) {
-      const levels = analysisResult.step4_materialityLevels;
-      const benchmarkSelection = analysisResult.step2_benchmarkSelection;
-      const riskAdjusted = analysisResult.step3_riskAdjustedPercentage;
-
-      let benchmarkEnum: 'PBT' | 'REVENUE' | 'TOTAL_ASSETS' | 'EQUITY' | 'GROSS_PROFIT' = 'PBT';
-      if (benchmarkSelection.selectedBenchmark.includes('Revenue')) benchmarkEnum = 'REVENUE';
-      else if (benchmarkSelection.selectedBenchmark.includes('Assets')) benchmarkEnum = 'TOTAL_ASSETS';
-      else if (benchmarkSelection.selectedBenchmark.includes('Equity')) benchmarkEnum = 'EQUITY';
-
-      await prisma.materialityAssessment.create({
-        data: {
-          engagementId,
-          benchmark: benchmarkEnum,
-          benchmarkAmount: benchmarkSelection.benchmarkValue,
-          benchmarkPercentage: riskAdjusted.finalPercentage,
-          overallMateriality: levels.overallMateriality,
-          performanceMateriality: levels.performanceMateriality,
-          performanceMatPercentage: levels.performanceMaterialityPercentage,
-          amptThreshold: levels.trivialThreshold,
-          amptPercentage: levels.trivialThresholdPercentage,
-          justification: analysisResult.step8_documentation?.benchmarkSelectionRationale || 'Generated by ISA 320 AI Analysis',
-          isaReference: 'ISA 320'
-        }
-      });
-    }
+    logAuditTrail(
+      userId, "MATERIALITY_PUSHED_DOWNSTREAM", "MaterialitySet", matSet.id,
+      undefined, JSON.stringify({ significantAccounts: significantAccounts.length, allocationsUpdated }),
+      engagementId
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json({
       success: true,
-      message: "ISA 320 materiality analysis saved successfully",
-      savedAt: new Date().toISOString()
+      significantAccounts,
+      allocationsUpdated,
+      thresholds: {
+        overallMateriality: om,
+        performanceMateriality: pm,
+        trivialThreshold: trivial,
+        investigationThreshold: Math.round(pm * 0.5),
+        jeTestingThreshold: trivial,
+      },
     });
   } catch (error) {
-    console.error("Save ISA 320 Materiality Error:", error);
-    res.status(500).json({
-      error: "Failed to save materiality analysis",
-      details: error instanceof Error ? error.message : "Unknown error"
+    console.error("ISA 320 Push Downstream Error:", error);
+    res.status(500).json({ error: "Failed to push materiality downstream" });
+  }
+});
+
+router.post("/:engagementId/analyze", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const firmId = req.user!.firmId;
+    if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
+
+    const engagement = await prisma.engagement.findFirst({
+      where: { id: engagementId, firmId },
+      include: { client: true },
     });
+    if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
+    const coaAccounts = await prisma.coAAccount.findMany({ where: { engagementId } });
+    const riskAssessments = await prisma.riskAssessment.findMany({ where: { engagementId } });
+    const totals = calculateTotalsFromAccounts(coaAccounts);
+    const fsLevelRisks = riskAssessments.map(r => (r.accountOrClass || "").toLowerCase());
+
+    const snapshot: SourceDataSnapshot = {
+      ...totals,
+      priorYearRevenue: engagement.previousYearRevenue ? Number(engagement.previousYearRevenue) : null,
+      priorYearAssets: null, priorYearPBT: null, priorYearEquity: null,
+      entityType: engagement.client?.entityType || null,
+      industry: engagement.client?.industry || null,
+      engagementType: engagement.engagementType || null,
+      ownershipStructure: engagement.client?.ownershipStructure || null,
+      regulatoryCategory: engagement.client?.regulatoryCategory || null,
+      tbImported: coaAccounts.length > 0,
+      fsMapped: coaAccounts.some(a => a.fsLineItem !== null && a.fsLineItem !== ""),
+      riskAssessmentDone: riskAssessments.length > 0,
+      fraudRiskCount: riskAssessments.filter(r => r.isFraudRisk).length,
+      significantRiskCount: riskAssessments.filter(r => r.isSignificantRisk).length,
+      goingConcernFlag: fsLevelRisks.some(r => r.includes("going concern") || r.includes("liquidity")),
+      relatedPartyFlag: fsLevelRisks.some(r => r.includes("related party")),
+      covenantFlag: fsLevelRisks.some(r => r.includes("covenant") || r.includes("borrowing")),
+      publicInterestFlag: engagement.client?.regulatoryCategory === "PUBLIC_INTEREST" || engagement.client?.entityType === "PUBLIC",
+      accountCount: coaAccounts.length,
+      snapshotDate: new Date().toISOString(),
+    };
+
+    const recommendation = recommendBenchmark(snapshot);
+    const riskAdj = calculateRiskAdjustments(recommendation.recommendedPercentage, snapshot);
+    const om = Math.round(recommendation.recommendedValue * (riskAdj.finalPercentage / 100));
+    const hasHighRisk = snapshot.fraudRiskCount > 0 || snapshot.significantRiskCount > 3;
+    const pmPct = hasHighRisk ? 65 : 75;
+    const trivialPct = hasHighRisk ? 3 : 5;
+    const pm = Math.round(om * (pmPct / 100));
+    const trivial = Math.round(om * (trivialPct / 100));
+
+    const significantFSHeads = coaAccounts
+      .filter(acc => Math.abs(Number(acc.closingBalance)) > om)
+      .map(acc => ({
+        accountName: acc.accountName,
+        balance: Number(acc.closingBalance),
+        percentOfMateriality: Math.round((Math.abs(Number(acc.closingBalance)) / om) * 100),
+        riskRating: Math.abs(Number(acc.closingBalance)) > om * 2 ? "HIGH" : "MEDIUM",
+      }))
+      .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
+      .slice(0, 20);
+
+    const result = {
+      engagementId,
+      analysisTimestamp: new Date().toISOString(),
+      step1_dataIngestion: snapshot,
+      step2_benchmarkSelection: {
+        selectedBenchmark: recommendation.recommended,
+        benchmarkValue: recommendation.recommendedValue,
+        percentageRange: recommendation.recommendedRange,
+        justification: recommendation.justification,
+        alternativeBenchmarks: recommendation.alternates,
+      },
+      step3_riskAdjustedPercentage: {
+        basePercentage: recommendation.recommendedPercentage,
+        adjustments: riskAdj.adjustments,
+        finalPercentage: riskAdj.finalPercentage,
+      },
+      step4_materialityLevels: {
+        overallMateriality: om,
+        performanceMateriality: pm,
+        performanceMaterialityPercentage: pmPct,
+        trivialThreshold: trivial,
+        trivialThresholdPercentage: trivialPct,
+        calculationFormulas: {
+          overall: `${formatPKR(recommendation.recommendedValue)} × ${riskAdj.finalPercentage}% = ${formatPKR(om)}`,
+          performance: `${formatPKR(om)} × ${pmPct}% = ${formatPKR(pm)}`,
+          trivial: `${formatPKR(om)} × ${trivialPct}% = ${formatPKR(trivial)}`,
+        },
+      },
+      step5_qualitativeFactors: {
+        factors: DEFAULT_QUALITATIVE_FACTORS.map(f => ({
+          ...f,
+          present: f.id === "fraudRisk" ? snapshot.fraudRiskCount > 0 :
+                   f.id === "goingConcern" ? snapshot.goingConcernFlag :
+                   f.id === "publicInterest" ? snapshot.publicInterestFlag :
+                   f.id === "relatedParty" ? snapshot.relatedPartyFlag :
+                   f.id === "debtCovenant" ? snapshot.covenantFlag : false,
+          severity: "LOW" as const,
+          explanation: "",
+          impact: "NO_CHANGE" as const,
+        })),
+      },
+      step6_riskAssessmentLinkage: {
+        significantFSHeads,
+        samplingParameters: {
+          suggestedConfidenceLevel: hasHighRisk ? 95 : 90,
+          tolerableMisstatement: pm,
+          expectedError: Math.round(pm * 0.1),
+        },
+        thresholds: {
+          investigationThreshold: Math.round(pm * 0.5),
+          jeTestingThreshold: trivial,
+        },
+      },
+      step8_documentation: {
+        benchmarkSelectionRationale: recommendation.justification,
+      },
+    };
+
+    res.json(result);
+  } catch (error) {
+    console.error("ISA 320 Analysis Error:", error);
+    res.status(500).json({ error: "Failed to perform materiality analysis" });
   }
 });
 

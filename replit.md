@@ -7,7 +7,7 @@ AuditWise is a full-stack TypeScript web application built for Pakistani audit f
 ## UI/UX Design System
 
 The application uses a clean, modern SaaS design with consistent patterns:
-- **Page container**: `page-container` class (`px-5 py-5 space-y-6 max-w-[1400px] mx-auto w-full`)
+- **Page container**: `page-container` class (`px-5 py-5 space-y-6 max-w-[1400px] mx-auto w-full`), some pages use tighter `px-5 py-3 space-y-3` inline
 - **Page headers**: `<h1 className="text-xl font-semibold tracking-tight">` — no icon-in-box patterns
 - **Filter bars**: `filter-bar` class for search/filter rows
 - **Cards**: `shadow-sm` standard, using `Card`/`CardContent` from shadcn
@@ -214,6 +214,22 @@ The Data Intake module provides a centralized, linked workflow for importing, va
 ### Auto-Reconciliation
 - After data import, `triggerPostImportReconciliation()` in `importRoutes.ts` automatically runs the full reconciliation scan, updating gate statuses and generating exception records.
 
+## Compliance Checklists
+
+Regulatory compliance checklists per engagement (`/compliance-checklists/:engagementId`):
+
+- **Backend**: `server/routes/regulatoryComplianceRoutes.ts` mounted at `/api/compliance/checklists`
+- **Frontend**: `client/src/pages/compliance-checklists.tsx`
+- **Checklist types**: Companies Act 2017, FBR Tax, FBR WHT, FBR NTN, SECP, SECP XBRL, ISA Documentation, ISQM Quality Control, Custom
+- **Features**:
+  - **Bulk Excel/CSV upload**: Column auto-detection (law/regulation, section/rule, applicability, requirement, status, evidence, remarks). Empty rows filtered. Status auto-mapped (Compliant→COMPLETED, Non-Compliant→IN_PROGRESS, etc.)
+  - **Template download**: Per-type Excel template with styled header + instructions sheet. Uses ExcelJS
+  - **Evidence attachments**: Per-row file upload (PDF, images, Word, Excel, CSV, text — max 15MB). Files stored in `uploads/checklist-evidence/`. Inline display with download/delete. Stored as JSON array `evidenceAttachments` in each checklist item
+  - **Role guards**: All mutating endpoints require `SENIOR` role minimum
+  - **Auth**: File uploads use `fetchWithAuth` for proper auth token handling (token key: `auditwise_token`)
+- **Data model**: `ComplianceChecklist` with `items` JSON array, unique per `(engagementId, checklistType)`
+- **APIs**: GET list, POST upsert, GET template/:type, POST bulk-upload, POST evidence-upload/:type/:ref, DELETE evidence/:type/:ref/:id, GET evidence-download/:type/:ref/:id, GET export
+
 ## Planning Module (ISA-Linked A-P Tabs)
 
 The Planning module (`/planning/:engagementId`) is restructured into 16 ISA-linked tabs (A-P):
@@ -222,8 +238,8 @@ The Planning module (`/planning/:engagementId`) is restructured into 16 ISA-link
 - **A**: Planning Dashboard — readiness overview, intake status, risk signals, next actions
 - **B**: Financial Statements — FS review and analysis
 - **C**: Entity Controls — entity understanding sections
-- **D**: Analytical Procedures — ratio analysis, trends
-- **E**: Materiality — ISA 320 materiality calculations
+- **D**: Analytical Procedures (ISA 520) — full analytics dashboard with horizontal/vertical/ratio/reasonableness analysis, fluctuation flags, risk linkage, editable narration, export. Backend: `server/planningAnalyticsRoutes.ts`, Frontend: `client/src/components/planning/analytical-procedures-panel.tsx`, Types: `shared/models/planningAnalyticsTypes.ts`. Auto-loads saved analytics on page load, shows read-only when planning locked. CR accounts sign-normalized.
+- **E**: Materiality — ISA 320 guided 10-step materiality workflow. Backend: `server/isa320MaterialityRoutes.ts` (mounted at `/api/isa320-materiality`), Frontend: `client/src/components/planning/isa320-materiality-panel.tsx`. Features: auto-pull source data from TB/GL/FS, smart benchmark recommendation engine, qualitative factor assessment, specific materiality, partner override with audit trail + revert, strict status transitions (DRAFT→PENDING_REVIEW→PENDING_APPROVAL→APPROVED→LOCKED), ISA 320 memo generation/print, push-downstream to risk/sampling, stale-status detection. Firm-ownership verified on all endpoints. `MaterialitySet` model extended with JSON fields: sourceDataSnapshot, qualitativeFactors, riskAdjustments, overrideHistory, documentationMemo, pmPercentage, trivialPercentage, benchmarkJustification, stepProgress, isStale/staleReason
 - **F**: Significant Accounts — auto-identified from TB/FS data
 - **G**: Risk Assessment — ISA 315 risk identification
 - **H**: Fraud Risk — ISA 240 fraud risk assessment with brainstorming

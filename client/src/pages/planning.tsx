@@ -49,13 +49,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { AIAssistBanner, PHASE_AI_CONFIGS } from "@/components/ai-assist-banner";
 import { AIAssistButton } from "@/components/ui/ai-assist-button";
 import { Sparkles } from "lucide-react";
 import { PhaseApprovalControl, PhaseLockIndicator } from "@/components/phase-approval-control";
 import { SyncPlanningToExecution } from "@/components/sync-planning-to-execution";
 import { MaterialitySetPanel, AuditPlanPanel, ProceduresMatrixPanel } from "@/components/control-pack";
-import { ISA320MaterialityPanel } from "@/components/isa320-materiality-panel";
+import { ISA320MaterialityPanel as ISA320MaterialityPanelNew } from "@/components/planning/isa320-materiality-panel";
 import { ISA300StrategyPanel } from "@/components/isa300-strategy-panel";
 import ISA530SamplingPanel from "@/components/isa530-sampling-panel";
 import {
@@ -70,7 +69,6 @@ import { formatAccounting } from '@/lib/formatters';
 
 import type { CoAAccountData } from "@/components/planning/fs-types";
 import { PlanningDashboard } from "@/components/planning/planning-dashboard";
-import { PlanningProgressRibbon } from "@/components/planning/planning-progress-ribbon";
 import { SignificantAccountsPanel } from "@/components/planning/significant-accounts-panel";
 import { FraudRiskPanel } from "@/components/planning/fraud-risk-panel";
 import { InternalControlsPanel } from "@/components/planning/internal-controls-panel";
@@ -282,6 +280,9 @@ export default function Planning() {
       setIsRecomputingFields(false);
     }
   };
+
+  const safeNum = (v: string | undefined | null): number =>
+    parseFloat(String(v ?? '').replace(/,/g, '')) || 0;
 
   // Section 0: Trial Balance Data
   const [trialBalance, setTrialBalance] = useState({
@@ -955,164 +956,6 @@ export default function Planning() {
   const [isRunningAiRiskAnalysis, setIsRunningAiRiskAnalysis] = useState(false);
   const [aiRiskAnalysisError, setAiRiskAnalysisError] = useState<string | null>(null);
 
-  // Planning Analytical Procedures (ISA 520) State
-  interface PlanningAnalyticsResultLocal {
-    fsHeadExpectations: Array<{
-      fsHeadKey: string;
-      fsHeadLabel: string;
-      currentYearBalance: number;
-      priorYearBalance: number;
-      expectedBalance: number;
-      expectationBasis: string;
-      expectationRationale: string;
-    }>;
-    trendAnalysis: Array<{
-      id: string;
-      fsHeadKey: string;
-      fsHeadLabel: string;
-      currentYear: number;
-      priorYear: number;
-      movement: number;
-      movementPercentage: number;
-      status: 'Expected' | 'Requires Explanation' | 'Risk-Indicative';
-      materialityFlag: boolean;
-      explanation?: string;
-    }>;
-    ratioAnalysis: Array<{
-      id: string;
-      ratioName: string;
-      category: 'Liquidity' | 'Profitability' | 'Leverage' | 'Efficiency' | 'Coverage';
-      currentYear: number;
-      priorYear: number;
-      industryAverage: number | null;
-      variance: number;
-      status: 'Expected' | 'Requires Explanation' | 'Risk-Indicative';
-      linkedFsHeads: string[];
-      interpretation: string;
-    }>;
-    significantFluctuations: Array<{
-      id: string;
-      fsHeadKey: string;
-      fsHeadLabel: string;
-      natureOfFluctuation: string;
-      possibleCauses: string[];
-      affectedAssertions: string[];
-      riskImpact: 'Confirms Existing Risk' | 'Elevates Risk Rating' | 'Introduces New Risk';
-      riskLevel: 'FS Level' | 'Assertion Level';
-      fraudConsideration: boolean;
-      significantRiskFlag: boolean;
-      documentedJustification: string;
-    }>;
-    riskMatrixUpdates: Array<{
-      fsHeadKey: string;
-      assertion: string;
-      previousRiskRating: 'High' | 'Medium' | 'Low';
-      updatedRiskRating: 'High' | 'Medium' | 'Low';
-      changeReason: string;
-      analyticsReference: string;
-    }>;
-    auditStrategyImpact: Array<{
-      fsHeadKey: string;
-      fsHeadLabel: string;
-      impactOnNature: string;
-      impactOnTiming: 'Interim' | 'Year-End' | 'Both';
-      impactOnExtent: string;
-      controlsRelianceImpact: string;
-      planningConclusion: string;
-    }>;
-    analysisDate: string;
-    totalFluctuationsIdentified: number;
-    riskIndicativeCount: number;
-    riskMatrixUpdatesCount: number;
-  }
-
-  const [planningAnalyticsResult, setPlanningAnalyticsResult] = useState<PlanningAnalyticsResultLocal | null>(null);
-  const [isRunningPlanningAnalytics, setIsRunningPlanningAnalytics] = useState(false);
-  const [planningAnalyticsError, setPlanningAnalyticsError] = useState<string | null>(null);
-  const [isUpdatingRiskMatrix, setIsUpdatingRiskMatrix] = useState(false);
-
-  const runPlanningAnalytics = useCallback(async () => {
-    if (!engagementId) {
-      toast({ title: "Error", description: "No engagement selected.", variant: "destructive" });
-      return;
-    }
-
-    setIsRunningPlanningAnalytics(true);
-    setPlanningAnalyticsError(null);
-
-    try {
-      const response = await fetchWithAuth(`/api/planning-analytics/${engagementId}/analyze`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
-        throw new Error(errorData.error || "Failed to run analytical procedures");
-      }
-
-      const result = await response.json();
-      setPlanningAnalyticsResult(result);
-      toast({
-        title: "Analytical Procedures Complete",
-        description: `Identified ${result.totalFluctuationsIdentified} significant fluctuations, ${result.riskIndicativeCount} risk-indicative items.`,
-      });
-    } catch (error) {
-      console.error("Planning Analytics failed:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to run analytical procedures";
-      setPlanningAnalyticsError(errorMessage);
-      toast({
-        title: "Analysis Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsRunningPlanningAnalytics(false);
-    }
-  }, [engagementId, toast]);
-
-  const updateRiskMatrixFromAnalytics = useCallback(async () => {
-    if (!engagementId || !planningAnalyticsResult?.riskMatrixUpdates?.length) {
-      toast({ title: "No Updates", description: "No risk matrix updates available.", variant: "destructive" });
-      return;
-    }
-
-    setIsUpdatingRiskMatrix(true);
-
-    try {
-      const response = await fetchWithAuth(`/api/planning-analytics/${engagementId}/update-risk-matrix`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ riskMatrixUpdates: planningAnalyticsResult.riskMatrixUpdates }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
-        throw new Error(errorData.error || "Failed to update risk matrix");
-      }
-
-      const result = await response.json();
-      toast({
-        title: "Risk Matrix Updated",
-        description: result.message || `Updated ${result.updatedCount} risk matrix entries.`,
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['/api/ai-risk-assessment', engagementId] });
-    } catch (error) {
-      console.error("Update risk matrix failed:", error);
-      toast({
-        title: "Update Failed",
-        description: error instanceof Error ? error.message : "Failed to update risk matrix.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdatingRiskMatrix(false);
-    }
-  }, [engagementId, planningAnalyticsResult, toast]);
 
   const runAiRiskAnalysis = useCallback(async () => {
     if (!engagementId) {
@@ -2182,10 +2025,10 @@ export default function Planning() {
 
   // Materiality calculations (auto-calc from TB)
   const materialityCalc = useMemo(() => {
-    const pbt = parseFloat(trialBalance.profitBeforeTax.replace(/,/g, '')) || 0;
-    const revenue = parseFloat(trialBalance.revenue.replace(/,/g, '')) || 0;
-    const assets = parseFloat(trialBalance.totalAssets.replace(/,/g, '')) || 0;
-    const equity = parseFloat(trialBalance.totalEquity.replace(/,/g, '')) || 0;
+    const pbt = safeNum(trialBalance.profitBeforeTax);
+    const revenue = safeNum(trialBalance.revenue);
+    const assets = safeNum(trialBalance.totalAssets);
+    const equity = safeNum(trialBalance.totalEquity);
     const pct = parseFloat(materiality.benchmarkPercentage) / 100;
 
     let selectedAmount = 0;
@@ -2205,10 +2048,10 @@ export default function Planning() {
 
   // Computed Analytical Data from Trial Balance
   const analyticalCalc = useMemo(() => {
-    const revenue = parseFloat(trialBalance.revenue.replace(/,/g, '')) || 0;
-    const assets = parseFloat(trialBalance.totalAssets.replace(/,/g, '')) || 0;
-    const equity = parseFloat(trialBalance.totalEquity.replace(/,/g, '')) || 0;
-    const pbt = parseFloat(trialBalance.profitBeforeTax.replace(/,/g, '')) || 0;
+    const revenue = safeNum(trialBalance.revenue);
+    const assets = safeNum(trialBalance.totalAssets);
+    const equity = safeNum(trialBalance.totalEquity);
+    const pbt = safeNum(trialBalance.profitBeforeTax);
 
     // Calculate derived metrics from available data
     const grossMargin = revenue > 0 ? (pbt / revenue) * 100 : 0;
@@ -2241,10 +2084,6 @@ export default function Planning() {
     { refNo: "CHK-042", checkItem: "ISA 320.13 - Documentation requirements met" },
     { refNo: "CHK-043", checkItem: "ISA 320.14 - Communication of materiality" }
   ]));
-  const [materialityQualitative, setMaterialityQualitative] = useState({
-    fraudRisk: false, regulatory: false, debtCovenant: false, goingConcern: false, sensitiveDisclosures: false, publicInterest: false
-  });
-
   // Section 5: Analytical Procedures
   const [analyticalProcedures, setAnalyticalProcedures] = useState({
     analyticalPlan: "",
@@ -2325,10 +2164,10 @@ export default function Planning() {
   // Auto-calculate ratios from B.S and P&L data
   const calculatedRatios = useMemo(() => {
     // Current Year Data (from trialBalance and derived)
-    const revenue = parseFloat(trialBalance.revenue.replace(/,/g, '')) || 0;
-    const totalAssets = parseFloat(trialBalance.totalAssets.replace(/,/g, '')) || 0;
-    const totalEquity = parseFloat(trialBalance.totalEquity.replace(/,/g, '')) || 0;
-    const pbt = parseFloat(trialBalance.profitBeforeTax.replace(/,/g, '')) || 0;
+    const revenue = safeNum(trialBalance.revenue);
+    const totalAssets = safeNum(trialBalance.totalAssets);
+    const totalEquity = safeNum(trialBalance.totalEquity);
+    const pbt = safeNum(trialBalance.profitBeforeTax);
     
     // Estimated current year values (can be refined with actual data)
     const costOfSales = revenue * 0.6; // Estimate 60% CoS if not available
@@ -2344,16 +2183,15 @@ export default function Planning() {
     const currentLiabilities = totalLiabilities * 0.5; // Estimate 50% current
     
     // Prior Year Data
-    const priorRevenue = parseFloat(fsPriorYear.revenue.replace(/,/g, '')) || 0;
-    const priorCostOfSales = parseFloat(fsPriorYear.costOfSales.replace(/,/g, '')) || 0;
+    const priorRevenue = safeNum(fsPriorYear.revenue);
+    const priorCostOfSales = safeNum(fsPriorYear.costOfSales);
     const priorGrossProfit = priorRevenue - priorCostOfSales;
-    const priorInventory = parseFloat(fsPriorYear.inventories.replace(/,/g, '')) || 0;
-    const priorReceivables = parseFloat(fsPriorYear.tradeReceivables.replace(/,/g, '')) || 0;
-    const priorCash = parseFloat(fsPriorYear.cashBankBalances.replace(/,/g, '')) || 0;
-    const priorPPE = parseFloat(fsPriorYear.propertyPlantEquipment.replace(/,/g, '')) || 0;
-    const priorIntangibles = parseFloat(fsPriorYear.intangibleAssets.replace(/,/g, '')) || 0;
-    const priorEquity = (parseFloat(fsPriorYear.shareCapital.replace(/,/g, '')) || 0) + 
-                        (parseFloat(fsPriorYear.retainedEarnings.replace(/,/g, '')) || 0);
+    const priorInventory = safeNum(fsPriorYear.inventories);
+    const priorReceivables = safeNum(fsPriorYear.tradeReceivables);
+    const priorCash = safeNum(fsPriorYear.cashBankBalances);
+    const priorPPE = safeNum(fsPriorYear.propertyPlantEquipment);
+    const priorIntangibles = safeNum(fsPriorYear.intangibleAssets);
+    const priorEquity = safeNum(fsPriorYear.shareCapital) + safeNum(fsPriorYear.retainedEarnings);
     const priorTotalAssets = priorPPE + priorIntangibles + priorInventory + priorReceivables + priorCash;
     
     // Helper to format ratio
@@ -3094,6 +2932,7 @@ export default function Planning() {
 
   return (
     <PageShell
+      showTopBar={false}
       title="Audit Planning Phase"
       subtitle={`${client?.name || ""} ${engagement?.engagementCode ? `(${engagement.engagementCode})` : ""}`}
       icon={<Calculator className="h-5 w-5 text-primary" />}
@@ -3132,34 +2971,6 @@ export default function Planning() {
       headerActions={null}
     >
       <div className="px-4 py-2 space-y-2">
-
-
-      {engagementId && (
-        <AIAssistBanner
-          engagementId={engagementId}
-          config={{
-            ...PHASE_AI_CONFIGS.planning,
-            contextBuilder: () => JSON.stringify({
-              phase: "planning",
-              engagementName: engagement?.engagementCode || "Unknown Engagement",
-              clientName: client?.name || "Unknown Client",
-              engagementType: engagement?.engagementType || "Not specified",
-              materiality: contextMateriality,
-              planningInitiation,
-              riskAssessment,
-            }),
-            onActionComplete: (actionId, content) => {
-              toast({
-                title: "AI Content Generated",
-                description: `${actionId} content has been generated. Apply it to relevant fields.`,
-              });
-            },
-          }}
-        />
-      )}
-
-
-      {engagementId && <PlanningProgressRibbon engagementId={engagementId} />}
 
       <Tabs value={activeTab} onValueChange={handleTabSwitch}>
         <SimpleTabNavigation
@@ -5716,201 +5527,12 @@ export default function Planning() {
 
         {/* Tab 4: Materiality */}
         <TabsContent value="materiality" className="space-y-4 mt-3" data-testid="tab-content-materiality">
-          {/* AI-Driven ISA 320 Materiality Analysis Panel */}
           {engagementId && (
-            <ISA320MaterialityPanel 
-              engagementId={engagementId} 
-              onMaterialityCalculated={(result) => {
-                // Update local state with AI-calculated materiality
-                if (result.step4_materialityLevels) {
-                  setMateriality(prev => ({
-                    ...prev,
-                    selectedBenchmark: result.step2_benchmarkSelection?.selectedBenchmark?.toLowerCase() || prev.selectedBenchmark,
-                    benchmarkPercentage: String(result.step3_riskAdjustedPercentage?.finalPercentage || prev.benchmarkPercentage),
-                    benchmarkRationale: result.step8_documentation?.benchmarkSelectionRationale || prev.benchmarkRationale,
-                  }));
-                }
-                // Update qualitative factors based on AI assessment
-                if (result.step5_qualitativeFactors?.factors) {
-                  const factors = result.step5_qualitativeFactors.factors;
-                  setMaterialityQualitative(prev => ({
-                    ...prev,
-                    fraudRisk: factors.find(f => f.factor === 'Fraud Risk Present')?.present || false,
-                    regulatory: factors.find(f => f.factor === 'Regulatory Sensitivity')?.present || false,
-                    debtCovenant: factors.find(f => f.factor === 'Debt Covenant Compliance')?.present || false,
-                    goingConcern: factors.find(f => f.factor === 'Going Concern Uncertainty')?.present || false,
-                    sensitiveDisclosures: factors.find(f => f.factor === 'Industry Specific Sensitivity')?.present || false,
-                    publicInterest: factors.find(f => f.factor === 'Public Interest Considerations')?.present || false,
-                  }));
-                }
-              }}
+            <ISA320MaterialityPanelNew
+              engagementId={engagementId}
+              readOnly={planningReadOnly}
             />
           )}
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calculator className="h-5 w-5" />
-                    Manual Materiality Determination
-                  </CardTitle>
-                  <CardDescription>ISA 320 Compliant - Manual controls for materiality in planning and performing an audit</CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" data-testid="btn-calculate-materiality"
-                    disabled={!draftFsData && !trialBalance.fileUploaded}
-                    title={!draftFsData && !trialBalance.fileUploaded ? "Upload Trial Balance data first to calculate materiality" : "Calculate materiality thresholds"}
-                    onClick={() => {
-                      const pbt = parseFloat(trialBalance.profitBeforeTax.replace(/,/g, '')) || 0;
-                      const rev = parseFloat(trialBalance.revenue.replace(/,/g, '')) || 0;
-                      const assets = parseFloat(trialBalance.totalAssets.replace(/,/g, '')) || 0;
-                      let benchmark = 'pbt';
-                      if (pbt <= 0 && rev > 0) benchmark = 'revenue';
-                      else if (pbt <= 0 && assets > 0) benchmark = 'assets';
-                      setMateriality(prev => ({ ...prev, selectedBenchmark: benchmark, benchmarkPercentage: benchmark === 'pbt' ? '5' : benchmark === 'revenue' ? '2' : '1' }));
-                      saveEngine.signalChange();
-                      toast({ title: "Materiality Calculated", description: `Benchmark set to ${benchmark.toUpperCase()} with standard ISA 320 percentage.` });
-                    }}
-                  >
-                    <Calculator className="h-4 w-4 mr-2" />
-                    Calculate
-                  </Button>
-                  <Button size="sm" data-testid="btn-apply-partner-override"
-                    onClick={() => {
-                      const overrideValue = prompt("Enter Partner Override for Overall Materiality (amount):");
-                      if (overrideValue && !isNaN(Number(overrideValue))) {
-                        const om = Number(overrideValue);
-                        const pbt = parseFloat(trialBalance.profitBeforeTax.replace(/,/g, '')) || parseFloat(trialBalance.revenue.replace(/,/g, '')) || om;
-                        const pct = pbt > 0 ? ((om / pbt) * 100).toFixed(2) : '5';
-                        setMateriality(prev => ({ ...prev, benchmarkPercentage: pct }));
-                        saveEngine.signalChange();
-                        toast({ title: "Partner Override Applied", description: `Overall Materiality overridden to ${Number(overrideValue).toLocaleString()}.` });
-                      }
-                    }}
-                  >
-                    <UserCheck className="h-4 w-4 mr-2" />
-                    Apply Partner Override
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Database className="h-4 w-4" />
-                    Auto-Extracted from Trial Balance
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Profit Before Tax</p>
-                      <p className="font-semibold">{materialityCalc.pbt ? formatAccounting(materialityCalc.pbt) : 'Not set'}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Revenue</p>
-                      <p className="font-semibold">{materialityCalc.revenue ? formatAccounting(materialityCalc.revenue) : 'Not set'}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Total Assets</p>
-                      <p className="font-semibold">{materialityCalc.assets ? formatAccounting(materialityCalc.assets) : 'Not set'}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Total Equity</p>
-                      <p className="font-semibold">{materialityCalc.equity ? formatAccounting(materialityCalc.equity) : 'Not set'}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between"><Label>Benchmark Selection Rationale <span className="text-destructive">*</span></Label><AIAssistButton fieldName="benchmarkRationale" fieldLabel="Benchmark Selection Rationale" promptType={getPromptType("benchmarkRationale")} context={`Materiality benchmark rationale per ISA 320 for ${engagement?.engagementCode || "engagement"}`} engagementId={engagementId} page="planning" section="materiality" onInsert={(c) => setMateriality(p => ({...p, benchmarkRationale: c}))} currentValue={materiality.benchmarkRationale} /></div>
-                    <Textarea 
-                      value={materiality.benchmarkRationale}
-                      onChange={(e) => setMateriality(p => ({...p, benchmarkRationale: e.target.value}))}
-                      placeholder="Rationale for benchmark selection (ISA 320.9)..."
-                      rows={3}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Selected Benchmark <span className="text-destructive">*</span></Label>
-                    <Select value={materiality.selectedBenchmark} onValueChange={(v) => setMateriality(p => ({...p, selectedBenchmark: v}))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pbt">Profit Before Tax (5%)</SelectItem>
-                        <SelectItem value="revenue">Revenue (0.5% - 2%)</SelectItem>
-                        <SelectItem value="assets">Total Assets (1%)</SelectItem>
-                        <SelectItem value="equity">Equity (5%)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Benchmark Percentage <span className="text-destructive">*</span></Label>
-                    <div className="flex items-center gap-2">
-                      <Input 
-                        type="number" 
-                        value={materiality.benchmarkPercentage}
-                        onChange={(e) => setMateriality(p => ({...p, benchmarkPercentage: e.target.value}))}
-                        className="w-24"
-                      />
-                      <span>%</span>
-                    </div>
-                  </div>
-                </div>
-                <Card className="bg-gradient-to-br from-primary/5 to-primary/10">
-                  <CardHeader>
-                    <CardTitle className="text-lg">Calculated Materiality</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center p-3 bg-background rounded-lg">
-                      <span>Overall Materiality (ISA 320.10)</span>
-                      <span className="text-xl font-bold text-primary">{formatAccounting(materialityCalc.overallMateriality)}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-background rounded-lg">
-                      <span>Performance Materiality (75%)</span>
-                      <span className="text-lg font-semibold">{formatAccounting(materialityCalc.performanceMateriality)}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-background rounded-lg">
-                      <span>Specific Materiality (50% of OM)</span>
-                      <span className="text-lg font-semibold">{formatAccounting(materialityCalc.overallMateriality * 0.5)}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-background rounded-lg">
-                      <span>Clearly Trivial Threshold (5% of OM)</span>
-                      <span className="font-medium">{formatAccounting(materialityCalc.trivialThreshold)}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Specific materiality applies to sensitive classes (e.g., Directors' Remuneration, Related Party Transactions). 
-                      Clearly trivial threshold per ISA 450.A2 — misstatements below this amount need not be accumulated.
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Qualitative Factors Considered <span className="text-destructive">*</span></Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {Object.entries(materialityQualitative).map(([key, value]) => (
-                    <div key={key} className="flex items-center space-x-2">
-                      <Checkbox checked={value} onCheckedChange={(c) => setMaterialityQualitative(p => ({...p, [key]: !!c}))} />
-                      <Label className="text-sm font-normal">
-                        {key === "fraudRisk" && "Fraud risk present"}
-                        {key === "regulatory" && "Regulatory reporting requirements"}
-                        {key === "debtCovenant" && "Debt covenant compliance"}
-                        {key === "goingConcern" && "Going concern considerations"}
-                        {key === "sensitiveDisclosures" && "Sensitive industry disclosures"}
-                        {key === "publicInterest" && "Public interest considerations"}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
         </TabsContent>
 
         {/* Tab D: Analytical Procedures (ISA 520) */}

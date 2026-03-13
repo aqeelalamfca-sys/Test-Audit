@@ -143,7 +143,7 @@ export function PageShell({
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Sticky Header Section */}
-      {(effectiveShowTopBar || title || metadata) && (
+      {effectiveShowTopBar !== false && (effectiveShowTopBar || title || metadata) && (
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/40 pb-3 pt-1 mb-4">
           {/* Title Row */}
           <div className="flex items-center justify-between gap-4 flex-wrap">

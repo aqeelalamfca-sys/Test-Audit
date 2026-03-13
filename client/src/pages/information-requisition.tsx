@@ -20,7 +20,6 @@ import { Link } from "wouter";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { PageShell } from "@/components/page-shell";
 import { useRequisitionSaveBridge } from "@/hooks/use-requisition-save-bridge";
-import { AIAssistBanner, PHASE_AI_CONFIGS } from "@/components/ai-assist-banner";
 import {
   ACCOUNT_CLASSES,
   ACCOUNT_SUBCLASSES,
@@ -48,7 +47,7 @@ import {
 } from "./information-requisition/data";
 import { ReviewCoaSection } from "./information-requisition/ReviewCoaSection";
 import { formatAccounting } from '@/lib/formatters';
-import { DataIntakeProgressRibbon } from "@/components/data-intake-progress-ribbon";
+
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 
 interface InformationRequest {
@@ -3243,6 +3242,7 @@ export default function InformationRequisition() {
     <PageShell
       title="Data Intake"
       subtitle=""
+      showTopBar={false}
       backHref={`/engagements`}
       nextHref={engagementId ? `/workspace/${engagementId}/pre-planning` : undefined}
       dashboardHref="/engagements"
@@ -3264,34 +3264,7 @@ export default function InformationRequisition() {
       activeTab={dataIntakeSubTab}
       onTabChange={setDataIntakeSubTab}
     >
-      {effectiveEngagementId && (
-        <DataIntakeProgressRibbon engagementId={effectiveEngagementId} />
-      )}
       <div className="w-full px-4 py-1 space-y-2">
-
-
-      {engagementId && (
-        <AIAssistBanner
-          engagementId={engagementId}
-          config={{
-            ...PHASE_AI_CONFIGS.requisition,
-            contextBuilder: () => JSON.stringify({
-              phase: "requisition",
-              engagementName: engagement?.engagementCode || "Unknown Engagement",
-              clientName: client?.name || "Unknown Client",
-              stats,
-              totalRequests: requests.length,
-            }),
-            onActionComplete: (actionId, content) => {
-              toast({
-                title: "AI Content Generated",
-                description: `${actionId} content has been generated. Apply it to relevant fields.`,
-              });
-            },
-          }}
-        />
-      )}
-
       <div className="space-y-2 mt-1">
         <ReviewCoaSection
           engagementId={effectiveEngagementId}

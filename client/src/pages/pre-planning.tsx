@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { SimpleTabNavigation } from "@/components/numbered-tab-navigation";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { PageShell } from "@/components/page-shell";
-import { AIAssistBanner, PHASE_AI_CONFIGS } from "@/components/ai-assist-banner";
 import { usePreplanningSaveBridge } from "@/hooks/use-preplanning-save-bridge";
 import { useToast } from "@/hooks/use-toast";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
@@ -640,6 +639,7 @@ export default function PrePlanning() {
 
   return (
     <PageShell
+      showTopBar={false}
       title="Pre-Planning Phase"
       subtitle={`${client?.name || "Select Client"}${engagement?.engagementCode ? ` (${engagement.engagementCode})` : ""}`}
       icon={<ClipboardCheck className="h-6 w-6 text-primary" />}
@@ -661,28 +661,6 @@ export default function PrePlanning() {
     >
     <div className="w-full bg-background" data-testid="preplanning-wizard-page">
       <div className="px-4 py-2 space-y-2">
-        {engagementId && (
-          <AIAssistBanner
-            engagementId={engagementId}
-            config={{
-              ...PHASE_AI_CONFIGS["pre-planning"],
-              contextBuilder: () => JSON.stringify({
-                phase: "pre-planning",
-                engagementName: engagement?.engagementCode || "Unknown Engagement",
-                clientName: client?.name || "Unknown Client",
-                industry: (client as any)?.industry || "Not specified",
-                activeStep,
-              }),
-              onActionComplete: (actionId: string) => {
-                toast({
-                  title: "AI Content Generated",
-                  description: `${actionId} content has been generated. Apply it to relevant fields.`,
-                });
-              },
-            }}
-          />
-        )}
-
         <Tabs value={activeStep} onValueChange={(v) => setActiveStep(v as StepId)}>
           <SimpleTabNavigation
             activeTab={activeStep}

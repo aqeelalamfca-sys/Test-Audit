@@ -27,7 +27,6 @@ import {
   Info, Edit, Save, Download, Scale, TrendingUp, FileSpreadsheet,
   ArrowUpDown, Layers
 } from "lucide-react";
-import { AIAssistBanner, PHASE_AI_CONFIGS } from "@/components/ai-assist-banner";
 import { AIHelpIcon } from "@/components/ai-help";
 import { PhaseLockIndicator } from "@/components/phase-approval-control";
 import { LockGatePanel } from "@/components/control-pack";
@@ -646,6 +645,7 @@ export default function Finalization() {
 
   return (
     <PageShell
+      showTopBar={false}
       title="Finalization"
       subtitle={`${client?.name || ""} ${engagement?.engagementCode ? `(${engagement.engagementCode})` : ""}`}
       icon={<FileCheck className="h-5 w-5 text-primary" />}
@@ -681,31 +681,6 @@ export default function Finalization() {
       }
     >
       <div className="w-full px-4 py-2 space-y-2">
-
-      {engagementId && (
-        <AIAssistBanner
-          engagementId={engagementId}
-          config={{
-            ...PHASE_AI_CONFIGS.finalization,
-            contextBuilder: () => JSON.stringify({
-              phase: "finalization",
-              engagementName: engagement?.engagementCode || "Unknown Engagement",
-              clientName: client?.name || "Unknown Client",
-              fileStatus: fileStatus || "OPEN",
-              opinionType: "UNQUALIFIED",
-              goingConcernConclusion,
-              approvals,
-            }),
-            onActionComplete: (actionId, content) => {
-              toast({
-                title: "AI Content Generated",
-                description: `${actionId} content has been generated. Apply it to relevant fields.`,
-              });
-            },
-          }}
-        />
-      )}
-
       <PhaseLockIndicator phase="FINALIZATION" />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>

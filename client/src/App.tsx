@@ -19,9 +19,7 @@ import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts-dialog"
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import { WorkspaceAccessGuard } from "@/components/workspace-access-guard";
-import { WorkspaceRibbon } from "@/components/workspace-ribbon";
 import { TrialBanner } from "@/components/trial-banner";
-import { AlphaRibbon } from "@/components/alpha-ribbon";
 
 import { ErrorBoundary } from "@/components/error-boundary";
 import { SystemStatusOverlay } from "@/components/system-status-overlay";
@@ -350,12 +348,7 @@ function Router() {
       
       {/* Workspace routes (require engagementId + access check) */}
       <Route path="/workspace/:engagementId/requisition" component={GuardedInformationRequisition} />
-      <Route path="/workspace/:engagementId/pre-planning">
-        {(params: any) => {
-          window.location.replace(`/workspace/${params.engagementId}/planning`);
-          return null;
-        }}
-      </Route>
+      <Route path="/workspace/:engagementId/pre-planning" component={GuardedPrePlanning} />
       <Route path="/workspace/:engagementId/planning" component={GuardedPlanning} />
       <Route path="/workspace/:engagementId/execution" component={GuardedExecution} />
       <Route path="/workspace/:engagementId/fs-heads" component={GuardedFSHeadsPage} />
@@ -455,9 +448,7 @@ function EnforcedAppContent({ user, firm, sidebarStyle, initials }: {
               currentPhase="onboarding"
               phaseStatus="not_started"
             />
-            <AlphaRibbon />
             <TrialBanner />
-            <WorkspaceRibbon />
             
             <main className="flex-1 overflow-auto bg-background scroll-smooth">
               <div className="min-h-full">

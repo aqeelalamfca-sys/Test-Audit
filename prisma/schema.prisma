@@ -12031,10 +12031,25 @@ model MaterialitySet {
   performanceMateriality Decimal @db.Decimal(18, 2)
   trivialThreshold       Decimal @db.Decimal(18, 2)
 
+  pmPercentage      Decimal? @db.Decimal(5, 2)
+  trivialPercentage Decimal? @db.Decimal(5, 2)
+
   specificMateriality Json?
 
-  rationale    String?
-  isaReference String  @default("ISA 320")
+  rationale              String?
+  benchmarkJustification String?
+  isaReference           String  @default("ISA 320")
+
+  sourceDataSnapshot Json?
+  qualitativeFactors Json?
+  riskAdjustments    Json?
+  overrideHistory    Json?
+  documentationMemo  Json?
+
+  isStale     Boolean @default(false)
+  staleReason String?
+
+  stepProgress Json?
 
   preparedById String?
   preparedAt   DateTime?
