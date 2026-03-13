@@ -18,7 +18,6 @@ import {
   Building2,
   FileText,
   UserCheck,
-  FolderOpen,
   Shield,
   ShieldCheck,
   Users,
@@ -27,9 +26,7 @@ import {
   ClipboardList,
   ListChecks,
   ArrowLeft,
-  Layers,
   BookOpen,
-  Target,
   Scale,
   Play,
   CheckCircle2,
@@ -99,14 +96,6 @@ const WORKSPACE_PHASE_ICONS: Record<string, React.ElementType> = {
   "opinion-reports": FileOutput,
   "eqcr": UserCheck,
   "inspection": Archive,
-  "requisition": FileText,
-  "pre-planning": ClipboardList,
-  "planning": Target,
-  "execution": Play,
-  "fs-heads": Layers,
-  "evidence": FolderOpen,
-  "checklists": ListChecks,
-  "deliverables": FileOutput,
 };
 
 export function AppSidebar({ currentUser }: AppSidebarProps) {

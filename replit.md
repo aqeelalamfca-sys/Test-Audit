@@ -101,9 +101,19 @@ Key files:
 - `client/src/lib/workspace-context.tsx` — Frontend phase routing (imports from shared/phases.ts)
 - `client/src/lib/navigation.ts` — Smart routing and phase helpers
 - `client/src/components/app-sidebar.tsx` — Sidebar with grouped 19-phase navigation
+- `client/src/components/engagement-workspace-shell.tsx` — Unified workspace shell (header, breadcrumbs, progress ribbon, prev/next, AI panel, gate alerts)
 - `client/src/App.tsx` — All workspace routes (canonical + legacy backward-compat)
 
-Old route slugs (pre-planning, requisition, planning, execution, etc.) are now **redirects** to canonical slugs. Legacy workspace routes (`/workspace/:id/requisition`, `/workspace/:id/pre-planning`, etc.) redirect to their canonical equivalents. Only standalone tool routes (checklists, audit-health, workflow-health, standards-matrix, compliance-simulation, qcr-dashboard) remain as direct component routes.
+**Engagement Workspace Shell**: All workspace routes render inside `EngagementWorkspaceShell`, which provides:
+- Canonical breadcrumbs: Home > Engagements > [Client] > [Phase Group] > [Phase]
+- Horizontal progress ribbon showing all 17 workspace phases with status icons and tooltips
+- Header with client name, engagement code, period, blocker count, completion stats, progress bar
+- Prev/next phase navigation in sticky bottom bar
+- AI capabilities side panel (toggle via bot icon)
+- Gate blocker/warning alerts above page content
+- Smart resume redirect: bare `/workspace/:id` redirects to first in-progress or incomplete phase
+
+Old route slugs (pre-planning, requisition, planning, execution, etc.) are now **redirects** to canonical slugs. Legacy workspace routes (`/workspace/:id/requisition`, `/workspace/:id/pre-planning`, etc.) redirect to their canonical equivalents. Standalone tool routes (checklists, audit-health, workflow-health, standards-matrix, compliance-simulation, qcr-dashboard) are also wrapped in the shell for consistent UX.
 
 **Phase order derivation**: All frontend UI components (workspace-ribbon, global-status-bar, phase-gates-panel, global-progress-panel, standards-matrix) now reference the canonical 19-phase system. Backend PHASE_ORDER arrays remain aligned with Prisma's `AuditPhase` enum (8 high-level storage phases) with cross-reference comments to `shared/phases.ts`.
 
