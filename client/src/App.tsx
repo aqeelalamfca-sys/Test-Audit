@@ -387,35 +387,35 @@ function Router() {
       <Route path="/workspace/:engagementId/standards-matrix" component={GuardedStandardsMatrix} />
       <Route path="/workspace/:engagementId/compliance-simulation" component={GuardedComplianceSimulation} />
       
-      {/* Legacy routes - redirect to workspace with access guard */}
-      <Route path="/engagement/:id/information-requisition" component={createLegacyRedirect("information-requisition", "requisition")} />
-      <Route path="/engagement/:id/pre-planning" component={createLegacyRedirect("pre-planning", "pre-planning")} />
-      <Route path="/engagement/:id/planning" component={createLegacyRedirect("planning", "planning")} />
-      <Route path="/engagement/:id/execution" component={createLegacyRedirect("execution", "execution")} />
-      <Route path="/engagement/:id/controls" component={createLegacyRedirect("controls", "execution")} />
-      <Route path="/engagement/:id/substantive" component={createLegacyRedirect("substantive", "execution")} />
-      <Route path="/engagement/:id/analytical" component={createLegacyRedirect("analytical", "execution")} />
+      {/* Legacy routes - redirect to canonical workspace slugs */}
+      <Route path="/engagement/:id/information-requisition" component={createLegacyRedirect("information-requisition", "tb-gl-upload")} />
+      <Route path="/engagement/:id/pre-planning" component={createLegacyRedirect("pre-planning", "acceptance")} />
+      <Route path="/engagement/:id/planning" component={createLegacyRedirect("planning", "materiality")} />
+      <Route path="/engagement/:id/execution" component={createLegacyRedirect("execution", "execution-testing")} />
+      <Route path="/engagement/:id/controls" component={createLegacyRedirect("controls", "execution-testing")} />
+      <Route path="/engagement/:id/substantive" component={createLegacyRedirect("substantive", "execution-testing")} />
+      <Route path="/engagement/:id/analytical" component={createLegacyRedirect("analytical", "execution-testing")} />
       <Route path="/engagement/:id/finalization" component={createLegacyRedirect("finalization", "finalization")} />
-      <Route path="/engagement/:id/print" component={createLegacyRedirect("print", "deliverables")} />
+      <Route path="/engagement/:id/print" component={createLegacyRedirect("print", "opinion-reports")} />
       <Route path="/engagement/:id/eqcr" component={createLegacyRedirect("eqcr", "eqcr")} />
-      <Route path="/engagement/:id/evidence" component={createLegacyRedirect("evidence", "evidence")} />
+      <Route path="/engagement/:id/evidence" component={createLegacyRedirect("evidence", "evidence-linking")} />
       <Route path="/engagement/:id/inspection" component={createLegacyRedirect("inspection", "inspection")} />
-      <Route path="/engagement/:id/onboarding" component={createLegacyRedirect("onboarding", "onboarding")} />
-      <Route path="/engagement/:id/control" component={createLegacyRedirect("control", "control")} />
-      <Route path="/engagement/:id/ethics" component={createLegacyRedirect("ethics", "ethics")} />
-      <Route path="/engagement/:id/tb-review" component={createLegacyRedirect("tb-review", "tb-review")} />
-      <Route path="/engagement/:id/fs-heads" component={createLegacyRedirect("fs-heads", "fs-heads")} />
+      <Route path="/engagement/:id/onboarding" component={createLegacyRedirect("onboarding", "acceptance")} />
+      <Route path="/engagement/:id/control" component={createLegacyRedirect("control", "acceptance")} />
+      <Route path="/engagement/:id/ethics" component={createLegacyRedirect("ethics", "independence")} />
+      <Route path="/engagement/:id/tb-review" component={createLegacyRedirect("tb-review", "validation")} />
+      <Route path="/engagement/:id/fs-heads" component={createLegacyRedirect("fs-heads", "coa-mapping")} />
 
       <Route path="/engagement/:id/observations" component={createLegacyRedirect("observations", "observations")} />
-      <Route path="/engagement/:id/outputs" component={createLegacyRedirect("outputs", "outputs")} />
-      <Route path="/engagement/:id/deliverables" component={createLegacyRedirect("deliverables", "deliverables")} />
-      <Route path="/engagement/:id/evidence-vault" component={createLegacyRedirect("evidence-vault", "evidence")} />
-      <Route path="/engagement/:id/audit-health" component={createLegacyRedirect("audit-health", "audit-health")} />
-      <Route path="/engagement/:id/workflow-health" component={createLegacyRedirect("workflow-health", "workflow-health")} />
-      <Route path="/engagement/:id/post-upload-workflow" component={createLegacyRedirect("post-upload-workflow", "post-upload-workflow")} />
-      <Route path="/engagement/:id/qcr-dashboard" component={createLegacyRedirect("qcr-dashboard", "qcr-dashboard")} />
-      <Route path="/engagement/:id/import" component={createLegacyRedirect("import", "import")} />
-      <Route path="/engagement/:id/requisition" component={createLegacyRedirect("requisition", "requisition")} />
+      <Route path="/engagement/:id/outputs" component={createLegacyRedirect("outputs", "opinion-reports")} />
+      <Route path="/engagement/:id/deliverables" component={createLegacyRedirect("deliverables", "opinion-reports")} />
+      <Route path="/engagement/:id/evidence-vault" component={createLegacyRedirect("evidence-vault", "evidence-linking")} />
+      <Route path="/engagement/:id/audit-health" component={createLegacyRedirect("audit-health", "execution-testing")} />
+      <Route path="/engagement/:id/workflow-health" component={createLegacyRedirect("workflow-health", "execution-testing")} />
+      <Route path="/engagement/:id/post-upload-workflow" component={createLegacyRedirect("post-upload-workflow", "validation")} />
+      <Route path="/engagement/:id/qcr-dashboard" component={createLegacyRedirect("qcr-dashboard", "inspection")} />
+      <Route path="/engagement/:id/import" component={createLegacyRedirect("import", "tb-gl-upload")} />
+      <Route path="/engagement/:id/requisition" component={createLegacyRedirect("requisition", "tb-gl-upload")} />
       
       {/* Standalone workspace routes - redirect to engagements (require engagement context) */}
       <Route path="/pre-planning">

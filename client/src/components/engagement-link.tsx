@@ -42,7 +42,7 @@ export function EngagementLink({
         
         switchToEngagement(engagementId, false);
         
-        navigate(`/workspace/${engagementId}/pre-planning`);
+        navigate(data.resumeRoute || `/workspace/${engagementId}/acceptance`);
       } else if (response.status === 404) {
         const startResponse = await fetchWithAuth(`/api/engagements/${engagementId}/start`, {
           method: "POST",
@@ -59,7 +59,7 @@ export function EngagementLink({
           }
           
           switchToEngagement(engagementId, false);
-          navigate(`/workspace/${engagementId}/pre-planning`);
+          navigate(`/workspace/${engagementId}/acceptance`);
         } else {
           throw new Error("Failed to start engagement");
         }
@@ -76,7 +76,7 @@ export function EngagementLink({
       console.error("EngagementLink error:", error);
       if (clientId) switchToClient(clientId);
       switchToEngagement(engagementId, false);
-      navigate(`/workspace/${engagementId}/pre-planning`);
+      navigate(`/workspace/${engagementId}/acceptance`);
     } finally {
       setLoading(false);
     }

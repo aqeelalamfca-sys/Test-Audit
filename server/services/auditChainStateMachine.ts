@@ -1,3 +1,8 @@
+/**
+ * @deprecated LEGACY — replaced by phaseGateEngine.ts (canonical 19-phase system).
+ * This file is retained for backward compatibility with existing routes that reference it.
+ * New code should use phaseGateEngine.ts and shared/phases.ts as the single source of truth.
+ */
 import { prisma } from "../db";
 import type { AuditPhase } from "@prisma/client";
 

@@ -29,10 +29,10 @@ export default function EthicsIndependence() {
   return (
     <div className="page-container">
       <div className="flex items-center gap-4">
-        <Link href={`/workspace/${engagementId}/pre-planning`}>
+        <Link href={`/workspace/${engagementId}/acceptance`}>
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Pre-Planning
+            Back to Acceptance
           </Button>
         </Link>
       </div>

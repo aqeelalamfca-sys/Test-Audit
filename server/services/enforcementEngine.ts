@@ -1,3 +1,8 @@
+/**
+ * @deprecated LEGACY — replaced by phaseGateEngine.ts (canonical 19-phase system).
+ * The enforcement engine's maker-checker and sign-off logic is partially retained
+ * for routes that still consume it. New phase enforcement should use phaseGateEngine.ts.
+ */
 import { prisma } from "../db";
 import type { UserRole, AuditPhase } from "@prisma/client";
 import * as crypto from "crypto";

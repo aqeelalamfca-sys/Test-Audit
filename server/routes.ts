@@ -299,6 +299,69 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/ai/phase/:phaseKey/capabilities", requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { getPhaseAIConfig } = await import("./services/aiPhaseOrchestrator");
+      const config = getPhaseAIConfig(_req.params.phaseKey);
+      if (!config) {
+        return res.status(404).json({ error: "Phase not found or has no AI capabilities" });
+      }
+      res.json(config);
+    } catch (error) {
+      console.error("AI phase capabilities error:", error);
+      res.status(500).json({ error: "Failed to load AI phase capabilities" });
+    }
+  });
+
+  app.get("/api/ai/phases/capabilities", requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { getAllPhaseAIConfigs } = await import("./services/aiPhaseOrchestrator");
+      res.json(getAllPhaseAIConfigs());
+    } catch (error) {
+      console.error("AI phases capabilities error:", error);
+      res.status(500).json({ error: "Failed to load AI phase capabilities" });
+    }
+  });
+
+  app.post("/api/ai/phase/:phaseKey/generate", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { engagementId, capabilityId, additionalContext } = req.body;
+      if (!engagementId || !capabilityId) {
+        return res.status(400).json({ error: "engagementId and capabilityId are required" });
+      }
+      const firmId = req.user!.firmId;
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+      const engagement = await prisma.engagement.findFirst({
+        where: { id: engagementId, firmId },
+      });
+      if (!engagement) {
+        return res.status(404).json({ error: "Engagement not found or access denied" });
+      }
+      if (!["PARTNER", "FIRM_ADMIN"].includes(userRole)) {
+        const membership = await prisma.engagementTeam.findFirst({
+          where: { engagementId, userId },
+        });
+        if (!membership) {
+          return res.status(403).json({ error: "Not a member of this engagement team" });
+        }
+      }
+      const { generatePhaseAIContent } = await import("./services/aiPhaseOrchestrator");
+      const result = await generatePhaseAIContent({
+        engagementId,
+        phaseKey: req.params.phaseKey,
+        capabilityId,
+        additionalContext,
+        firmId,
+      });
+      res.json(result);
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : "AI generation failed";
+      console.error("AI phase generation error:", error);
+      res.status(500).json({ error: errMsg });
+    }
+  });
+
   app.get("/api/workspace/:engagementId/planning", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { engagementId } = req.params;

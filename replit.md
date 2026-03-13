@@ -101,7 +101,23 @@ Key files:
 - `client/src/components/app-sidebar.tsx` — Sidebar with grouped 19-phase navigation
 - `client/src/App.tsx` — All workspace routes (canonical + legacy backward-compat)
 
-Old route slugs (pre-planning, requisition, planning, execution, etc.) are preserved as legacy routes for backward compatibility.
+Old route slugs (pre-planning, requisition, planning, execution, etc.) are preserved as legacy routes that redirect to canonical slugs.
+
+### AI Phase Orchestration
+- `server/services/aiPhaseOrchestrator.ts` — Maps each canonical phase to AI capabilities
+- API: `GET /api/ai/phase/:phaseKey/capabilities`, `GET /api/ai/phases/capabilities`, `POST /api/ai/phase/:phaseKey/generate`
+- Frontend: `client/src/hooks/use-phase-ai.ts` — `usePhaseAI(phaseKey)` hook for phase-aware AI
+- 16 phases have AI capabilities (client-creation, engagement-setup, and inspection do not)
+- Existing AI services retained: `aiService.ts`, `aiCopilotService.ts`, `aiAuditUtilities.ts`
+
+### Legacy Engines (Deprecated, Retained)
+- `server/services/auditChainStateMachine.ts` — @deprecated, use phaseGateEngine.ts
+- `server/services/enforcementEngine.ts` — @deprecated, use phaseGateEngine.ts
+- `server/services/workflowOrchestrator.ts` — @deprecated, use phaseGateEngine.ts
+- `server/services/phaseEngine.ts` — @deprecated, use phaseGateEngine.ts
+
+### Cleanup Report
+- Full cleanup report at `docs/CLEANUP_REPORT.md`
 
 ## Feature Status
 
