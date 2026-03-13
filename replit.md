@@ -211,6 +211,15 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - **AI capabilities**: execution-documentation-narration, test-result-summary, exception-wording, conclusion-draft
 - **Prerequisite**: Procedures & Sampling phase must be complete
 
+### Evidence Linking (Phase 12)
+- **Page**: `client/src/pages/evidence-linking.tsx` — dedicated standalone page with 6 tabs
+- **Tabs**: Dashboard, Evidence Vault, Procedure Linkage, Categorization, Version History, Reviewer Panel
+- **Features**: Phase overview header with 6 stat cards (active files/linked procs/WP links/categorized/sufficient/linkage%), gate warnings for ISA 500/230/220 compliance; evidence-by-source-type breakdown (ISA 500 hierarchy); sufficiency assessment dashboard; missing evidence alerts for unlinked procedures; drag/drop file upload zone; filterable evidence table with source type/sufficiency/phase filters; procedure-evidence linkage matrix showing linked/unlinked status; workpaper-evidence link tracking; categorization with auto-categorize AI button; file version history with supersession tracking; traceability chips showing where each file is used (procedures/workpapers/assertions); reviewer panel with review status/sufficiency ratings/unaddressed comments
+- **Backend**: `server/planningRoutes.ts` — GET `/api/planning/:engagementId/evidence-linking-stats` returns evidence file counts, linked/unlinked procedures, workpaper evidence links, sufficiency ratings, source type breakdown, version stats, by-phase and by-sufficiency breakdowns, and full evidence list with linked procedures/workpapers
+- **Gates**: evidence-linked (hard), evidence-categorized (hard), sufficiency-confirmed (hard), version-history-maintained (soft), reviewer-comments-addressed (soft)
+- **AI capabilities**: evidence-sufficiency-prompts, missing-evidence-alerts, evidence-description-suggestions
+- **Prerequisite**: Execution Testing phase must be complete
+
 ## Feature Status
 
 - ISA 320 Materiality: Complete
@@ -221,6 +230,7 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - Planning Strategy: Complete (7-tab focused view, status overview, prerequisite enforcement, AI support, 4 gates)
 - Procedures & Sampling: Complete (4-tab focused view, risk-procedure matrix, audit program designer, ISA 530 sampling, assertion coverage, 6 gates)
 - Execution Testing: Complete (5-tab focused view, procedure execution, control/substantive testing, workpapers, reviewer panel, 6 gates, 4 AI capabilities)
+- Evidence Linking: Complete (6-tab focused view, evidence vault, procedure linkage, categorization, version history, reviewer panel, 5 gates, 3 AI capabilities)
 - Execution Module: Working paper system with FS head mapping
 - Review Notes: Complete with notifications
 - Document Management: Complete with S3/local storage

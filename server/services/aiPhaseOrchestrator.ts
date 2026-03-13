@@ -346,6 +346,26 @@ const AI_CAPABILITY_REGISTRY: Record<string, PhaseAICapability[]> = {
       isaReference: "ISA 500",
     },
   ],
+  "missing-evidence-alerts": [
+    {
+      id: "missing-evidence-alerts",
+      label: "Identify Missing Evidence",
+      description: "Analyze procedures and workpapers to identify where supporting evidence is missing or insufficient per ISA 500 requirements",
+      promptType: "gap_analysis",
+      requiresContext: ["procedures", "linked_evidence", "risk_levels", "assertions"],
+      isaReference: "ISA 500",
+    },
+  ],
+  "evidence-description-suggestions": [
+    {
+      id: "evidence-description-suggestions",
+      label: "Suggest Evidence Descriptions",
+      description: "Generate appropriate descriptions and categorization for uploaded evidence files based on their content and audit context",
+      promptType: "content_suggestion",
+      requiresContext: ["file_name", "file_type", "procedure_context", "fs_head"],
+      isaReference: "ISA 230",
+    },
+  ],
   "observation-wording": [
     {
       id: "observation-wording",
@@ -457,9 +477,14 @@ For exceptions: provide professional wording including nature, amount, assertion
 For conclusions: summarize test results, evidence obtained, exceptions found, and the overall conclusion on the procedure objective.
 Link every execution item back to: the originating procedure, assessed risk, FS head, and sample item where applicable.`,
 
-  "evidence-linking": `You are assisting with evidence evaluation per ISA 500.
-Focus on sufficiency and appropriateness of audit evidence.
-Consider whether evidence supports the conclusions at assertion level.`,
+  "evidence-linking": `You are assisting with evidence linking and evaluation per ISA 500 (Audit Evidence) and ISA 230 (Audit Documentation).
+Focus on sufficiency and appropriateness of audit evidence for each procedure and assertion.
+For sufficiency assessment: evaluate quantity of evidence relative to risk level — high-risk areas require more extensive evidence.
+For appropriateness assessment: consider source reliability (external > internal), directness (direct > indirect), and form (original > copy).
+ISA 500 source hierarchy: External third-party confirmations > External entity-prepared > Internal with strong controls > Internal with weak controls > Management representations.
+Identify missing evidence gaps: procedures without linked files, high-risk areas with insufficient coverage, assertions without corroborating evidence.
+For evidence descriptions: suggest clear, professional descriptions referencing the procedure, assertion, and FS area the evidence supports.
+Link every evidence file back to: the originating procedure, workpaper, sample item, and FS head where applicable.`,
 
   observations: `You are assisting with audit findings and observations documentation.
 Focus on clear articulation of condition, criteria, cause, and effect.

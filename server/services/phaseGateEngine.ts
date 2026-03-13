@@ -726,15 +726,111 @@ async function evaluateSingleGate(
         break;
       }
 
-      case "evidence-attached":
-      case "evidence-linked":
-      case "evidence-sufficient": {
+      case "evidence-attached": {
         const evidenceCount = await prisma.evidenceFile.count({
           where: { engagementId, phase: "EXECUTION" },
         });
         passed = evidenceCount > 0;
         if (passed) message = `${evidenceCount} evidence file(s) attached`;
         else message = "No evidence files attached for execution";
+        break;
+      }
+
+      case "evidence-linked": {
+        const executedProcs = await prisma.engagementProcedure.findMany({
+          where: { engagementId, status: { in: ["COMPLETED", "IN_PROGRESS"] } },
+          select: { id: true },
+        });
+        const evidenceFiles = await prisma.evidenceFile.findMany({
+          where: { engagementId, phase: "EXECUTION", status: "ACTIVE" },
+          select: { procedureIds: true },
+        });
+        const linkedProcIds = new Set(evidenceFiles.flatMap(e => e.procedureIds));
+        const unlinkedProcs = executedProcs.filter(p => !linkedProcIds.has(p.id));
+        if (executedProcs.length === 0) {
+          passed = true;
+          message = "No executed procedures to link";
+        } else {
+          passed = unlinkedProcs.length === 0;
+          if (passed) message = `All ${executedProcs.length} executed procedure(s) have linked evidence`;
+          else message = `${unlinkedProcs.length} of ${executedProcs.length} executed procedure(s) lack linked evidence`;
+        }
+        break;
+      }
+
+      case "evidence-categorized": {
+        const uncategorizedEvidence = await prisma.evidenceFile.count({
+          where: { engagementId, phase: "EXECUTION", status: "ACTIVE", sourceType: null },
+        });
+        const totalActiveEvidence = await prisma.evidenceFile.count({
+          where: { engagementId, phase: "EXECUTION", status: "ACTIVE" },
+        });
+        if (totalActiveEvidence === 0) {
+          passed = true;
+          message = "No evidence files to categorize";
+        } else {
+          passed = uncategorizedEvidence === 0;
+          if (passed) message = `All ${totalActiveEvidence} evidence file(s) categorized`;
+          else message = `${uncategorizedEvidence} of ${totalActiveEvidence} evidence file(s) missing source type categorization`;
+        }
+        break;
+      }
+
+      case "sufficiency-confirmed": {
+        const highRiskProcs = await prisma.engagementProcedure.findMany({
+          where: { engagementId, status: { in: ["COMPLETED", "IN_PROGRESS"] } },
+          select: { id: true, linkedRiskIds: true },
+        });
+        const assessedRisks = await prisma.assessedRisk.findMany({
+          where: { engagementId, riskOfMaterialMisstatement: { in: ["HIGH", "SIGNIFICANT"] } },
+          select: { id: true },
+        });
+        const highRiskIds = new Set(assessedRisks.map(r => r.id));
+        const highRiskProcedures = highRiskProcs.filter(p => p.linkedRiskIds.some(rid => highRiskIds.has(rid)));
+
+        if (highRiskProcedures.length === 0) {
+          passed = true;
+          message = "No high-risk procedures to assess";
+        } else {
+          const evidenceForProcs = await prisma.evidenceFile.findMany({
+            where: { engagementId, phase: "EXECUTION", status: "ACTIVE" },
+            select: { procedureIds: true, sufficiencyRating: true },
+          });
+          const procsWithInsufficientEvidence = highRiskProcedures.filter(proc => {
+            const linkedEvidence = evidenceForProcs.filter(e => e.procedureIds.includes(proc.id));
+            if (linkedEvidence.length === 0) return true;
+            return linkedEvidence.every(e => !e.sufficiencyRating || e.sufficiencyRating === "INSUFFICIENT" || e.sufficiencyRating === "MARGINAL");
+          });
+          passed = procsWithInsufficientEvidence.length === 0;
+          if (passed) message = `All ${highRiskProcedures.length} high-risk procedure(s) have sufficient evidence`;
+          else message = `${procsWithInsufficientEvidence.length} of ${highRiskProcedures.length} high-risk procedure(s) lack adequate evidence`;
+        }
+        break;
+      }
+
+      case "version-history-maintained": {
+        const supersededWithoutReason = await prisma.evidenceFile.count({
+          where: { engagementId, status: "SUPERSEDED", supersededReason: null },
+        });
+        passed = supersededWithoutReason === 0;
+        if (passed) message = "All superseded files have documented reasons";
+        else message = `${supersededWithoutReason} superseded file(s) lack documented reasons`;
+        break;
+      }
+
+      case "reviewer-comments-addressed": {
+        const evidenceWithUnreviewedNotes = await prisma.evidenceFile.count({
+          where: {
+            engagementId,
+            phase: "EXECUTION",
+            status: "ACTIVE",
+            reviewerNotes: { not: null },
+            reviewedById: null,
+          },
+        });
+        passed = evidenceWithUnreviewedNotes === 0;
+        if (passed) message = "All reviewer comments addressed";
+        else message = `${evidenceWithUnreviewedNotes} evidence file(s) have unaddressed reviewer comments`;
         break;
       }
 

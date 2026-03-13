@@ -1146,6 +1146,230 @@ router.get("/:engagementId/execution-stats", requireAuth, async (req: Authentica
   }
 });
 
+router.get("/:engagementId/evidence-linking-stats", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const engagementId = req.params.engagementId;
+    const [
+      evidenceFiles,
+      workpaperLinks,
+      procedures,
+      workpapers,
+      reviewNotes,
+    ] = await Promise.all([
+      prisma.evidenceFile.findMany({
+        where: { engagementId },
+        select: {
+          id: true,
+          fileName: true,
+          fileType: true,
+          fileSize: true,
+          phase: true,
+          status: true,
+          version: true,
+          sourceType: true,
+          sufficiencyRating: true,
+          reliabilityRating: true,
+          isaRelevance: true,
+          description: true,
+          reviewerNotes: true,
+          reviewedById: true,
+          procedureIds: true,
+          riskIds: true,
+          assertions: true,
+          cycle: true,
+          supersededById: true,
+          supersededReason: true,
+          uploadedDate: true,
+          tags: true,
+          uploadedBy: { select: { id: true, fullName: true } },
+          reviewedBy: { select: { id: true, fullName: true } },
+        },
+      }),
+      prisma.workpaperEvidenceLink.findMany({
+        where: { workpaper: { engagementId } },
+        select: {
+          id: true,
+          workpaperId: true,
+          evidenceFileId: true,
+          crossReference: true,
+          description: true,
+          workpaper: { select: { id: true, workpaperRef: true, procedureId: true } },
+        },
+      }),
+      prisma.engagementProcedure.findMany({
+        where: { engagementId },
+        select: {
+          id: true,
+          title: true,
+          category: true,
+          procedureType: true,
+          status: true,
+          workpaperRef: true,
+          linkedAccountIds: true,
+        },
+      }),
+      prisma.workpaperRegistry.findMany({
+        where: { engagementId },
+        select: { id: true, workpaperRef: true, procedureId: true, status: true },
+      }),
+      prisma.reviewNote.findMany({
+        where: { engagementId, phase: "EXECUTION" },
+        select: { id: true, status: true, severity: true },
+      }),
+    ]);
+
+    const activeEvidence = evidenceFiles.filter(e => e.status === "ACTIVE");
+    const supersededEvidence = evidenceFiles.filter(e => e.status === "SUPERSEDED");
+    const voidedEvidence = evidenceFiles.filter(e => e.status === "VOIDED");
+
+    const linkedProcIds = new Set(activeEvidence.flatMap(e => e.procedureIds));
+    const executedProcs = procedures.filter(p => p.status === "COMPLETED" || p.status === "IN_PROGRESS");
+    const procsWithEvidence = executedProcs.filter(p => linkedProcIds.has(p.id));
+    const procsWithoutEvidence = executedProcs.filter(p => !linkedProcIds.has(p.id));
+
+    const workpapersWithLinks = new Set(workpaperLinks.map(wl => wl.workpaperId));
+    const workpapersLinked = workpapers.filter(w => workpapersWithLinks.has(w.id)).length;
+    const workpapersUnlinked = workpapers.length - workpapersLinked;
+
+    const categorized = activeEvidence.filter(e => e.sourceType !== null).length;
+    const uncategorized = activeEvidence.length - categorized;
+
+    const withSufficiency = activeEvidence.filter(e => e.sufficiencyRating !== null);
+    const sufficientCount = withSufficiency.filter(
+      e => e.sufficiencyRating === "ADEQUATE" || e.sufficiencyRating === "STRONG"
+    ).length;
+    const insufficientCount = withSufficiency.filter(
+      e => e.sufficiencyRating === "INSUFFICIENT" || e.sufficiencyRating === "MARGINAL"
+    ).length;
+    const unratedCount = activeEvidence.length - withSufficiency.length;
+
+    const withReviewerNotes = activeEvidence.filter(e => e.reviewerNotes !== null);
+    const reviewedCount = activeEvidence.filter(e => e.reviewedById !== null).length;
+    const unreviewedWithNotes = withReviewerNotes.filter(e => e.reviewedById === null).length;
+
+    const supersededWithoutReason = supersededEvidence.filter(e => !e.supersededReason).length;
+
+    const byPhase: Record<string, { total: number; active: number; linked: number; categorized: number }> = {};
+    for (const ef of evidenceFiles) {
+      if (!byPhase[ef.phase]) byPhase[ef.phase] = { total: 0, active: 0, linked: 0, categorized: 0 };
+      byPhase[ef.phase].total++;
+      if (ef.status === "ACTIVE") {
+        byPhase[ef.phase].active++;
+        if (ef.procedureIds.length > 0) byPhase[ef.phase].linked++;
+        if (ef.sourceType) byPhase[ef.phase].categorized++;
+      }
+    }
+
+    const bySourceType: Record<string, number> = {};
+    for (const ef of activeEvidence) {
+      const st = ef.sourceType || "UNCATEGORIZED";
+      bySourceType[st] = (bySourceType[st] || 0) + 1;
+    }
+
+    const bySufficiency: Record<string, number> = {};
+    for (const ef of activeEvidence) {
+      const sr = ef.sufficiencyRating || "UNRATED";
+      bySufficiency[sr] = (bySufficiency[sr] || 0) + 1;
+    }
+
+    const totalSize = activeEvidence.reduce((sum, e) => sum + (e.fileSize || 0), 0);
+    const linkagePercent = executedProcs.length > 0 ? Math.round((procsWithEvidence.length / executedProcs.length) * 100) : 100;
+
+    res.json({
+      totalFiles: evidenceFiles.length,
+      activeFiles: activeEvidence.length,
+      supersededFiles: supersededEvidence.length,
+      voidedFiles: voidedEvidence.length,
+      totalSize,
+
+      totalProcedures: procedures.length,
+      executedProcedures: executedProcs.length,
+      procsWithEvidence: procsWithEvidence.length,
+      procsWithoutEvidence: procsWithoutEvidence.length,
+      procsWithoutEvidenceList: procsWithoutEvidence.map(p => ({
+        id: p.id,
+        code: p.category,
+        name: p.title,
+        type: p.procedureType,
+        fsArea: (p.linkedAccountIds && p.linkedAccountIds[0]) || "",
+      })),
+
+      totalWorkpapers: workpapers.length,
+      workpapersLinked,
+      workpapersUnlinked,
+      workpaperLinkCount: workpaperLinks.length,
+
+      categorized,
+      uncategorized,
+
+      sufficientCount,
+      insufficientCount,
+      unratedCount,
+
+      reviewedCount,
+      unreviewedWithNotes,
+      supersededWithoutReason,
+
+      linkagePercent,
+      byPhase,
+      bySourceType,
+      bySufficiency,
+
+      allFilesList: evidenceFiles.map(e => ({
+        id: e.id,
+        fileName: e.fileName,
+        fileType: e.fileType,
+        fileSize: e.fileSize,
+        phase: e.phase,
+        status: e.status,
+        version: e.version,
+        supersededById: e.supersededById,
+        supersededReason: e.supersededReason,
+        uploadedDate: e.uploadedDate,
+        uploadedBy: e.uploadedBy,
+      })),
+
+      evidenceList: activeEvidence.map(e => ({
+        id: e.id,
+        fileName: e.fileName,
+        fileType: e.fileType,
+        fileSize: e.fileSize,
+        phase: e.phase,
+        version: e.version,
+        sourceType: e.sourceType,
+        sufficiencyRating: e.sufficiencyRating,
+        reliabilityRating: e.reliabilityRating,
+        isaRelevance: e.isaRelevance,
+        description: e.description,
+        reviewerNotes: e.reviewerNotes,
+        procedureIds: e.procedureIds,
+        riskIds: e.riskIds,
+        assertions: e.assertions,
+        cycle: e.cycle,
+        tags: e.tags,
+        uploadedDate: e.uploadedDate,
+        uploadedBy: e.uploadedBy,
+        reviewedBy: e.reviewedBy,
+        linkedProcedures: procedures.filter(p => e.procedureIds.includes(p.id)).map(p => ({
+          id: p.id,
+          code: p.category,
+          name: p.title,
+          fsArea: (p.linkedAccountIds && p.linkedAccountIds[0]) || "",
+        })),
+        linkedWorkpapers: workpaperLinks
+          .filter(wl => wl.evidenceFileId === e.id)
+          .map(wl => ({
+            id: wl.workpaper.id,
+            ref: wl.workpaper.workpaperRef,
+            crossReference: wl.crossReference,
+          })),
+      })),
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: "Failed to fetch evidence linking stats", details: error.message });
+  }
+});
+
 router.get("/:engagementId/procedures-stats", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const engagementId = req.params.engagementId;
