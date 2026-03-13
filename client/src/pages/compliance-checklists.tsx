@@ -241,45 +241,18 @@ export default function ComplianceChecklistsPage() {
   }, [checklists]);
 
   return (
-    <div className="page-container">
+    <div className="px-5 py-3 space-y-3 max-w-[1400px] mx-auto w-full">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Compliance Checklists</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Regulatory and statutory compliance checklists for the engagement
-          </p>
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg font-semibold tracking-tight">Compliance Checklists</h1>
+          <span className="text-xs text-muted-foreground">
+            {summary.total} checklist{summary.total !== 1 ? "s" : ""} · {summary.completed}/{summary.items} items done
+          </span>
         </div>
-        <Button onClick={() => setCreateOpen(true)} className="gap-1.5" disabled={availableTypes.length === 0}>
+        <Button onClick={() => setCreateOpen(true)} size="sm" className="gap-1.5" disabled={availableTypes.length === 0}>
           <Plus className="h-4 w-4" />
           Add Checklist
         </Button>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs font-medium text-muted-foreground">Total Checklists</p>
-            <p className="text-2xl font-bold mt-1">{summary.total}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs font-medium text-muted-foreground">Completed</p>
-            <p className="text-2xl font-bold text-green-600 mt-1">{summary.complete}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs font-medium text-muted-foreground">Total Items</p>
-            <p className="text-2xl font-bold mt-1">{summary.items}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs font-medium text-muted-foreground">Items Completed</p>
-            <p className="text-2xl font-bold text-blue-600 mt-1">{summary.completed}</p>
-          </CardContent>
-        </Card>
       </div>
 
       {isLoading ? (
@@ -288,13 +261,13 @@ export default function ComplianceChecklistsPage() {
         </div>
       ) : !checklists || checklists.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <ListChecks className="h-12 w-12 text-muted-foreground/50 mb-3" />
-            <h3 className="text-lg font-semibold">No checklists yet</h3>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">
+          <CardContent className="flex flex-col items-center justify-center py-10">
+            <ListChecks className="h-10 w-10 text-muted-foreground/50 mb-2" />
+            <h3 className="text-base font-semibold">No checklists yet</h3>
+            <p className="text-sm text-muted-foreground mt-1 mb-3">
               Add compliance checklists for regulatory requirements
             </p>
-            <Button onClick={() => setCreateOpen(true)} className="gap-1.5">
+            <Button onClick={() => setCreateOpen(true)} size="sm" className="gap-1.5">
               <Plus className="h-4 w-4" />
               Add Checklist
             </Button>
