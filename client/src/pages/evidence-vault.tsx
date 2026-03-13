@@ -42,7 +42,7 @@ import {
   Lock, Plus, Eye, Trash2, Download, Link2, AlertTriangle,
   ClipboardCheck, Target, CheckCircle2, Sparkles, Upload, Check,
   Pencil, Save, Package, FileSpreadsheet, FileOutput, History, User, ShieldCheck,
-  ArrowUpCircle, ArrowDownCircle
+  ArrowUpCircle, ArrowDownCircle, BookOpen, FileDown, Library
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -168,6 +168,221 @@ function getPhaseLabel(phase: string): string {
     INSPECTION: "Inspection",
   };
   return labels[phase] || phase;
+}
+
+interface VaultTemplate {
+  id: string;
+  fileName: string;
+  category: string;
+  subCategory: string;
+  reference: string;
+  title: string;
+  description: string;
+  fileType: string;
+  phase: string;
+  fsLineItems: string[];
+  isaParagraph: string;
+}
+
+interface VaultCatalogResponse {
+  templates: VaultTemplate[];
+  meta: {
+    totalTemplates: number;
+    filteredCount: number;
+    categories: string[];
+    subCategories: string[];
+  };
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  WORKING_PAPER: "Working Papers",
+  PLANNING: "Planning",
+  REPORTING: "Reports & Letters",
+  CONFIRMATION: "Confirmations",
+  OTHER: "Other",
+  ISQM: "ISQM Documents",
+  ISQM_REFERENCE: "ISQM Reference",
+};
+
+const CATEGORY_COLORS: Record<string, string> = {
+  WORKING_PAPER: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  PLANNING: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+  REPORTING: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+  CONFIRMATION: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+  OTHER: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300",
+  ISQM: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300",
+  ISQM_REFERENCE: "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300",
+};
+
+function TemplateLibraryTab() {
+  const [vaultSearch, setVaultSearch] = useState("");
+  const [vaultCategory, setVaultCategory] = useState("ALL");
+  const [downloading, setDownloading] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const { data: catalogData, isLoading: catalogLoading } = useQuery<VaultCatalogResponse>({
+    queryKey: ["/api/template-vault/catalog"],
+    queryFn: async () => {
+      const res = await fetchWithAuth("/api/template-vault/catalog");
+      if (!res.ok) throw new Error("Failed to load templates");
+      return res.json();
+    },
+  });
+
+  const handleDownload = async (template: VaultTemplate) => {
+    setDownloading(template.id);
+    try {
+      const res = await fetchWithAuth(`/api/template-vault/download/${template.id}`);
+      if (!res.ok) throw new Error("Download failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = template.fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: "Downloaded", description: `${template.fileName} downloaded successfully` });
+    } catch {
+      toast({ title: "Error", description: "Failed to download template", variant: "destructive" });
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  const templates = catalogData?.templates || [];
+  const filtered = templates.filter(t => {
+    if (vaultCategory !== "ALL" && t.category !== vaultCategory) return false;
+    if (vaultSearch) {
+      const term = vaultSearch.toLowerCase();
+      return t.title.toLowerCase().includes(term) || t.reference.toLowerCase().includes(term) || t.description.toLowerCase().includes(term);
+    }
+    return true;
+  });
+
+  const grouped = filtered.reduce<Record<string, VaultTemplate[]>>((acc, t) => {
+    const key = t.subCategory;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(t);
+    return acc;
+  }, {});
+
+  const fileIcon = (type: string) => {
+    if (type === "xlsx") return <FileSpreadsheet className="h-4 w-4 text-green-600" />;
+    if (type === "docx") return <FileText className="h-4 w-4 text-blue-600" />;
+    if (type === "pdf") return <BookOpen className="h-4 w-4 text-red-600" />;
+    return <File className="h-4 w-4 text-gray-500" />;
+  };
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="bg-gradient-to-r from-indigo-50/50 to-transparent dark:from-indigo-950/20 border-b border-border/50 pb-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 flex-shrink-0">
+              <Library className="h-5 w-5" />
+            </div>
+            <div className="space-y-1 min-w-0">
+              <CardTitle className="text-lg">Template Library</CardTitle>
+              <CardDescription>
+                {catalogData?.meta.totalTemplates || 0} standardized working paper templates, confirmation letters, and ISQM documents
+              </CardDescription>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-3 mt-4">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search templates..."
+              value={vaultSearch}
+              onChange={(e) => setVaultSearch(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </div>
+          <Select value={vaultCategory} onValueChange={setVaultCategory}>
+            <SelectTrigger className="w-[200px] h-9">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Categories</SelectItem>
+              <SelectItem value="WORKING_PAPER">Working Papers</SelectItem>
+              <SelectItem value="PLANNING">Planning</SelectItem>
+              <SelectItem value="REPORTING">Reports & Letters</SelectItem>
+              <SelectItem value="CONFIRMATION">Confirmations</SelectItem>
+              <SelectItem value="ISQM">ISQM Documents</SelectItem>
+              <SelectItem value="ISQM_REFERENCE">ISQM Reference</SelectItem>
+              <SelectItem value="OTHER">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-4">
+        {catalogLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <Library className="h-12 w-12 mx-auto mb-3 opacity-30" />
+            <p>No templates found matching your criteria</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([subCat, items]) => (
+              <div key={subCat}>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <FolderOpen className="h-4 w-4" />
+                  {subCat}
+                  <Badge variant="secondary" className="text-xs">{items.length}</Badge>
+                </h3>
+                <div className="grid gap-2">
+                  {items.sort((a, b) => a.reference.localeCompare(b.reference)).map(template => (
+                    <div
+                      key={template.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group"
+                    >
+                      <div className="flex-shrink-0">{fileIcon(template.fileType)}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs text-muted-foreground">{template.reference}</span>
+                          <span className="font-medium text-sm truncate">{template.title}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">{template.description}</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {template.isaParagraph && (
+                          <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">{template.isaParagraph}</Badge>
+                        )}
+                        <Badge className={`text-[10px] ${CATEGORY_COLORS[template.category] || ""}`}>
+                          {CATEGORY_LABELS[template.category] || template.category}
+                        </Badge>
+                        <Badge variant="secondary" className="text-[10px] uppercase">{template.fileType}</Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          disabled={downloading === template.id}
+                          onClick={() => handleDownload(template)}
+                        >
+                          {downloading === template.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <FileDown className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function EvidenceVault() {
@@ -555,6 +770,10 @@ export default function EvidenceVault() {
           <TabsTrigger value="audit-trail" data-testid="tab-audit-trail">
             <History className="h-3.5 w-3.5 mr-1" />
             Audit Trail
+          </TabsTrigger>
+          <TabsTrigger value="template-library" data-testid="tab-template-library">
+            <Library className="h-3.5 w-3.5 mr-1" />
+            Template Library
           </TabsTrigger>
         </TabsList>
 
@@ -1469,6 +1688,10 @@ export default function EvidenceVault() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="template-library">
+          <TemplateLibraryTab />
         </TabsContent>
       </Tabs>
 

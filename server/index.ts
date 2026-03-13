@@ -71,6 +71,7 @@ import isaComplianceRoutes from "./routes/isaComplianceRoutes";
 import auditHealthRoutes from "./routes/auditHealthRoutes";
 import aiCopilotRoutes from "./routes/aiCopilotRoutes";
 import templateRoutes from "./templateRoutes";
+import templateVaultRoutes from "./templateVaultRoutes";
 import importRoutes from "./importRoutes";
 import riskProcedureMappingRoutes from "./routes/riskProcedureMappingRoutes";
 import auditGovernanceRoutes from "./routes/auditGovernanceRoutes";
@@ -425,6 +426,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   app.use("/api/ai/preplanning", preplanningAiRoutes);
 
   app.use("/api/templates", templateRoutes);
+  app.use("/api/template-vault", templateVaultRoutes);
   app.use("/api/import", importRoutes);
   app.use("/api/risk-procedure", riskProcedureMappingRoutes);
   app.use("/api/governance", auditGovernanceRoutes);
