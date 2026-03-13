@@ -46,6 +46,7 @@ const Finalization = lazy(() => retryImport(() => import("@/pages/finalization")
 const ComplianceChecklists = lazy(() => retryImport(() => import("@/pages/compliance-checklists")));
 const Execution = lazy(() => retryImport(() => import("@/pages/execution")));
 const ProceduresSampling = lazy(() => retryImport(() => import("@/pages/procedures-sampling")));
+const ExecutionTesting = lazy(() => retryImport(() => import("@/pages/execution-testing")));
 const ImportWizard = lazy(() => retryImport(() => import("@/pages/import-wizard")));
 const NewEngagement = lazy(() => retryImport(() => import("@/pages/new-engagement")));
 const EngagementDetail = lazy(() => retryImport(() => import("@/pages/engagement-detail")));
@@ -306,7 +307,7 @@ const ShelledMateriality = createShelledComponent(Planning, "Materiality", "mate
 const ShelledRiskAssessment = createShelledComponent(Planning, "RiskAssessment", "risk-assessment");
 const ShelledPlanningStrategy = createShelledComponent(Planning, "PlanningStrategy", "planning-strategy");
 const ShelledProceduresSampling = createShelledComponent(ProceduresSampling, "ProceduresSampling", "procedures-sampling");
-const ShelledExecutionTesting = createShelledComponent(Execution, "ExecutionTesting", "execution-testing");
+const ShelledExecutionTesting = createShelledComponent(ExecutionTesting, "ExecutionTesting", "execution-testing");
 const ShelledEvidenceLinking = createShelledComponent(EvidenceVault, "EvidenceLinking", "evidence-linking");
 const ShelledObservations = createShelledComponent(Observations, "Observations", "observations");
 const ShelledAdjustments = createShelledComponent(Finalization, "Adjustments", "adjustments");

@@ -306,6 +306,36 @@ const AI_CAPABILITY_REGISTRY: Record<string, PhaseAICapability[]> = {
       isaReference: "ISA 230",
     },
   ],
+  "test-result-summary": [
+    {
+      id: "test-result-summary",
+      label: "Summarize Test Results",
+      description: "Generate a professional summary of test results for a procedure or FS head, including pass/fail ratios and key observations",
+      promptType: "procedure_narrative",
+      requiresContext: ["procedure_type", "test_results", "pass_fail_counts", "fs_head"],
+      isaReference: "ISA 330",
+    },
+  ],
+  "exception-wording": [
+    {
+      id: "exception-wording",
+      label: "Draft Exception Wording",
+      description: "Generate professional exception and misstatement wording for audit findings, including impact assessment and recommended actions",
+      promptType: "observation_narrative",
+      requiresContext: ["exception_type", "amount", "assertion", "fs_head", "materiality"],
+      isaReference: "ISA 450",
+    },
+  ],
+  "conclusion-draft": [
+    {
+      id: "conclusion-draft",
+      label: "Draft Procedure Conclusion",
+      description: "Generate a conclusion for a completed audit procedure based on test results, exceptions found, and evidence obtained",
+      promptType: "procedure_narrative",
+      requiresContext: ["procedure_type", "test_results", "exceptions", "evidence_summary", "fs_head", "risk_level"],
+      isaReference: "ISA 230",
+    },
+  ],
   "evidence-sufficiency-prompts": [
     {
       id: "evidence-sufficiency-prompts",
@@ -418,9 +448,14 @@ For sampling: define populations clearly, select appropriate methods (statistica
 Flag any high-risk areas without procedures, assertions without coverage, and sampling-dependent procedures without defined populations.
 Consider the procedure library for standard templates and allow custom procedures for entity-specific needs.`,
 
-  "execution-testing": `You are assisting with audit execution documentation per ISA 230.
-Focus on clear documentation of procedures performed, results obtained, and conclusions drawn.
-Ensure workpaper narration supports the audit evidence chain.`,
+  "execution-testing": `You are assisting with audit execution and testing per ISA 230/330/500/530.
+Help auditors document procedures performed, test steps executed, results obtained, and conclusions drawn.
+For control testing (ISA 330.8): document tests of operating effectiveness, assess design and implementation, record deviations and their impact on planned reliance.
+For substantive testing (ISA 330.18): document tests of details, analytical procedures, sample items tested, pass/fail/exception outcomes, and misstatements found.
+For workpaper narration: ensure clear, sufficient documentation per ISA 230 supporting the audit evidence chain — who performed, what was done, results, and conclusion.
+For exceptions: provide professional wording including nature, amount, assertion affected, impact assessment, and whether the misstatement exceeds performance materiality.
+For conclusions: summarize test results, evidence obtained, exceptions found, and the overall conclusion on the procedure objective.
+Link every execution item back to: the originating procedure, assessed risk, FS head, and sample item where applicable.`,
 
   "evidence-linking": `You are assisting with evidence evaluation per ISA 500.
 Focus on sufficiency and appropriateness of audit evidence.

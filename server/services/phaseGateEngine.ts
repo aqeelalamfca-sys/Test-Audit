@@ -641,22 +641,104 @@ async function evaluateSingleGate(
         break;
       }
 
-      case "procedures-executed":
-      case "workpapers-documented": {
-        passed = isBackendPhaseActive(statusMap, "EXECUTION");
-        if (passed) message = "Execution phase active";
+      case "procedures-executed": {
+        const totalExecProcs = await prisma.engagementProcedure.count({
+          where: { engagementId },
+        });
+        const notStartedProcs = await prisma.engagementProcedure.count({
+          where: { engagementId, status: "NOT_STARTED" },
+        });
+        if (totalExecProcs === 0) {
+          passed = false;
+          message = "No procedures assigned for execution";
+        } else {
+          passed = notStartedProcs === 0;
+          if (passed) message = `All ${totalExecProcs} procedures have been executed`;
+          else message = `${notStartedProcs}/${totalExecProcs} procedures still NOT_STARTED`;
+        }
         break;
       }
 
+      case "workpapers-documented": {
+        const totalWpProcs = await prisma.engagementProcedure.count({
+          where: { engagementId },
+        });
+        const procsWithWp = await prisma.engagementProcedure.count({
+          where: { engagementId, workpaperRef: { not: null } },
+        });
+        if (totalWpProcs === 0) {
+          passed = false;
+          message = "No procedures to document";
+        } else {
+          passed = procsWithWp >= totalWpProcs * 0.8;
+          if (passed) message = `${procsWithWp}/${totalWpProcs} procedures have workpaper references`;
+          else message = `${procsWithWp}/${totalWpProcs} procedures documented (80% required)`;
+        }
+        break;
+      }
+
+      case "critical-exceptions-resolved": {
+        const unresolvedMisstatements = await prisma.misstatement.count({
+          where: {
+            engagementId,
+            status: "IDENTIFIED",
+          },
+        });
+        passed = unresolvedMisstatements === 0;
+        if (passed) message = "No unresolved critical exceptions";
+        else message = `${unresolvedMisstatements} unresolved misstatement(s) require attention`;
+        break;
+      }
+
+      case "conclusions-documented": {
+        const completedProcsForConc = await prisma.engagementProcedure.count({
+          where: { engagementId, status: "COMPLETED" },
+        });
+        const completedWithConclusion = await prisma.engagementProcedure.count({
+          where: { engagementId, status: "COMPLETED", conclusion: { not: null } },
+        });
+        if (completedProcsForConc === 0) {
+          passed = true;
+          message = "No completed procedures yet";
+        } else {
+          passed = completedWithConclusion >= completedProcsForConc;
+          if (passed) message = `All ${completedProcsForConc} completed procedures have conclusions`;
+          else message = `${completedWithConclusion}/${completedProcsForConc} completed procedures have conclusions`;
+        }
+        break;
+      }
+
+      case "review-notes-cleared": {
+        const totalReviewNotes = await prisma.reviewNote.count({
+          where: { engagementId, phase: "EXECUTION" },
+        });
+        const resolvedNotes = await prisma.reviewNote.count({
+          where: { engagementId, phase: "EXECUTION", status: { in: ["ADDRESSED", "CLEARED"] } },
+        });
+        if (totalReviewNotes === 0) {
+          passed = true;
+          message = "No review notes for execution";
+        } else {
+          passed = resolvedNotes >= totalReviewNotes * 0.75;
+          if (passed) message = `${resolvedNotes}/${totalReviewNotes} review notes resolved`;
+          else message = `${resolvedNotes}/${totalReviewNotes} review notes resolved (75% required)`;
+        }
+        break;
+      }
+
+      case "evidence-attached":
       case "evidence-linked":
       case "evidence-sufficient": {
-        passed = isBackendPhaseActive(statusMap, "EXECUTION");
-        if (passed) message = "Execution phase active";
+        const evidenceCount = await prisma.evidenceFile.count({
+          where: { engagementId, phase: "EXECUTION" },
+        });
+        passed = evidenceCount > 0;
+        if (passed) message = `${evidenceCount} evidence file(s) attached`;
+        else message = "No evidence files attached for execution";
         break;
       }
 
-      case "critical-findings-resolved":
-      case "review-notes-cleared": {
+      case "critical-findings-resolved": {
         passed = isBackendPhaseActive(statusMap, "EXECUTION");
         if (passed) message = "Execution phase active";
         break;

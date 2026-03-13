@@ -202,6 +202,15 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - **AI capabilities**: procedure-suggestions, sample-rationale-wording, missing-procedure-coverage
 - **Prerequisite**: Planning strategy phase must be complete
 
+### Execution Testing (Phase 11)
+- **Page**: `client/src/pages/execution-testing.tsx` — dedicated standalone page with 5 tabs
+- **Tabs**: Dashboard, Procedures, Testing, Workpapers, Review
+- **Features**: Phase overview header with 6 stat cards (total/completed/in-progress/not-started/workpapers/exceptions), execution % composite, gate warnings for ISA 230/330/450/500/220 compliance; FS area execution progress; per-procedure detail with risk/assertion/sample linkage; control vs substantive testing breakdown; workpaper documentation status with missing workpaper alerts; reviewer panel with awaiting-review/missing-conclusions/review-note tracking
+- **Backend**: `server/planningRoutes.ts` — GET `/api/planning/:engagementId/execution-stats` returns procedure execution progress, test counts, misstatements, review notes, evidence files, FS area execution breakdown, and full procedure details
+- **Gates**: procedures-executed (hard), workpapers-documented (hard), critical-exceptions-resolved (hard), conclusions-documented (hard), review-notes-cleared (soft), evidence-attached (soft)
+- **AI capabilities**: execution-documentation-narration, test-result-summary, exception-wording, conclusion-draft
+- **Prerequisite**: Procedures & Sampling phase must be complete
+
 ## Feature Status
 
 - ISA 320 Materiality: Complete
@@ -211,6 +220,7 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - Risk Assessment: Complete (8-tab focused view, status overview, AI support, 7 gates)
 - Planning Strategy: Complete (7-tab focused view, status overview, prerequisite enforcement, AI support, 4 gates)
 - Procedures & Sampling: Complete (4-tab focused view, risk-procedure matrix, audit program designer, ISA 530 sampling, assertion coverage, 6 gates)
+- Execution Testing: Complete (5-tab focused view, procedure execution, control/substantive testing, workpapers, reviewer panel, 6 gates, 4 AI capabilities)
 - Execution Module: Working paper system with FS head mapping
 - Review Notes: Complete with notifications
 - Document Management: Complete with S3/local storage
