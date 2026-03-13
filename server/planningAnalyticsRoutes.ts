@@ -1,6 +1,7 @@
 import { Router, Response } from "express";
 import { prisma } from "./db";
 import { requireAuth, type AuthenticatedRequest } from "./auth";
+import { requirePhaseUnlocked } from "./middleware/auditLock";
 import type { 
   PlanningAnalyticsResult, 
   FsHeadExpectation, 
@@ -192,7 +193,7 @@ function getPossibleCauses(fsHeadKey: string, movementPct: number): string[] {
   ].slice(0, 3);
 }
 
-router.post("/:engagementId/analyze", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post("/:engagementId/analyze", requireAuth, requirePhaseUnlocked("PLANNING"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { engagementId } = req.params;
     const firmId = req.user!.firmId;
@@ -204,7 +205,7 @@ router.post("/:engagementId/analyze", requireAuth, async (req: AuthenticatedRequ
     const engagement = await prisma.engagement.findFirst({
       where: { id: engagementId, firmId },
       include: {
-        planningData: true,
+        planningMemo: true,
         client: true
       }
     });
@@ -212,6 +213,13 @@ router.post("/:engagementId/analyze", requireAuth, async (req: AuthenticatedRequ
     if (!engagement) {
       return res.status(404).json({ error: "Engagement not found" });
     }
+
+    let planningData: any = {};
+    try {
+      if (engagement.planningMemo?.teamBriefingNotes) {
+        planningData = JSON.parse(engagement.planningMemo.teamBriefingNotes);
+      }
+    } catch { planningData = {}; }
 
     const tbAccounts = await prisma.coAAccount.findMany({
       where: { engagementId },
@@ -226,7 +234,7 @@ router.post("/:engagementId/analyze", requireAuth, async (req: AuthenticatedRequ
       }
     });
 
-    const materialityData = engagement.planningData?.materiality as any;
+    const materialityData = planningData?.isa320MaterialityAnalysis?.step4_materialityLevels || planningData?.materiality as any;
     const overallMateriality = materialityData?.overallMateriality || 100000;
     const performanceMateriality = materialityData?.performanceMateriality || overallMateriality * 0.75;
 
@@ -449,16 +457,21 @@ router.post("/:engagementId/analyze", requireAuth, async (req: AuthenticatedRequ
       riskMatrixUpdatesCount: riskMatrixUpdates.length
     };
 
-    await prisma.engagement.update({
-      where: { id: engagementId },
-      data: {
-        planningData: {
-          update: {
-            analyticalProcedures: result as any
-          }
+    const updatedPlanningData = { ...planningData, analyticalProcedures: result };
+    if (engagement.planningMemo) {
+      await prisma.planningMemo.update({
+        where: { id: engagement.planningMemo.id },
+        data: { teamBriefingNotes: JSON.stringify(updatedPlanningData) }
+      });
+    } else {
+      await prisma.planningMemo.create({
+        data: {
+          engagementId,
+          preparedById: req.user!.id,
+          teamBriefingNotes: JSON.stringify(updatedPlanningData)
         }
-      }
-    });
+      });
+    }
 
     res.json(result);
   } catch (error) {
@@ -478,14 +491,20 @@ router.get("/:engagementId", requireAuth, async (req: AuthenticatedRequest, res:
 
     const engagement = await prisma.engagement.findFirst({
       where: { id: engagementId, firmId },
-      include: { planningData: true }
+      include: { planningMemo: true }
     });
 
     if (!engagement) {
       return res.status(404).json({ error: "Engagement not found" });
     }
 
-    const analyticalProcedures = engagement.planningData?.analyticalProcedures as PlanningAnalyticsResult | null;
+    let analyticalProcedures: PlanningAnalyticsResult | null = null;
+    try {
+      if (engagement.planningMemo?.teamBriefingNotes) {
+        const pd = JSON.parse(engagement.planningMemo.teamBriefingNotes);
+        analyticalProcedures = pd?.analyticalProcedures || null;
+      }
+    } catch { analyticalProcedures = null; }
 
     if (!analyticalProcedures) {
       return res.json(null);
@@ -498,7 +517,7 @@ router.get("/:engagementId", requireAuth, async (req: AuthenticatedRequest, res:
   }
 });
 
-router.post("/:engagementId/update-risk-matrix", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post("/:engagementId/update-risk-matrix", requireAuth, requirePhaseUnlocked("PLANNING"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { engagementId } = req.params;
     const { riskMatrixUpdates } = req.body as { riskMatrixUpdates: RiskMatrixUpdate[] };
@@ -510,14 +529,21 @@ router.post("/:engagementId/update-risk-matrix", requireAuth, async (req: Authen
 
     const engagement = await prisma.engagement.findFirst({
       where: { id: engagementId, firmId },
-      include: { planningData: true }
+      include: { planningMemo: true }
     });
 
     if (!engagement) {
       return res.status(404).json({ error: "Engagement not found" });
     }
 
-    const existingRiskMatrix = (engagement.planningData?.riskAssessment as any)?.assertionLevelRisks || [];
+    let engPlanningData: any = {};
+    try {
+      if (engagement.planningMemo?.teamBriefingNotes) {
+        engPlanningData = JSON.parse(engagement.planningMemo.teamBriefingNotes);
+      }
+    } catch { engPlanningData = {}; }
+
+    const existingRiskMatrix = (engPlanningData?.riskAssessment as any)?.assertionLevelRisks || [];
 
     const updatedMatrix = existingRiskMatrix.map((risk: any) => {
       const update = riskMatrixUpdates.find(u => 
@@ -561,20 +587,28 @@ router.post("/:engagementId/update-risk-matrix", requireAuth, async (req: Authen
 
     const finalMatrix = [...updatedMatrix, ...newRisks];
 
-    await prisma.engagement.update({
-      where: { id: engagementId },
-      data: {
-        planningData: {
-          update: {
-            riskAssessment: {
-              ...(engagement.planningData?.riskAssessment as any),
-              assertionLevelRisks: finalMatrix,
-              analyticsUpdatedAt: new Date().toISOString()
-            }
-          }
-        }
+    const updatedRiskData = {
+      ...engPlanningData,
+      riskAssessment: {
+        ...(engPlanningData?.riskAssessment || {}),
+        assertionLevelRisks: finalMatrix,
+        analyticsUpdatedAt: new Date().toISOString()
       }
-    });
+    };
+    if (engagement.planningMemo) {
+      await prisma.planningMemo.update({
+        where: { id: engagement.planningMemo.id },
+        data: { teamBriefingNotes: JSON.stringify(updatedRiskData) }
+      });
+    } else {
+      await prisma.planningMemo.create({
+        data: {
+          engagementId,
+          preparedById: req.user!.id,
+          teamBriefingNotes: JSON.stringify(updatedRiskData)
+        }
+      });
+    }
 
     const updatedCount = updatedMatrix.filter((r: any, i: number) => 
       JSON.stringify(r) !== JSON.stringify(existingRiskMatrix[i])

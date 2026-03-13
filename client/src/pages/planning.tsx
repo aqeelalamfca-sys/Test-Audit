@@ -2197,7 +2197,8 @@ export default function Planning() {
       pbt, revenue, assets, equity,
       overallMateriality: selectedAmount,
       performanceMateriality: selectedAmount * 0.75,
-      trivialThreshold: selectedAmount * 0.75 * 0.05
+      specificMateriality: selectedAmount * 0.5,
+      trivialThreshold: selectedAmount * 0.05
     };
   }, [trialBalance, materiality]);
 
@@ -5825,9 +5826,17 @@ export default function Planning() {
                       <span className="text-lg font-semibold">{formatAccounting(materialityCalc.performanceMateriality)}</span>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-background rounded-lg">
-                      <span>Trivial Threshold (5% of PM)</span>
+                      <span>Specific Materiality (50% of OM)</span>
+                      <span className="text-lg font-semibold">{formatAccounting(materialityCalc.overallMateriality * 0.5)}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-background rounded-lg">
+                      <span>Clearly Trivial Threshold (5% of OM)</span>
                       <span className="font-medium">{formatAccounting(materialityCalc.trivialThreshold)}</span>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Specific materiality applies to sensitive classes (e.g., Directors' Remuneration, Related Party Transactions). 
+                      Clearly trivial threshold per ISA 450.A2 — misstatements below this amount need not be accumulated.
+                    </p>
                   </CardContent>
                 </Card>
               </div>

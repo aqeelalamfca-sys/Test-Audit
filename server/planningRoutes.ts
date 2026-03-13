@@ -297,6 +297,7 @@ router.post("/:engagementId/materiality/calculate", requireAuth, requirePhaseUnl
     
     const overallMateriality = amount * (pct / 100);
     const performanceMateriality = overallMateriality * 0.75;
+    const specificMateriality = overallMateriality * 0.5;
     const amptThreshold = overallMateriality * 0.05;
 
     res.json({
@@ -306,6 +307,7 @@ router.post("/:engagementId/materiality/calculate", requireAuth, requirePhaseUnl
       suggestedRange: range,
       overallMateriality: Math.round(overallMateriality),
       performanceMateriality: Math.round(performanceMateriality),
+      specificMateriality: Math.round(specificMateriality),
       amptThreshold: Math.round(amptThreshold),
       isaReference: "ISA 320",
     });
@@ -2361,6 +2363,7 @@ router.post("/:engagementId/materiality-optimization", requireAuth, requirePhase
     
     const overallMateriality = Math.round(benchmarkAmount * (recommendedPercentage / 100));
     const performanceMateriality = Math.round(overallMateriality * (performanceMatPercentage / 100));
+    const specificMateriality = Math.round(overallMateriality * 0.5);
     const amptThreshold = Math.round(overallMateriality * 0.05);
 
     res.json({
@@ -2370,6 +2373,7 @@ router.post("/:engagementId/materiality-optimization", requireAuth, requirePhase
         percentage: recommendedPercentage,
         overallMateriality,
         performanceMateriality,
+        specificMateriality,
         performanceMatPercentage,
         amptThreshold,
         rationale,
