@@ -283,6 +283,9 @@ export default function Planning() {
     }
   };
 
+  const safeNum = (v: string | undefined | null): number =>
+    parseFloat(String(v ?? '').replace(/,/g, '')) || 0;
+
   // Section 0: Trial Balance Data
   const [trialBalance, setTrialBalance] = useState({
     fileUploaded: false,
@@ -2182,10 +2185,10 @@ export default function Planning() {
 
   // Materiality calculations (auto-calc from TB)
   const materialityCalc = useMemo(() => {
-    const pbt = parseFloat(trialBalance.profitBeforeTax.replace(/,/g, '')) || 0;
-    const revenue = parseFloat(trialBalance.revenue.replace(/,/g, '')) || 0;
-    const assets = parseFloat(trialBalance.totalAssets.replace(/,/g, '')) || 0;
-    const equity = parseFloat(trialBalance.totalEquity.replace(/,/g, '')) || 0;
+    const pbt = safeNum(trialBalance.profitBeforeTax);
+    const revenue = safeNum(trialBalance.revenue);
+    const assets = safeNum(trialBalance.totalAssets);
+    const equity = safeNum(trialBalance.totalEquity);
     const pct = parseFloat(materiality.benchmarkPercentage) / 100;
 
     let selectedAmount = 0;
@@ -2205,10 +2208,10 @@ export default function Planning() {
 
   // Computed Analytical Data from Trial Balance
   const analyticalCalc = useMemo(() => {
-    const revenue = parseFloat(trialBalance.revenue.replace(/,/g, '')) || 0;
-    const assets = parseFloat(trialBalance.totalAssets.replace(/,/g, '')) || 0;
-    const equity = parseFloat(trialBalance.totalEquity.replace(/,/g, '')) || 0;
-    const pbt = parseFloat(trialBalance.profitBeforeTax.replace(/,/g, '')) || 0;
+    const revenue = safeNum(trialBalance.revenue);
+    const assets = safeNum(trialBalance.totalAssets);
+    const equity = safeNum(trialBalance.totalEquity);
+    const pbt = safeNum(trialBalance.profitBeforeTax);
 
     // Calculate derived metrics from available data
     const grossMargin = revenue > 0 ? (pbt / revenue) * 100 : 0;
@@ -2325,10 +2328,10 @@ export default function Planning() {
   // Auto-calculate ratios from B.S and P&L data
   const calculatedRatios = useMemo(() => {
     // Current Year Data (from trialBalance and derived)
-    const revenue = parseFloat(trialBalance.revenue.replace(/,/g, '')) || 0;
-    const totalAssets = parseFloat(trialBalance.totalAssets.replace(/,/g, '')) || 0;
-    const totalEquity = parseFloat(trialBalance.totalEquity.replace(/,/g, '')) || 0;
-    const pbt = parseFloat(trialBalance.profitBeforeTax.replace(/,/g, '')) || 0;
+    const revenue = safeNum(trialBalance.revenue);
+    const totalAssets = safeNum(trialBalance.totalAssets);
+    const totalEquity = safeNum(trialBalance.totalEquity);
+    const pbt = safeNum(trialBalance.profitBeforeTax);
     
     // Estimated current year values (can be refined with actual data)
     const costOfSales = revenue * 0.6; // Estimate 60% CoS if not available
@@ -2344,16 +2347,15 @@ export default function Planning() {
     const currentLiabilities = totalLiabilities * 0.5; // Estimate 50% current
     
     // Prior Year Data
-    const priorRevenue = parseFloat(fsPriorYear.revenue.replace(/,/g, '')) || 0;
-    const priorCostOfSales = parseFloat(fsPriorYear.costOfSales.replace(/,/g, '')) || 0;
+    const priorRevenue = safeNum(fsPriorYear.revenue);
+    const priorCostOfSales = safeNum(fsPriorYear.costOfSales);
     const priorGrossProfit = priorRevenue - priorCostOfSales;
-    const priorInventory = parseFloat(fsPriorYear.inventories.replace(/,/g, '')) || 0;
-    const priorReceivables = parseFloat(fsPriorYear.tradeReceivables.replace(/,/g, '')) || 0;
-    const priorCash = parseFloat(fsPriorYear.cashBankBalances.replace(/,/g, '')) || 0;
-    const priorPPE = parseFloat(fsPriorYear.propertyPlantEquipment.replace(/,/g, '')) || 0;
-    const priorIntangibles = parseFloat(fsPriorYear.intangibleAssets.replace(/,/g, '')) || 0;
-    const priorEquity = (parseFloat(fsPriorYear.shareCapital.replace(/,/g, '')) || 0) + 
-                        (parseFloat(fsPriorYear.retainedEarnings.replace(/,/g, '')) || 0);
+    const priorInventory = safeNum(fsPriorYear.inventories);
+    const priorReceivables = safeNum(fsPriorYear.tradeReceivables);
+    const priorCash = safeNum(fsPriorYear.cashBankBalances);
+    const priorPPE = safeNum(fsPriorYear.propertyPlantEquipment);
+    const priorIntangibles = safeNum(fsPriorYear.intangibleAssets);
+    const priorEquity = safeNum(fsPriorYear.shareCapital) + safeNum(fsPriorYear.retainedEarnings);
     const priorTotalAssets = priorPPE + priorIntangibles + priorInventory + priorReceivables + priorCash;
     
     // Helper to format ratio
@@ -5762,9 +5764,9 @@ export default function Planning() {
                     disabled={!draftFsData && !trialBalance.fileUploaded}
                     title={!draftFsData && !trialBalance.fileUploaded ? "Upload Trial Balance data first to calculate materiality" : "Calculate materiality thresholds"}
                     onClick={() => {
-                      const pbt = parseFloat(trialBalance.profitBeforeTax.replace(/,/g, '')) || 0;
-                      const rev = parseFloat(trialBalance.revenue.replace(/,/g, '')) || 0;
-                      const assets = parseFloat(trialBalance.totalAssets.replace(/,/g, '')) || 0;
+                      const pbt = safeNum(trialBalance.profitBeforeTax);
+                      const rev = safeNum(trialBalance.revenue);
+                      const assets = safeNum(trialBalance.totalAssets);
                       let benchmark = 'pbt';
                       if (pbt <= 0 && rev > 0) benchmark = 'revenue';
                       else if (pbt <= 0 && assets > 0) benchmark = 'assets';
@@ -5781,7 +5783,7 @@ export default function Planning() {
                       const overrideValue = prompt("Enter Partner Override for Overall Materiality (amount):");
                       if (overrideValue && !isNaN(Number(overrideValue))) {
                         const om = Number(overrideValue);
-                        const pbt = parseFloat(trialBalance.profitBeforeTax.replace(/,/g, '')) || parseFloat(trialBalance.revenue.replace(/,/g, '')) || om;
+                        const pbt = safeNum(trialBalance.profitBeforeTax) || safeNum(trialBalance.revenue) || om;
                         const pct = pbt > 0 ? ((om / pbt) * 100).toFixed(2) : '5';
                         setMateriality(prev => ({ ...prev, benchmarkPercentage: pct }));
                         saveEngine.signalChange();
