@@ -902,6 +902,66 @@ router.get("/:engagementId/planning-summary", requireAuth, async (req: Authentic
   }
 });
 
+router.get("/:engagementId/risk-stats", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const engagementId = req.params.engagementId;
+    const risks = await prisma.riskAssessment.findMany({
+      where: { engagementId },
+      select: {
+        fsArea: true,
+        assertionImpacts: true,
+        isSignificantRisk: true,
+        isFraudRisk: true,
+        plannedResponse: true,
+        riskOfMaterialMisstatement: true,
+      },
+    });
+
+    const total = risks.length;
+    const withFsArea = risks.filter(r => r.fsArea).length;
+    const withAssertions = risks.filter(r => r.assertionImpacts && r.assertionImpacts.length > 0).length;
+    const significant = risks.filter(r => r.isSignificantRisk).length;
+    const fraud = risks.filter(r => r.isFraudRisk).length;
+    const withResponse = risks.filter(r => r.plannedResponse).length;
+
+    const fsAreas = FS_AREAS;
+    const coveredAreas = new Set(risks.filter(r => r.fsArea).map(r => r.fsArea));
+    const coveragePercent = Math.round((coveredAreas.size / fsAreas.length) * 100);
+    const unmappedAreas = fsAreas.length - coveredAreas.size;
+
+    const highRiskLevels = ["HIGH", "SIGNIFICANT"];
+    const pendingHighRisk = risks.filter(r =>
+      highRiskLevels.includes(r.riskOfMaterialMisstatement) && !r.plannedResponse
+    ).length;
+
+    res.json({ total, withFsArea, withAssertions, significant, fraud, withResponse, coveragePercent, unmappedAreas, pendingHighRisk });
+  } catch (error: any) {
+    res.status(500).json({ error: "Failed to fetch risk stats", details: error.message });
+  }
+});
+
+router.get("/:engagementId/strategy-stats", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const engagementId = req.params.engagementId;
+    const [strategy, teamCount, memo, riskCount] = await Promise.all([
+      prisma.auditStrategy.findFirst({ where: { engagementId }, select: { overallStrategy: true, auditApproach: true, substantiveApproach: true, controlsReliance: true } }),
+      prisma.engagementTeam.count({ where: { engagementId } }),
+      prisma.planningMemo.findFirst({ where: { engagementId }, select: { id: true } }),
+      prisma.riskAssessment.count({ where: { engagementId } }),
+    ]);
+
+    res.json({
+      hasStrategy: !!(strategy?.overallStrategy || strategy?.auditApproach),
+      hasScope: !!(strategy?.substantiveApproach || strategy?.controlsReliance),
+      teamCount,
+      hasMemo: !!memo,
+      riskAssessmentExists: riskCount > 0,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: "Failed to fetch strategy stats", details: error.message });
+  }
+});
+
 router.get("/:engagementId/risks/fs-level", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const risks = await prisma.riskAssessment.findMany({

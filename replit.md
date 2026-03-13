@@ -166,13 +166,41 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - **Gates**: tb-validated (hard), gl-reconciled (hard), duplicates-cleared (hard), blockers-resolved (hard)
 - **Gate enforcement**: Validation blockers prevent COA Mapping and Materiality completion (recursive prerequisite checks in phaseGateEngine.ts)
 
+### CoA/FS Mapping (Phase 6)
+- **Page**: `client/src/pages/fs-heads.tsx` — MappingOverviewPanel + FSHeadsContent
+- **Features**: Mapping completeness score, 5 stat cards (total/mapped/unmapped/flagged/FS heads), 4 sub-tabs (FS Head Groups, Unmapped, Lead Schedules, Prior Year), AI analysis
+- **Backend**: `server/importRoutes.ts` — GET `/api/import/:engagementId/coa-accounts`, GET `/api/import/:engagementId/mapping-stats`
+- **Gates**: coa-mapped, fs-heads-mapped, lead-schedules-grouped (soft), unmapped-reviewed, mapping-score-met (95% threshold)
+
+### Materiality (Phase 7)
+- **Page**: `client/src/pages/planning.tsx` (materiality tab) — MaterialityPhaseOverview + ISA320MaterialityPanelNew
+- **Features**: Route-aware defaulting (/materiality → materiality tab), dynamic page title, overview card with benchmark/calculation/qualitative/approval sections, AI support badges, downstream linkage badges
+- **Gates**: benchmark-selected, materiality-calculated, qualitative-assessed (soft), materiality-approved
+
+### Risk Assessment (Phase 8)
+- **Page**: `client/src/pages/planning.tsx` (risk-assessment route) — RiskAssessmentPhaseHeader + focused tabs
+- **Tabs**: Entity & FS-Level Risks, Significant Accounts & Assertions, Fraud Risk, Related Controls Awareness, Analytical Triggers, Related Parties, Going Concern, Laws & Regulations
+- **Features**: Status overview header with risk coverage %, unmapped areas, high-risk pending counts; route-aware tab filtering; AI support for risk drafting from analytics, fraud risk prompts, missing linkage warnings
+- **Backend**: `server/planningRoutes.ts` — GET `/api/planning/:engagementId/risk-stats`
+- **Gates**: entity-risks-documented, fs-level-risks-mapped, assertion-risks-linked, significant-risks-identified, fraud-risks-assessed, risk-register-complete (soft), risk-conclusion-documented
+- **Prerequisite**: Materiality phase must be complete
+
+### Planning Strategy (Phase 9)
+- **Page**: `client/src/pages/planning.tsx` (planning-strategy route) — PlanningStrategyPhaseHeader + focused tabs
+- **Tabs**: Audit Strategy Memo, Scope & Component Coverage, Team Allocation & Timing, Internal Control Reliance, Use of Analytics, Substantive Approach & Programs, Planning Conclusion & Memo
+- **Features**: Status overview with strategy/scope/team/memo completion status; prerequisite enforcement (requires risk assessment); AI support for planning memo draft and missing linkage warnings
+- **Backend**: `server/planningRoutes.ts` — GET `/api/planning/:engagementId/strategy-stats`
+- **Gates**: strategy-documented, scope-defined, team-allocated (soft), planning-memo-complete
+- **Prerequisite**: Risk assessment phase must have documented risks
+
 ## Feature Status
 
 - ISA 320 Materiality: Complete
 - ISA 520 Analytical Procedures: Complete
 - Compliance Checklists: Complete (bulk Excel/CSV upload, template download, evidence attachments)
 - Data Intake: Complete (TB, GL, AR, AP, Bank import with reconciliation)
-- Planning Module: 16 ISA-linked tabs (A-P)
+- Risk Assessment: Complete (8-tab focused view, status overview, AI support, 7 gates)
+- Planning Strategy: Complete (7-tab focused view, status overview, prerequisite enforcement, AI support, 4 gates)
 - Execution Module: Working paper system with FS head mapping
 - Review Notes: Complete with notifications
 - Document Management: Complete with S3/local storage

@@ -230,9 +230,29 @@ const AI_CAPABILITY_REGISTRY: Record<string, PhaseAICapability[]> = {
     {
       id: "risk-drafting-from-analytics",
       label: "Draft Risk Descriptions",
-      description: "Generate risk descriptions from analytics results and FS movement analysis",
+      description: "Generate risk descriptions from analytics results and FS movement analysis at entity, FS, and assertion levels",
       promptType: "risk_description",
-      requiresContext: ["analytics_results", "fs_movements", "industry_risks"],
+      requiresContext: ["analytics_results", "fs_movements", "industry_risks", "materiality_thresholds"],
+      isaReference: "ISA 315",
+    },
+  ],
+  "fraud-risk-prompts": [
+    {
+      id: "fraud-risk-prompts",
+      label: "Fraud Risk Assessment Prompts",
+      description: "Generate fraud risk indicators and prompts based on entity profile, revenue patterns, and management override considerations",
+      promptType: "fraud_risk_assessment",
+      requiresContext: ["entity_profile", "revenue_data", "journal_entries", "related_parties"],
+      isaReference: "ISA 240",
+    },
+  ],
+  "missing-linkage-warnings": [
+    {
+      id: "missing-linkage-warnings",
+      label: "Missing Linkage Warnings",
+      description: "Identify gaps in risk-to-assertion linkage, unmapped FS areas, and risks without planned responses",
+      promptType: "linkage_analysis",
+      requiresContext: ["risk_register", "fs_heads", "assertions", "planned_procedures"],
       isaReference: "ISA 315",
     },
   ],
@@ -240,9 +260,9 @@ const AI_CAPABILITY_REGISTRY: Record<string, PhaseAICapability[]> = {
     {
       id: "planning-memo-drafting",
       label: "Draft Planning Memo",
-      description: "Generate the audit planning memo covering strategy, approach, and key focus areas",
+      description: "Generate the audit planning memo covering strategy, scope, team allocation, timing, and key focus areas",
       promptType: "audit_strategy",
-      requiresContext: ["risk_assessment", "materiality", "engagement_profile"],
+      requiresContext: ["risk_assessment", "materiality", "engagement_profile", "team_allocation", "scope_decisions"],
       isaReference: "ISA 300",
     },
   ],
@@ -371,12 +391,15 @@ Draft materiality narration suitable for audit documentation, recommend benchmar
 Consider entity-specific qualitative factors including fraud risk, going concern, regulatory environment, and stakeholder expectations.`,
 
   "risk-assessment": `You are assisting with risk assessment per ISA 315 and ISA 240.
-Focus on inherent risk, control risk, and significant risks including fraud.
-Consider industry risks, entity-specific factors, and FS assertion-level risks.`,
+Organize risks at three levels: entity-level (going concern, regulatory, industry), financial statement level (pervasive misstatement risks), and assertion-level (existence, completeness, accuracy, valuation, rights, presentation).
+Flag significant risks requiring special audit consideration. Address fraud risk including presumed risks (revenue recognition per ISA 240.26, management override per ISA 240.31).
+Identify linkages between risks and related controls, and flag unmapped or unlinked risk areas.
+Consider analytical triggers, related party indicators, and prior year findings.`,
 
   "planning-strategy": `You are assisting with overall audit strategy per ISA 300.
-Focus on audit approach, resource allocation, and key areas of focus.
-Consider timing, scope, and nature of planned procedures.`,
+Cover: audit approach (substantive vs controls-reliant vs combined), scope decisions and component coverage, team allocation and expertise requirements, timing of procedures, use of experts and specialists, use of analytics, internal control reliance approach, and substantive approach planning.
+Ensure the strategy responds to assessed risks from the risk assessment phase.
+Flag any risk areas without planned responses or insufficient coverage.`,
 
   "procedures-sampling": `You are assisting with audit procedure design and sampling per ISA 330/530.
 Focus on linking procedures to assessed risks and determining sample sizes.

@@ -418,22 +418,111 @@ async function evaluateSingleGate(
         break;
       }
 
-      case "risks-identified": {
+      case "risks-identified":
+      case "entity-risks-documented": {
         const riskCount = await prisma.riskAssessment.count({
           where: { engagementId },
         });
         passed = riskCount > 0;
-        if (passed) message = `${riskCount} risks identified`;
+        if (passed) message = `${riskCount} risks documented`;
+        break;
+      }
+
+      case "fs-level-risks-mapped": {
+        const fsRiskCount = await prisma.riskAssessment.count({
+          where: { engagementId, fsArea: { not: null } },
+        });
+        passed = fsRiskCount > 0;
+        if (passed) message = `${fsRiskCount} risks mapped to FS areas`;
+        else message = "No risks mapped to FS areas";
+        break;
+      }
+
+      case "assertion-risks-linked": {
+        const assertionRiskCount = await prisma.riskAssessment.count({
+          where: { engagementId, assertionImpacts: { isEmpty: false } },
+        });
+        passed = assertionRiskCount > 0;
+        if (passed) message = `${assertionRiskCount} risks linked to assertions`;
+        else message = "No risks linked to assertions";
+        break;
+      }
+
+      case "significant-risks-identified": {
+        const sigRiskCount = await prisma.riskAssessment.count({
+          where: { engagementId, isSignificantRisk: true },
+        });
+        passed = sigRiskCount > 0;
+        if (passed) message = `${sigRiskCount} significant risks identified`;
+        else message = "No significant risks flagged";
         break;
       }
 
       case "fraud-risks-assessed": {
-        passed = isBackendPhaseActive(statusMap, "PLANNING");
-        if (passed) message = "Planning phase active";
+        const fraudRiskCount = await prisma.riskAssessment.count({
+          where: { engagementId, isFraudRisk: true },
+        });
+        passed = fraudRiskCount > 0;
+        if (passed) message = `${fraudRiskCount} fraud risks assessed`;
+        else message = "Fraud risk assessment not completed";
         break;
       }
 
-      case "strategy-documented":
+      case "risk-register-complete": {
+        const totalRisks = await prisma.riskAssessment.count({
+          where: { engagementId },
+        });
+        const risksWithResponse = await prisma.riskAssessment.count({
+          where: { engagementId, plannedResponse: { not: null } },
+        });
+        passed = totalRisks > 0 && risksWithResponse >= totalRisks * 0.8;
+        if (passed) message = `${risksWithResponse}/${totalRisks} risks have planned responses`;
+        else message = totalRisks === 0 ? "No risks in register" : `${risksWithResponse}/${totalRisks} risks have responses (80% required)`;
+        break;
+      }
+
+      case "risk-conclusion-documented": {
+        const hasRisks = await prisma.riskAssessment.count({ where: { engagementId } });
+        const hasFraud = await prisma.riskAssessment.count({ where: { engagementId, isFraudRisk: true } });
+        const hasSignificant = await prisma.riskAssessment.count({ where: { engagementId, isSignificantRisk: true } });
+        passed = hasRisks > 0 && hasFraud > 0 && hasSignificant > 0;
+        if (passed) message = "Risk conclusion documented with fraud and significant risks";
+        else message = "Risk conclusion incomplete — need risks, fraud assessment, and significant risks";
+        break;
+      }
+
+      case "strategy-documented": {
+        const strategy = await prisma.auditStrategy.findFirst({
+          where: { engagementId },
+          select: { overallStrategy: true, auditApproach: true },
+        });
+        passed = !!(strategy?.overallStrategy || strategy?.auditApproach);
+        if (passed) message = "Audit strategy documented";
+        else message = "Audit strategy not yet documented";
+        break;
+      }
+
+      case "scope-defined": {
+        const scopeStrategy = await prisma.auditStrategy.findFirst({
+          where: { engagementId },
+          select: { substantiveApproach: true, controlsReliance: true },
+        });
+        passed = !!(scopeStrategy?.substantiveApproach || scopeStrategy?.controlsReliance);
+        if (passed) message = "Audit scope defined";
+        else message = "Audit scope not yet defined";
+        break;
+      }
+
+      case "team-allocated": {
+        const teamCount = await prisma.engagementTeam.count({
+          where: { engagementId },
+        });
+        passed = teamCount > 0;
+        if (passed) message = `${teamCount} team members allocated`;
+        else message = "No team members allocated";
+        break;
+      }
+
       case "planning-memo-complete": {
         const memo = await prisma.planningMemo.findFirst({
           where: { engagementId },
@@ -441,6 +530,7 @@ async function evaluateSingleGate(
         });
         passed = !!memo;
         if (passed) message = "Planning memo exists";
+        else message = "Planning memo not yet created";
         break;
       }
 

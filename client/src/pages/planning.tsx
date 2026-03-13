@@ -130,6 +130,189 @@ function getPromptType(fieldName: string): AIPromptType {
   return FIELD_PROMPT_MAP[fieldName] || "audit_procedure";
 }
 
+function RiskAssessmentPhaseHeader({ engagementId }: { engagementId: string }) {
+  const { data: riskStats } = useQuery({
+    queryKey: ["risk-assessment-stats", engagementId],
+    queryFn: async () => {
+      const res = await fetchWithAuth(`/api/planning/${engagementId}/risk-stats`);
+      if (!res.ok) return { total: 0, withFsArea: 0, withAssertions: 0, significant: 0, fraud: 0, withResponse: 0, coveragePercent: 0, unmappedAreas: 0, pendingHighRisk: 0 };
+      return res.json();
+    },
+    staleTime: 30000,
+  });
+
+  const stats = riskStats || { total: 0, withFsArea: 0, withAssertions: 0, significant: 0, fraud: 0, withResponse: 0, coveragePercent: 0, unmappedAreas: 0, pendingHighRisk: 0 };
+
+  return (
+    <Card className="border-amber-200 dark:border-amber-800 mb-4">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4" />
+          Risk Assessment Phase — Status Overview
+        </CardTitle>
+        <CardDescription>ISA 315 / ISA 240 — Identify and assess risks at entity, FS, and assertion levels</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+          <div className="p-3 rounded-md border bg-card">
+            <p className="text-xs text-muted-foreground">Total Risks</p>
+            <p className="text-lg font-bold">{stats.total}</p>
+          </div>
+          <div className="p-3 rounded-md border bg-card">
+            <p className="text-xs text-muted-foreground">FS-Mapped</p>
+            <p className="text-lg font-bold">{stats.withFsArea}</p>
+          </div>
+          <div className="p-3 rounded-md border bg-card">
+            <p className="text-xs text-muted-foreground">Significant</p>
+            <p className="text-lg font-bold text-amber-600">{stats.significant}</p>
+          </div>
+          <div className="p-3 rounded-md border bg-card">
+            <p className="text-xs text-muted-foreground">Fraud Risks</p>
+            <p className="text-lg font-bold text-red-600">{stats.fraud}</p>
+          </div>
+          <div className="p-3 rounded-md border bg-card">
+            <p className="text-xs text-muted-foreground">With Response</p>
+            <p className="text-lg font-bold text-green-600">{stats.withResponse}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className={`p-3 rounded-md border ${stats.coveragePercent >= 80 ? 'bg-green-50 dark:bg-green-950/20 border-green-200' : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              {stats.coveragePercent >= 80 ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <AlertCircle className="h-4 w-4 text-amber-500" />}
+              <p className="text-sm font-medium">Risk Coverage</p>
+            </div>
+            <Progress value={stats.coveragePercent} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-1">{stats.coveragePercent}% of FS areas covered</p>
+          </div>
+          <div className={`p-3 rounded-md border ${stats.unmappedAreas === 0 ? 'bg-green-50 dark:bg-green-950/20 border-green-200' : 'bg-red-50 dark:bg-red-950/20 border-red-200'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              {stats.unmappedAreas === 0 ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <AlertTriangle className="h-4 w-4 text-red-500" />}
+              <p className="text-sm font-medium">Unmapped Areas</p>
+            </div>
+            <p className="text-lg font-bold">{stats.unmappedAreas}</p>
+            <p className="text-xs text-muted-foreground">FS areas without risk assessment</p>
+          </div>
+          <div className={`p-3 rounded-md border ${stats.pendingHighRisk === 0 ? 'bg-green-50 dark:bg-green-950/20 border-green-200' : 'bg-red-50 dark:bg-red-950/20 border-red-200'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              {stats.pendingHighRisk === 0 ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <AlertTriangle className="h-4 w-4 text-red-500" />}
+              <p className="text-sm font-medium">High-Risk Pending</p>
+            </div>
+            <p className="text-lg font-bold">{stats.pendingHighRisk}</p>
+            <p className="text-xs text-muted-foreground">High-risk items without planned response</p>
+          </div>
+        </div>
+
+        <div className="border-t pt-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="h-4 w-4 text-purple-500" />
+            <h3 className="text-sm font-semibold">AI Support</h3>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="text-xs">Risk Drafting from Analytics</Badge>
+            <Badge variant="outline" className="text-xs">Fraud Risk Prompts</Badge>
+            <Badge variant="outline" className="text-xs">Missing Linkage Warnings</Badge>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PlanningStrategyPhaseHeader({ engagementId }: { engagementId: string }) {
+  const { data: strategyStats } = useQuery({
+    queryKey: ["planning-strategy-stats", engagementId],
+    queryFn: async () => {
+      const res = await fetchWithAuth(`/api/planning/${engagementId}/strategy-stats`);
+      if (!res.ok) return { hasStrategy: false, hasScope: false, teamCount: 0, hasMemo: false, riskAssessmentExists: false };
+      return res.json();
+    },
+    staleTime: 30000,
+  });
+
+  const stats = strategyStats || { hasStrategy: false, hasScope: false, teamCount: 0, hasMemo: false, riskAssessmentExists: false };
+
+  return (
+    <Card className="border-blue-200 dark:border-blue-800 mb-4">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Briefcase className="h-4 w-4" />
+          Planning Strategy Phase — Status Overview
+        </CardTitle>
+        <CardDescription>ISA 300 — Document overall audit strategy, scope, team, and approach</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {!stats.riskAssessmentExists && (
+          <div className="p-3 rounded-md border border-red-300 bg-red-50 dark:bg-red-950/20">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-red-500" />
+              <p className="text-sm font-medium text-red-700 dark:text-red-400">Risk Assessment Required</p>
+            </div>
+            <p className="text-xs text-red-600 dark:text-red-400 mt-1">Planning strategy cannot be completed until the risk assessment phase has documented risks.</p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className={`p-3 rounded-md border ${stats.hasStrategy ? 'bg-green-50 dark:bg-green-950/20 border-green-200' : 'bg-card'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              {stats.hasStrategy ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <CircleDashed className="h-4 w-4 text-muted-foreground" />}
+              <p className="text-sm font-medium">Strategy Memo</p>
+            </div>
+            <p className="text-xs text-muted-foreground">{stats.hasStrategy ? "Documented" : "Not started"}</p>
+          </div>
+          <div className={`p-3 rounded-md border ${stats.hasScope ? 'bg-green-50 dark:bg-green-950/20 border-green-200' : 'bg-card'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              {stats.hasScope ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <CircleDashed className="h-4 w-4 text-muted-foreground" />}
+              <p className="text-sm font-medium">Scope Defined</p>
+            </div>
+            <p className="text-xs text-muted-foreground">{stats.hasScope ? "Complete" : "Pending"}</p>
+          </div>
+          <div className={`p-3 rounded-md border ${stats.teamCount > 0 ? 'bg-green-50 dark:bg-green-950/20 border-green-200' : 'bg-card'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              {stats.teamCount > 0 ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <CircleDashed className="h-4 w-4 text-muted-foreground" />}
+              <p className="text-sm font-medium">Team Allocated</p>
+            </div>
+            <p className="text-xs text-muted-foreground">{stats.teamCount > 0 ? `${stats.teamCount} members` : "Not assigned"}</p>
+          </div>
+          <div className={`p-3 rounded-md border ${stats.hasMemo ? 'bg-green-50 dark:bg-green-950/20 border-green-200' : 'bg-card'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              {stats.hasMemo ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <CircleDashed className="h-4 w-4 text-muted-foreground" />}
+              <p className="text-sm font-medium">Planning Memo</p>
+            </div>
+            <p className="text-xs text-muted-foreground">{stats.hasMemo ? "Complete" : "Not started"}</p>
+          </div>
+        </div>
+
+        <div className="border-t pt-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="h-4 w-4 text-purple-500" />
+            <h3 className="text-sm font-semibold">AI Support</h3>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="text-xs">Planning Memo Draft</Badge>
+            <Badge variant="outline" className="text-xs">Missing Linkage Warnings</Badge>
+          </div>
+        </div>
+
+        <div className="border-t pt-3">
+          <p className="text-xs font-medium text-muted-foreground mb-2">PHASE LINKAGE</p>
+          <div className="flex flex-wrap gap-2">
+            <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200" variant="secondary">
+              <ChevronRight className="h-3 w-3 mr-1" /> Risk Assessment — Risk responses drive strategy
+            </Badge>
+            <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" variant="secondary">
+              <ChevronRight className="h-3 w-3 mr-1" /> Materiality — Thresholds inform scope
+            </Badge>
+            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" variant="secondary">
+              <ChevronRight className="h-3 w-3 mr-1" /> Procedures — Strategy drives audit programs
+            </Badge>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Planning() {
   const params = useParams<{ engagementId: string }>();
   const { 
@@ -144,7 +327,15 @@ export default function Planning() {
   const engagementId = params.engagementId || contextEngagementId || undefined;
   const { isReadOnly: planningReadOnly } = useModuleReadOnly("PLANNING", "PLANNING");
   const [, setLocation] = useLocation();
+  const currentPath = window.location.pathname;
+  const isRiskAssessmentRoute = currentPath.includes("/risk-assessment");
+  const isPlanningStrategyRoute = currentPath.includes("/planning-strategy");
+  const isMaterialityRoute = currentPath.includes("/materiality");
+
   const [activeTab, setActiveTab] = useState<string>(() => {
+    if (isRiskAssessmentRoute) return "risk-assessment";
+    if (isPlanningStrategyRoute) return "strategy-approach";
+    if (isMaterialityRoute) return "materiality";
     const saved = localStorage.getItem(`planning-active-tab-${engagementId}`);
     if (saved === "balance-sheet" || saved === "profit-loss" || saved === "gl-tb-data") {
       return "financial-statements";
@@ -173,7 +364,6 @@ export default function Planning() {
     if (saved === "tcwg-communication" || saved === "team-quality") {
       return "team-planning";
     }
-    if (window.location.pathname.includes("/materiality")) return "materiality";
     const validTabs = ["planning-dashboard", "financial-statements", "entity-controls", "analytical-procedures", "materiality", "significant-accounts", "risk-assessment", "fraud-risk", "internal-controls", "related-parties", "laws-regulations", "going-concern", "team-planning", "strategy-approach", "audit-program", "planning-memo"];
     if (validTabs.includes(saved || "")) return saved as string;
     return "planning-dashboard";
@@ -2897,7 +3087,28 @@ export default function Planning() {
     localStorage.setItem(`planning-active-tab-${engagementId}`, newTab);
   }, [saveEngine, engagementId]);
 
-  const tabs = [
+  const riskAssessmentTabs = [
+    { id: "risk-assessment", label: "A. Entity & FS-Level Risks (ISA 315)", icon: AlertTriangle },
+    { id: "significant-accounts", label: "B. Significant Accounts & Assertions", icon: Target },
+    { id: "fraud-risk", label: "C. Fraud Risk (ISA 240)", icon: Shield },
+    { id: "internal-controls", label: "D. Related Controls Awareness", icon: Lock },
+    { id: "analytical-procedures", label: "E. Analytical Triggers (ISA 520)", icon: TrendingUp },
+    { id: "related-parties", label: "F. Related Parties (ISA 550)", icon: Users },
+    { id: "going-concern", label: "G. Going Concern (ISA 570)", icon: Activity },
+    { id: "laws-regulations", label: "H. Laws & Regulations (ISA 250)", icon: Scale },
+  ];
+
+  const planningStrategyTabs = [
+    { id: "strategy-approach", label: "A. Audit Strategy Memo (ISA 300)", icon: Briefcase },
+    { id: "entity-controls", label: "B. Scope & Component Coverage", icon: Building2 },
+    { id: "team-planning", label: "C. Team Allocation & Timing", icon: Calendar },
+    { id: "internal-controls", label: "D. Internal Control Reliance", icon: Lock },
+    { id: "analytical-procedures", label: "E. Use of Analytics", icon: TrendingUp },
+    { id: "audit-program", label: "F. Substantive Approach & Programs", icon: ClipboardList },
+    { id: "planning-memo", label: "G. Planning Conclusion & Memo", icon: FileCheck },
+  ];
+
+  const allTabs = [
     { id: "planning-dashboard", label: "A. Dashboard / Readiness", icon: Activity },
     { id: "financial-statements", label: "B. Financial Statements", icon: FileSpreadsheet },
     { id: "entity-controls", label: "C. Entity & Environment (ISA 315)", icon: Building2 },
@@ -2915,6 +3126,8 @@ export default function Planning() {
     { id: "audit-program", label: "O. Audit Programs", icon: ClipboardList },
     { id: "planning-memo", label: "P. Planning Memo / Approval", icon: FileCheck },
   ];
+
+  const tabs = isRiskAssessmentRoute ? riskAssessmentTabs : isPlanningStrategyRoute ? planningStrategyTabs : allTabs;
 
 
   if (!engagementId) {
@@ -2935,11 +3148,11 @@ export default function Planning() {
   return (
     <PageShell
       showTopBar={false}
-      title={activeTab === "materiality" ? "Materiality (ISA 320)" : "Audit Planning Phase"}
+      title={isRiskAssessmentRoute ? "Risk Assessment (ISA 315 / ISA 240)" : isPlanningStrategyRoute ? "Planning Strategy (ISA 300)" : activeTab === "materiality" ? "Materiality (ISA 320)" : "Audit Planning Phase"}
       subtitle={`${client?.name || ""} ${engagement?.engagementCode ? `(${engagement.engagementCode})` : ""}`}
-      icon={<Calculator className="h-5 w-5 text-primary" />}
-      backHref={`/engagements`}
-      nextHref={`/workspace/${engagementId}/risk-assessment`}
+      icon={isRiskAssessmentRoute ? <AlertTriangle className="h-5 w-5 text-primary" /> : isPlanningStrategyRoute ? <Briefcase className="h-5 w-5 text-primary" /> : <Calculator className="h-5 w-5 text-primary" />}
+      backHref={isPlanningStrategyRoute ? `/workspace/${engagementId}/risk-assessment` : isRiskAssessmentRoute ? `/workspace/${engagementId}/materiality` : isMaterialityRoute ? `/workspace/${engagementId}/coa-mapping` : `/workspace/${engagementId}/materiality`}
+      nextHref={isMaterialityRoute ? `/workspace/${engagementId}/risk-assessment` : isRiskAssessmentRoute ? `/workspace/${engagementId}/planning-strategy` : isPlanningStrategyRoute ? `/workspace/${engagementId}/procedures-sampling` : `/workspace/${engagementId}/risk-assessment`}
       dashboardHref="/engagements"
       saveFn={async () => {
         try {
@@ -2974,12 +3187,20 @@ export default function Planning() {
     >
       <div className="px-4 py-2 space-y-2">
 
+      {isRiskAssessmentRoute && engagementId && (
+        <RiskAssessmentPhaseHeader engagementId={engagementId} />
+      )}
+
+      {isPlanningStrategyRoute && engagementId && (
+        <PlanningStrategyPhaseHeader engagementId={engagementId} />
+      )}
+
       <Tabs value={activeTab} onValueChange={handleTabSwitch}>
         <SimpleTabNavigation
           activeTab={activeTab}
           setActiveTab={handleTabSwitch}
           tabs={tabs.map(tab => ({ id: tab.id, label: tab.label }))}
-          ariaLabel="Planning Steps"
+          ariaLabel={isRiskAssessmentRoute ? "Risk Assessment Steps" : isPlanningStrategyRoute ? "Planning Strategy Steps" : "Planning Steps"}
         />
 
         {/* Tab A: Planning Dashboard / Readiness Summary */}
