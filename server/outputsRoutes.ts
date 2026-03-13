@@ -1,7 +1,7 @@
 import { Router, Response } from "express";
 import { prisma } from "./db";
 import { requireAuth, logAuditTrail, type AuthenticatedRequest } from "./auth";
-import { computePreDraftBlockers } from "./finalizationRoutes";
+import { computePreDraftBlockers } from "./services/preReportBlockerService";
 import { z } from "zod";
 import path from "path";
 import fs from "fs";
