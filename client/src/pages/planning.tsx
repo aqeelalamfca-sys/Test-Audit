@@ -69,7 +69,6 @@ import { formatAccounting } from '@/lib/formatters';
 
 import type { CoAAccountData } from "@/components/planning/fs-types";
 import { PlanningDashboard } from "@/components/planning/planning-dashboard";
-import { PlanningProgressRibbon } from "@/components/planning/planning-progress-ribbon";
 import { SignificantAccountsPanel } from "@/components/planning/significant-accounts-panel";
 import { FraudRiskPanel } from "@/components/planning/fraud-risk-panel";
 import { InternalControlsPanel } from "@/components/planning/internal-controls-panel";
@@ -3134,7 +3133,6 @@ export default function Planning() {
       headerActions={null}
     >
       <div className="px-4 py-2 space-y-2">
-      {engagementId && <PlanningProgressRibbon engagementId={engagementId} />}
 
       <Tabs value={activeTab} onValueChange={handleTabSwitch}>
         <SimpleTabNavigation
