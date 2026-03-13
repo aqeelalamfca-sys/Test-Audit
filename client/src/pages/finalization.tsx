@@ -178,6 +178,17 @@ export default function Finalization() {
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isGeneratingOutputs, setIsGeneratingOutputs] = useState(false);
 
+  const [writtenRepChecklist, setWrittenRepChecklist] = useState<boolean[]>(Array(8).fill(false));
+  const [writtenRepEvidence, setWrittenRepEvidence] = useState<boolean[]>(Array(3).fill(false));
+  const [writtenRepOutputs, setWrittenRepOutputs] = useState<boolean[]>(Array(1).fill(false));
+  const [reportingOpinionChecklist, setReportingOpinionChecklist] = useState<boolean[]>(Array(7).fill(false));
+  const [reportingOpinionType, setReportingOpinionType] = useState("");
+  const [reportingEvidence, setReportingEvidence] = useState<boolean[]>(Array(3).fill(false));
+  const [reportingOutputs, setReportingOutputs] = useState<boolean[]>(Array(2).fill(false));
+  const [otherInfoChecklist, setOtherInfoChecklist] = useState<boolean[]>(Array(7).fill(false));
+  const [otherInfoEvidence, setOtherInfoEvidence] = useState<boolean[]>(Array(4).fill(false));
+  const [otherInfoOutputs, setOtherInfoOutputs] = useState<boolean[]>(Array(1).fill(false));
+
   const { data: draftFsData } = useQuery<DraftFSData>({
     queryKey: ['/api/fs-draft', engagementId],
     queryFn: async () => {
@@ -282,6 +293,16 @@ export default function Finalization() {
     subsequentEventsConclusion,
     goingConcernConclusion,
     basisForGoingConcernConclusion,
+    writtenRepChecklist,
+    writtenRepEvidence,
+    writtenRepOutputs,
+    reportingOpinionChecklist,
+    reportingOpinionType,
+    reportingEvidence,
+    reportingOutputs,
+    otherInfoChecklist,
+    otherInfoEvidence,
+    otherInfoOutputs,
     goingConcernReviewedBy,
     goingConcernReviewDate,
     goingConcernAttachments,
@@ -333,6 +354,16 @@ export default function Finalization() {
             if (data.otherMatterParagraph) setOtherMatterParagraph(data.otherMatterParagraph);
             if (data.approvals) setApprovals(data.approvals);
             if (data.fileStatus) setFileStatus(data.fileStatus);
+            if (data.writtenRepChecklist) setWrittenRepChecklist(data.writtenRepChecklist);
+            if (data.writtenRepEvidence) setWrittenRepEvidence(data.writtenRepEvidence);
+            if (data.writtenRepOutputs) setWrittenRepOutputs(data.writtenRepOutputs);
+            if (data.reportingOpinionChecklist) setReportingOpinionChecklist(data.reportingOpinionChecklist);
+            if (data.reportingOpinionType !== undefined) setReportingOpinionType(data.reportingOpinionType);
+            if (data.reportingEvidence) setReportingEvidence(data.reportingEvidence);
+            if (data.reportingOutputs) setReportingOutputs(data.reportingOutputs);
+            if (data.otherInfoChecklist) setOtherInfoChecklist(data.otherInfoChecklist);
+            if (data.otherInfoEvidence) setOtherInfoEvidence(data.otherInfoEvidence);
+            if (data.otherInfoOutputs) setOtherInfoOutputs(data.otherInfoOutputs);
             
             // Restore activeTab from server, or keep current if not saved
             if (data.activeTab) {
@@ -2511,7 +2542,19 @@ export default function Finalization() {
                     "Representations signed by management with appropriate responsibility"
                   ].map((item, idx) => (
                     <label key={idx} className="flex items-start gap-2 text-sm cursor-pointer" data-testid={`label-wr-checklist-${idx}`}>
-                      <input type="checkbox" className="mt-1 h-4 w-4 rounded border-border" data-testid={`checkbox-wr-checklist-${idx}`} />
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 rounded border-border"
+                        checked={writtenRepChecklist[idx] || false}
+                        onChange={(e) => {
+                          const updated = [...writtenRepChecklist];
+                          updated[idx] = e.target.checked;
+                          setWrittenRepChecklist(updated);
+                          saveEngine.signalChange();
+                        }}
+                        disabled={!canEdit}
+                        data-testid={`checkbox-wr-checklist-${idx}`}
+                      />
                       <span>{item}</span>
                     </label>
                   ))}
@@ -2548,7 +2591,19 @@ export default function Finalization() {
                     "TCWG representation (if separate from management)"
                   ].map((item, idx) => (
                     <label key={idx} className="flex items-start gap-2 text-sm cursor-pointer" data-testid={`label-wr-evidence-${idx}`}>
-                      <input type="checkbox" className="mt-1 h-4 w-4 rounded border-border" data-testid={`checkbox-wr-evidence-${idx}`} />
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 rounded border-border"
+                        checked={writtenRepEvidence[idx] || false}
+                        onChange={(e) => {
+                          const updated = [...writtenRepEvidence];
+                          updated[idx] = e.target.checked;
+                          setWrittenRepEvidence(updated);
+                          saveEngine.signalChange();
+                        }}
+                        disabled={!canEdit}
+                        data-testid={`checkbox-wr-evidence-${idx}`}
+                      />
                       <span>{item}</span>
                     </label>
                   ))}
@@ -2564,7 +2619,19 @@ export default function Finalization() {
                 </h3>
                 <div className="space-y-2">
                   <label className="flex items-start gap-2 text-sm cursor-pointer" data-testid="label-wr-output-0">
-                    <input type="checkbox" className="mt-1 h-4 w-4 rounded border-border" data-testid="checkbox-wr-output-0" />
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 rounded border-border"
+                      checked={writtenRepOutputs[0] || false}
+                      onChange={(e) => {
+                        const updated = [...writtenRepOutputs];
+                        updated[0] = e.target.checked;
+                        setWrittenRepOutputs(updated);
+                        saveEngine.signalChange();
+                      }}
+                      disabled={!canEdit}
+                      data-testid="checkbox-wr-output-0"
+                    />
                     <span>ISA 580 Written Representation Letter (signed)</span>
                   </label>
                 </div>
@@ -2602,7 +2669,19 @@ export default function Finalization() {
                     "Determine type of opinion: Unmodified / Qualified / Adverse / Disclaimer"
                   ].map((item, idx) => (
                     <label key={idx} className="flex items-start gap-2 text-sm cursor-pointer" data-testid={`label-ro-checklist-${idx}`}>
-                      <input type="checkbox" className="mt-1 h-4 w-4 rounded border-border" data-testid={`checkbox-ro-checklist-${idx}`} />
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 rounded border-border"
+                        checked={reportingOpinionChecklist[idx] || false}
+                        onChange={(e) => {
+                          const updated = [...reportingOpinionChecklist];
+                          updated[idx] = e.target.checked;
+                          setReportingOpinionChecklist(updated);
+                          saveEngine.signalChange();
+                        }}
+                        disabled={!canEdit}
+                        data-testid={`checkbox-ro-checklist-${idx}`}
+                      />
                       <span>{item}</span>
                     </label>
                   ))}
@@ -2628,6 +2707,12 @@ export default function Finalization() {
                         type="radio"
                         name="reporting-opinion-type"
                         value={option.value}
+                        checked={reportingOpinionType === option.value}
+                        onChange={(e) => {
+                          setReportingOpinionType(e.target.value);
+                          saveEngine.signalChange();
+                        }}
+                        disabled={!canEdit}
                         className="h-4 w-4"
                         data-testid={`radio-ro-opinion-${option.value}`}
                       />
@@ -2681,7 +2766,19 @@ export default function Finalization() {
                     "Partner review sign-off"
                   ].map((item, idx) => (
                     <label key={idx} className="flex items-start gap-2 text-sm cursor-pointer" data-testid={`label-ro-evidence-${idx}`}>
-                      <input type="checkbox" className="mt-1 h-4 w-4 rounded border-border" data-testid={`checkbox-ro-evidence-${idx}`} />
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 rounded border-border"
+                        checked={reportingEvidence[idx] || false}
+                        onChange={(e) => {
+                          const updated = [...reportingEvidence];
+                          updated[idx] = e.target.checked;
+                          setReportingEvidence(updated);
+                          saveEngine.signalChange();
+                        }}
+                        disabled={!canEdit}
+                        data-testid={`checkbox-ro-evidence-${idx}`}
+                      />
                       <span>{item}</span>
                     </label>
                   ))}
@@ -2701,7 +2798,19 @@ export default function Finalization() {
                     "KAM Documentation"
                   ].map((item, idx) => (
                     <label key={idx} className="flex items-start gap-2 text-sm cursor-pointer" data-testid={`label-ro-output-${idx}`}>
-                      <input type="checkbox" className="mt-1 h-4 w-4 rounded border-border" data-testid={`checkbox-ro-output-${idx}`} />
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 rounded border-border"
+                        checked={reportingOutputs[idx] || false}
+                        onChange={(e) => {
+                          const updated = [...reportingOutputs];
+                          updated[idx] = e.target.checked;
+                          setReportingOutputs(updated);
+                          saveEngine.signalChange();
+                        }}
+                        disabled={!canEdit}
+                        data-testid={`checkbox-ro-output-${idx}`}
+                      />
                       <span>{item}</span>
                     </label>
                   ))}
@@ -2740,7 +2849,19 @@ export default function Finalization() {
                     "Include an Other Information section in the auditor's report"
                   ].map((item, idx) => (
                     <label key={idx} className="flex items-start gap-2 text-sm cursor-pointer" data-testid={`label-oi-checklist-${idx}`}>
-                      <input type="checkbox" className="mt-1 h-4 w-4 rounded border-border" data-testid={`checkbox-oi-checklist-${idx}`} />
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 rounded border-border"
+                        checked={otherInfoChecklist[idx] || false}
+                        onChange={(e) => {
+                          const updated = [...otherInfoChecklist];
+                          updated[idx] = e.target.checked;
+                          setOtherInfoChecklist(updated);
+                          saveEngine.signalChange();
+                        }}
+                        disabled={!canEdit}
+                        data-testid={`checkbox-oi-checklist-${idx}`}
+                      />
                       <span>{item}</span>
                     </label>
                   ))}
@@ -2762,7 +2883,19 @@ export default function Finalization() {
                     "Any other documents accompanying financial statements"
                   ].map((item, idx) => (
                     <label key={idx} className="flex items-start gap-2 text-sm cursor-pointer" data-testid={`label-oi-evidence-${idx}`}>
-                      <input type="checkbox" className="mt-1 h-4 w-4 rounded border-border" data-testid={`checkbox-oi-evidence-${idx}`} />
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 rounded border-border"
+                        checked={otherInfoEvidence[idx] || false}
+                        onChange={(e) => {
+                          const updated = [...otherInfoEvidence];
+                          updated[idx] = e.target.checked;
+                          setOtherInfoEvidence(updated);
+                          saveEngine.signalChange();
+                        }}
+                        disabled={!canEdit}
+                        data-testid={`checkbox-oi-evidence-${idx}`}
+                      />
                       <span>{item}</span>
                     </label>
                   ))}
@@ -2778,7 +2911,19 @@ export default function Finalization() {
                 </h3>
                 <div className="space-y-2">
                   <label className="flex items-start gap-2 text-sm cursor-pointer" data-testid="label-oi-output-0">
-                    <input type="checkbox" className="mt-1 h-4 w-4 rounded border-border" data-testid="checkbox-oi-output-0" />
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 rounded border-border"
+                      checked={otherInfoOutputs[0] || false}
+                      onChange={(e) => {
+                        const updated = [...otherInfoOutputs];
+                        updated[0] = e.target.checked;
+                        setOtherInfoOutputs(updated);
+                        saveEngine.signalChange();
+                      }}
+                      disabled={!canEdit}
+                      data-testid="checkbox-oi-output-0"
+                    />
                     <span>ISA 720 Other Information Review working paper</span>
                   </label>
                 </div>

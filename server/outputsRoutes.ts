@@ -129,7 +129,7 @@ router.post("/engagements/:engagementId/outputs", requireAuth, async (req: Authe
       },
     });
 
-    await logAuditTrail(req.user!.id, engagementId, "OUTPUT_CREATED", `Created output ${data.outputCode} v${version}`);
+    logAuditTrail(req.user!.id, "OUTPUT_CREATED", "outputs_registry", output.id, null, { outputCode: data.outputCode, version }, engagementId, `Created output ${data.outputCode} v${version}`).catch(err => console.error("Audit trail error:", err));
 
     res.status(201).json(output);
   } catch (error) {
@@ -218,7 +218,7 @@ router.patch("/engagements/:engagementId/outputs/:outputId", requireAuth, async 
       },
     });
 
-    await logAuditTrail(req.user!.id, engagementId, "OUTPUT_UPDATED", `Updated output ${output.outputCode}`);
+    logAuditTrail(req.user!.id, "OUTPUT_UPDATED", "outputs_registry", outputId, null, data, engagementId, `Updated output ${output.outputCode}`).catch(err => console.error("Audit trail error:", err));
 
     res.json(output);
   } catch (error) {
@@ -255,7 +255,7 @@ router.delete("/engagements/:engagementId/outputs/:outputId", requireAuth, async
       where: { id: outputId },
     });
 
-    await logAuditTrail(req.user!.id, engagementId, "OUTPUT_DELETED", `Deleted output ${output.outputCode}`);
+    logAuditTrail(req.user!.id, "OUTPUT_DELETED", "outputs_registry", outputId, null, { outputCode: output.outputCode }, engagementId, `Deleted output ${output.outputCode}`).catch(err => console.error("Audit trail error:", err));
 
     res.json({ success: true });
   } catch (error) {
@@ -318,12 +318,11 @@ router.post("/engagements/:engagementId/outputs/generate-phase2", requireAuth, a
 
     const result = await generatePhase2Outputs(engagementId, req.user!.id);
 
-    await logAuditTrail(
-      req.user!.id,
-      engagementId,
-      "PHASE2_OUTPUTS_GENERATED",
+    logAuditTrail(
+      req.user!.id, "PHASE2_OUTPUTS_GENERATED", "outputs_registry", undefined,
+      null, { outputsCreated: result.outputsCreated, outputsSkipped: result.outputsSkipped }, engagementId,
       `Generated ${result.outputsCreated} Pre-Planning outputs, skipped ${result.outputsSkipped}`
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json({
       success: result.success,
@@ -354,12 +353,11 @@ router.post("/engagements/:engagementId/outputs/generate-phase3", requireAuth, a
     const result = await generatePhase3Outputs(engagementId, tabId || null, req.user!.id);
 
     const tabLabel = tabId ? ` for tab "${tabId}"` : "";
-    await logAuditTrail(
-      req.user!.id,
-      engagementId,
-      "PHASE3_OUTPUTS_GENERATED",
+    logAuditTrail(
+      req.user!.id, "PHASE3_OUTPUTS_GENERATED", "outputs_registry", undefined,
+      null, { outputsCreated: result.outputsCreated, outputsSkipped: result.outputsSkipped, tabId }, engagementId,
       `Generated ${result.outputsCreated} Planning outputs${tabLabel}, skipped ${result.outputsSkipped}`
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json({
       success: result.success,
@@ -390,12 +388,11 @@ router.post("/engagements/:engagementId/outputs/generate-phase4", requireAuth, a
     const result = await generatePhase4Outputs(engagementId, fsHeadTab || undefined, req.user!.id);
 
     const tabLabel = fsHeadTab ? ` for FS Head "${fsHeadTab}"` : "";
-    await logAuditTrail(
-      req.user!.id,
-      engagementId,
-      "PHASE4_OUTPUTS_GENERATED",
+    logAuditTrail(
+      req.user!.id, "PHASE4_OUTPUTS_GENERATED", "outputs_registry", undefined,
+      null, { outputsCreated: result.outputsCreated, outputsSkipped: result.outputsSkipped, fsHeadTab }, engagementId,
       `Generated ${result.outputsCreated} Execution Working Paper outputs${tabLabel}, skipped ${result.outputsSkipped}`
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json({
       success: result.success,
@@ -424,12 +421,11 @@ router.post("/engagements/:engagementId/outputs/generate-phase5", requireAuth, a
 
     const result = await generatePhase5Outputs(engagementId, req.user!.id);
 
-    await logAuditTrail(
-      req.user!.id,
-      engagementId,
-      "PHASE5_OUTPUTS_GENERATED",
+    logAuditTrail(
+      req.user!.id, "PHASE5_OUTPUTS_GENERATED", "outputs_registry", undefined,
+      null, { outputsCreated: result.outputsCreated, outputsSkipped: result.outputsSkipped }, engagementId,
       `Generated ${result.outputsCreated} Finalization outputs, skipped ${result.outputsSkipped}`
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json({
       success: result.success,
@@ -499,7 +495,7 @@ router.post("/engagements/:engagementId/outputs/:outputId/link-evidence", requir
       },
     });
 
-    await logAuditTrail(req.user!.id, engagementId, "OUTPUT_EVIDENCE_LINKED", `Linked output ${output.outputCode} to evidence ${evidence.fileName}`);
+    logAuditTrail(req.user!.id, "OUTPUT_EVIDENCE_LINKED", "output_evidence", link.id, null, { outputCode: output.outputCode, evidenceFile: evidence.fileName }, engagementId, `Linked output ${output.outputCode} to evidence ${evidence.fileName}`).catch(err => console.error("Audit trail error:", err));
 
     res.status(201).json(link);
   } catch (error) {
@@ -548,7 +544,7 @@ router.delete("/engagements/:engagementId/outputs/:outputId/unlink-evidence/:evi
       where: { id: link.id },
     });
 
-    await logAuditTrail(req.user!.id, engagementId, "OUTPUT_EVIDENCE_UNLINKED", `Unlinked output ${outputId} from evidence ${evidenceId}`);
+    logAuditTrail(req.user!.id, "OUTPUT_EVIDENCE_UNLINKED", "output_evidence", undefined, null, { outputId, evidenceId }, engagementId, `Unlinked output ${outputId} from evidence ${evidenceId}`).catch(err => console.error("Audit trail error:", err));
 
     res.json({ success: true });
   } catch (error) {
@@ -724,7 +720,7 @@ router.patch("/engagements/:engagementId/outputs/:outputId/deliverable-status", 
       },
     });
 
-    await logAuditTrail(req.user!.id, engagementId, "OUTPUT_DELIVERABLE_STATUS", `Updated deliverable status for ${output.outputCode}`);
+    logAuditTrail(req.user!.id, "OUTPUT_DELIVERABLE_STATUS", "outputs_registry", outputId, null, { isDeliverable, deliveryStatus, deliveryDate }, engagementId, `Updated deliverable status for ${output.outputCode}`).catch(err => console.error("Audit trail error:", err));
 
     res.json(updated);
   } catch (error) {

@@ -44,7 +44,7 @@ router.post("/:engagementId/subsequent-events", requireAuth, requirePhaseUnlocke
       include: { identifiedBy: { select: { id: true, fullName: true, role: true } } },
     });
 
-    await logAuditTrail(req.user!.id, "SUBSEQUENT_EVENT_IDENTIFIED", "subsequent_event", event.id, null, event, req.params.engagementId, `Subsequent event ${event.eventReference} identified`, req.ip, req.get("user-agent"));
+    logAuditTrail(req.user!.id, "SUBSEQUENT_EVENT_IDENTIFIED", "subsequent_event", event.id, null, event, req.params.engagementId, `Subsequent event ${event.eventReference} identified`, req.ip, req.get("user-agent")).catch(err => console.error("Audit trail error:", err));
     res.status(201).json(event);
   } catch (error: any) {
     res.status(500).json({ error: "Failed to create event", details: error.message });
@@ -117,7 +117,7 @@ router.post("/:engagementId/report", requireAuth, requirePhaseUnlocked("REPORTIN
       create: { ...req.body, engagementId: req.params.engagementId, draftedById: req.user!.id, draftedDate: new Date() },
     });
 
-    await logAuditTrail(req.user!.id, "AUDIT_REPORT_DRAFTED", "audit_report", report.id, null, report, req.params.engagementId, "Audit report drafted", req.ip, req.get("user-agent"));
+    logAuditTrail(req.user!.id, "AUDIT_REPORT_DRAFTED", "audit_report", report.id, null, report, req.params.engagementId, "Audit report drafted", req.ip, req.get("user-agent")).catch(err => console.error("Audit trail error:", err));
     res.json(report);
   } catch (error: any) {
     res.status(500).json({ error: "Failed to save report", details: error.message });
@@ -139,7 +139,7 @@ router.post("/:engagementId/report/partner-approve", requireAuth, requireMinRole
       data: { partnerApprovedById: req.user!.id, partnerApprovalDate: new Date() },
     });
 
-    await logAuditTrail(req.user!.id, "AUDIT_REPORT_PARTNER_APPROVED", "audit_report", report.id, null, { partnerApprovedById: req.user!.id }, req.params.engagementId, "Audit report partner approved", req.ip, req.get("user-agent"));
+    logAuditTrail(req.user!.id, "AUDIT_REPORT_PARTNER_APPROVED", "audit_report", report.id, null, { partnerApprovedById: req.user!.id }, req.params.engagementId, "Audit report partner approved", req.ip, req.get("user-agent")).catch(err => console.error("Audit trail error:", err));
     res.json(report);
   } catch (error: any) {
     res.status(500).json({ error: "Failed to approve report", details: error.message });
@@ -161,7 +161,7 @@ router.post("/:engagementId/report/sign", requireAuth, requireMinRole("PARTNER")
       data: { signedById: req.user!.id, signedDate: new Date(), signatureEvidence: req.body.signatureEvidence, reportDate: new Date() },
     });
 
-    await logAuditTrail(req.user!.id, "AUDIT_REPORT_SIGNED", "audit_report", report.id, null, { signedById: req.user!.id }, req.params.engagementId, "Audit report signed", req.ip, req.get("user-agent"));
+    logAuditTrail(req.user!.id, "AUDIT_REPORT_SIGNED", "audit_report", report.id, null, { signedById: req.user!.id }, req.params.engagementId, "Audit report signed", req.ip, req.get("user-agent")).catch(err => console.error("Audit trail error:", err));
     res.json(report);
   } catch (error: any) {
     res.status(500).json({ error: "Failed to sign report", details: error.message });

@@ -250,7 +250,7 @@ router.post("/:engagementId/generate-board", requireAuth, async (req: Authentica
       },
     });
 
-    await prisma.auditTrail.create({
+    prisma.auditTrail.create({
       data: {
         engagementId,
         userId: user.id,
@@ -267,7 +267,7 @@ router.post("/:engagementId/generate-board", requireAuth, async (req: Authentica
           openNotes: openReviewNotes,
         },
       },
-    });
+    }).catch(err => console.error("Audit trail error:", err));
 
     res.json({
       success: true,
