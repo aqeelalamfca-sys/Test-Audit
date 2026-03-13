@@ -885,6 +885,13 @@ router.get("/stats", requireAuth, (req: AuthenticatedRequest, res: Response) => 
       byFileType,
       byModule,
       prefillCapable: catalog.filter(t => t.prefillCapable).length,
+      extractionNotes: {
+        workingPapersExtracted: 57,
+        isqmExtracted: 19,
+        generated: 2,
+        missingFromSequence: ["BS.03 (Right-of-Use Assets)", "BS.20 (Deferred Revenue)", "BS.21 (Provisions)"],
+        missingReason: "Not present in source ZIP - firm-specific template set does not include these BS references",
+      },
     });
   } catch (error) {
     console.error("Template stats error:", error);
