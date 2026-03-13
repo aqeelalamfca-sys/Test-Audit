@@ -28,6 +28,7 @@ import {
   ArrowUpDown, Layers
 } from "lucide-react";
 import { AIAssistBanner, PHASE_AI_CONFIGS } from "@/components/ai-assist-banner";
+import { AIHelpIcon } from "@/components/ai-help";
 import { PhaseLockIndicator } from "@/components/phase-approval-control";
 import { LockGatePanel } from "@/components/control-pack";
 import { useQuery } from "@tanstack/react-query";
@@ -1343,6 +1344,7 @@ export default function Finalization() {
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
                     Subsequent Events
+                    <AIHelpIcon fieldName="subsequentEvents" category="completion" size="sm" />
                   </CardTitle>
                   <CardDescription>ISA 560 - Document and evaluate events occurring after the reporting period</CardDescription>
                 </div>
@@ -1881,6 +1883,7 @@ export default function Finalization() {
                   <CardTitle className="flex items-center gap-2">
                     <TrendingDown className="h-5 w-5" />
                     Going Concern Assessment
+                    <AIHelpIcon fieldName="goingConcern" category="completion" size="sm" />
                   </CardTitle>
                   <CardDescription>ISA 570 - Evaluate management's assessment of going concern</CardDescription>
                 </div>
