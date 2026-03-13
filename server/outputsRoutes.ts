@@ -269,12 +269,12 @@ router.get("/engagements/:engagementId/outputs/:outputId/download", requireAuth,
   try {
     const { engagementId, outputId } = req.params;
 
-    const engagement = await prisma.engagement.findFirst({
+    const engagementWithClient = await prisma.engagement.findFirst({
       where: { id: engagementId, firmId: req.user!.firmId! },
       include: { client: { select: { name: true } } },
     });
 
-    if (!engagement) {
+    if (!engagementWithClient) {
       return res.status(404).json({ error: "Engagement not found" });
     }
 
@@ -296,11 +296,11 @@ router.get("/engagements/:engagementId/outputs/:outputId/download", requireAuth,
       return res.status(404).json({ error: "File not found on server" });
     }
 
-    const clientSlug = (engagement as any).client?.name?.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30) || "Client";
-    const firmName = await prisma.firm.findUnique({ where: { id: req.user!.firmId! }, select: { name: true } });
-    const firmSlug = firmName?.name?.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 20) || "Firm";
-    const engCode = engagement.engagementCode?.replace(/[^a-zA-Z0-9-]/g, "") || "";
-    const yearEnd = engagement.fiscalYearEnd ? new Date(engagement.fiscalYearEnd).getFullYear().toString() : "FY";
+    const clientSlug = engagementWithClient.client?.name?.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30) || "Client";
+    const firmRecord = await prisma.firm.findUnique({ where: { id: req.user!.firmId! }, select: { name: true } });
+    const firmSlug = firmRecord?.name?.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 20) || "Firm";
+    const engCode = engagementWithClient.engagementCode?.replace(/[^a-zA-Z0-9-]/g, "") || "";
+    const yearEnd = engagementWithClient.fiscalYearEnd ? new Date(engagementWithClient.fiscalYearEnd).getFullYear().toString() : "FY";
     const filename = `${firmSlug}_${clientSlug}_${engCode}_${yearEnd}_${output.outputCode}-v${output.version}.${output.outputFormat.toLowerCase()}`;
     
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
