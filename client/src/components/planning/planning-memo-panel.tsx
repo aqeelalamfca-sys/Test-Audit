@@ -326,17 +326,17 @@ export function PlanningMemoPanel({ engagementId, readOnly, onFieldChange, plann
           <div className="grid grid-cols-3 gap-4">
             <div className="p-3 rounded-md border text-center">
               <p className="text-[10px] text-muted-foreground uppercase mb-1">Prepared By</p>
-              <p className="text-xs font-medium">{memo.preparedBy?.name || "—"}</p>
+              <p className="text-xs font-medium">{memo.preparedBy?.fullName || memo.preparedBy?.name || "—"}</p>
               <p className="text-[10px] text-muted-foreground">{memo.preparedDate ? new Date(memo.preparedDate).toLocaleDateString() : "—"}</p>
             </div>
             <div className={`p-3 rounded-md border text-center ${isReviewed ? "border-blue-200 bg-blue-50/30 dark:bg-blue-950/10" : ""}`}>
               <p className="text-[10px] text-muted-foreground uppercase mb-1">Manager Review</p>
-              <p className="text-xs font-medium">{memo.managerReviewedBy?.name || "Pending"}</p>
+              <p className="text-xs font-medium">{memo.managerReviewedBy?.fullName || memo.managerReviewedBy?.name || "Pending"}</p>
               <p className="text-[10px] text-muted-foreground">{memo.managerReviewedDate ? new Date(memo.managerReviewedDate).toLocaleDateString() : "—"}</p>
             </div>
             <div className={`p-3 rounded-md border text-center ${isApproved ? "border-green-200 bg-green-50/30 dark:bg-green-950/10" : ""}`}>
               <p className="text-[10px] text-muted-foreground uppercase mb-1">Partner Approval</p>
-              <p className="text-xs font-medium">{memo.partnerApprovedBy?.name || "Pending"}</p>
+              <p className="text-xs font-medium">{memo.partnerApprovedBy?.fullName || memo.partnerApprovedBy?.name || "Pending"}</p>
               <p className="text-[10px] text-muted-foreground">{memo.partnerApprovalDate ? new Date(memo.partnerApprovalDate).toLocaleDateString() : "—"}</p>
             </div>
           </div>
