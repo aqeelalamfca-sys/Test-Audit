@@ -290,7 +290,7 @@ router.get("/api/engagements/:engagementId/fs-heads-summary", async (req: Reques
       let completionPercent = 0;
       if (wp?.status === "APPROVED") completionPercent = 100;
       else if (wp?.status === "REVIEWED") completionPercent = 80;
-      else if (wp?.status === "COMPLETED") completionPercent = 60;
+      else if (wp?.status === "PREPARED") completionPercent = 60;
       else if (wp?.status === "IN_PROGRESS") completionPercent = 30;
       else if (proceduresCount > 0) completionPercent = 10;
 
@@ -2617,7 +2617,28 @@ router.patch("/api/engagements/:engagementId/fs-heads/:fsHeadKey/status", async 
     }
 
     const { status: newStatus, reason } = validation.data;
-    const userId = (req as any).session?.passport?.user || null;
+    const authUser = (req as any).user;
+    const userId = authUser?.id || (req as any).session?.passport?.user || null;
+    const userRole = authUser?.role || '';
+
+    const ROLE_HIERARCHY = ["STAFF", "SENIOR", "MANAGER", "PARTNER", "EQCR", "FIRM_ADMIN"];
+    const userRoleIndex = ROLE_HIERARCHY.indexOf(userRole);
+
+    const statusMinRole: Record<string, string> = {
+      PREPARED: "STAFF",
+      REVIEWED: "SENIOR",
+      APPROVED: "MANAGER",
+    };
+
+    const requiredRole = statusMinRole[newStatus];
+    if (requiredRole) {
+      const requiredIndex = ROLE_HIERARCHY.indexOf(requiredRole);
+      if (userRoleIndex < requiredIndex) {
+        return res.status(403).json({
+          error: `Role ${requiredRole} or above required to set status to ${newStatus}. Your role: ${userRole || 'unknown'}`
+        });
+      }
+    }
 
     const workingPaper = await db.fSHeadWorkingPaper.findUnique({
       where: { engagementId_fsHeadKey: { engagementId, fsHeadKey } },
@@ -2668,6 +2689,13 @@ router.patch("/api/engagements/:engagementId/fs-heads/:fsHeadKey/status", async 
     if (newStatus === 'APPROVED') {
       if (!workingPaper.conclusion || workingPaper.conclusion.trim().length === 0) {
         return res.status(400).json({ error: "Cannot approve — conclusion must be written" });
+      }
+      if ((workingPaper.attachments || []).length === 0) {
+        return res.status(400).json({ error: "Cannot approve — at least one evidence attachment is required" });
+      }
+      const openRPs = (workingPaper.reviewPoints || []).filter((rp: any) => rp.status === 'OPEN').length;
+      if (openRPs > 0) {
+        return res.status(400).json({ error: `Cannot approve — ${openRPs} open review point(s) must be resolved first` });
       }
     }
 
@@ -2834,7 +2862,7 @@ router.get("/api/engagements/:engagementId/execution-compliance-summary", async 
     const noOpenReviewPoints = perHead.every((h: any) => h.openReviewPoints === 0);
     const allApproved = totalHeads > 0 && approvedHeads === totalHeads;
 
-    const canProceedToFinalization = allApproved;
+    const canProceedToFinalization = allApproved && allHaveEvidence && allHaveConclusions && noOpenReviewPoints;
 
     const totalProcedures = perHead.reduce((s: number, h: any) => s + h.procedureCount, 0);
     const totalCompletedProcedures = perHead.reduce((s: number, h: any) => s + h.completedProcedures, 0);
@@ -2866,7 +2894,7 @@ router.get("/api/engagements/:engagementId/execution-compliance-summary", async 
         highRiskPending,
         isaCompliance: {
           allHeadsHaveEvidence: allHaveEvidence,
-          allRisksLinked: true,
+          allRisksLinked: perHead.every((h: any) => h.linkedRiskCount > 0),
           allConclusionsWritten: allHaveConclusions,
           allReviewPointsCleared: noOpenReviewPoints,
         },
