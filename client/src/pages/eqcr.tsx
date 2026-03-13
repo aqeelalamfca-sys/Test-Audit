@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, Link } from "wouter";
+import { useParams } from "wouter";
 import { useEngagement } from "@/lib/workspace-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,16 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Shield, CheckCircle2, AlertTriangle, FileText, Plus, Sparkles, Upload, Trash2, Download, Lock, Unlock, RefreshCw, Eye, MessageSquare, Printer, AlertCircle, Info, Building, Scale, UserCheck } from "lucide-react";
+import {
+  Shield, CheckCircle2, AlertTriangle, FileText, Plus, Sparkles, Upload,
+  Trash2, Lock, Unlock, RefreshCw, Eye, MessageSquare, Printer,
+  AlertCircle, Info, Building, Scale, UserCheck, ClipboardCheck,
+  Package, Brain, BarChart3, Send, XCircle
+} from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
-import { formatAccounting } from '@/lib/formatters';
 import { PageShell } from "@/components/page-shell";
 import { useEQCRSaveBridge } from "@/hooks/use-eqcr-save-bridge";
 import { useAuth } from "@/lib/auth";
@@ -39,6 +44,22 @@ interface ChecklistItem {
     uploadedBy?: { id: string; fullName: string };
     uploadedAt: string;
   }>;
+}
+
+interface EQCRCommentItem {
+  id: string;
+  commentReference: string | null;
+  area: string | null;
+  comment: string;
+  severity: string;
+  status: string;
+  response: string | null;
+  createdBy?: { id: string; fullName: string; role: string } | null;
+  respondedBy?: { id: string; fullName: string; role: string } | null;
+  clearedBy?: { id: string; fullName: string; role: string } | null;
+  respondedDate: string | null;
+  clearedDate: string | null;
+  createdAt: string;
 }
 
 interface PartnerComment {
@@ -79,18 +100,19 @@ interface EQCRAssignment {
   aiGeneratedSummary: string | null;
   aiSummaryGeneratedAt: string | null;
   checklistItems: ChecklistItem[];
+  comments: EQCRCommentItem[];
   partnerComment: PartnerComment | null;
   signedReports: SignedReport[];
 }
 
 export default function EQCR() {
   const params = useParams<{ engagementId: string }>();
-  const { 
-    engagementId: contextEngagementId, 
-    engagement, 
+  const {
+    engagementId: contextEngagementId,
+    engagement,
     client,
     getPhaseStatus,
-    refreshEngagement 
+    refreshEngagement
   } = useEngagement();
   const engagementId = params.engagementId || contextEngagementId || undefined;
   const { toast } = useToast();
@@ -101,7 +123,10 @@ export default function EQCR() {
   const [saving, setSaving] = useState(false);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [showSummaryDialog, setShowSummaryDialog] = useState(false);
+  const [showUnresolvedDialog, setShowUnresolvedDialog] = useState(false);
+  const [unresolvedSummary, setUnresolvedSummary] = useState("");
   const [generatingSummary, setGeneratingSummary] = useState(false);
+  const [generatingUnresolved, setGeneratingUnresolved] = useState(false);
   const [showAddItemDialog, setShowAddItemDialog] = useState(false);
   const [newItemArea, setNewItemArea] = useState("");
   const [partnerConclusion, setPartnerConclusion] = useState("");
@@ -112,10 +137,16 @@ export default function EQCR() {
   const [reopenReason, setReopenReason] = useState("");
   const [printingReport, setPrintingReport] = useState(false);
   const [showReopenDialog, setShowReopenDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [newCommentRef, setNewCommentRef] = useState("");
+  const [newCommentArea, setNewCommentArea] = useState("");
+  const [newCommentText, setNewCommentText] = useState("");
+  const [newCommentSeverity, setNewCommentSeverity] = useState("INFO");
+  const [respondText, setRespondText] = useState("");
+  const [respondingId, setRespondingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const signedReportInputRef = useRef<HTMLInputElement>(null);
 
-  // Build payload for saving
   const buildEQCRPayload = () => ({
     assignment,
     partnerConclusion,
@@ -126,7 +157,6 @@ export default function EQCR() {
     activeItemId
   });
 
-  // Initialize save engine
   const saveEngine = useEQCRSaveBridge(engagementId, buildEQCRPayload);
 
   const fetchAssignment = useCallback(async () => {
@@ -159,9 +189,7 @@ export default function EQCR() {
     if (!engagementId) return;
     setSaving(true);
     try {
-      const response = await fetchWithAuth(`/api/eqcr/${engagementId}/start-review`, {
-        method: "POST",
-      });
+      const response = await fetchWithAuth(`/api/eqcr/${engagementId}/start-review`, { method: "POST" });
       if (response.ok) {
         toast({ title: "Success", description: "EQCR review started" });
         await fetchAssignment();
@@ -203,19 +231,14 @@ export default function EQCR() {
     if (!engagementId) return;
     setSaving(true);
     try {
-      const response = await fetchWithAuth(`/api/eqcr/${engagementId}/ai-assist/${itemId}`, {
-        method: "POST",
-      });
+      const response = await fetchWithAuth(`/api/eqcr/${engagementId}/ai-assist/${itemId}`, { method: "POST" });
       if (response.ok) {
         const data = await response.json();
-        const item = assignment?.checklistItems.find(i => i.id === itemId);
-        if (item) {
-          await updateChecklistItem(itemId, {
-            descriptionOfReview: data.suggestion,
-            isAIAssisted: true,
-            aiDraftContent: data.suggestion,
-          });
-        }
+        await updateChecklistItem(itemId, {
+          descriptionOfReview: data.suggestion,
+          isAIAssisted: true,
+          aiDraftContent: data.suggestion,
+        });
         toast({ title: "AI Suggestion", description: "Description generated" });
       }
     } catch (error) {
@@ -275,9 +298,7 @@ export default function EQCR() {
     if (!engagementId) return;
     setSaving(true);
     try {
-      const response = await fetchWithAuth(`/api/eqcr/${engagementId}/checklist-files/${fileId}`, {
-        method: "DELETE",
-      });
+      const response = await fetchWithAuth(`/api/eqcr/${engagementId}/checklist-files/${fileId}`, { method: "DELETE" });
       if (response.ok) {
         await fetchAssignment();
         toast({ title: "Success", description: "File deleted" });
@@ -293,18 +314,34 @@ export default function EQCR() {
     if (!engagementId) return;
     setGeneratingSummary(true);
     try {
-      const response = await fetchWithAuth(`/api/eqcr/${engagementId}/generate-summary`, {
-        method: "POST",
-      });
+      const response = await fetchWithAuth(`/api/eqcr/${engagementId}/generate-summary`, { method: "POST" });
       if (response.ok) {
         await fetchAssignment();
         setShowSummaryDialog(true);
-        toast({ title: "Success", description: "Summary generated" });
+        toast({ title: "Success", description: "Readiness summary generated" });
       }
     } catch (error) {
       toast({ title: "Error", description: "Failed to generate summary", variant: "destructive" });
     } finally {
       setGeneratingSummary(false);
+    }
+  };
+
+  const generateUnresolvedSummary = async () => {
+    if (!engagementId) return;
+    setGeneratingUnresolved(true);
+    try {
+      const response = await fetchWithAuth(`/api/eqcr/${engagementId}/generate-unresolved-summary`, { method: "POST" });
+      if (response.ok) {
+        const data = await response.json();
+        setUnresolvedSummary(data.summary);
+        setShowUnresolvedDialog(true);
+        toast({ title: "Success", description: "Unresolved issues summary generated" });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to generate summary", variant: "destructive" });
+    } finally {
+      setGeneratingUnresolved(false);
     }
   };
 
@@ -334,13 +371,80 @@ export default function EQCR() {
     }
   };
 
+  const addComment = async () => {
+    if (!engagementId || !newCommentText.trim()) return;
+    setSaving(true);
+    try {
+      const response = await fetchWithAuth(`/api/eqcr/${engagementId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          commentReference: newCommentRef.trim() || undefined,
+          area: newCommentArea.trim() || undefined,
+          comment: newCommentText.trim(),
+          severity: newCommentSeverity,
+        }),
+      });
+      if (response.ok) {
+        await fetchAssignment();
+        setNewCommentRef("");
+        setNewCommentArea("");
+        setNewCommentText("");
+        setNewCommentSeverity("INFO");
+        toast({ title: "Success", description: "Comment added" });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to add comment", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const respondToComment = async (commentId: string) => {
+    if (!engagementId || !respondText.trim()) return;
+    setSaving(true);
+    try {
+      const response = await fetchWithAuth(`/api/eqcr/${engagementId}/comments/${commentId}/respond`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ response: respondText.trim() }),
+      });
+      if (response.ok) {
+        await fetchAssignment();
+        setRespondText("");
+        setRespondingId(null);
+        toast({ title: "Success", description: "Response saved" });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to respond", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const clearComment = async (commentId: string) => {
+    if (!engagementId) return;
+    setSaving(true);
+    try {
+      const response = await fetchWithAuth(`/api/eqcr/${engagementId}/comments/${commentId}/clear`, { method: "POST" });
+      if (response.ok) {
+        await fetchAssignment();
+        toast({ title: "Success", description: "Comment cleared" });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to clear comment", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const printEQCRReport = async () => {
     if (!engagementId || !assignment) return;
     setPrintingReport(true);
     try {
       const html2pdf = (await import("html2pdf.js")).default;
       const headerHtml = await getDocumentHeaderHtml(firm?.logoUrl, firm?.name);
-      
+
       const reportContent = document.createElement("div");
       reportContent.innerHTML = `
         <div style="font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto;">
@@ -350,14 +454,12 @@ export default function EQCR() {
             <h2 style="color: #4a5568; font-weight: normal; text-align: center;">ISQM 2 Compliant Report</h2>
             <p style="color: #718096; text-align: center;">Generated: ${new Date().toLocaleString()}</p>
           </div>
-          
           <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
             <h3 style="color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Engagement Details</h3>
             <p><strong>EQCR Reviewer:</strong> ${assignment.assignedReviewer?.fullName || "Not Assigned"}</p>
             <p><strong>Review Start Date:</strong> ${assignment.reviewStartDate ? new Date(assignment.reviewStartDate).toLocaleDateString() : "N/A"}</p>
             <p><strong>Status:</strong> ${assignment.status}</p>
           </div>
-          
           <div style="margin-bottom: 30px;">
             <h3 style="color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">EQCR Checklist</h3>
             <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
@@ -383,7 +485,6 @@ export default function EQCR() {
               </tbody>
             </table>
           </div>
-          
           ${assignment.aiGeneratedSummary ? `
           <div style="margin-bottom: 30px; background: #ebf8ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3182ce;">
             <h3 style="color: #2c5282; margin-bottom: 10px;">AI-Generated Engagement Summary</h3>
@@ -391,18 +492,16 @@ export default function EQCR() {
             <pre style="white-space: pre-wrap; font-size: 11px; font-family: inherit;">${assignment.aiGeneratedSummary}</pre>
           </div>
           ` : ""}
-          
           <div style="margin-bottom: 30px; background: #f0fff4; padding: 20px; border-radius: 8px;">
-            <h3 style="color: #276749; border-bottom: 2px solid #c6f6d5; padding-bottom: 10px;">EQCR Partner Response</h3>
+            <h3 style="color: #276749; border-bottom: 2px solid #c6f6d5; padding-bottom: 10px;">EQCR Conclusion</h3>
             <p><strong>Overall Conclusion:</strong></p>
             <p style="background: white; padding: 10px; border-radius: 4px; min-height: 60px;">${partnerConclusion || "Not provided"}</p>
-            <p><strong>Matters for Engagement Partner Attention:</strong></p>
+            <p><strong>Matters for Attention:</strong></p>
             <p style="background: white; padding: 10px; border-radius: 4px; min-height: 40px;">${mattersForAttention || "None"}</p>
             <p><strong>Clearance Conditions:</strong></p>
             <p style="background: white; padding: 10px; border-radius: 4px; min-height: 40px;">${clearanceConditions || "None"}</p>
             <p><strong>Clearance Status:</strong> <span style="font-weight: bold; color: ${clearanceStatus === "CLEARED" ? "#276749" : clearanceStatus === "NOT_CLEARED" ? "#c53030" : "#b7791f"};">${clearanceStatus === "CLEARED" ? "Cleared" : clearanceStatus === "CLEARED_WITH_CONDITIONS" ? "Cleared with Conditions" : clearanceStatus === "NOT_CLEARED" ? "Not Cleared" : "Not Selected"}</span></p>
           </div>
-          
           <div style="margin-top: 50px; border-top: 2px solid #e2e8f0; padding-top: 30px;">
             <h3 style="color: #2d3748;">Signatures</h3>
             <div style="display: flex; justify-content: space-between; margin-top: 30px;">
@@ -465,9 +564,7 @@ export default function EQCR() {
     if (!engagementId) return;
     setSaving(true);
     try {
-      const response = await fetchWithAuth(`/api/eqcr/${engagementId}/finalize`, {
-        method: "POST",
-      });
+      const response = await fetchWithAuth(`/api/eqcr/${engagementId}/finalize`, { method: "POST" });
       if (response.ok) {
         await fetchAssignment();
         toast({ title: "Success", description: "EQCR finalized and locked" });
@@ -505,7 +602,8 @@ export default function EQCR() {
   };
 
   const completedItems = assignment?.checklistItems.filter(i => i.response) || [];
-  const openComments = assignment?.checklistItems.filter(i => i.response === "NO" && !i.remarks) || [];
+  const openChecklistIssues = assignment?.checklistItems.filter(i => i.response === "NO" && !i.remarks) || [];
+  const openComments = assignment?.comments?.filter(c => c.status !== "CLEARED") || [];
   const isFinalized = assignment?.isFinalized || false;
 
   const getStatusBadge = () => {
@@ -531,8 +629,8 @@ export default function EQCR() {
       subtitle={`ISQM 1, ISQM 2${client?.name ? ` | ${client.name}` : ""}${engagement?.engagementCode ? ` (${engagement.engagementCode})` : ""}`}
       icon={<Shield className="h-5 w-5 text-primary" />}
       useRegistry={true}
-      backHref={`/workspace/${engagementId}/finalization`}
-      nextHref={`/workspace/${engagementId}/deliverables`}
+      backHref={`/workspace/${engagementId}/opinion-reports`}
+      nextHref={`/workspace/${engagementId}/inspection`}
       dashboardHref="/engagements"
       saveFn={async () => {
         try {
@@ -556,6 +654,7 @@ export default function EQCR() {
           {isFinalized && <Lock className="h-4 w-4 text-muted-foreground" />}
         </div>
       </div>
+
       <Card className="border-0 shadow-sm">
         <CardContent className="py-1.5 px-3">
           <div className="flex items-center flex-wrap divide-x">
@@ -571,124 +670,24 @@ export default function EQCR() {
             </div>
             <div className="flex items-center gap-2 px-4">
               <AlertTriangle className="h-3.5 w-3.5 text-orange-500 flex-shrink-0" />
-              <span className="text-xs text-muted-foreground">Issues Needing Remarks:</span>
-              <span className="font-bold text-sm">{openComments.length}</span>
+              <span className="text-xs text-muted-foreground">Open Matters:</span>
+              <span className="font-bold text-sm">{openComments.length + openChecklistIssues.length}</span>
             </div>
-            <div className="flex items-center gap-2 pl-4">
+            <div className="flex items-center gap-2 px-4">
               <FileText className="h-3.5 w-3.5 text-purple-500 flex-shrink-0" />
               <span className="text-xs text-muted-foreground">Signed Report:</span>
               <span className="font-medium text-sm">{assignment?.signedReports.length ? `v${assignment.signedReports[0].version}` : "Not Uploaded"}</span>
             </div>
+            <div className="flex items-center gap-2 pl-4">
+              <Scale className="h-3.5 w-3.5 text-indigo-500 flex-shrink-0" />
+              <span className="text-xs text-muted-foreground">Clearance:</span>
+              <span className={`font-bold text-sm ${clearanceStatus === "CLEARED" ? "text-green-600" : clearanceStatus === "NOT_CLEARED" ? "text-red-600" : clearanceStatus ? "text-amber-600" : "text-muted-foreground"}`}>
+                {clearanceStatus === "CLEARED" ? "Cleared" : clearanceStatus === "CLEARED_WITH_CONDITIONS" ? "Conditional" : clearanceStatus === "NOT_CLEARED" ? "Not Cleared" : "Pending"}
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Read-Only Summary Outputs - Auto-pulled from earlier phases */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-        <Card className="border-blue-200 bg-blue-50/30 dark:bg-blue-950/20">
-          <CardContent className="py-2 px-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Building className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
-              <span className="text-xs font-medium">Engagement Summary</span>
-              <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1">Read-Only</Badge>
-            </div>
-            <div className="space-y-0.5 text-xs">
-              <div className="flex justify-between gap-1">
-                <span className="text-muted-foreground">Client:</span>
-                <span className="font-medium" data-testid="text-engagement-client">{client?.name || "N/A"}</span>
-              </div>
-              <div className="flex justify-between gap-1">
-                <span className="text-muted-foreground">Engagement:</span>
-                <span className="font-medium" data-testid="text-engagement-code">{engagement?.engagementCode || "N/A"}</span>
-              </div>
-              <div className="flex justify-between gap-1">
-                <span className="text-muted-foreground">Status:</span>
-                <Badge variant="secondary" className="text-[10px] py-0 px-1">{assignment?.status || "Pending"}</Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-orange-200 bg-orange-50/30 dark:bg-orange-950/20">
-          <CardContent className="py-2 px-3">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle className="h-3.5 w-3.5 text-orange-500 flex-shrink-0" />
-              <span className="text-xs font-medium">Key Findings from Execution</span>
-              <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1">Read-Only</Badge>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-lg font-bold text-orange-600" data-testid="text-key-findings-count">{openComments.length}</span>
-              <span className="text-[11px] text-muted-foreground">items requiring EQCR attention</span>
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Pulled from Execution phase</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-purple-200 bg-purple-50/30 dark:bg-purple-950/20">
-          <CardContent className="py-2 px-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Scale className="h-3.5 w-3.5 text-purple-500 flex-shrink-0" />
-              <span className="text-xs font-medium">Risk Areas Summary</span>
-              <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1">Read-Only</Badge>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-lg font-bold text-purple-600" data-testid="text-risk-areas-count">
-                {assignment?.checklistItems.filter(i => i.response === "NO" || i.response === "NOT_SIGNIFICANT").length || 0}
-              </span>
-              <span className="text-[11px] text-muted-foreground">high-risk areas identified</span>
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">From Risk Assessment (Planning phase)</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex items-center gap-2 justify-end">
-        <Button
-          variant="outline"
-          onClick={generateSummary}
-          disabled={generatingSummary || isFinalized}
-          data-testid="button-generate-qcr-report"
-        >
-          <Sparkles className="h-4 w-4 mr-2" />
-          {generatingSummary ? "Generating..." : "Generate QCR Report"}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => {
-            toast({
-              title: "Clarification Request",
-              description: "A clarification request has been sent to the engagement team.",
-            });
-          }}
-          disabled={isFinalized}
-          data-testid="button-request-clarification"
-        >
-          <MessageSquare className="h-4 w-4 mr-2" />
-          Request Clarification
-        </Button>
-        <Button
-          onClick={() => {
-            if (openComments.length > 0) {
-              toast({
-                title: "Cannot Submit to Partner",
-                description: "Resolve all open items before submitting to partner.",
-                variant: "destructive",
-              });
-              return;
-            }
-            toast({
-              title: "Submitted to Partner",
-              description: "EQCR has been submitted to the Partner for final approval.",
-            });
-          }}
-          disabled={isFinalized || openComments.length > 0}
-          data-testid="button-submit-to-partner"
-        >
-          <UserCheck className="h-4 w-4 mr-2" />
-          Submit to Partner
-        </Button>
-      </div>
 
       {!assignment?.status || assignment.status === "NOT_REQUIRED" || assignment.status === "PENDING_ASSIGNMENT" ? (
         <Card>
@@ -705,351 +704,669 @@ export default function EQCR() {
           </CardContent>
         </Card>
       ) : (
-        <>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>EQCR Checklist</CardTitle>
-                <CardDescription>Quality review procedures per ISQM 2</CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={generateSummary} disabled={generatingSummary || isFinalized}
-                  data-testid="btn-generate-eqcr-summary"
-                  title={isFinalized ? "EQCR is finalized" : generatingSummary ? "Generation in progress" : "Generate AI-powered EQCR summary"}
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  {generatingSummary ? "Generating..." : "Generate Summary"}
-                </Button>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto py-1 bg-muted/50">
+            <TabsTrigger value="dashboard" className="gap-1.5 text-xs">
+              <BarChart3 className="h-3.5 w-3.5" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="open-matters" className="gap-1.5 text-xs">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Open Matters
+              {(openComments.length + openChecklistIssues.length) > 0 && (
+                <Badge variant="destructive" className="ml-1 text-[10px] px-1 py-0 h-4">{openComments.length + openChecklistIssues.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="report-pack" className="gap-1.5 text-xs">
+              <Package className="h-3.5 w-3.5" />
+              Report Pack
+            </TabsTrigger>
+            <TabsTrigger value="key-judgments" className="gap-1.5 text-xs">
+              <Scale className="h-3.5 w-3.5" />
+              Key Judgments
+            </TabsTrigger>
+            <TabsTrigger value="independence" className="gap-1.5 text-xs">
+              <Shield className="h-3.5 w-3.5" />
+              Independence
+            </TabsTrigger>
+            <TabsTrigger value="checklist" className="gap-1.5 text-xs">
+              <ClipboardCheck className="h-3.5 w-3.5" />
+              EQCR Checklist
+            </TabsTrigger>
+            <TabsTrigger value="clearance" className="gap-1.5 text-xs">
+              <Lock className="h-3.5 w-3.5" />
+              Clearance
+            </TabsTrigger>
+          </TabsList>
+
+          {/* ─── TAB 1: Dashboard ─── */}
+          <TabsContent value="dashboard" className="space-y-3 mt-3">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              <Card className="border-blue-200 bg-blue-50/30 dark:bg-blue-950/20">
+                <CardContent className="py-3 px-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Building className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm font-medium">Engagement Summary</span>
+                    <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1">Read-Only</Badge>
+                  </div>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Client:</span><span className="font-medium">{client?.name || "N/A"}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Engagement:</span><span className="font-medium">{engagement?.engagementCode || "N/A"}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Reviewer:</span><span className="font-medium">{assignment?.assignedReviewer?.fullName || "Not Assigned"}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Status:</span>{getStatusBadge()}</div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-orange-200 bg-orange-50/30 dark:bg-orange-950/20">
+                <CardContent className="py-3 px-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="h-4 w-4 text-orange-500" />
+                    <span className="text-sm font-medium">Open Matters</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-orange-600">{openComments.length + openChecklistIssues.length}</span>
+                    <span className="text-xs text-muted-foreground">items requiring attention</span>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-1 space-y-0.5">
+                    <p>{openComments.length} open comment(s)</p>
+                    <p>{openChecklistIssues.length} "No" item(s) without remarks</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-green-200 bg-green-50/30 dark:bg-green-950/20">
+                <CardContent className="py-3 px-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <span className="text-sm font-medium">Completion Progress</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-green-600">
+                      {assignment?.checklistItems.length ? Math.round((completedItems.length / assignment.checklistItems.length) * 100) : 0}%
+                    </span>
+                    <span className="text-xs text-muted-foreground">({completedItems.length}/{assignment?.checklistItems.length || 0} items)</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div
+                      className="bg-green-500 h-2 rounded-full transition-all"
+                      style={{ width: `${assignment?.checklistItems.length ? (completedItems.length / assignment.checklistItems.length) * 100 : 0}%` }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="flex items-center gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={generateSummary} disabled={generatingSummary || isFinalized}>
+                <Brain className="h-4 w-4 mr-2" />
+                {generatingSummary ? "Generating..." : "AI Readiness Summary"}
+              </Button>
+              <Button variant="outline" size="sm" onClick={generateUnresolvedSummary} disabled={generatingUnresolved || isFinalized}>
+                <AlertCircle className="h-4 w-4 mr-2" />
+                {generatingUnresolved ? "Generating..." : "AI Unresolved Issues"}
+              </Button>
+            </div>
+
+            <Card>
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm">Finalization Requirements</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1">
+                <p className={`text-sm ${completedItems.length === assignment?.checklistItems.length ? "text-green-600" : "text-red-500"}`}>
+                  {completedItems.length === assignment?.checklistItems.length ? "✓" : "✗"} All checklist items responded ({completedItems.length}/{assignment?.checklistItems.length || 0})
+                </p>
+                <p className={`text-sm ${openChecklistIssues.length === 0 ? "text-green-600" : "text-red-500"}`}>
+                  {openChecklistIssues.length === 0 ? "✓" : "✗"} Remarks for all "No" responses ({openChecklistIssues.length} missing)
+                </p>
+                <p className={`text-sm ${openComments.length === 0 ? "text-green-600" : "text-red-500"}`}>
+                  {openComments.length === 0 ? "✓" : "✗"} All comments cleared ({openComments.length} open)
+                </p>
+                <p className={`text-sm ${partnerConclusion ? "text-green-600" : "text-red-500"}`}>
+                  {partnerConclusion ? "✓" : "✗"} Overall conclusion documented
+                </p>
+                <p className={`text-sm ${clearanceStatus ? "text-green-600" : "text-red-500"}`}>
+                  {clearanceStatus ? "✓" : "✗"} Clearance status selected
+                </p>
+                <p className={`text-sm ${(assignment?.signedReports.length || 0) > 0 ? "text-green-600" : "text-red-500"}`}>
+                  {(assignment?.signedReports.length || 0) > 0 ? "✓" : "✗"} Signed report uploaded
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ─── TAB 2: Open Matters ─── */}
+          <TabsContent value="open-matters" className="space-y-3 mt-3">
+            <Card>
+              <CardHeader className="py-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      EQCR Comments & Critical Matters
+                    </CardTitle>
+                    <CardDescription className="text-xs">Raise and track matters requiring engagement team attention</CardDescription>
+                  </div>
+                  <Badge variant={openComments.length > 0 ? "destructive" : "secondary"}>
+                    {openComments.length} Open
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 {!isFinalized && (
-                  <Button variant="outline" size="sm" onClick={() => setShowAddItemDialog(true)}
-                    data-testid="btn-add-eqcr-item"
-                    title="Add a new checklist item"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Item
-                  </Button>
+                  <div className="border rounded-lg p-3 bg-muted/30 space-y-2">
+                    <p className="text-xs font-medium">Add New Comment</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Input placeholder="Reference (e.g. WP-101)" value={newCommentRef} onChange={e => setNewCommentRef(e.target.value)} className="text-xs" />
+                      <Input placeholder="Area (e.g. Revenue)" value={newCommentArea} onChange={e => setNewCommentArea(e.target.value)} className="text-xs" />
+                      <Select value={newCommentSeverity} onValueChange={setNewCommentSeverity}>
+                        <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="INFO">Info</SelectItem>
+                          <SelectItem value="WARNING">Warning</SelectItem>
+                          <SelectItem value="CRITICAL">Critical</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Textarea placeholder="Describe the matter..." value={newCommentText} onChange={e => setNewCommentText(e.target.value)} className="min-h-[60px] text-xs" />
+                    <Button size="sm" onClick={addComment} disabled={!newCommentText.trim() || saving}>
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Add Comment
+                    </Button>
+                  </div>
                 )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="py-3 px-2 text-left w-12">Sr.</th>
-                      <th className="py-3 px-2 text-left w-48">Checklist Area</th>
-                      <th className="py-3 px-2 text-left">Description of Review</th>
-                      <th className="py-3 px-2 text-center w-20">AI</th>
-                      <th className="py-3 px-2 text-left w-36">Response</th>
-                      <th className="py-3 px-2 text-left w-48">Remarks</th>
-                      <th className="py-3 px-2 text-center w-24">Files</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {assignment?.checklistItems.map((item) => (
-                      <tr key={item.id} className="border-b hover:bg-muted/30">
-                        <td className="py-3 px-2">{item.srNo}</td>
-                        <td className="py-3 px-2 font-medium">{item.checklistArea}</td>
-                        <td className="py-3 px-2">
-                          <Textarea
-                            value={item.descriptionOfReview || ""}
-                            onChange={(e) => {
-                              const newItems = assignment.checklistItems.map(i => 
-                                i.id === item.id ? { ...i, descriptionOfReview: e.target.value } : i
-                              );
-                              setAssignment({ ...assignment, checklistItems: newItems });
-                            }}
-                            onBlur={(e) => updateChecklistItem(item.id, { descriptionOfReview: e.target.value })}
-                            placeholder="Enter description..."
-                            className="min-h-[60px]"
-                            disabled={isFinalized}
-                          />
-                          {item.isAIAssisted && (
-                            <div className="mt-1 p-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700 flex items-center gap-1">
-                              <Sparkles className="h-3 w-3 text-blue-500 flex-shrink-0" />
-                              <span>AI-Assisted (Subject to Professional Judgment)</span>
+
+                {(assignment?.comments || []).length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm">No comments raised yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {(assignment?.comments || []).map(comment => (
+                      <div key={comment.id} className={`border rounded-lg p-3 ${comment.status === "CLEARED" ? "bg-green-50/50 border-green-200" : comment.severity === "CRITICAL" ? "bg-red-50/50 border-red-200" : "bg-white"}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge variant={comment.severity === "CRITICAL" ? "destructive" : comment.severity === "WARNING" ? "outline" : "secondary"} className="text-[10px] px-1 py-0">
+                                {comment.severity}
+                              </Badge>
+                              {comment.commentReference && <span className="text-xs font-mono text-muted-foreground">{comment.commentReference}</span>}
+                              {comment.area && <span className="text-xs text-muted-foreground">| {comment.area}</span>}
+                              <Badge variant={comment.status === "CLEARED" ? "default" : comment.status === "ADDRESSED" ? "outline" : "secondary"} className="text-[10px] px-1 py-0 ml-auto">
+                                {comment.status}
+                              </Badge>
                             </div>
-                          )}
-                        </td>
-                        <td className="py-3 px-2 text-center">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => getAISuggestion(item.id)}
-                                  disabled={saving || isFinalized}
-                                  className="hover:bg-blue-50"
-                                >
-                                  <Sparkles className="h-4 w-4 text-blue-500" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="max-w-xs">
-                                <p className="font-medium">AI Assist</p>
-                                <p className="text-xs text-muted-foreground">Generate a suggested description. AI output is subject to professional judgment and must be reviewed.</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </td>
-                        <td className="py-3 px-2">
-                          <Select
-                            value={item.response || ""}
-                            onValueChange={(value) => updateChecklistItem(item.id, { response: value as any })}
-                            disabled={isFinalized}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="YES">Yes</SelectItem>
-                              <SelectItem value="NO">No</SelectItem>
-                              <SelectItem value="NOT_SIGNIFICANT">Not Significant</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </td>
-                        <td className="py-3 px-2">
-                          <Textarea
-                            value={item.remarks || ""}
-                            onChange={(e) => {
-                              const newItems = assignment.checklistItems.map(i => 
-                                i.id === item.id ? { ...i, remarks: e.target.value } : i
-                              );
-                              setAssignment({ ...assignment, checklistItems: newItems });
-                            }}
-                            onBlur={(e) => updateChecklistItem(item.id, { remarks: e.target.value })}
-                            placeholder={item.response === "NO" ? "Required..." : "Optional..."}
-                            className={`min-h-[60px] ${item.response === "NO" && !item.remarks ? "border-red-300" : ""}`}
-                            disabled={isFinalized}
-                          />
-                        </td>
-                        <td className="py-3 px-2">
-                          <div className="flex flex-col gap-1">
-                            {item.attachments.map((att) => (
-                              <div key={att.id} className="flex items-center gap-1 text-xs">
-                                <span className="truncate max-w-[80px]" title={att.originalName}>{att.originalName}</span>
-                                {!isFinalized && (
-                                  <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={() => deleteAttachment(att.id)}>
-                                    <Trash2 className="h-3 w-3 text-destructive" />
+                            <p className="text-sm">{comment.comment}</p>
+                            <p className="text-[10px] text-muted-foreground mt-1">By {comment.createdBy?.fullName} on {new Date(comment.createdAt).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                        {comment.response && (
+                          <div className="mt-2 pl-3 border-l-2 border-blue-300">
+                            <p className="text-xs text-blue-700"><strong>Response:</strong> {comment.response}</p>
+                            <p className="text-[10px] text-muted-foreground">By {comment.respondedBy?.fullName} on {comment.respondedDate ? new Date(comment.respondedDate).toLocaleDateString() : "N/A"}</p>
+                          </div>
+                        )}
+                        {comment.status === "CLEARED" && comment.clearedBy && (
+                          <div className="mt-1 pl-3 border-l-2 border-green-300">
+                            <p className="text-[10px] text-green-700">Cleared by {comment.clearedBy.fullName} on {comment.clearedDate ? new Date(comment.clearedDate).toLocaleDateString() : "N/A"}</p>
+                          </div>
+                        )}
+                        {!isFinalized && comment.status !== "CLEARED" && (
+                          <div className="mt-2 flex gap-2">
+                            {comment.status === "OPEN" && (
+                              respondingId === comment.id ? (
+                                <div className="flex-1 flex gap-2">
+                                  <Input placeholder="Type response..." value={respondText} onChange={e => setRespondText(e.target.value)} className="text-xs flex-1" />
+                                  <Button size="sm" variant="outline" onClick={() => respondToComment(comment.id)} disabled={!respondText.trim() || saving}>
+                                    <Send className="h-3 w-3 mr-1" /> Send
                                   </Button>
-                                )}
-                              </div>
-                            ))}
-                            {!isFinalized && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 text-xs"
-                                onClick={() => {
-                                  setActiveItemId(item.id);
-                                  fileInputRef.current?.click();
-                                }}
-                                data-testid={`btn-upload-checklist-${item.id}`}
-                                title="Upload supporting file"
-                              >
-                                <Upload className="h-3 w-3 mr-1" />
-                                Upload
+                                  <Button size="sm" variant="ghost" onClick={() => { setRespondingId(null); setRespondText(""); }}>Cancel</Button>
+                                </div>
+                              ) : (
+                                <Button size="sm" variant="outline" onClick={() => setRespondingId(comment.id)}>
+                                  <MessageSquare className="h-3 w-3 mr-1" /> Respond
+                                </Button>
+                              )
+                            )}
+                            {comment.status === "ADDRESSED" && (
+                              <Button size="sm" variant="outline" className="text-green-600" onClick={() => clearComment(comment.id)} disabled={saving}>
+                                <CheckCircle2 className="h-3 w-3 mr-1" /> Clear
                               </Button>
                             )}
                           </div>
-                        </td>
-                      </tr>
+                        )}
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                EQCR Partner Comments & Conclusion
-              </CardTitle>
-              <CardDescription>Document the overall conclusion and any clearance conditions</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Overall Conclusion</Label>
-                <Textarea
-                  value={partnerConclusion}
-                  onChange={(e) => setPartnerConclusion(e.target.value)}
-                  placeholder="Enter the overall conclusion from the EQCR review..."
-                  className="min-h-[100px]"
-                  disabled={isFinalized}
-                />
-              </div>
-              <div>
-                <Label>Matters for Attention</Label>
-                <Textarea
-                  value={mattersForAttention}
-                  onChange={(e) => setMattersForAttention(e.target.value)}
-                  placeholder="Document any significant matters requiring attention..."
-                  className="min-h-[80px]"
-                  disabled={isFinalized}
-                />
-              </div>
-              <div>
-                <Label>Clearance Conditions (if any)</Label>
-                <Textarea
-                  value={clearanceConditions}
-                  onChange={(e) => setClearanceConditions(e.target.value)}
-                  placeholder="Specify any conditions that must be met before clearance..."
-                  className="min-h-[80px]"
-                  disabled={isFinalized}
-                />
-              </div>
-              <div>
-                <Label>EQCR Clearance Status</Label>
-                <Select
-                  value={clearanceStatus}
-                  onValueChange={(value) => setClearanceStatus(value as any)}
-                  disabled={isFinalized}
-                >
-                  <SelectTrigger className="w-full mt-1">
-                    <SelectValue placeholder="Select clearance status..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CLEARED">Cleared</SelectItem>
-                    <SelectItem value="CLEARED_WITH_CONDITIONS">Cleared with Conditions</SelectItem>
-                    <SelectItem value="NOT_CLEARED">Not Cleared</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {!isFinalized && (
-                <Button onClick={savePartnerComments} disabled={saving}>
-                  Save Comments
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                EQCR Report - Print, Sign & Upload
-              </CardTitle>
-              <CardDescription>Generate PDF, manually sign, and upload the signed document</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={printEQCRReport} disabled={printingReport}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  {printingReport ? "Generating PDF..." : "Print EQCR Report"}
-                </Button>
-              </div>
-              
-              <div className="border-t pt-4">
-                <p className="text-sm font-medium mb-2">Signed Report</p>
-                {assignment?.signedReports.length > 0 ? (
-                  <div className="space-y-2">
-                    {assignment.signedReports.map((report) => (
-                      <div key={report.id} className="flex items-center justify-between p-3 border rounded-lg bg-green-50">
-                        <div className="flex items-center gap-3">
-                          <FileText className="h-5 w-5 text-green-600" />
-                          <div>
-                            <p className="font-medium">{report.originalName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Version {report.version} | Uploaded by {report.uploadedBy?.fullName} | {new Date(report.uploadedAt).toLocaleDateString()}
-                            </p>
+          {/* ─── TAB 3: Report Pack Review ─── */}
+          <TabsContent value="report-pack" className="space-y-3 mt-3">
+            <Card>
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Report Pack Review
+                  <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1">Read-Only</Badge>
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Review the report package assembled in Phase 16 (Opinion & Reports). The EQCR reviewer must verify completeness and accuracy.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="border rounded-lg p-3 bg-muted/20">
+                    <p className="text-xs font-medium mb-1">Report Pack Status</p>
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-blue-500" />
+                      <span className="text-sm">Assembled in Phase 16</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">Navigate to Opinion & Reports to view the full report package</p>
+                  </div>
+                  <div className="border rounded-lg p-3 bg-muted/20">
+                    <p className="text-xs font-medium mb-1">Signed Reports</p>
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-green-500" />
+                      <span className="text-sm">{assignment?.signedReports.length || 0} version(s) uploaded</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="border rounded-lg p-4">
+                  <p className="text-xs font-medium mb-2">EQCR Report — Print, Sign & Upload</p>
+                  <div className="flex gap-2 mb-3">
+                    <Button variant="outline" size="sm" onClick={printEQCRReport} disabled={printingReport}>
+                      <Printer className="h-4 w-4 mr-2" />
+                      {printingReport ? "Generating PDF..." : "Print EQCR Report"}
+                    </Button>
+                    {!isFinalized && (
+                      <Button variant="outline" size="sm" onClick={() => signedReportInputRef.current?.click()}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Signed Report
+                      </Button>
+                    )}
+                  </div>
+                  {(assignment?.signedReports || []).length > 0 && (
+                    <div className="space-y-2">
+                      {assignment!.signedReports.map(report => (
+                        <div key={report.id} className="flex items-center justify-between p-2 border rounded-lg bg-green-50">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-green-600" />
+                            <div>
+                              <p className="text-sm font-medium">{report.originalName}</p>
+                              <p className="text-[10px] text-muted-foreground">v{report.version} | {report.uploadedBy?.fullName} | {new Date(report.uploadedAt).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 text-[10px]">Current</Badge>
+                            <a href={`/api/eqcr/files/${report.fileName}`} target="_blank" rel="noopener noreferrer">
+                              <Button variant="ghost" size="sm"><Eye className="h-3.5 w-3.5" /></Button>
+                            </a>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">Current</Badge>
-                          <a href={`/api/eqcr/files/${report.fileName}`} target="_blank" rel="noopener noreferrer">
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ─── TAB 4: Key Judgments ─── */}
+          <TabsContent value="key-judgments" className="space-y-3 mt-3">
+            <Card>
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Scale className="h-4 w-4" />
+                  Key Judgments Review
+                  <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1">Read-Only Summary</Badge>
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  ISQM 2 requires the EQCR reviewer to evaluate significant judgments made by the engagement team
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="border rounded-lg p-4 bg-purple-50/30">
+                  <p className="text-xs font-medium mb-2">Areas Requiring Judgment Review</p>
+                  <div className="space-y-2 text-sm">
+                    {[
+                      { area: "Significant Risks", desc: "Review identification and response to significant risks per ISA 315" },
+                      { area: "Accounting Estimates", desc: "Evaluate reasonableness of significant estimates and assumptions" },
+                      { area: "Materiality", desc: "Review materiality determination and its application throughout the audit" },
+                      { area: "Going Concern", desc: "Assess management's going concern evaluation and audit conclusion" },
+                      { area: "Audit Opinion", desc: "Evaluate appropriateness of the proposed audit opinion" },
+                      { area: "Key Audit Matters", desc: "Review KAM selection and communication for listed entities" },
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-start gap-2 p-2 border rounded bg-white">
+                        <Scale className="h-3.5 w-3.5 text-purple-500 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="font-medium text-xs">{item.area}</p>
+                          <p className="text-[11px] text-muted-foreground">{item.desc}</p>
                         </div>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-muted-foreground text-sm">No signed report uploaded yet. Print the report, sign manually, then upload.</p>
-                )}
-                {!isFinalized && (
-                  <Button variant="outline" className="mt-3" onClick={() => signedReportInputRef.current?.click()}
-                    data-testid="btn-upload-signed-report"
-                    title="Upload signed EQCR report"
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Signed Report
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Info className="h-3.5 w-3.5 text-blue-600" />
+                    <span className="text-xs text-blue-700">Detailed review of each area is performed via the EQCR Checklist tab</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Finalization</CardTitle>
-              <CardDescription>Lock the EQCR review after all requirements are met</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isFinalized ? (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-green-600">
-                    <Lock className="h-5 w-5" />
-                    <span>EQCR has been finalized and locked on {assignment?.finalizedAt ? new Date(assignment.finalizedAt).toLocaleDateString() : "N/A"}</span>
+          {/* ─── TAB 5: Independence Summary ─── */}
+          <TabsContent value="independence" className="space-y-3 mt-3">
+            <Card>
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Independence & Ethics Review Summary
+                  <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1">Read-Only Summary</Badge>
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  EQCR reviewer must confirm independence and ethical requirements have been met per IESBA Code
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="border rounded-lg p-4 bg-indigo-50/30">
+                  <p className="text-xs font-medium mb-2">Independence Verification Areas</p>
+                  <div className="space-y-2 text-sm">
+                    {[
+                      { area: "Financial Interests", desc: "No prohibited financial interests held by team members or firm" },
+                      { area: "Non-Audit Services", desc: "All non-audit services reviewed for independence threats" },
+                      { area: "Team Relationships", desc: "No prohibited personal/business relationships with client" },
+                      { area: "Fee Arrangements", desc: "Fee structure and overdue fees reviewed for self-interest threats" },
+                      { area: "Partner Rotation", desc: "Engagement partner rotation requirements verified" },
+                      { area: "Threat & Safeguards", desc: "All identified threats have appropriate safeguards documented" },
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-start gap-2 p-2 border rounded bg-white">
+                        <Shield className="h-3.5 w-3.5 text-indigo-500 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="font-medium text-xs">{item.area}</p>
+                          <p className="text-[11px] text-muted-foreground">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <Button variant="outline" onClick={() => setShowReopenDialog(true)}
-                    data-testid="btn-reopen-eqcr"
-                    title="Reopen EQCR review (Partner only)"
-                  >
-                    <Unlock className="h-4 w-4 mr-2" />
-                    Reopen (Partner Only)
+                </div>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Info className="h-3.5 w-3.5 text-blue-600" />
+                    <span className="text-xs text-blue-700">Independence assessment was performed in Phase 2. The EQCR reviewer confirms adequacy through the checklist.</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ─── TAB 6: EQCR Checklist ─── */}
+          <TabsContent value="checklist" className="space-y-3 mt-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between py-3">
+                <div>
+                  <CardTitle className="text-sm">EQCR Checklist</CardTitle>
+                  <CardDescription className="text-xs">Quality review procedures per ISQM 2</CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={generateSummary} disabled={generatingSummary || isFinalized}>
+                    <Sparkles className="h-3.5 w-3.5 mr-1" />
+                    {generatingSummary ? "Generating..." : "Generate Summary"}
                   </Button>
+                  {!isFinalized && (
+                    <Button variant="outline" size="sm" onClick={() => setShowAddItemDialog(true)}>
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Add Item
+                    </Button>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="text-sm space-y-1">
-                    <p className={completedItems.length === assignment?.checklistItems.length ? "text-green-600" : "text-red-500"}>
-                      {completedItems.length === assignment?.checklistItems.length ? "✓" : "✗"} All checklist items must have a response
-                    </p>
-                    <p className={openComments.length === 0 ? "text-green-600" : "text-red-500"}>
-                      {openComments.length === 0 ? "✓" : "✗"} Remarks required for "No" responses ({openComments.length} missing)
-                    </p>
-                    <p className={partnerConclusion ? "text-green-600" : "text-red-500"}>
-                      {partnerConclusion ? "✓" : "✗"} Overall conclusion required
-                    </p>
-                    <p className={clearanceStatus ? "text-green-600" : "text-red-500"}>
-                      {clearanceStatus ? "✓" : "✗"} Clearance status must be selected
-                    </p>
-                    <p className={(assignment?.signedReports.length || 0) > 0 ? "text-green-600" : "text-red-500"}>
-                      {(assignment?.signedReports.length || 0) > 0 ? "✓" : "✗"} Signed report must be uploaded
-                    </p>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="py-3 px-2 text-left w-12">Sr.</th>
+                        <th className="py-3 px-2 text-left w-48">Checklist Area</th>
+                        <th className="py-3 px-2 text-left">Description of Review</th>
+                        <th className="py-3 px-2 text-center w-20">AI</th>
+                        <th className="py-3 px-2 text-left w-36">Response</th>
+                        <th className="py-3 px-2 text-left w-48">Remarks</th>
+                        <th className="py-3 px-2 text-center w-24">Files</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {assignment?.checklistItems.map((item) => (
+                        <tr key={item.id} className="border-b hover:bg-muted/30">
+                          <td className="py-3 px-2">{item.srNo}</td>
+                          <td className="py-3 px-2 font-medium">{item.checklistArea}</td>
+                          <td className="py-3 px-2">
+                            <Textarea
+                              value={item.descriptionOfReview || ""}
+                              onChange={(e) => {
+                                const newItems = assignment.checklistItems.map(i =>
+                                  i.id === item.id ? { ...i, descriptionOfReview: e.target.value } : i
+                                );
+                                setAssignment({ ...assignment, checklistItems: newItems });
+                              }}
+                              onBlur={(e) => updateChecklistItem(item.id, { descriptionOfReview: e.target.value })}
+                              placeholder="Enter description..."
+                              className="min-h-[60px]"
+                              disabled={isFinalized}
+                            />
+                            {item.isAIAssisted && (
+                              <div className="mt-1 p-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700 flex items-center gap-1">
+                                <Sparkles className="h-3 w-3 text-blue-500 flex-shrink-0" />
+                                <span>AI-Assisted (Subject to Professional Judgment)</span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3 px-2 text-center">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="sm" onClick={() => getAISuggestion(item.id)} disabled={saving || isFinalized} className="hover:bg-blue-50">
+                                    <Sparkles className="h-4 w-4 text-blue-500" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs">
+                                  <p className="font-medium">AI Assist</p>
+                                  <p className="text-xs text-muted-foreground">Generate a suggested description. AI output must be reviewed.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </td>
+                          <td className="py-3 px-2">
+                            <Select
+                              value={item.response || ""}
+                              onValueChange={(value) => updateChecklistItem(item.id, { response: value as any })}
+                              disabled={isFinalized}
+                            >
+                              <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="YES">Yes</SelectItem>
+                                <SelectItem value="NO">No</SelectItem>
+                                <SelectItem value="NOT_SIGNIFICANT">Not Significant</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </td>
+                          <td className="py-3 px-2">
+                            <Textarea
+                              value={item.remarks || ""}
+                              onChange={(e) => {
+                                const newItems = assignment.checklistItems.map(i =>
+                                  i.id === item.id ? { ...i, remarks: e.target.value } : i
+                                );
+                                setAssignment({ ...assignment, checklistItems: newItems });
+                              }}
+                              onBlur={(e) => updateChecklistItem(item.id, { remarks: e.target.value })}
+                              placeholder={item.response === "NO" ? "Required..." : "Optional..."}
+                              className={`min-h-[60px] ${item.response === "NO" && !item.remarks ? "border-red-300" : ""}`}
+                              disabled={isFinalized}
+                            />
+                          </td>
+                          <td className="py-3 px-2">
+                            <div className="flex flex-col gap-1">
+                              {item.attachments.map((att) => (
+                                <div key={att.id} className="flex items-center gap-1 text-xs">
+                                  <span className="truncate max-w-[80px]" title={att.originalName}>{att.originalName}</span>
+                                  {!isFinalized && (
+                                    <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={() => deleteAttachment(att.id)}>
+                                      <Trash2 className="h-3 w-3 text-destructive" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                              {!isFinalized && (
+                                <Button variant="outline" size="sm" className="h-6 text-xs" onClick={() => { setActiveItemId(item.id); fileInputRef.current?.click(); }}>
+                                  <Upload className="h-3 w-3 mr-1" />
+                                  Upload
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ─── TAB 7: Clearance & Conclusion ─── */}
+          <TabsContent value="clearance" className="space-y-3 mt-3">
+            <Card>
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  EQCR Conclusion
+                </CardTitle>
+                <CardDescription className="text-xs">Document the overall conclusion, clearance conditions, and final determination</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label className="text-xs">Overall Conclusion</Label>
+                  <Textarea
+                    value={partnerConclusion}
+                    onChange={(e) => setPartnerConclusion(e.target.value)}
+                    placeholder="Enter the overall conclusion from the EQCR review..."
+                    className="min-h-[100px]"
+                    disabled={isFinalized}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Matters for Attention</Label>
+                  <Textarea
+                    value={mattersForAttention}
+                    onChange={(e) => setMattersForAttention(e.target.value)}
+                    placeholder="Document any significant matters requiring attention..."
+                    className="min-h-[80px]"
+                    disabled={isFinalized}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Clearance Conditions (if any)</Label>
+                  <Textarea
+                    value={clearanceConditions}
+                    onChange={(e) => setClearanceConditions(e.target.value)}
+                    placeholder="Specify any conditions that must be met before clearance..."
+                    className="min-h-[80px]"
+                    disabled={isFinalized}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">EQCR Clearance Status</Label>
+                  <Select
+                    value={clearanceStatus}
+                    onValueChange={(value) => setClearanceStatus(value as any)}
+                    disabled={isFinalized}
+                  >
+                    <SelectTrigger className="w-full mt-1">
+                      <SelectValue placeholder="Select clearance status..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CLEARED">Cleared</SelectItem>
+                      <SelectItem value="CLEARED_WITH_CONDITIONS">Cleared with Conditions</SelectItem>
+                      <SelectItem value="NOT_CLEARED">Not Cleared — Return for Correction</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {!isFinalized && (
+                  <Button onClick={savePartnerComments} disabled={saving}>
+                    Save Conclusion
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm">Finalization</CardTitle>
+                <CardDescription className="text-xs">Lock the EQCR review after all requirements are met</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isFinalized ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-green-600">
+                      <Lock className="h-5 w-5" />
+                      <span>EQCR finalized and locked on {assignment?.finalizedAt ? new Date(assignment.finalizedAt).toLocaleDateString() : "N/A"}</span>
+                    </div>
+                    <Button variant="outline" onClick={() => setShowReopenDialog(true)}>
+                      <Unlock className="h-4 w-4 mr-2" />
+                      Reopen (Partner Only)
+                    </Button>
                   </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button disabled={saving || completedItems.length !== assignment?.checklistItems.length || openComments.length > 0 || !partnerConclusion || !clearanceStatus || (assignment?.signedReports.length || 0) === 0}
-                        data-testid="btn-finalize-eqcr"
-                        title={saving ? "Save in progress" : completedItems.length !== assignment?.checklistItems.length ? "All checklist items must have a response" : openComments.length > 0 ? "Remarks required for all 'No' responses" : !partnerConclusion ? "Overall conclusion is required" : !clearanceStatus ? "Clearance status must be selected" : (assignment?.signedReports.length || 0) === 0 ? "Signed report must be uploaded" : "Finalize and lock the EQCR review"}
-                      >
-                        <Lock className="h-4 w-4 mr-2" />
-                        Finalize EQCR
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Finalize EQCR?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will lock the EQCR review. After finalization, no changes can be made unless reopened by a Partner.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={finalizeEQCR}>Finalize</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="text-sm space-y-1">
+                      <p className={completedItems.length === assignment?.checklistItems.length ? "text-green-600" : "text-red-500"}>
+                        {completedItems.length === assignment?.checklistItems.length ? "✓" : "✗"} All checklist items must have a response
+                      </p>
+                      <p className={openChecklistIssues.length === 0 ? "text-green-600" : "text-red-500"}>
+                        {openChecklistIssues.length === 0 ? "✓" : "✗"} Remarks required for "No" responses ({openChecklistIssues.length} missing)
+                      </p>
+                      <p className={partnerConclusion ? "text-green-600" : "text-red-500"}>
+                        {partnerConclusion ? "✓" : "✗"} Overall conclusion required
+                      </p>
+                      <p className={clearanceStatus ? "text-green-600" : "text-red-500"}>
+                        {clearanceStatus ? "✓" : "✗"} Clearance status must be selected
+                      </p>
+                      <p className={(assignment?.signedReports.length || 0) > 0 ? "text-green-600" : "text-red-500"}>
+                        {(assignment?.signedReports.length || 0) > 0 ? "✓" : "✗"} Signed report must be uploaded
+                      </p>
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button disabled={saving || completedItems.length !== assignment?.checklistItems.length || openChecklistIssues.length > 0 || !partnerConclusion || !clearanceStatus || (assignment?.signedReports.length || 0) === 0}>
+                          <Lock className="h-4 w-4 mr-2" />
+                          Finalize EQCR
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Finalize EQCR?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will lock the EQCR review. After finalization, no changes can be made unless reopened by a Partner.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={finalizeEQCR}>Finalize</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       )}
 
       <input
@@ -1088,14 +1405,10 @@ export default function EQCR() {
           </DialogHeader>
           <div className="py-4">
             <Label>Checklist Area</Label>
-            <Input
-              value={newItemArea}
-              onChange={(e) => setNewItemArea(e.target.value)}
-              placeholder="Enter the review area..."
-            />
+            <Input value={newItemArea} onChange={(e) => setNewItemArea(e.target.value)} placeholder="Enter the review area..." />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddItemDialog(false)} data-testid="button-cancel-add-item">Cancel</Button>
+            <Button variant="outline" onClick={() => setShowAddItemDialog(false)}>Cancel</Button>
             <Button onClick={addChecklistItem} disabled={!newItemArea.trim() || saving}>Add Item</Button>
           </DialogFooter>
         </DialogContent>
@@ -1105,8 +1418,8 @@ export default function EQCR() {
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-blue-500" />
-              AI-Generated EQCR Engagement Review Report
+              <Brain className="h-5 w-5 text-blue-500" />
+              AI-Generated EQCR Readiness Summary
             </DialogTitle>
             <DialogDescription>
               <div className="flex items-center gap-2 mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -1118,14 +1431,43 @@ export default function EQCR() {
           <div className="border border-muted rounded-lg overflow-hidden">
             <div className="bg-muted/50 px-4 py-2 text-xs text-muted-foreground flex items-center gap-2">
               <Info className="h-3 w-3" />
-              This report is read-only and cannot be edited. Professional judgment of EQCR Partner shall always prevail.
+              This report is read-only. Professional judgment of EQCR reviewer shall always prevail.
             </div>
             <pre className="whitespace-pre-wrap text-sm p-4 overflow-auto max-h-[50vh] bg-white">
               {assignment?.aiGeneratedSummary || "No summary generated yet."}
             </pre>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSummaryDialog(false)} data-testid="button-close-summary">Close</Button>
+            <Button variant="outline" onClick={() => setShowSummaryDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showUnresolvedDialog} onOpenChange={setShowUnresolvedDialog}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-orange-500" />
+              AI-Generated Unresolved Issues Summary
+            </DialogTitle>
+            <DialogDescription>
+              <div className="flex items-center gap-2 mt-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <AlertTriangle className="h-4 w-4 text-orange-600" />
+                <span className="text-orange-700 font-medium">System-Generated (AI) — All items must be resolved before EQCR clearance</span>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="border border-muted rounded-lg overflow-hidden">
+            <div className="bg-muted/50 px-4 py-2 text-xs text-muted-foreground flex items-center gap-2">
+              <Info className="h-3 w-3" />
+              Review all unresolved matters below and address them through the Open Matters and Checklist tabs.
+            </div>
+            <pre className="whitespace-pre-wrap text-sm p-4 overflow-auto max-h-[50vh] bg-white">
+              {unresolvedSummary || "No unresolved issues summary generated yet."}
+            </pre>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowUnresolvedDialog(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1138,15 +1480,10 @@ export default function EQCR() {
           </DialogHeader>
           <div className="py-4">
             <Label>Reason for Reopening</Label>
-            <Textarea
-              value={reopenReason}
-              onChange={(e) => setReopenReason(e.target.value)}
-              placeholder="Enter the reason..."
-              className="min-h-[100px]"
-            />
+            <Textarea value={reopenReason} onChange={(e) => setReopenReason(e.target.value)} placeholder="Enter the reason..." className="min-h-[100px]" />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowReopenDialog(false)} data-testid="button-cancel-reopen">Cancel</Button>
+            <Button variant="outline" onClick={() => setShowReopenDialog(false)}>Cancel</Button>
             <Button onClick={reopenEQCR} disabled={!reopenReason.trim() || saving}>Reopen</Button>
           </DialogFooter>
         </DialogContent>

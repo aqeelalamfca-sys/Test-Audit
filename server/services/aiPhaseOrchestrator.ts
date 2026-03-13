@@ -516,6 +516,15 @@ const AI_CAPABILITY_REGISTRY: Record<string, PhaseAICapability[]> = {
       requiresContext: ["report_pack_status", "open_issues", "sign_off_status"],
     },
   ],
+  "eqcr-unresolved-issues-summary": [
+    {
+      id: "eqcr-unresolved-issues-summary",
+      label: "Unresolved Issues Summary",
+      description: "Summarize all unresolved EQCR issues, open comments, and outstanding matters requiring attention before clearance",
+      promptType: "eqcr_unresolved",
+      requiresContext: ["eqcr_comments", "checklist_status", "clearance_status"],
+    },
+  ],
 };
 
 const PHASE_SYSTEM_PROMPTS: Record<string, string> = {

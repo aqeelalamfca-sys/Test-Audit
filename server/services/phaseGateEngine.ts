@@ -1171,17 +1171,78 @@ async function evaluateSingleGate(
         break;
       }
 
-      case "report-pack-frozen":
-      case "eqcr-issues-resolved":
+      case "report-pack-frozen": {
+        const frozenDeliverables = await prisma.deliverable.count({
+          where: { engagementId, status: { in: ["FINAL", "ISSUED"] } },
+        });
+        passed = frozenDeliverables > 0;
+        if (passed) message = `Report pack frozen (${frozenDeliverables} deliverable(s) finalized)`;
+        else message = "Report pack must contain at least one finalized deliverable before EQCR";
+        break;
+      }
+
+      case "eqcr-issues-resolved": {
+        const eqcrAssignmentIssues = await prisma.eQCRAssignment.findUnique({
+          where: { engagementId },
+          include: {
+            comments: { where: { status: { not: "CLEARED" } } },
+            checklistItems: { where: { response: "NO", OR: [{ remarks: null }, { remarks: "" }] } },
+          },
+        });
+        if (!eqcrAssignmentIssues) {
+          passed = false;
+          message = "EQCR assignment not found";
+        } else {
+          const openComments = eqcrAssignmentIssues.comments.length;
+          const unremarkedNo = eqcrAssignmentIssues.checklistItems.length;
+          passed = openComments === 0 && unremarkedNo === 0;
+          if (passed) message = "All EQCR issues resolved";
+          else message = `${openComments} open comment(s) and ${unremarkedNo} unresolved checklist item(s) remain`;
+        }
+        break;
+      }
+
       case "eqcr-release": {
-        passed = isBackendPhaseActive(statusMap, "EQCR");
-        if (passed) message = "EQCR phase active";
+        const eqcrAssignmentRelease = await prisma.eQCRAssignment.findUnique({
+          where: { engagementId },
+          include: { partnerComment: true },
+        });
+        if (!eqcrAssignmentRelease) {
+          passed = false;
+          message = "EQCR assignment not found";
+        } else if (!eqcrAssignmentRelease.isRequired) {
+          passed = true;
+          message = "EQCR not required for this engagement";
+        } else {
+          const cleared = eqcrAssignmentRelease.isFinalized &&
+            (eqcrAssignmentRelease.partnerComment?.clearanceStatus === "CLEARED" ||
+             eqcrAssignmentRelease.partnerComment?.clearanceStatus === "CLEARED_WITH_CONDITIONS");
+          passed = !!cleared;
+          if (passed) message = `EQCR release signed (${eqcrAssignmentRelease.partnerComment?.clearanceStatus})`;
+          else if (eqcrAssignmentRelease.isFinalized) message = "EQCR finalized but clearance not granted";
+          else message = "EQCR must be finalized with clearance before release";
+        }
         break;
       }
 
       case "eqcr-released": {
-        passed = isBackendPhaseCompleted(statusMap, "EQCR");
-        if (passed) message = "EQCR completed";
+        const eqcrReleased = await prisma.eQCRAssignment.findUnique({
+          where: { engagementId },
+          include: { partnerComment: true },
+        });
+        if (!eqcrReleased) {
+          passed = false;
+          message = "EQCR assignment not found";
+        } else if (!eqcrReleased.isRequired) {
+          passed = true;
+          message = "EQCR not required — auto-passed";
+        } else {
+          passed = !!eqcrReleased.isFinalized &&
+            (eqcrReleased.partnerComment?.clearanceStatus === "CLEARED" ||
+             eqcrReleased.partnerComment?.clearanceStatus === "CLEARED_WITH_CONDITIONS");
+          if (passed) message = "EQCR released and cleared";
+          else message = "EQCR must be finalized with clearance before archiving";
+        }
         break;
       }
 

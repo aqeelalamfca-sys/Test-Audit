@@ -261,6 +261,15 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - **Features**: AI Opinion Engine (reused from finalization), deliverables register with CRUD/upload/approval/issuance workflow, readiness checklist, release controls with partner-only issuance
 - **Routing**: `App.tsx` routes `/workspace/:engagementId/opinion-reports` to `OpinionReportsPage` (previously routed to `PrintView`/print-view.tsx)
 
+### EQCR Review (Phase 17)
+- **Page**: `client/src/pages/eqcr.tsx` — 7-tab EQCR review phase (Dashboard, Open Matters, Report Pack Review, Key Judgments, Independence Summary, EQCR Checklist, Clearance & Conclusion)
+- **Backend**: `server/eqcrRoutes.ts` — EQCR CRUD, assignment, checklist items, comments (IDOR-protected), partner comments, signed report upload, AI summary generation, unresolved issues summary, stats endpoint
+- **Stats endpoint**: `GET /api/eqcr/:engagementId/stats` (completion progress, open comments, clearance status, finalization state)
+- **Gates**: report-pack-frozen (real: checks finalized deliverables), eqcr-issues-resolved (real: checks open comments + unremarked NO items), eqcr-release (real: checks isFinalized + clearance status)
+- **AI capabilities**: eqcr-readiness-summary, eqcr-unresolved-issues-summary
+- **Security**: All mutating routes enforce finalization lock server-side; comment respond/clear routes verify comment belongs to engagement's assignment (IDOR protection)
+- **Navigation**: backHref → opinion-reports, nextHref → inspection
+
 ## Feature Status
 
 - ISA 320 Materiality: Complete
@@ -284,3 +293,4 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - Validation & Parsing: Complete (structured results panel, AI analysis, blocker enforcement)
 - Finalization / Completion: Complete (11-section completion phase, 14-tab UI, completion dashboard, enhanced gate enforcement with 10 gates, 4 AI capabilities, partner review readiness tracking)
 - Opinion / Reports: Complete (9-tab reporting phase, ISA 700/701/705/706/265 coverage, AI opinion engine, deliverables register, 9 gates, 4 AI capabilities, release controls)
+- EQCR Review: Complete (7-tab focused view: Dashboard, Open Matters, Report Pack, Key Judgments, Independence, EQCR Checklist, Clearance & Conclusion; 3 real gate evaluators, 2 AI capabilities, IDOR-protected comment routes, finalization lock enforcement)

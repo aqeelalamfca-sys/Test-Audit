@@ -452,7 +452,7 @@ export const CANONICAL_PHASES: CanonicalPhase[] = [
       { id: "eqcr-release", label: "EQCR release signed", type: "hard", description: "EQCR reviewer must sign off on release" },
     ],
     rolePermissions: { canPrepare: EQCR_ONLY, canReview: EQCR_ONLY, canApprove: EQCR_ONLY, canView: MANAGER_UP },
-    aiCapabilities: ["eqcr-readiness-summary"],
+    aiCapabilities: ["eqcr-readiness-summary", "eqcr-unresolved-issues-summary"],
     outputArtifacts: ["EQCR checklist", "Release clearance"],
   },
   {
