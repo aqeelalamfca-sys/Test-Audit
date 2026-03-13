@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -291,23 +291,20 @@ export default function ExecutionTesting() {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="dashboard" className="text-xs sm:text-sm">
-              <Layers className="h-3.5 w-3.5 mr-1" /> Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="procedures" className="text-xs sm:text-sm">
-              <ClipboardList className="h-3.5 w-3.5 mr-1" /> Procedures
-            </TabsTrigger>
-            <TabsTrigger value="testing" className="text-xs sm:text-sm">
-              <Shield className="h-3.5 w-3.5 mr-1" /> Testing
-            </TabsTrigger>
-            <TabsTrigger value="workpapers" className="text-xs sm:text-sm">
-              <FileText className="h-3.5 w-3.5 mr-1" /> Workpapers
-            </TabsTrigger>
-            <TabsTrigger value="review" className="text-xs sm:text-sm">
-              <MessageSquare className="h-3.5 w-3.5 mr-1" /> Review
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex items-center gap-2 mb-3">
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger className="h-8 w-48 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dashboard"><span className="flex items-center gap-1.5 text-xs"><Layers className="h-3.5 w-3.5" /> Dashboard</span></SelectItem>
+                <SelectItem value="procedures"><span className="flex items-center gap-1.5 text-xs"><ClipboardList className="h-3.5 w-3.5" /> Procedures</span></SelectItem>
+                <SelectItem value="testing"><span className="flex items-center gap-1.5 text-xs"><Shield className="h-3.5 w-3.5" /> Testing</span></SelectItem>
+                <SelectItem value="workpapers"><span className="flex items-center gap-1.5 text-xs"><FileText className="h-3.5 w-3.5" /> Workpapers</span></SelectItem>
+                <SelectItem value="review"><span className="flex items-center gap-1.5 text-xs"><MessageSquare className="h-3.5 w-3.5" /> Review</span></SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           <TabsContent value="dashboard" className="space-y-4 mt-3">
             <ExecutionDashboard stats={stats} fsAreasList={fsAreasList} engagementId={engagementId} />
