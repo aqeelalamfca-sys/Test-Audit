@@ -835,15 +835,95 @@ async function evaluateSingleGate(
       }
 
       case "critical-findings-resolved": {
-        passed = isBackendPhaseActive(statusMap, "EXECUTION");
-        if (passed) message = "Execution phase active";
+        const criticalObs = await db.observation.count({
+          where: {
+            engagementId,
+            severity: { in: ["CRITICAL", "HIGH"] },
+            status: { in: ["OPEN", "UNDER_REVIEW"] },
+          },
+        });
+        passed = criticalObs === 0;
+        if (passed) message = "All critical/high-severity findings resolved";
+        else message = `${criticalObs} critical/high finding(s) remain unresolved`;
         break;
       }
 
-      case "adjustments-summarized":
+      case "management-responses-obtained": {
+        const obsNeedingResponse = await db.observation.count({
+          where: {
+            engagementId,
+            status: { in: ["OPEN", "UNDER_REVIEW"] },
+            severity: { in: ["CRITICAL", "HIGH", "MEDIUM"] },
+            managementResponse: null,
+          },
+        });
+        passed = obsNeedingResponse === 0;
+        if (passed) message = "All observations have management responses";
+        else message = `${obsNeedingResponse} observation(s) awaiting management response`;
+        break;
+      }
+
+      case "partner-review-observations": {
+        const critHighObs = await db.observation.findMany({
+          where: {
+            engagementId,
+            severity: { in: ["CRITICAL", "HIGH"] },
+          },
+          select: { partnerApprovedById: true },
+        });
+        const unreviewed = critHighObs.filter((o: any) => !o.partnerApprovedById).length;
+        passed = unreviewed === 0 || critHighObs.length === 0;
+        if (passed) message = "Partner review complete for critical/high observations";
+        else message = `${unreviewed} critical/high observation(s) pending partner review`;
+        break;
+      }
+
+      case "adjustments-summarized": {
+        const adjCount = await db.auditAdjustment.count({
+          where: { engagementId },
+        });
+        passed = adjCount > 0;
+        if (passed) message = `${adjCount} adjustment(s) in summary`;
+        else message = "No adjustments recorded — create at least one adjustment entry";
+        break;
+      }
+
       case "sad-classified": {
-        passed = isBackendPhaseActive(statusMap, "EXECUTION");
-        if (passed) message = "Execution phase active";
+        const uncorrected = await db.auditAdjustment.findMany({
+          where: {
+            engagementId,
+            adjustmentType: "UNCORRECTED",
+            isClearlyTrivial: false,
+          },
+          select: { misstatementClassification: true },
+        });
+        const unclassified = uncorrected.filter((a: any) => !a.misstatementClassification).length;
+        passed = unclassified === 0;
+        if (passed) message = "All non-trivial uncorrected misstatements classified";
+        else message = `${unclassified} uncorrected misstatement(s) need classification (factual/judgmental/projected)`;
+        break;
+      }
+
+      case "management-acceptance-recorded": {
+        const adjTotal = await db.auditAdjustment.count({ where: { engagementId } });
+        const adjPending = await db.auditAdjustment.count({
+          where: { engagementId, managementAccepted: null },
+        });
+        passed = adjPending === 0 || adjTotal === 0;
+        if (passed) message = "Management acceptance recorded for all adjustments";
+        else message = `${adjPending} adjustment(s) pending management acceptance`;
+        break;
+      }
+
+      case "cumulative-effect-assessed": {
+        const uncorrectedAdj = await db.auditAdjustment.findMany({
+          where: { engagementId, adjustmentType: "UNCORRECTED" },
+          select: { netImpact: true },
+        });
+        const cumulativeUncorrected = uncorrectedAdj.reduce((sum: number, a: any) => sum + Math.abs(Number(a.netImpact) || 0), 0);
+        passed = cumulativeUncorrected === 0 || uncorrectedAdj.length === 0;
+        if (passed) message = "No uncorrected misstatements or cumulative effect is zero";
+        else message = `Cumulative uncorrected misstatements: ${cumulativeUncorrected.toLocaleString()} — review against materiality`;
         break;
       }
 

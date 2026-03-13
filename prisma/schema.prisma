@@ -6030,9 +6030,10 @@ model AuditAdjustment {
   adjustmentType AdjustmentType
   status         AdjustmentStatus @default(IDENTIFIED)
 
-  fsArea      String?
-  accountCode String?
-  accountName String?
+  misstatementClassification String?
+  fsArea                     String?
+  accountCode                String?
+  accountName                String?
 
   description String
   auditImpact String?
@@ -6043,6 +6044,13 @@ model AuditAdjustment {
 
   isMaterial        Boolean @default(false)
   materialityImpact String?
+
+  isClearlyTrivial       Boolean  @default(false)
+  trivialThresholdAmount Decimal? @db.Decimal(18, 2)
+
+  managementAccepted Boolean?
+  sadNarrative       String?
+  cumulativeEffect   Decimal? @db.Decimal(18, 2)
 
   identifiedById         String?
   identifiedAt           DateTime?
@@ -6059,6 +6067,8 @@ model AuditAdjustment {
 
   linkedProcedureId String?
   linkedWorkpaperId String?
+  observationId     String?
+  linkedEvidenceIds String[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -6069,6 +6079,7 @@ model AuditAdjustment {
   @@index([engagementId])
   @@index([adjustmentType])
   @@index([status])
+  @@index([observationId])
 }
 
 // ============================================
@@ -11769,14 +11780,21 @@ enum ObservationType {
   CONTROL_DEFICIENCY
   MATERIAL_WEAKNESS
   SIGNIFICANT_DEFICIENCY
+  AUDIT_FINDING
+  PJE_RECLASS
+  MANAGEMENT_POINT
+  COMPLIANCE_ISSUE
   OTHER
 }
 
 enum ObservationStatus {
   OPEN
   UNDER_REVIEW
+  MGMT_RESPONDED
   PENDING_CLEARANCE
   CLEARED
+  ADJUSTED
+  CARRIED_FORWARD
   WAIVED
   CLOSED
 }
@@ -11793,6 +11811,7 @@ model Observation {
   engagementId String
 
   observationRef String?
+  title          String?
   type           ObservationType     @default(MISSTATEMENT)
   status         ObservationStatus   @default(OPEN)
   severity       ObservationSeverity @default(MEDIUM)
@@ -11810,6 +11829,9 @@ model Observation {
   effect            String?
   effectAmount      Decimal? @db.Decimal(18, 2)
   effectQualitative String?
+
+  riskImplication String?
+  recommendation  String?
 
   proposedAction         String?
   proposedAdjustmentType String?

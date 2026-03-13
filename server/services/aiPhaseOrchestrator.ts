@@ -384,6 +384,15 @@ const AI_CAPABILITY_REGISTRY: Record<string, PhaseAICapability[]> = {
       requiresContext: ["findings", "recommendations", "management_responses"],
     },
   ],
+  "recommendation-wording": [
+    {
+      id: "recommendation-wording",
+      label: "Draft Recommendation",
+      description: "Generate professional recommendation wording for audit observations per ISA 265",
+      promptType: "recommendation_narrative",
+      requiresContext: ["finding_type", "condition", "cause", "risk_implication"],
+    },
+  ],
   "misstatement-summary-drafting": [
     {
       id: "misstatement-summary-drafting",
@@ -391,6 +400,24 @@ const AI_CAPABILITY_REGISTRY: Record<string, PhaseAICapability[]> = {
       description: "Summarize adjusted and unadjusted differences with impact assessment",
       promptType: "misstatement_summary",
       requiresContext: ["adjustments", "materiality", "classification"],
+    },
+  ],
+  "adjustment-narrative": [
+    {
+      id: "adjustment-narrative",
+      label: "Draft Adjustment Narrative",
+      description: "Generate narrative description for proposed journal entries explaining the audit impact",
+      promptType: "adjustment_narrative",
+      requiresContext: ["adjustment_type", "accounts", "amounts", "observation"],
+    },
+  ],
+  "sad-summary-narration": [
+    {
+      id: "sad-summary-narration",
+      label: "Draft SAD Summary Narrative",
+      description: "Generate Summary of Audit Differences narrative covering corrected/uncorrected misstatements, cumulative effect, and impact on opinion per ISA 450",
+      promptType: "sad_summary",
+      requiresContext: ["corrected_total", "uncorrected_total", "materiality", "cumulative_effect"],
     },
   ],
   "completion-memo-drafting": [

@@ -220,6 +220,28 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - **AI capabilities**: evidence-sufficiency-prompts, missing-evidence-alerts, evidence-description-suggestions
 - **Prerequisite**: Execution Testing phase must be complete
 
+### Observations & Findings (Phase 13)
+- **Page**: `client/src/pages/observations.tsx` — dedicated standalone page
+- **Features**: Full CRUD for observations, management response/auditor conclusion workflow, severity/type/status badges, FS head linkage, effect amount tracking, filter/sort/search, waiver workflow, ISA 265/450 compliance badge
+- **Extended Types**: MISSTATEMENT, CONTROL_DEFICIENCY, MATERIAL_WEAKNESS, SIGNIFICANT_DEFICIENCY, AUDIT_FINDING, PJE_RECLASS, MANAGEMENT_POINT, COMPLIANCE_ISSUE, OTHER
+- **Extended Statuses**: OPEN, UNDER_REVIEW, MGMT_RESPONDED, PENDING_CLEARANCE, CLEARED, ADJUSTED, CARRIED_FORWARD, WAIVED, CLOSED
+- **New Fields**: title (optional descriptive heading), riskImplication, recommendation
+- **Backend**: `server/observationRoutes.ts` — CRUD, management-response, auditor-conclusion, clear, waive, review, delete endpoints
+- **Gates**: critical-findings-resolved (hard), observation-evidence-linked (hard), management-responses-obtained (hard), observations-reviewed (soft), observations-partner-approved (hard)
+- **AI capabilities**: recommendation-wording
+- **Prerequisite**: Evidence Linking phase must be complete
+
+### Adjustments & Misstatements (Phase 14)
+- **Page**: `client/src/pages/adjustments.tsx` — dedicated standalone page with 4 tabs
+- **Tabs**: Dashboard, Journal Entries, SAD Summary, Review
+- **Features**: Adjustment CRUD with journal entry format (debit/credit), misstatement classification (Factual/Judgmental/Projected per ISA 450), clearly trivial threshold assessment, materiality comparison with progress bar, management acceptance/dispute workflow, reviewer panel, phase gate compliance warnings, cumulative effect assessment, SAD (Summary of Audit Differences) split view
+- **Backend**: `server/auditAdjustmentRoutes.ts` — CRUD, management-accept, review, stats/summary endpoints
+- **API mount**: `/api/audit-adjustments`
+- **Stats endpoint**: `GET /api/audit-adjustments/:engagementId/stats/summary` (registered before `/:id` to avoid route conflict)
+- **Gates**: adjustments-summarized (hard), sad-classified (hard), sad-reviewed (hard), management-acceptance-recorded (hard), cumulative-effect-assessed (hard), adjustments-reviewed (soft), adjustments-partner-approved (hard)
+- **AI capabilities**: adjustment-narrative, sad-summary-narration
+- **Prerequisite**: Observations phase must be complete
+
 ## Feature Status
 
 - ISA 320 Materiality: Complete
@@ -231,6 +253,8 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - Procedures & Sampling: Complete (4-tab focused view, risk-procedure matrix, audit program designer, ISA 530 sampling, assertion coverage, 6 gates)
 - Execution Testing: Complete (5-tab focused view, procedure execution, control/substantive testing, workpapers, reviewer panel, 6 gates, 4 AI capabilities)
 - Evidence Linking: Complete (6-tab focused view, evidence vault, procedure linkage, categorization, version history, reviewer panel, 5 gates, 3 AI capabilities)
+- Observations & Findings: Complete (extended 9-type/9-status system, title/risk/recommendation fields, management response workflow, 5 gates, 1 AI capability)
+- Adjustments & Misstatements: Complete (4-tab view, journal entries, SAD summary, misstatement classification, trivial threshold, management acceptance, materiality comparison, 7 gates, 2 AI capabilities)
 - Execution Module: Working paper system with FS head mapping
 - Review Notes: Complete with notifications
 - Document Management: Complete with S3/local storage

@@ -43,6 +43,7 @@ const FirmWideControlsLazy = lazy(() => retryImport(() => import("@/pages/firm-w
 const InformationRequisition = lazy(() => retryImport(() => import("@/pages/information-requisition")));
 const FSHeadsPage = lazy(() => retryImport(() => import("@/pages/fs-heads")));
 const Finalization = lazy(() => retryImport(() => import("@/pages/finalization")));
+const AdjustmentsPage = lazy(() => retryImport(() => import("@/pages/adjustments")));
 const ComplianceChecklists = lazy(() => retryImport(() => import("@/pages/compliance-checklists")));
 const Execution = lazy(() => retryImport(() => import("@/pages/execution")));
 const ProceduresSampling = lazy(() => retryImport(() => import("@/pages/procedures-sampling")));
@@ -311,7 +312,7 @@ const ShelledProceduresSampling = createShelledComponent(ProceduresSampling, "Pr
 const ShelledExecutionTesting = createShelledComponent(ExecutionTesting, "ExecutionTesting", "execution-testing");
 const ShelledEvidenceLinking = createShelledComponent(EvidenceLinking, "EvidenceLinking", "evidence-linking");
 const ShelledObservations = createShelledComponent(Observations, "Observations", "observations");
-const ShelledAdjustments = createShelledComponent(Finalization, "Adjustments", "adjustments");
+const ShelledAdjustments = createShelledComponent(AdjustmentsPage, "Adjustments", "adjustments");
 const ShelledFinalization = createShelledComponent(Finalization, "Finalization", "finalization");
 const ShelledOpinionReports = createShelledComponent(PrintView, "OpinionReports", "opinion-reports");
 const ShelledEQCR = createShelledComponent(EQCR, "EQCR", "eqcr");

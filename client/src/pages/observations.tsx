@@ -28,21 +28,26 @@ import { Link } from "wouter";
 
 const OBSERVATION_TYPES = [
   { value: "MISSTATEMENT", label: "Misstatement" },
-  { value: "PJE_RECLASS", label: "PJE/Reclass" },
   { value: "CONTROL_DEFICIENCY", label: "Control Deficiency" },
+  { value: "MATERIAL_WEAKNESS", label: "Material Weakness" },
+  { value: "SIGNIFICANT_DEFICIENCY", label: "Significant Deficiency" },
   { value: "AUDIT_FINDING", label: "Audit Finding" },
+  { value: "PJE_RECLASS", label: "PJE/Reclass" },
   { value: "MANAGEMENT_POINT", label: "Management Point" },
   { value: "COMPLIANCE_ISSUE", label: "Compliance Issue" },
+  { value: "OTHER", label: "Other" },
 ] as const;
 
 const OBSERVATION_STATUSES = [
   { value: "OPEN", label: "Open", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200" },
   { value: "UNDER_REVIEW", label: "Under Review", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
   { value: "MGMT_RESPONDED", label: "Mgmt Responded", color: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200" },
+  { value: "PENDING_CLEARANCE", label: "Pending Clearance", color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200" },
   { value: "CLEARED", label: "Cleared", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" },
   { value: "ADJUSTED", label: "Adjusted", color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200" },
   { value: "CARRIED_FORWARD", label: "Carried Forward", color: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200" },
   { value: "WAIVED", label: "Waived", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200" },
+  { value: "CLOSED", label: "Closed", color: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200" },
 ] as const;
 
 const OBSERVATION_SEVERITIES = [
@@ -65,6 +70,7 @@ const ASSERTIONS = [
 interface Observation {
   id: string;
   observationRef: string;
+  title?: string;
   type: string;
   status: string;
   severity: string;
@@ -79,6 +85,8 @@ interface Observation {
   effect?: string;
   effectAmount?: string | number;
   effectQualitative?: string;
+  riskImplication?: string;
+  recommendation?: string;
   proposedAction?: string;
   proposedAdjustmentType?: string;
   proposedDebitAccount?: string;
@@ -96,6 +104,10 @@ interface Observation {
   reviewedBy?: { id: string; fullName: string; role: string };
   clearedBy?: { id: string; fullName: string; role: string };
   waivedBy?: { id: string; fullName: string; role: string };
+  partnerApprovedBy?: { id: string; fullName: string; role: string };
+  linkedProcedureId?: string;
+  linkedProcedureRef?: string;
+  linkedEvidenceIds?: string[];
 }
 
 interface ObservationSummary {
@@ -118,6 +130,7 @@ interface FSHead {
 }
 
 const defaultFormData = {
+  title: "",
   type: "MISSTATEMENT" as string,
   severity: "MEDIUM" as string,
   fsHeadWorkingPaperId: "",
@@ -131,6 +144,8 @@ const defaultFormData = {
   effect: "",
   effectAmount: "",
   effectQualitative: "",
+  riskImplication: "",
+  recommendation: "",
   proposedAction: "",
   proposedAdjustmentType: "",
   proposedDebitAccount: "",
@@ -315,6 +330,7 @@ export default function Observations() {
   const openEditDialog = (obs: Observation) => {
     setSelectedObservation(obs);
     setFormData({
+      title: obs.title || "",
       type: obs.type,
       severity: obs.severity,
       fsHeadWorkingPaperId: obs.fsHeadWorkingPaperId || "",
@@ -328,6 +344,8 @@ export default function Observations() {
       effect: obs.effect || "",
       effectAmount: obs.effectAmount?.toString() || "",
       effectQualitative: obs.effectQualitative || "",
+      riskImplication: obs.riskImplication || "",
+      recommendation: obs.recommendation || "",
       proposedAction: obs.proposedAction || "",
       proposedAdjustmentType: obs.proposedAdjustmentType || "",
       proposedDebitAccount: obs.proposedDebitAccount || "",
@@ -517,7 +535,7 @@ export default function Observations() {
         <div className="flex items-center gap-2 mb-2">
           <Badge variant="outline" className="text-xs" data-testid="badge-isa-reference">
             <Shield className="h-3 w-3 mr-1" />
-            ISA 450 - Evaluation of Misstatements
+            ISA 265/450 - Observations &amp; Findings
           </Badge>
         </div>
 
@@ -803,7 +821,12 @@ export default function Observations() {
                           <TableCell data-testid={`cell-type-${obs.id}`}>{getTypeBadge(obs.type)}</TableCell>
                           <TableCell data-testid={`cell-fshead-${obs.id}`}>{obs.fsHeadName || "-"}</TableCell>
                           <TableCell className="max-w-[200px]" data-testid={`cell-condition-${obs.id}`}>
-                            {truncateText(obs.condition)}
+                            {obs.title ? (
+                              <div>
+                                <p className="text-sm font-medium">{truncateText(obs.title, 40)}</p>
+                                <p className="text-xs text-muted-foreground">{truncateText(obs.condition, 40)}</p>
+                              </div>
+                            ) : truncateText(obs.condition)}
                           </TableCell>
                           <TableCell className="text-right" data-testid={`cell-effect-${obs.id}`}>
                             {formatCurrency(obs.effectAmount)}
@@ -925,6 +948,17 @@ export default function Observations() {
 
             <ScrollArea className="flex-1 mt-4">
               <TabsContent value="basic" className="mt-0 space-y-4">
+                <div className="space-y-2">
+                  <Label>Observation Title</Label>
+                  <Input
+                    placeholder="Brief descriptive title for this observation"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    disabled={dialogMode === "view"}
+                    data-testid="input-title"
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Type</Label>
@@ -1040,6 +1074,30 @@ export default function Observations() {
                       data-testid="input-isa-reference"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Risk Implication</Label>
+                  <Textarea
+                    placeholder="What is the risk if this issue is not addressed?"
+                    value={formData.riskImplication}
+                    onChange={(e) => setFormData({ ...formData, riskImplication: e.target.value })}
+                    rows={2}
+                    disabled={dialogMode === "view"}
+                    data-testid="textarea-risk-implication"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Recommendation</Label>
+                  <Textarea
+                    placeholder="What corrective action do you recommend?"
+                    value={formData.recommendation}
+                    onChange={(e) => setFormData({ ...formData, recommendation: e.target.value })}
+                    rows={2}
+                    disabled={dialogMode === "view"}
+                    data-testid="textarea-recommendation"
+                  />
                 </div>
               </TabsContent>
 
