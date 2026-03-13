@@ -7,7 +7,7 @@ AuditWise is a full-stack TypeScript web application built for Pakistani audit f
 ## UI/UX Design System
 
 The application uses a clean, modern SaaS design with consistent patterns:
-- **Page container**: `page-container` class (`px-5 py-5 space-y-6 max-w-[1400px] mx-auto w-full`)
+- **Page container**: `page-container` class (`px-5 py-5 space-y-6 max-w-[1400px] mx-auto w-full`), some pages use tighter `px-5 py-3 space-y-3` inline
 - **Page headers**: `<h1 className="text-xl font-semibold tracking-tight">` — no icon-in-box patterns
 - **Filter bars**: `filter-bar` class for search/filter rows
 - **Cards**: `shadow-sm` standard, using `Card`/`CardContent` from shadcn
@@ -222,7 +222,7 @@ The Planning module (`/planning/:engagementId`) is restructured into 16 ISA-link
 - **A**: Planning Dashboard — readiness overview, intake status, risk signals, next actions
 - **B**: Financial Statements — FS review and analysis
 - **C**: Entity Controls — entity understanding sections
-- **D**: Analytical Procedures — ratio analysis, trends
+- **D**: Analytical Procedures (ISA 520) — full analytics dashboard with horizontal/vertical/ratio/reasonableness analysis, fluctuation flags, risk linkage, editable narration, export. Backend: `server/planningAnalyticsRoutes.ts`, Frontend: `client/src/components/planning/analytical-procedures-panel.tsx`, Types: `shared/models/planningAnalyticsTypes.ts`. Auto-loads saved analytics on page load, shows read-only when planning locked. CR accounts sign-normalized.
 - **E**: Materiality — ISA 320 materiality calculations
 - **F**: Significant Accounts — auto-identified from TB/FS data
 - **G**: Risk Assessment — ISA 315 risk identification
