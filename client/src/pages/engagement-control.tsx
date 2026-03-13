@@ -102,36 +102,41 @@ const PHASE_LABELS: Record<string, string> = {
   INSPECTION: "Inspection",
 };
 
-const ROUTE_LABELS: Record<string, string> = {
-  "/workspace/:id/requisition": "Data Intake",
-  "/workspace/:id/pre-planning": "Pre-Planning",
-  "/workspace/:id/planning": "Planning",
-
-  "/workspace/:id/execution": "Execution",
-  "/workspace/:id/fs-heads": "FS Heads",
-  "/workspace/:id/evidence": "Evidence Vault",
-  "/workspace/:id/outputs": "Outputs",
-  "/workspace/:id/finalization": "Finalization",
-  "/workspace/:id/deliverables": "Deliverables",
-  "/workspace/:id/eqcr": "Quality Review",
-  "/workspace/:id/inspection": "Inspection",
-  "/workspace/:id/ethics": "Ethics & Independence",
+const SLUG_LABELS: Record<string, string> = {
+  "acceptance": "Acceptance & Continuance",
+  "independence": "Independence / Ethics",
+  "tb-gl-upload": "TB / GL Upload",
+  "validation": "Validation & Parsing",
+  "coa-mapping": "CoA / FS Mapping",
+  "pre-planning": "Pre-Planning",
+  "materiality": "Materiality",
+  "risk-assessment": "Risk Assessment",
+  "planning-strategy": "Planning Strategy",
+  "procedures-sampling": "Procedures & Sampling",
+  "execution-testing": "Execution & Testing",
+  "evidence-linking": "Evidence Linking",
+  "observations": "Observations",
+  "adjustments": "Adjustments",
+  "finalization": "Finalization",
+  "opinion-reports": "Opinion & Reports",
+  "eqcr": "Quality Review",
+  "inspection": "Inspection",
+  "requisition": "Data Intake",
+  "planning": "Planning",
+  "execution": "Execution",
+  "evidence": "Evidence Vault",
+  "fs-heads": "FS Heads",
+  "outputs": "Outputs",
+  "deliverables": "Deliverables",
+  "ethics": "Ethics & Independence",
 };
 
 function getRouteLabel(route?: string): string {
   if (!route) return "Not started";
-  for (const [pattern, label] of Object.entries(ROUTE_LABELS)) {
-    if (route.includes(pattern.replace(":id", ""))) {
-      return label;
-    }
-  }
-  if (route.includes("pre-planning")) return "Pre-Planning";
-  if (route.includes("planning")) return "Planning";
-  if (route.includes("execution")) return "Execution";
-  if (route.includes("controls")) return "Internal Controls";
-  if (route.includes("finalization")) return "Finalization";
-  if (route.includes("eqcr")) return "Quality Review";
-  return route.split("/").pop() || "Unknown";
+  const slug = route.split("/").pop() || "";
+  if (SLUG_LABELS[slug]) return SLUG_LABELS[slug];
+  if (slug.includes("controls")) return "Internal Controls";
+  return slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()) || "Unknown";
 }
 
 export default function EngagementControl() {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, Fragment } from "react";
 import { useParams, Link } from "wouter";
+import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { useEngagement } from "@/lib/workspace-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -16,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/lib/auth";
 import { PageShell } from "@/components/page-shell";
-import { useModuleReadOnly } from "@/components/sign-off-bar";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { useFinalizationSaveBridge } from "@/hooks/use-finalization-save-bridge";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -28,7 +29,6 @@ import {
   ArrowUpDown, Layers
 } from "lucide-react";
 import { AIHelpIcon } from "@/components/ai-help";
-import { PhaseLockIndicator } from "@/components/phase-approval-control";
 import { LockGatePanel } from "@/components/control-pack";
 import { useQuery } from "@tanstack/react-query";
 import { FSSoCF } from "@/components/planning/fs-socf";
@@ -36,7 +36,6 @@ import { FSSoCE } from "@/components/planning/fs-soce";
 import { FSNotes } from "@/components/planning/fs-notes";
 import { NotesDisclosurePanel } from "@/components/finalization/notes-disclosure-panel";
 import { FinalizationControlBoard } from "@/components/finalization/finalization-control-board";
-import { AIOpinionEngine } from "@/components/finalization/ai-opinion-engine";
 import type { DraftFSData, CoAAccountData, FSPriorYear, TrialBalanceData } from "@/components/planning/fs-types";
 
 interface Attachment {
@@ -141,7 +140,7 @@ export default function Finalization() {
     refreshEngagement 
   } = useEngagement();
   const engagementId = params.engagementId || contextEngagementId || undefined;
-  const { isReadOnly: finalizationReadOnly } = useModuleReadOnly("FINALIZATION", "FINALIZATION");
+  const { isReadOnly: finalizationReadOnly } = usePhaseRoleGuard("finalization", "FINALIZATION");
   const { user } = useAuth();
   const currentUserRole = user?.role || "staff";
   const isPartner = currentUserRole.toLowerCase() === "partner" || currentUserRole.toLowerCase() === "admin";
@@ -181,13 +180,6 @@ export default function Finalization() {
   const [writtenRepChecklist, setWrittenRepChecklist] = useState<boolean[]>(Array(8).fill(false));
   const [writtenRepEvidence, setWrittenRepEvidence] = useState<boolean[]>(Array(3).fill(false));
   const [writtenRepOutputs, setWrittenRepOutputs] = useState<boolean[]>(Array(1).fill(false));
-  const [reportingOpinionChecklist, setReportingOpinionChecklist] = useState<boolean[]>(Array(7).fill(false));
-  const [reportingOpinionType, setReportingOpinionType] = useState("");
-  const [reportingEvidence, setReportingEvidence] = useState<boolean[]>(Array(3).fill(false));
-  const [reportingOutputs, setReportingOutputs] = useState<boolean[]>(Array(2).fill(false));
-  const [otherInfoChecklist, setOtherInfoChecklist] = useState<boolean[]>(Array(7).fill(false));
-  const [otherInfoEvidence, setOtherInfoEvidence] = useState<boolean[]>(Array(4).fill(false));
-  const [otherInfoOutputs, setOtherInfoOutputs] = useState<boolean[]>(Array(1).fill(false));
 
   const { data: draftFsData } = useQuery<DraftFSData>({
     queryKey: ['/api/fs-draft', engagementId],
@@ -214,16 +206,17 @@ export default function Finalization() {
   });
   const coaAccounts = coaAccountsRaw || [];
 
-  const { data: preReportCheck } = useQuery<{ readyForDraft: boolean; readyForRelease: boolean; draftIssues: Array<{ type: string; count?: number; message: string }>; issues: Array<{ type: string; count?: number; message: string }> }>({
-    queryKey: [`/api/finalization/${engagementId}/pre-report-check`],
+  const { data: finStats } = useQuery<any>({
+    queryKey: [`/api/finalization/${engagementId}/finalization-stats`],
     queryFn: async () => {
-      const res = await fetchWithAuth(`/api/finalization/${engagementId}/pre-report-check`);
-      if (!res.ok) throw new Error("Failed to fetch pre-report check");
+      const res = await fetchWithAuth(`/api/finalization/${engagementId}/finalization-stats`);
+      if (!res.ok) throw new Error("Failed to fetch finalization stats");
       return res.json();
     },
     enabled: !!engagementId,
     staleTime: 30000,
   });
+
 
   const [fsSubTab, setFsSubTab] = useState("adjusted-bs");
 
@@ -307,13 +300,6 @@ export default function Finalization() {
     writtenRepChecklist,
     writtenRepEvidence,
     writtenRepOutputs,
-    reportingOpinionChecklist,
-    reportingOpinionType,
-    reportingEvidence,
-    reportingOutputs,
-    otherInfoChecklist,
-    otherInfoEvidence,
-    otherInfoOutputs,
     goingConcernReviewedBy,
     goingConcernReviewDate,
     goingConcernAttachments,
@@ -368,13 +354,6 @@ export default function Finalization() {
             if (data.writtenRepChecklist) setWrittenRepChecklist(data.writtenRepChecklist);
             if (data.writtenRepEvidence) setWrittenRepEvidence(data.writtenRepEvidence);
             if (data.writtenRepOutputs) setWrittenRepOutputs(data.writtenRepOutputs);
-            if (data.reportingOpinionChecklist) setReportingOpinionChecklist(data.reportingOpinionChecklist);
-            if (data.reportingOpinionType !== undefined) setReportingOpinionType(data.reportingOpinionType);
-            if (data.reportingEvidence) setReportingEvidence(data.reportingEvidence);
-            if (data.reportingOutputs) setReportingOutputs(data.reportingOutputs);
-            if (data.otherInfoChecklist) setOtherInfoChecklist(data.otherInfoChecklist);
-            if (data.otherInfoEvidence) setOtherInfoEvidence(data.otherInfoEvidence);
-            if (data.otherInfoOutputs) setOtherInfoOutputs(data.otherInfoOutputs);
             
             // Restore activeTab from server, or keep current if not saved
             if (data.activeTab) {
@@ -629,17 +608,19 @@ export default function Finalization() {
     approvals[1].status === "approved";
 
   const finalizationTabs = [
-    { id: "control-board", label: "Control Board" },
-    { id: "adjusted-fs", label: "Adj. F.S" },
+    { id: "control-board", label: "Completion Dashboard" },
     { id: "checklist", label: "Completion Checklist" },
     { id: "events", label: "Subsequent Events" },
     { id: "going-concern", label: "Going Concern" },
-    { id: "ai-opinion-engine", label: "AI Opinion Engine" },
-    { id: "reports", label: "Reports" },
-    { id: "notes", label: "Notes & Disclosures" },
-    { id: "written-representations", label: "Written Representations (ISA 580)" },
-    { id: "reporting-opinion", label: "Reporting & Opinion (ISA 700/705)" },
-    { id: "other-information", label: "Other Information (ISA 720)" },
+    { id: "legal-claims", label: "Legal & Claims" },
+    { id: "related-parties", label: "Related Parties" },
+    { id: "notes", label: "Disclosure Review" },
+    { id: "written-representations", label: "Representation Letter" },
+    { id: "final-analytics", label: "Final Analytics" },
+    { id: "final-conclusion", label: "Final Conclusion" },
+    { id: "completion-memo", label: "Completion Memo" },
+    { id: "partner-review", label: "Partner Review" },
+    { id: "adjusted-fs", label: "Adj. F.S" },
     { id: "lock-gate", label: "Lock Gate" }
   ];
 
@@ -649,8 +630,8 @@ export default function Finalization() {
       title="Finalization"
       subtitle={`${client?.name || ""} ${engagement?.engagementCode ? `(${engagement.engagementCode})` : ""}`}
       icon={<FileCheck className="h-5 w-5 text-primary" />}
-      backHref={`/workspace/${engagementId}/execution`}
-      nextHref={`/workspace/${engagementId}/qcr`}
+      backHref={`/workspace/${engagementId}/adjustments`}
+      nextHref={`/workspace/${engagementId}/opinion-reports`}
       dashboardHref="/engagements"
       saveFn={async () => {
         try {
@@ -681,8 +662,7 @@ export default function Finalization() {
       }
     >
       <div className="w-full px-4 py-2 space-y-2">
-      <PhaseLockIndicator phase="FINALIZATION" />
-
+      <AIAssistantPanel engagementId={engagementId || ""} phaseKey="finalization" className="mb-2" />
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <SimpleTabNavigation
           activeTab={activeTab}
@@ -693,6 +673,68 @@ export default function Finalization() {
 
         {/* Finalization Control Board */}
         <TabsContent value="control-board" className="space-y-4 mt-3">
+          {finStats && (
+            <Card className="mb-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <ClipboardCheck className="h-5 w-5 text-primary" />
+                  Completion Progress — {finStats.completionPercent}%
+                </CardTitle>
+                <CardDescription>
+                  {finStats.reportReady
+                    ? "All completion procedures done — ready for opinion formation"
+                    : "Complete all items below before proceeding to opinion"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  <div className="p-3 border rounded-md text-center">
+                    <p className="text-xl font-bold">{finStats.subsequentEvents?.total || 0}</p>
+                    <p className="text-xs text-muted-foreground">Subsequent Events</p>
+                    <Badge variant={finStats.completionProgress?.subsequentEventsReviewed ? "default" : "secondary"} className="text-[10px] mt-1">
+                      {finStats.completionProgress?.subsequentEventsReviewed ? "Reviewed" : "Pending"}
+                    </Badge>
+                  </div>
+                  <div className="p-3 border rounded-md text-center">
+                    <Badge variant={finStats.completionProgress?.goingConcernAssessed ? "default" : "destructive"} className="text-xs">
+                      {finStats.completionProgress?.goingConcernAssessed ? "Assessed" : "Not Done"}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-1">Going Concern</p>
+                  </div>
+                  <div className="p-3 border rounded-md text-center">
+                    <Badge variant={finStats.completionProgress?.representationObtained ? "default" : "destructive"} className="text-xs">
+                      {finStats.completionProgress?.representationObtained ? "Obtained" : "Pending"}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-1">Rep. Letter</p>
+                  </div>
+                  <div className="p-3 border rounded-md text-center">
+                    <Badge variant={finStats.completionProgress?.findingsAddressed ? "default" : "destructive"} className="text-xs">
+                      {finStats.completionProgress?.findingsAddressed ? "Addressed" : "Open Items"}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-1">Findings</p>
+                  </div>
+                </div>
+                {finStats.findings?.criticalOpen > 0 && (
+                  <div className="flex items-start gap-2 p-3 rounded-md border bg-red-50 dark:bg-red-950/20 border-red-200 mb-3">
+                    <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-red-700 dark:text-red-400">{finStats.findings.criticalOpen} Critical/High Finding(s) Unresolved</p>
+                      <p className="text-xs text-muted-foreground">These must be resolved before finalization can be approved</p>
+                    </div>
+                  </div>
+                )}
+                {finStats.adjustments?.pending > 0 && (
+                  <div className="flex items-start gap-2 p-3 rounded-md border bg-amber-50 dark:bg-amber-950/20 border-amber-200">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-700 dark:text-amber-400">{finStats.adjustments.pending} Adjustment(s) at Identified Status</p>
+                      <p className="text-xs text-muted-foreground">Adjustments should be proposed, agreed, or waived before finalization</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
           <FinalizationControlBoard />
         </TabsContent>
 
@@ -2140,742 +2182,361 @@ export default function Finalization() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="ai-opinion-engine" className="space-y-4">
-          <AIOpinionEngine engagementId={engagementId!} />
-        </TabsContent>
-
-        <TabsContent value="reports" className="space-y-4">
+        {/* Legal & Claims Status */}
+        <TabsContent value="legal-claims" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileCheck className="h-5 w-5" />
-                    Generate Finalization Documents
-                  </CardTitle>
-                  <CardDescription>
-                    Generate deliverable documents for the finalization phase.{" "}
-                    See also:{" "}
-                    <Link href={`/workspace/${engagementId}/outputs`} className="text-primary hover:underline">Outputs Registry</Link>
-                    {" | "}
-                    <Link href={`/workspace/${engagementId}/deliverables`} className="text-primary hover:underline">Deliverables Register</Link>
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {preReportCheck && !preReportCheck.readyForDraft && (
-                <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/5 p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertCircle className="h-5 w-5 text-destructive" />
-                    <h4 className="font-semibold text-destructive">Pre-Report Blockers</h4>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    The following completion-phase items must be resolved before finalization outputs can be generated:
-                  </p>
-                  <ul className="space-y-1">
-                    {(preReportCheck.draftIssues || preReportCheck.issues).map((issue: { message: string }, idx: number) => (
-                      <li key={idx} className="text-sm flex items-center gap-2">
-                        <AlertCircle className="h-3 w-3 text-destructive flex-shrink-0" />
-                        <span>{issue.message}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <div className="space-y-3">
-                <div className="text-sm text-muted-foreground">
-                  Generates all finalization outputs in one batch: Audit Report Draft (ISA 700), Governance Letter (ISA 260),
-                  Representation Letter (ISA 580), Final Audited Financial Statements, and Partner Sign-Off Sheet (ISA 220).
-                </div>
-                <Button
-                  className="w-full h-auto py-4 px-6"
-                  onClick={() => {
-                    toast({
-                      title: "Generating Finalization Outputs",
-                      description: "Creating all Phase 5 finalization documents...",
-                    });
-                    generateFinalizationOutputs();
-                  }}
-                  disabled={isGeneratingOutputs || fileStatus === "locked" || (preReportCheck && !preReportCheck.readyForDraft)}
-                  data-testid="button-generate-all-outputs"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileSignature className="h-5 w-5" />
-                    <div className="text-left">
-                      <div className="font-medium">Generate All Finalization Outputs</div>
-                      <div className="text-xs opacity-80">5 documents: Report, Letters, F.S., Sign-Off</div>
-                    </div>
-                  </div>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileSignature className="h-5 w-5" />
-                    Final Audit Report
-                  </CardTitle>
-                  <CardDescription>ISA 700, ISA 705, ISA 706 - Partner-driven final opinion and report</CardDescription>
-                </div>
-                {!isPartner && (
-                  <Badge variant="secondary" className="gap-1">
-                    <Shield className="h-3 w-3" />
-                    Partner Only
-                  </Badge>
-                )}
-              </div>
+              <CardTitle className="flex items-center gap-2">
+                <Scale className="h-5 w-5" />
+                Legal & Claims Status
+              </CardTitle>
+              <CardDescription>Review status of litigation, claims, and assessments — ISA 501</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base font-medium">Audit Summary (Auto + Manual)</Label>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={generateAISummary}
-                    disabled={isGeneratingAI || fileStatus === "locked"}
-                  >
-                    {isGeneratingAI ? <RefreshCw className="h-3 w-3 mr-1 animate-spin" /> : <Brain className="h-3 w-3 mr-1" />}
-                    AI Generate Summary
-                  </Button>
-                </div>
-                <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground mb-2">
-                  AI auto-summarizes: Planning highlights, Execution procedures, Key risks & responses, Exceptions & conclusions
-                </div>
-                <Textarea
-                  value={auditSummary}
-                  onChange={(e) => setAuditSummary(e.target.value)}
-                  placeholder="Enter or generate audit summary..."
-                  rows={8}
-                  disabled={fileStatus === "locked" || (!isPartner && auditSummary !== "")}
-                />
-              </div>
-
-              <Separator />
-
-              <div className="space-y-4">
-                <Label className="text-base font-medium">Audit Opinion Selection (Partner Only) <span className="text-destructive">*</span></Label>
-                <Select
-                  value={auditOpinion}
-                  onValueChange={(v) => setAuditOpinion(v as any)}
-                  disabled={fileStatus === "locked" || !isPartner}
-                >
-                  <SelectTrigger className={!isPartner ? "opacity-50" : ""}>
-                    <SelectValue placeholder="Select audit opinion..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unmodified">Unmodified Opinion (ISA 700)</SelectItem>
-                    <SelectItem value="qualified">Qualified Opinion (ISA 705)</SelectItem>
-                    <SelectItem value="adverse">Adverse Opinion (ISA 705)</SelectItem>
-                    <SelectItem value="disclaimer">Disclaimer of Opinion (ISA 705)</SelectItem>
-                  </SelectContent>
-                </Select>
-                {!isPartner && (
-                  <p className="text-sm text-muted-foreground">Only Partner can select the audit opinion.</p>
-                )}
-              </div>
-
-              {auditOpinion && auditOpinion !== "unmodified" && (
-                <div className="space-y-4 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                  <Label className="text-base font-medium">Basis for Modification (ISA 705) <span className="text-destructive">*</span></Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-medium">Outstanding Litigation</Label>
                   <Textarea
-                    value={basisForModification}
-                    onChange={(e) => setBasisForModification(e.target.value)}
-                    placeholder="Document the basis for the modified opinion..."
-                    rows={4}
-                    disabled={fileStatus === "locked" || !isPartner}
+                    placeholder="Describe any known litigation or claims against the entity..."
+                    rows={3}
+                    disabled={fileStatus === "locked"}
+                    data-testid="textarea-litigation"
                   />
                 </div>
-              )}
-
-              <div className="space-y-4">
-                <Label className="text-base font-medium">Emphasis of Matter Paragraph (ISA 706) - Optional</Label>
+                <div className="space-y-2">
+                  <Label className="font-medium">Legal Confirmations</Label>
+                  <Textarea
+                    placeholder="Status of legal confirmations received from attorneys..."
+                    rows={3}
+                    disabled={fileStatus === "locked"}
+                    data-testid="textarea-legal-confirmations"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Impact on Financial Statements</Label>
                 <Textarea
-                  value={emphasisOfMatter}
-                  onChange={(e) => setEmphasisOfMatter(e.target.value)}
-                  placeholder="Enter emphasis of matter paragraph if applicable..."
+                  placeholder="Assess whether any provisions, contingent liabilities, or disclosures are required..."
                   rows={3}
-                  disabled={fileStatus === "locked" || !isPartner}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-legal-impact"
                 />
               </div>
-
-              <div className="space-y-4">
-                <Label className="text-base font-medium">Other Matter Paragraph - Optional</Label>
+              <div className="space-y-2">
+                <Label className="font-medium">Conclusion</Label>
                 <Textarea
-                  value={otherMatterParagraph}
-                  onChange={(e) => setOtherMatterParagraph(e.target.value)}
-                  placeholder="Enter other matter paragraph if applicable..."
-                  rows={3}
-                  disabled={fileStatus === "locked" || !isPartner}
+                  placeholder="Overall conclusion on legal and claims status..."
+                  rows={2}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-legal-conclusion"
                 />
               </div>
+              <div className="flex items-center gap-2 p-3 rounded-md border bg-blue-50/50 dark:bg-blue-950/20">
+                <Info className="h-4 w-4 text-blue-500" />
+                <span className="text-xs text-muted-foreground">ISA 501 requires inquiry of management and legal counsel regarding litigation and claims</span>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-              <Separator />
+        {/* Related Parties Completion Review */}
+        <TabsContent value="related-parties" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Related Parties Completion Review
+              </CardTitle>
+              <CardDescription>Completion review of related party transactions and disclosures — ISA 550</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label className="font-medium">Related Party Transactions Identified</Label>
+                <Textarea
+                  placeholder="Summarize all related party transactions identified during the audit..."
+                  rows={3}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-rp-transactions"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Disclosure Adequacy</Label>
+                <Textarea
+                  placeholder="Are related party disclosures complete and adequate per the applicable framework?"
+                  rows={2}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-rp-disclosure"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Conclusion on Related Parties</Label>
+                <Textarea
+                  placeholder="Overall conclusion on related party matters..."
+                  rows={2}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-rp-conclusion"
+                />
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-md border bg-blue-50/50 dark:bg-blue-950/20">
+                <Info className="h-4 w-4 text-blue-500" />
+                <span className="text-xs text-muted-foreground">ISA 550 requires evaluation of whether identified related party relationships and transactions have been appropriately accounted for and disclosed</span>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-              <div className="space-y-4">
-                <Label className="text-base font-medium">Final Approvals</Label>
-                <div className="rounded-lg border overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead>Role</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead className="w-[120px]">Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {approvals.map((approval, idx) => (
-                        <TableRow key={approval.role}>
-                          <TableCell className="font-medium">{approval.role}</TableCell>
-                          <TableCell>
-                            {approval.role === "Partner Approval" ? (
-                              <span>{approval.name || "-"}</span>
-                            ) : (
-                              <Select
-                                value={approval.name}
-                                onValueChange={(v) => {
-                                  const updated = [...approvals];
-                                  updated[idx].name = v;
-                                  updated[idx].status = "approved";
-                                  updated[idx].date = new Date().toISOString().split('T')[0];
-                                  setApprovals(updated);
-                                }}
-                                disabled={fileStatus === "locked"}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {teamMembers.map(m => (
-                                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {approval.date || "-"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={approval.status === "approved" ? "default" : "secondary"}>
-                              {approval.status === "approved" ? (
-                                <><CheckCircle2 className="h-3 w-3 mr-1" /> Approved</>
-                              ) : "Pending"}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+        {/* Final Analytics */}
+        <TabsContent value="final-analytics" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Final Analytical Procedures
+              </CardTitle>
+              <CardDescription>Overall analytical review near end of audit — ISA 520</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label className="font-medium">Overall Analytical Review</Label>
+                <Textarea
+                  placeholder="Describe the overall analytical review performed near the end of the audit. Consider whether the financial statements are consistent with your understanding of the entity..."
+                  rows={4}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-final-analytics"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-medium">Key Ratios / Trends Noted</Label>
+                  <Textarea
+                    placeholder="Document significant ratios or trends identified..."
+                    rows={3}
+                    disabled={fileStatus === "locked"}
+                    data-testid="textarea-key-ratios"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium">Unusual Fluctuations</Label>
+                  <Textarea
+                    placeholder="Document any unusual or unexpected fluctuations and investigation results..."
+                    rows={3}
+                    disabled={fileStatus === "locked"}
+                    data-testid="textarea-unusual-fluctuations"
+                  />
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Conclusion on Final Analytics</Label>
+                <Textarea
+                  placeholder="Overall conclusion: Are the financial statements consistent with your understanding?"
+                  rows={2}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-analytics-conclusion"
+                />
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-md border bg-blue-50/50 dark:bg-blue-950/20">
+                <Info className="h-4 w-4 text-blue-500" />
+                <span className="text-xs text-muted-foreground">ISA 520 requires final analytical procedures to form an overall conclusion on whether the financial statements are consistent with the auditor's understanding of the entity</span>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-              {isPartner && fileStatus === "open" && (
-                <div className="flex justify-end pt-4">
-                  <Button 
-                    onClick={handlePartnerApproval}
-                    disabled={!canLockFile}
-                    className="gap-2"
-                  >
-                    <Lock className="h-4 w-4" />
-                    Partner Approval & Lock File
-                  </Button>
+        {/* Final Overall Conclusion */}
+        <TabsContent value="final-conclusion" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5" />
+                Final Overall Conclusion
+              </CardTitle>
+              <CardDescription>Document the overall audit conclusion before forming the opinion</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {finStats && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  <div className="p-3 border rounded-md text-center">
+                    <p className="text-2xl font-bold">{finStats.findings?.total || 0}</p>
+                    <p className="text-xs text-muted-foreground">Total Findings</p>
+                  </div>
+                  <div className="p-3 border rounded-md text-center">
+                    <p className="text-2xl font-bold text-red-600">{finStats.findings?.criticalOpen || 0}</p>
+                    <p className="text-xs text-muted-foreground">Critical Open</p>
+                  </div>
+                  <div className="p-3 border rounded-md text-center">
+                    <p className="text-2xl font-bold">{finStats.adjustments?.total || 0}</p>
+                    <p className="text-xs text-muted-foreground">Adjustments</p>
+                  </div>
+                  <div className="p-3 border rounded-md text-center">
+                    <p className="text-2xl font-bold text-amber-600">{finStats.adjustments?.uncorrected || 0}</p>
+                    <p className="text-xs text-muted-foreground">Uncorrected</p>
+                  </div>
                 </div>
               )}
+              <div className="space-y-2">
+                <Label className="font-medium">Sufficiency & Appropriateness of Evidence</Label>
+                <Textarea
+                  placeholder="Has sufficient appropriate audit evidence been obtained to form the opinion?"
+                  rows={3}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-evidence-sufficiency"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Unresolved Matters</Label>
+                <Textarea
+                  placeholder="Are there any unresolved matters? If so, what is their impact on the opinion?"
+                  rows={3}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-unresolved-matters"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Overall Audit Conclusion</Label>
+                <Textarea
+                  placeholder="State the overall audit conclusion and basis for the proposed opinion type..."
+                  rows={4}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-overall-conclusion"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-              {!canLockFile && isPartner && fileStatus === "open" && (
-                <div className="p-3 bg-muted rounded-lg text-sm text-muted-foreground">
-                  <p className="font-medium mb-1">Requirements for Partner Approval:</p>
-                  <ul className="list-disc ml-4 space-y-1">
-                    <li className={allChecklistItemsAnswered ? "text-green-600" : ""}>
-                      Answer all checklist items ({checklistProgress}/{checklistItems.length} completed)
-                    </li>
-                    <li className={noMissingRemarks ? "text-green-600" : "text-red-600"}>
-                      Provide remarks for all "No" responses {!noMissingRemarks && `(${openReviewNotes} missing)`}
-                    </li>
-                    <li className={goingConcernConclusion !== "" ? "text-green-600" : ""}>
-                      Complete Going Concern assessment with conclusion
-                    </li>
-                    <li className={basisForGoingConcernConclusion.trim() !== "" ? "text-green-600" : ""}>
-                      Document basis for Going Concern conclusion
-                    </li>
-                    <li className={auditOpinion ? "text-green-600" : ""}>
-                      Select audit opinion
-                    </li>
-                    <li className={approvals[0].status === "approved" ? "text-green-600" : ""}>
-                      Prepared By approval
-                    </li>
-                    <li className={approvals[1].status === "approved" ? "text-green-600" : ""}>
-                      Reviewed By approval
-                    </li>
-                  </ul>
+        {/* Completion Memo */}
+        <TabsContent value="completion-memo" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Completion Memo
+              </CardTitle>
+              <CardDescription>Audit completion memorandum summarizing the audit — ISA 230</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label className="font-medium">Executive Summary</Label>
+                <Textarea
+                  placeholder="Provide a summary of the audit including scope, key matters, and overall results..."
+                  rows={4}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-memo-summary"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-medium">Subsequent Events Conclusion</Label>
+                  <Textarea
+                    placeholder="Conclusion on subsequent events review..."
+                    rows={2}
+                    disabled={fileStatus === "locked"}
+                    data-testid="textarea-memo-events"
+                  />
                 </div>
+                <div className="space-y-2">
+                  <Label className="font-medium">Going Concern Conclusion</Label>
+                  <Textarea
+                    placeholder="Conclusion on going concern..."
+                    rows={2}
+                    disabled={fileStatus === "locked"}
+                    data-testid="textarea-memo-gc"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Unresolved Matters</Label>
+                <Textarea
+                  placeholder="Document any unresolved matters or open items at the time of completion..."
+                  rows={3}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-memo-unresolved"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Overall Conclusion</Label>
+                <Textarea
+                  placeholder="Overall audit conclusion for the completion memo..."
+                  rows={3}
+                  disabled={fileStatus === "locked"}
+                  data-testid="textarea-memo-overall"
+                />
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-md border bg-blue-50/50 dark:bg-blue-950/20">
+                <Info className="h-4 w-4 text-blue-500" />
+                <span className="text-xs text-muted-foreground">ISA 230 requires audit documentation sufficient to enable an experienced auditor to understand the nature, timing and extent of procedures performed, results obtained, and significant matters arising</span>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Partner Review Readiness */}
+        <TabsContent value="partner-review" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Partner Review Readiness
+              </CardTitle>
+              <CardDescription>Assess readiness for partner final review and approval</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {finStats ? (
+                <>
+                  <div className="space-y-3">
+                    {[
+                      { label: "Completion Checklist Done", done: finStats.completionProgress?.checklistDone, icon: <ClipboardCheck className="h-4 w-4" /> },
+                      { label: "Subsequent Events Reviewed", done: finStats.completionProgress?.subsequentEventsReviewed, icon: <Calendar className="h-4 w-4" /> },
+                      { label: "Going Concern Assessed", done: finStats.completionProgress?.goingConcernAssessed, icon: <TrendingDown className="h-4 w-4" /> },
+                      { label: "Representation Letter Obtained", done: finStats.completionProgress?.representationObtained, icon: <FileSignature className="h-4 w-4" /> },
+                      { label: "Findings & Adjustments Addressed", done: finStats.completionProgress?.findingsAddressed, icon: <AlertCircle className="h-4 w-4" /> },
+                      { label: "Completion Memo Complete", done: finStats.completionProgress?.memoComplete, icon: <FileText className="h-4 w-4" /> },
+                      { label: "Manager Review Done", done: finStats.completionProgress?.managerReviewed, icon: <User className="h-4 w-4" /> },
+                      { label: "Partner Approved", done: finStats.completionProgress?.partnerApproved, icon: <Shield className="h-4 w-4" /> },
+                    ].map((item, i) => (
+                      <div key={i} className={`flex items-center gap-3 p-3 rounded-md border ${item.done ? "bg-green-50 dark:bg-green-950/20 border-green-200" : "bg-red-50 dark:bg-red-950/20 border-red-200"}`}>
+                        {item.done ? <CheckCircle2 className="h-5 w-5 text-green-600" /> : <AlertTriangle className="h-5 w-5 text-red-600" />}
+                        <div className="flex items-center gap-2">
+                          {item.icon}
+                          <span className="text-sm font-medium">{item.label}</span>
+                        </div>
+                        <Badge variant={item.done ? "default" : "destructive"} className="ml-auto text-xs">
+                          {item.done ? "Done" : "Pending"}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between p-4 rounded-md border">
+                    <div>
+                      <p className="font-medium">Completion Progress</p>
+                      <p className="text-sm text-muted-foreground">{finStats.completionPercent}% complete</p>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant={finStats.reportReady ? "default" : "secondary"} className="text-sm px-3 py-1">
+                        {finStats.reportReady ? "Ready for Report" : "Not Ready"}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {finStats.findings?.criticalOpen > 0 && (
+                    <div className="flex items-start gap-2 p-3 rounded-md border bg-red-50 dark:bg-red-950/20 border-red-200">
+                      <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-red-700 dark:text-red-400">Critical Findings Blocking Report</p>
+                        <p className="text-xs text-muted-foreground">{finStats.findings.criticalOpen} critical/high finding(s) remain open — must be resolved before partner can approve</p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">Loading completion status...</div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
-
-        <TabsContent value="notes" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Notes to the Financial Statements
-                  </CardTitle>
-                  <CardDescription>IFRS / Local GAAP Notes & Disclosures Generator — auto-generated from mapped FS Heads, trial balance, and entity profile</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <NotesDisclosurePanel
-                draftFsData={draftFsData}
-                coaAccounts={coaAccounts}
-                fsPriorYear={fsPriorYear}
-                trialBalance={trialBalance}
-                engagementId={engagementId || ""}
-                clientName={client?.name || "Company Name"}
-                periodEnd={engagement?.periodEnd ? new Date(engagement.periodEnd).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : "Period End"}
-                entityType={(client as any)?.entityType}
-                industry={(client as any)?.industry}
-                secpNo={(client as any)?.secpNo}
-                fileStatus={fileStatus}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Written Representations Tab - ISA 580 */}
-        <TabsContent value="written-representations" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2" data-testid="text-written-representations-title">
-                <FileSignature className="h-5 w-5" />
-                Written Representations — ISA 580
-              </CardTitle>
-              <CardDescription>
-                Obtain written representations from management and, where appropriate, those charged with governance.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <ClipboardCheck className="h-4 w-4" />
-                  Representation Checklist
-                </h3>
-                <div className="space-y-2">
-                  {[
-                    "Obtain management representation that they have fulfilled their responsibility for preparation of financial statements",
-                    "Obtain representation that all transactions have been recorded and reflected",
-                    "Obtain representation regarding completeness of information provided",
-                    "Obtain representation regarding related party relationships and transactions",
-                    "Obtain representation regarding subsequent events",
-                    "Obtain representation regarding fraud and non-compliance with laws",
-                    "Ensure representations are dated as of the date of the auditor's report",
-                    "Representations signed by management with appropriate responsibility"
-                  ].map((item, idx) => (
-                    <label key={idx} className="flex items-start gap-2 text-sm cursor-pointer" data-testid={`label-wr-checklist-${idx}`}>
-                      <input
-                        type="checkbox"
-                        className="mt-1 h-4 w-4 rounded border-border"
-                        checked={writtenRepChecklist[idx] || false}
-                        onChange={(e) => {
-                          const updated = [...writtenRepChecklist];
-                          updated[idx] = e.target.checked;
-                          setWrittenRepChecklist(updated);
-                          saveEngine.signalChange();
-                        }}
-                        disabled={!canEdit}
-                        data-testid={`checkbox-wr-checklist-${idx}`}
-                      />
-                      <span>{item}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Representation Letter Template
-                </h3>
-                <Card>
-                  <CardContent className="p-4">
-                    <p className="text-sm text-muted-foreground" data-testid="text-wr-template-note">
-                      Standard management representation letter template available for customization
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Required Evidence
-                </h3>
-                <div className="space-y-2">
-                  {[
-                    "Signed management representation letter",
-                    "Board authorization for financial statements",
-                    "TCWG representation (if separate from management)"
-                  ].map((item, idx) => (
-                    <label key={idx} className="flex items-start gap-2 text-sm cursor-pointer" data-testid={`label-wr-evidence-${idx}`}>
-                      <input
-                        type="checkbox"
-                        className="mt-1 h-4 w-4 rounded border-border"
-                        checked={writtenRepEvidence[idx] || false}
-                        onChange={(e) => {
-                          const updated = [...writtenRepEvidence];
-                          updated[idx] = e.target.checked;
-                          setWrittenRepEvidence(updated);
-                          saveEngine.signalChange();
-                        }}
-                        disabled={!canEdit}
-                        data-testid={`checkbox-wr-evidence-${idx}`}
-                      />
-                      <span>{item}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <FileCheck2 className="h-4 w-4" />
-                  Outputs
-                </h3>
-                <div className="space-y-2">
-                  <label className="flex items-start gap-2 text-sm cursor-pointer" data-testid="label-wr-output-0">
-                    <input
-                      type="checkbox"
-                      className="mt-1 h-4 w-4 rounded border-border"
-                      checked={writtenRepOutputs[0] || false}
-                      onChange={(e) => {
-                        const updated = [...writtenRepOutputs];
-                        updated[0] = e.target.checked;
-                        setWrittenRepOutputs(updated);
-                        saveEngine.signalChange();
-                      }}
-                      disabled={!canEdit}
-                      data-testid="checkbox-wr-output-0"
-                    />
-                    <span>ISA 580 Written Representation Letter (signed)</span>
-                  </label>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Reporting & Opinion Tab - ISA 700/705/706 */}
-        <TabsContent value="reporting-opinion" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2" data-testid="text-reporting-opinion-title">
-                <Scale className="h-5 w-5" />
-                Forming an Opinion & Reporting — ISA 700/705/706
-              </CardTitle>
-              <CardDescription>
-                Form an opinion on the financial statements and issue the auditor's report.{" "}
-                To manage formal deliverables and issue reports, go to the{" "}
-                <Link href={`/workspace/${engagementId}/deliverables`} className="text-primary hover:underline">
-                  Deliverables Register
-                </Link>.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <ClipboardCheck className="h-4 w-4" />
-                  Opinion Decision Checklist
-                </h3>
-                <div className="space-y-2">
-                  {[
-                    "Evaluate whether financial statements are prepared in accordance with applicable framework",
-                    "Evaluate whether financial statements achieve fair presentation",
-                    "Consider whether sufficient appropriate audit evidence has been obtained",
-                    "Evaluate uncorrected misstatements (ISA 450)",
-                    "Consider going concern conclusions (ISA 570)",
-                    "Consider subsequent events impact (ISA 560)",
-                    "Determine type of opinion: Unmodified / Qualified / Adverse / Disclaimer"
-                  ].map((item, idx) => (
-                    <label key={idx} className="flex items-start gap-2 text-sm cursor-pointer" data-testid={`label-ro-checklist-${idx}`}>
-                      <input
-                        type="checkbox"
-                        className="mt-1 h-4 w-4 rounded border-border"
-                        checked={reportingOpinionChecklist[idx] || false}
-                        onChange={(e) => {
-                          const updated = [...reportingOpinionChecklist];
-                          updated[idx] = e.target.checked;
-                          setReportingOpinionChecklist(updated);
-                          saveEngine.signalChange();
-                        }}
-                        disabled={!canEdit}
-                        data-testid={`checkbox-ro-checklist-${idx}`}
-                      />
-                      <span>{item}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <FileCheck className="h-4 w-4" />
-                  Opinion Type
-                </h3>
-                <div className="space-y-2">
-                  {[
-                    { value: "unmodified", label: "Unmodified Opinion (ISA 700)" },
-                    { value: "qualified", label: "Qualified Opinion (ISA 705)" },
-                    { value: "adverse", label: "Adverse Opinion (ISA 705)" },
-                    { value: "disclaimer", label: "Disclaimer of Opinion (ISA 705)" }
-                  ].map((option) => (
-                    <label key={option.value} className="flex items-center gap-2 text-sm cursor-pointer" data-testid={`label-ro-opinion-${option.value}`}>
-                      <input
-                        type="radio"
-                        name="reporting-opinion-type"
-                        value={option.value}
-                        checked={reportingOpinionType === option.value}
-                        onChange={(e) => {
-                          setReportingOpinionType(e.target.value);
-                          saveEngine.signalChange();
-                        }}
-                        disabled={!canEdit}
-                        className="h-4 w-4"
-                        data-testid={`radio-ro-opinion-${option.value}`}
-                      />
-                      <span>{option.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" />
-                  Key Audit Matters (ISA 701)
-                </h3>
-                <Card>
-                  <CardContent className="p-4">
-                    <p className="text-sm text-muted-foreground" data-testid="text-ro-kam-note">
-                      Determine and document Key Audit Matters to be communicated in the auditor's report
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <Info className="h-4 w-4" />
-                  Emphasis of Matter / Other Matter (ISA 706)
-                </h3>
-                <Card>
-                  <CardContent className="p-4">
-                    <p className="text-sm text-muted-foreground" data-testid="text-ro-eom-note">
-                      Document any Emphasis of Matter or Other Matter paragraphs required
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Required Evidence
-                </h3>
-                <div className="space-y-2">
-                  {[
-                    "Draft auditor's report",
-                    "All supporting working papers",
-                    "Partner review sign-off"
-                  ].map((item, idx) => (
-                    <label key={idx} className="flex items-start gap-2 text-sm cursor-pointer" data-testid={`label-ro-evidence-${idx}`}>
-                      <input
-                        type="checkbox"
-                        className="mt-1 h-4 w-4 rounded border-border"
-                        checked={reportingEvidence[idx] || false}
-                        onChange={(e) => {
-                          const updated = [...reportingEvidence];
-                          updated[idx] = e.target.checked;
-                          setReportingEvidence(updated);
-                          saveEngine.signalChange();
-                        }}
-                        disabled={!canEdit}
-                        data-testid={`checkbox-ro-evidence-${idx}`}
-                      />
-                      <span>{item}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <FileCheck2 className="h-4 w-4" />
-                  Outputs
-                </h3>
-                <div className="space-y-2">
-                  {[
-                    "Draft Auditor's Report",
-                    "KAM Documentation"
-                  ].map((item, idx) => (
-                    <label key={idx} className="flex items-start gap-2 text-sm cursor-pointer" data-testid={`label-ro-output-${idx}`}>
-                      <input
-                        type="checkbox"
-                        className="mt-1 h-4 w-4 rounded border-border"
-                        checked={reportingOutputs[idx] || false}
-                        onChange={(e) => {
-                          const updated = [...reportingOutputs];
-                          updated[idx] = e.target.checked;
-                          setReportingOutputs(updated);
-                          saveEngine.signalChange();
-                        }}
-                        disabled={!canEdit}
-                        data-testid={`checkbox-ro-output-${idx}`}
-                      />
-                      <span>{item}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Other Information Tab - ISA 720 */}
-        <TabsContent value="other-information" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2" data-testid="text-other-information-title">
-                <FileSpreadsheet className="h-5 w-5" />
-                Other Information in Documents Containing Audited Financial Statements — ISA 720
-              </CardTitle>
-              <CardDescription>
-                Read and consider other information included in annual reports and assess consistency with audited financial statements.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <ClipboardCheck className="h-4 w-4" />
-                  Review Checklist
-                </h3>
-                <div className="space-y-2">
-                  {[
-                    "Identify all other information in documents containing audited financial statements",
-                    "Read the other information to identify material inconsistencies with financial statements",
-                    "Read the other information to identify material misstatements of fact",
-                    "Evaluate any material inconsistencies identified",
-                    "Report to TCWG any uncorrected material inconsistencies",
-                    "Consider implications for the auditor's report",
-                    "Include an Other Information section in the auditor's report"
-                  ].map((item, idx) => (
-                    <label key={idx} className="flex items-start gap-2 text-sm cursor-pointer" data-testid={`label-oi-checklist-${idx}`}>
-                      <input
-                        type="checkbox"
-                        className="mt-1 h-4 w-4 rounded border-border"
-                        checked={otherInfoChecklist[idx] || false}
-                        onChange={(e) => {
-                          const updated = [...otherInfoChecklist];
-                          updated[idx] = e.target.checked;
-                          setOtherInfoChecklist(updated);
-                          saveEngine.signalChange();
-                        }}
-                        disabled={!canEdit}
-                        data-testid={`checkbox-oi-checklist-${idx}`}
-                      />
-                      <span>{item}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Required Evidence
-                </h3>
-                <div className="space-y-2">
-                  {[
-                    "Annual report draft",
-                    "Directors' report",
-                    "Chairman's statement",
-                    "Any other documents accompanying financial statements"
-                  ].map((item, idx) => (
-                    <label key={idx} className="flex items-start gap-2 text-sm cursor-pointer" data-testid={`label-oi-evidence-${idx}`}>
-                      <input
-                        type="checkbox"
-                        className="mt-1 h-4 w-4 rounded border-border"
-                        checked={otherInfoEvidence[idx] || false}
-                        onChange={(e) => {
-                          const updated = [...otherInfoEvidence];
-                          updated[idx] = e.target.checked;
-                          setOtherInfoEvidence(updated);
-                          saveEngine.signalChange();
-                        }}
-                        disabled={!canEdit}
-                        data-testid={`checkbox-oi-evidence-${idx}`}
-                      />
-                      <span>{item}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <FileCheck2 className="h-4 w-4" />
-                  Outputs
-                </h3>
-                <div className="space-y-2">
-                  <label className="flex items-start gap-2 text-sm cursor-pointer" data-testid="label-oi-output-0">
-                    <input
-                      type="checkbox"
-                      className="mt-1 h-4 w-4 rounded border-border"
-                      checked={otherInfoOutputs[0] || false}
-                      onChange={(e) => {
-                        const updated = [...otherInfoOutputs];
-                        updated[0] = e.target.checked;
-                        setOtherInfoOutputs(updated);
-                        saveEngine.signalChange();
-                      }}
-                      disabled={!canEdit}
-                      data-testid="checkbox-oi-output-0"
-                    />
-                    <span>ISA 720 Other Information Review working paper</span>
-                  </label>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         {/* Lock Gate Tab - Final engagement lock before archiving */}
         <TabsContent value="lock-gate" className="space-y-4">
           <Card>

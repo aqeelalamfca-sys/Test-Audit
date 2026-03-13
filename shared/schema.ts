@@ -189,6 +189,10 @@ export type ReviewNote = typeof reviewNotes.$inferSelect;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type Document = typeof documents.$inferSelect;
 
+/**
+ * Backend storage phases (maps to Prisma AuditPhase enum).
+ * For the full 19-phase canonical workflow, see shared/phases.ts CANONICAL_PHASES.
+ */
 export const PHASE_ORDER: AuditPhaseType[] = [
   "onboarding",
   "pre_planning",

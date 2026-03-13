@@ -5,6 +5,14 @@ import { queryClient } from "@/lib/queryClient";
 import { useAuth } from "./auth";
 import { PhaseProgress, getSmartWorkspaceRoute } from "./navigation";
 import { fetchWithAuth } from "./fetchWithAuth";
+import {
+  CANONICAL_PHASES,
+  SLUG_TO_BACKEND_PHASE,
+  OLD_ROUTE_TO_NEW_SLUG,
+  PHASE_GROUP_LABELS,
+  PHASE_GROUP_ORDER,
+  type CanonicalPhase,
+} from "../../../shared/phases";
 
 interface Client {
   id: string;
@@ -108,50 +116,49 @@ interface WorkspaceContextType {
 
 const WorkspaceContext = createContext<WorkspaceContextType | null>(null);
 
-const PHASE_ROUTES_ALL: Record<string, string> = {
-  "onboarding": "PRE_PLANNING",
-  "ethics": "PRE_PLANNING",
-  "requisition": "REQUISITION",
-  "import": "REQUISITION",
-  "tb-review": "REQUISITION",
-  "fs-mapping": "REQUISITION",
-  "pre-planning": "PRE_PLANNING",
-  "planning": "PLANNING",
-  "execution": "EXECUTION",
-  "fs-heads": "EXECUTION",
-  "observations": "EXECUTION",
-  "checklists": "EXECUTION",
-  "finalization": "FINALIZATION",
-  "deliverables": "REPORTING",
-  "outputs": "REPORTING",
-  "eqcr": "EQCR",
-  "inspection": "INSPECTION",
-  "controls": "EXECUTION",
-  "substantive": "EXECUTION",
-  "analytical": "EXECUTION",
-  "evidence": "EXECUTION",
-  "audit-health": "EXECUTION",
-  "information-requisition": "REQUISITION",
-  "workflow-health": "EXECUTION",
-  "post-upload-workflow": "REQUISITION",
-  "standards-matrix": "EXECUTION",
-  "compliance-simulation": "EXECUTION",
-  "qcr-dashboard": "INSPECTION",
-};
+const PHASE_ROUTES_ALL: Record<string, string> = {};
+for (const phase of CANONICAL_PHASES) {
+  PHASE_ROUTES_ALL[phase.routeSlug] = phase.backendPhase;
+}
+PHASE_ROUTES_ALL["onboarding"] = "ONBOARDING";
+PHASE_ROUTES_ALL["ethics"] = "PRE_PLANNING";
+PHASE_ROUTES_ALL["requisition"] = "REQUISITION";
+PHASE_ROUTES_ALL["import"] = "REQUISITION";
+PHASE_ROUTES_ALL["tb-review"] = "REQUISITION";
+PHASE_ROUTES_ALL["fs-mapping"] = "REQUISITION";
+PHASE_ROUTES_ALL["pre-planning"] = "PRE_PLANNING";
+PHASE_ROUTES_ALL["planning"] = "PLANNING";
+PHASE_ROUTES_ALL["execution"] = "EXECUTION";
+PHASE_ROUTES_ALL["fs-heads"] = "EXECUTION";
+PHASE_ROUTES_ALL["observations"] = "EXECUTION";
+PHASE_ROUTES_ALL["checklists"] = "EXECUTION";
+PHASE_ROUTES_ALL["deliverables"] = "REPORTING";
+PHASE_ROUTES_ALL["outputs"] = "REPORTING";
+PHASE_ROUTES_ALL["controls"] = "EXECUTION";
+PHASE_ROUTES_ALL["substantive"] = "EXECUTION";
+PHASE_ROUTES_ALL["analytical"] = "EXECUTION";
+PHASE_ROUTES_ALL["evidence"] = "EXECUTION";
+PHASE_ROUTES_ALL["audit-health"] = "EXECUTION";
+PHASE_ROUTES_ALL["information-requisition"] = "REQUISITION";
+PHASE_ROUTES_ALL["workflow-health"] = "EXECUTION";
+PHASE_ROUTES_ALL["post-upload-workflow"] = "REQUISITION";
+PHASE_ROUTES_ALL["standards-matrix"] = "EXECUTION";
+PHASE_ROUTES_ALL["compliance-simulation"] = "EXECUTION";
+PHASE_ROUTES_ALL["qcr-dashboard"] = "INSPECTION";
 
-const PHASE_ORDER = ["ONBOARDING", "PRE_PLANNING", "REQUISITION", "PLANNING", "EXECUTION", "FINALIZATION", "REPORTING", "EQCR", "INSPECTION"]; // Note: REQUISITION (Data Intake) comes after PRE_PLANNING in UI but enforcement order preserved
+const PHASE_ORDER = CANONICAL_PHASES
+  .filter(p => p.order >= 2)
+  .map(p => p.backendPhase)
+  .filter((v, i, a) => a.indexOf(v) === i);
 
-const PHASE_TO_ROUTE: Record<string, string> = {
-  "ONBOARDING": "pre-planning",
-  "PRE_PLANNING": "pre-planning",
-  "REQUISITION": "requisition",
-  "PLANNING": "planning",
-  "EXECUTION": "execution",
-  "FINALIZATION": "finalization",
-  "REPORTING": "deliverables",
-  "EQCR": "eqcr",
-  "INSPECTION": "inspection",
-};
+const PHASE_TO_ROUTE: Record<string, string> = {};
+const seenBackend = new Set<string>();
+for (const phase of CANONICAL_PHASES) {
+  if (!seenBackend.has(phase.backendPhase)) {
+    PHASE_TO_ROUTE[phase.backendPhase] = phase.routeSlug;
+    seenBackend.add(phase.backendPhase);
+  }
+}
 
 interface WorkspacePhase {
   key: string;
@@ -160,24 +167,21 @@ interface WorkspacePhase {
   isPrimary?: boolean;
 }
 
-export const WORKSPACE_PHASES: WorkspacePhase[] = [
-  { key: "pre-planning", label: "Pre-Planning", group: "Audit Lifecycle" },
-  { key: "requisition", label: "Data Intake", group: "Audit Lifecycle" },
-  { key: "planning", label: "Planning", group: "Audit Lifecycle" },
-  { key: "execution", label: "Execution", group: "Audit Lifecycle" },
-  { key: "fs-heads", label: "FS Heads", group: "Audit Lifecycle" },
-  { key: "evidence", label: "Evidence", group: "Audit Lifecycle" },
-  { key: "checklists", label: "Checklists", group: "Audit Lifecycle" },
-  { key: "finalization", label: "Finalization", group: "Audit Lifecycle" },
-  { key: "deliverables", label: "Deliverables", group: "Audit Lifecycle" },
-  { key: "eqcr", label: "QR", group: "Audit Lifecycle" },
-  { key: "inspection", label: "Inspection", group: "Audit Lifecycle" },
-];
+export const WORKSPACE_PHASES: WorkspacePhase[] = CANONICAL_PHASES
+  .filter(p => p.order >= 2)
+  .map(p => ({
+    key: p.routeSlug,
+    label: p.label,
+    group: PHASE_GROUP_LABELS[p.group] || p.group,
+  }));
 
-export const RESTRICTED_PHASE_ROLES: Record<string, string[]> = {
-  "eqcr": ["FIRM_ADMIN", "PARTNER", "MANAGER", "EQCR"],
-  "inspection": ["FIRM_ADMIN", "PARTNER", "MANAGER", "EQCR"],
-};
+export const RESTRICTED_PHASE_ROLES: Record<string, string[]> = {};
+for (const phase of CANONICAL_PHASES) {
+  const viewRoles = phase.rolePermissions.canView;
+  if (viewRoles.length < 6) {
+    RESTRICTED_PHASE_ROLES[phase.routeSlug] = viewRoles;
+  }
+}
 
 export function isPhaseVisible(phaseKey: string, userRole: string): boolean {
   const allowedRoles = RESTRICTED_PHASE_ROLES[phaseKey];
@@ -450,17 +454,17 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
 
   const getNextUnlockedPhase = useCallback((phases: PhaseProgress[] | undefined, startingPhase: string): string => {
-    if (!phases) return "pre-planning";
+    if (!phases) return "acceptance";
     
     const startIndex = PHASE_ORDER.indexOf(startingPhase);
-    if (startIndex === -1) return "pre-planning";
+    if (startIndex === -1) return "acceptance";
     
     for (let i = startIndex; i < PHASE_ORDER.length; i++) {
       const phaseName = PHASE_ORDER[i];
       const phaseData = phases.find(p => p.phase === phaseName);
       const isLocked = phaseData?.lockedAt || phaseData?.status === "COMPLETED";
       if (!isLocked) {
-        return PHASE_TO_ROUTE[phaseName] || "pre-planning";
+        return PHASE_TO_ROUTE[phaseName] || "acceptance";
       }
     }
     
@@ -469,11 +473,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       const phaseData = phases.find(p => p.phase === phaseName);
       const isLocked = phaseData?.lockedAt || phaseData?.status === "COMPLETED";
       if (!isLocked) {
-        return PHASE_TO_ROUTE[phaseName] || "pre-planning";
+        return PHASE_TO_ROUTE[phaseName] || "acceptance";
       }
     }
     
-    return "pre-planning";
+    return "acceptance";
   }, []);
 
   const switchToEngagement = useCallback((engagementId: string, preservePhase = true) => {
@@ -533,7 +537,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    setLocation(`/workspace/${engagementId}/pre-planning`);
+    setLocation(`/workspace/${engagementId}/acceptance`);
     setActiveEngagement(targetEngagement);
   }, [userEngagements, currentPhaseRoute, setLocation, getNextUnlockedPhase]);
 

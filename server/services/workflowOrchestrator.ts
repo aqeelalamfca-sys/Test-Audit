@@ -1,3 +1,8 @@
+/**
+ * @deprecated LEGACY — replaced by phaseGateEngine.ts (canonical 19-phase system).
+ * This 8-phase orchestrator is retained for the dashboard score/exception views.
+ * New workflow logic should use shared/phases.ts + phaseGateEngine.ts.
+ */
 import { prisma } from "../db";
 import type { WorkflowPhase, GateStatus, ExceptionTaxonomy } from "@prisma/client";
 

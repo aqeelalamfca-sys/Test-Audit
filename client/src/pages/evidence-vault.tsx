@@ -51,7 +51,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
-import { PhaseApprovalControl, PhaseLockIndicator } from "@/components/phase-approval-control";
 import { PageShell } from "@/components/page-shell";
 import { useEvidenceSaveBridge } from "@/hooks/use-evidence-save-bridge";
 
@@ -880,7 +879,7 @@ export default function EvidenceVault() {
       subtitle={`${client?.name || "Select Client"}${engagement?.engagementCode ? ` (${engagement.engagementCode})` : ""}`}
       icon={<FolderOpen className="h-6 w-6 text-primary" />}
       useRegistry={true}
-      backHref={`/workspace/${engagementId}/execution`}
+      backHref={`/workspace/${engagementId}/execution-testing`}
       nextHref={`/workspace/${engagementId}/finalization`}
       dashboardHref="/engagements"
       saveFn={async () => {

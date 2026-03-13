@@ -18,7 +18,6 @@ import {
   Building2,
   FileText,
   UserCheck,
-  FolderOpen,
   Shield,
   ShieldCheck,
   Users,
@@ -27,9 +26,7 @@ import {
   ClipboardList,
   ListChecks,
   ArrowLeft,
-  Layers,
   BookOpen,
-  Target,
   Scale,
   Play,
   CheckCircle2,
@@ -41,6 +38,18 @@ import {
   Rocket,
   MessageSquare,
   Banknote,
+  Upload,
+  CheckSquare,
+  Map,
+  Calculator,
+  AlertTriangle,
+  Compass,
+  TestTube,
+  Link2,
+  Eye,
+  PenTool,
+  Gavel,
+  Archive,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth";
@@ -64,18 +73,29 @@ interface AppSidebarProps {
   };
 }
 
+import {
+  PHASE_GROUP_ORDER,
+  PHASE_GROUP_LABELS,
+} from "../../../shared/phases";
+
 const WORKSPACE_PHASE_ICONS: Record<string, React.ElementType> = {
-  "requisition": FileText,
-  "pre-planning": ClipboardList,
-  "planning": Target,
-  "execution": Play,
-  "fs-heads": Layers,
-  "evidence": FolderOpen,
-  "checklists": ListChecks,
+  "acceptance": ClipboardList,
+  "independence": Shield,
+  "tb-gl-upload": Upload,
+  "validation": CheckSquare,
+  "coa-mapping": Map,
+  "materiality": Calculator,
+  "risk-assessment": AlertTriangle,
+  "planning-strategy": Compass,
+  "procedures-sampling": ListChecks,
+  "execution-testing": Play,
+  "evidence-linking": Link2,
+  "observations": Eye,
+  "adjustments": PenTool,
   "finalization": CheckCircle2,
-  "deliverables": FileOutput,
+  "opinion-reports": FileOutput,
   "eqcr": UserCheck,
-  "inspection": Search,
+  "inspection": Archive,
 };
 
 export function AppSidebar({ currentUser }: AppSidebarProps) {
@@ -152,39 +172,46 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
               <EngagementHealthPanel slot="top" />
             </div>
 
-            <SidebarGroup>
-              <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Audit Lifecycle
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {WORKSPACE_PHASES.filter((phase) => {
-                    const role = user?.role?.toUpperCase() || currentUser?.role?.toUpperCase() || "STAFF";
-                    return isPhaseVisible(phase.key, role);
-                  }).map((phase) => {
-                    const Icon = WORKSPACE_PHASE_ICONS[phase.key] || FileText;
-                    const href = getWorkspaceHref(phase.key);
-                    const isActive = location.includes(`/${phase.key}`) ||
-                      (phase.key === "requisition" && location.includes("/requisition"));
-                    
-                    return (
-                      <SidebarMenuItem key={phase.key}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={isActive}
-                          data-testid={`nav-${phase.key}`}
-                        >
-                          <Link href={href}>
-                            <Icon className="h-4 w-4" />
-                            <span>{phase.label}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+            {(() => {
+              const role = user?.role?.toUpperCase() || currentUser?.role?.toUpperCase() || "STAFF";
+              const visiblePhases = WORKSPACE_PHASES.filter(p => isPhaseVisible(p.key, role));
+              const groups = PHASE_GROUP_ORDER
+                .map(g => PHASE_GROUP_LABELS[g] || g)
+                .filter(g => visiblePhases.some(p => p.group === g));
+
+              return groups.map(groupLabel => (
+                <SidebarGroup key={groupLabel}>
+                  <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {groupLabel}
+                  </SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {visiblePhases
+                        .filter(phase => phase.group === groupLabel)
+                        .map(phase => {
+                          const Icon = WORKSPACE_PHASE_ICONS[phase.key] || FileText;
+                          const href = getWorkspaceHref(phase.key);
+                          const isActive = location.includes(`/${phase.key}`);
+                          return (
+                            <SidebarMenuItem key={phase.key}>
+                              <SidebarMenuButton
+                                asChild
+                                isActive={isActive}
+                                data-testid={`nav-${phase.key}`}
+                              >
+                                <Link href={href}>
+                                  <Icon className="h-4 w-4" />
+                                  <span>{phase.label}</span>
+                                </Link>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          );
+                        })}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              ));
+            })()}
 
             <div className="border-t border-sidebar-border mx-2">
               <EngagementHealthPanel slot="bottom" />

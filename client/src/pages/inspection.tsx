@@ -1,331 +1,329 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, Link } from "wouter";
+import { useParams } from "wouter";
+import { AIAssistantPanel } from "@/components/ai-assistant-panel";
+import { SignOffBar } from "@/components/sign-off-bar";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { useEngagement } from "@/lib/workspace-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
-import { formatAccounting } from '@/lib/formatters';
-import { 
-  Eye, CheckCircle2, AlertTriangle, FileText, Lock, Printer,
-  ClipboardCheck, Shield, User, FileCheck,
-  AlertCircle, RefreshCw, Archive, Package,
-  BookOpen, ClipboardList,
-  History, Clock, UserCheck, ArrowRight, Activity
-} from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { getDocumentHeaderHtml } from "@/lib/pdf-logo";
+import {
+  Archive, Shield, Lock, FileText, CheckCircle2, AlertTriangle,
+  Package, Printer, RefreshCw, Eye, Clock, UserCheck, ArrowRight,
+  Activity, AlertCircle, FileCheck, History, ClipboardList,
+  Search, FolderArchive, BookOpen, Download, Sparkles, BarChart3
+} from "lucide-react";
 
-interface PhaseSummary {
-  phase: string;
-  status: string;
-  completedItems: number;
-  totalItems: number;
-  signedOffBy?: string;
-  signedOffDate?: string;
-  keyFindings?: string[];
-}
-
-interface InspectionData {
-  engagementInfo: {
+interface ArchiveStats {
+  archiveStatus: string;
+  archiveSealedAt: string | null;
+  archiveReleasedAt: string | null;
+  readinessScore: number;
+  readinessIssues: any[];
+  phaseLockStatus: Record<string, string>;
+  metrics: {
+    totalPhases: number;
+    completedPhases: number;
+    totalWorkpapers: number;
+    totalFindings: number;
+    openItems: number;
+    totalAdjustments: number;
+    checklistTotal: number;
+    checklistCompleted: number;
+    risksTotal: number;
+    risksAddressed: number;
+    testsTotal: number;
+    testsWithConclusions: number;
+    deliverablesTotal: number;
+    deliverablesFinal: number;
+    auditTrailEntries: number;
+    exportCount: number;
+  };
+  eqcrStatus: string;
+  eqcrClearance: string;
+  reportSigned: boolean;
+  recentExports: any[];
+  engagement: {
     code: string;
     clientName: string;
     periodStart?: string;
     periodEnd?: string;
-    auditOpinion?: string;
-    fileStatus?: string;
+    status?: string;
   };
-  phases: PhaseSummary[];
-  keyMetrics: {
-    totalWorkpapers: number;
-    totalFindings: number;
-    openItems: number;
-    adjustmentsCount: number;
-    materialityAmount?: number;
-  };
-  riskSummary: Array<{
-    riskArea: string;
-    riskLevel: string;
-    response: string;
-  }>;
-  auditMatters: Array<{
-    matter: string;
-    conclusion: string;
-  }>;
 }
 
 export default function Inspection() {
   const params = useParams<{ engagementId: string }>();
-  const { 
-    engagementId: contextEngagementId, 
-    engagement, 
-    client,
-    refreshEngagement 
-  } = useEngagement();
+  const { engagementId: contextEngagementId, engagement, client, refreshEngagement } = useEngagement();
   const engagementId = params.engagementId || contextEngagementId || undefined;
   const { toast } = useToast();
-  const { firm } = useAuth();
+  const { firm, user } = useAuth();
+  const roleGuard = usePhaseRoleGuard("inspection", "INSPECTION");
 
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
-  const [printing, setPrinting] = useState(false);
-  const [data, setData] = useState<InspectionData>({
-    engagementInfo: {
-      code: engagement?.engagementCode || "",
-      clientName: client?.name || "",
-      fileStatus: "LOCKED"
-    },
-    phases: [
-      { phase: "Pre-Planning", status: "Completed", completedItems: 12, totalItems: 12, signedOffBy: "Manager", signedOffDate: "2026-01-15" },
-      { phase: "Planning", status: "Completed", completedItems: 25, totalItems: 25, signedOffBy: "Manager", signedOffDate: "2026-01-18" },
-      { phase: "Execution", status: "Completed", completedItems: 45, totalItems: 45, signedOffBy: "Senior", signedOffDate: "2026-01-25" },
-      { phase: "Finalization", status: "Completed", completedItems: 18, totalItems: 18, signedOffBy: "Partner", signedOffDate: "2026-01-28" },
-      { phase: "EQCR", status: "Completed", completedItems: 15, totalItems: 15, signedOffBy: "EQCR Reviewer", signedOffDate: "2026-01-29" },
-    ],
-    keyMetrics: {
-      totalWorkpapers: 85,
-      totalFindings: 3,
-      openItems: 0,
-      adjustmentsCount: 2,
-      materialityAmount: 5000000
-    },
-    riskSummary: [
-      { riskArea: "Revenue Recognition", riskLevel: "Significant", response: "Extended substantive procedures performed" },
-      { riskArea: "Management Override", riskLevel: "Significant", response: "Journal entry testing completed" },
-      { riskArea: "Inventory Valuation", riskLevel: "Moderate", response: "Physical count observation and NRV testing" },
-    ],
-    auditMatters: [
-      { matter: "Revenue Recognition Policy", conclusion: "Appropriate accounting treatment confirmed" },
-      { matter: "Going Concern Assessment", conclusion: "No material uncertainty identified" },
-      { matter: "Related Party Transactions", conclusion: "All transactions at arm's length, properly disclosed" },
-    ]
-  });
+  const [stats, setStats] = useState<ArchiveStats | null>(null);
+  const [archive, setArchive] = useState<any>(null);
+  const [archiveIndex, setArchiveIndex] = useState<any>(null);
+  const [finalReports, setFinalReports] = useState<any>(null);
+  const [reviewHistory, setReviewHistory] = useState<any>(null);
+  const [auditTrail, setAuditTrail] = useState<any[]>([]);
+  const [workingPapers, setWorkingPapers] = useState<any>(null);
+  const [exportLogs, setExportLogs] = useState<any[]>([]);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const fetchInspectionData = useCallback(async () => {
-    if (!engagementId) {
-      setLoading(false);
-      return;
-    }
+  const isSealed = archive?.status === "SEALED" || archive?.status === "RELEASED";
+  const isReleased = archive?.status === "RELEASED";
+  const isPartner = user?.role === "PARTNER" || user?.role === "FIRM_ADMIN" || user?.role === "SUPER_ADMIN";
+
+  const fetchStats = useCallback(async () => {
+    if (!engagementId) return;
     try {
-      const response = await fetchWithAuth(`/api/workspace/${engagementId}/inspection`);
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          setData(prev => ({ ...prev, ...result.data }));
-        }
+      const res = await fetchWithAuth(`/api/inspection/${engagementId}/stats`);
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success) setStats(result.data);
       }
-    } catch (error) {
-      console.error("Failed to fetch inspection data:", error);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error("Failed to fetch stats:", e); }
   }, [engagementId]);
 
-  useEffect(() => {
-    fetchInspectionData();
-  }, [fetchInspectionData]);
-
-  const handleExportFullPackage = async () => {
-    setExporting(true);
+  const fetchArchive = useCallback(async () => {
+    if (!engagementId) return;
     try {
-      toast({
-        title: "Exporting Package",
-        description: "Generating full audit package for download...",
-      });
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      const res = await fetchWithAuth(`/api/inspection/${engagementId}/archive`);
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success) {
+          setArchive(result.data);
+          if (result.data?.archiveIndex) setArchiveIndex(result.data.archiveIndex);
+        }
+      }
+    } catch (e) { console.error("Failed to fetch archive:", e); }
+  }, [engagementId]);
+
+  const fetchTabData = useCallback(async (tab: string) => {
+    if (!engagementId) return;
+    try {
+      if (tab === "reports" && !finalReports) {
+        const res = await fetchWithAuth(`/api/inspection/${engagementId}/final-reports`);
+        if (res.ok) { const r = await res.json(); if (r.success) setFinalReports(r.data); }
+      } else if (tab === "review" && !reviewHistory) {
+        const res = await fetchWithAuth(`/api/inspection/${engagementId}/review-history`);
+        if (res.ok) { const r = await res.json(); if (r.success) setReviewHistory(r.data); }
+      } else if (tab === "trail" && auditTrail.length === 0) {
+        const res = await fetchWithAuth(`/api/inspection/${engagementId}/audit-trail`);
+        if (res.ok) { const r = await res.json(); if (r.success) setAuditTrail(r.data); }
+      } else if (tab === "papers" && !workingPapers) {
+        const res = await fetchWithAuth(`/api/inspection/${engagementId}/working-papers`);
+        if (res.ok) { const r = await res.json(); if (r.success) setWorkingPapers(r.data); }
+      } else if (tab === "exports" && exportLogs.length === 0) {
+        const res = await fetchWithAuth(`/api/inspection/${engagementId}/exports`);
+        if (res.ok) { const r = await res.json(); if (r.success) setExportLogs(r.data); }
+      }
+    } catch (e) { console.error("Failed to fetch tab data:", e); }
+  }, [engagementId, finalReports, reviewHistory, auditTrail, workingPapers, exportLogs]);
+
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true);
+      await Promise.all([fetchStats(), fetchArchive()]);
+      setLoading(false);
+    };
+    init();
+  }, [fetchStats, fetchArchive]);
+
+  useEffect(() => {
+    fetchTabData(activeTab);
+  }, [activeTab, fetchTabData]);
+
+  const handleBuildArchive = async () => {
+    setActionLoading("build");
+    try {
+      const res = await fetchWithAuth(`/api/inspection/${engagementId}/archive/build`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        setArchive(result.data);
+        toast({ title: "Archive Built", description: "Archive package has been assembled." });
+        await fetchStats();
+      } else {
+        toast({ title: "Build Failed", description: result.error || "Failed to build archive.", variant: "destructive" });
+      }
+    } catch (e) { toast({ title: "Error", description: "Failed to build archive.", variant: "destructive" }); }
+    finally { setActionLoading(null); }
+  };
+
+  const handleSealArchive = async () => {
+    setActionLoading("seal");
+    try {
+      const res = await fetchWithAuth(`/api/inspection/${engagementId}/archive/seal`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        setArchive(result.data);
+        toast({ title: "Archive Sealed", description: "Engagement file is now immutable. No further modifications allowed." });
+        await fetchStats();
+      } else {
+        toast({ title: "Seal Failed", description: result.error || "Failed to seal archive.", variant: "destructive" });
+      }
+    } catch (e) { toast({ title: "Error", description: "Failed to seal archive.", variant: "destructive" }); }
+    finally { setActionLoading(null); }
+  };
+
+  const handleReleaseArchive = async () => {
+    setActionLoading("release");
+    try {
+      const res = await fetchWithAuth(`/api/inspection/${engagementId}/archive/release`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        setArchive(result.data);
+        toast({ title: "Archive Released", description: "Engagement has been transitioned to ARCHIVED state." });
+        await fetchStats();
+        refreshEngagement?.();
+      } else {
+        toast({ title: "Release Failed", description: result.error || "Failed to release archive.", variant: "destructive" });
+      }
+    } catch (e) { toast({ title: "Error", description: "Failed to release archive.", variant: "destructive" }); }
+    finally { setActionLoading(null); }
+  };
+
+  const handleGenerateIndex = async () => {
+    setActionLoading("index");
+    try {
+      const res = await fetchWithAuth(`/api/inspection/${engagementId}/archive/generate-index`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        setArchiveIndex(result.data);
+        toast({ title: "Index Generated", description: "Archive index has been generated for inspection retrieval." });
+      } else {
+        toast({ title: "Index Failed", description: result.error || "Failed to generate index.", variant: "destructive" });
+      }
+    } catch (e) { toast({ title: "Error", description: "Failed to generate index.", variant: "destructive" }); }
+    finally { setActionLoading(null); }
+  };
+
+  const handleCheckReadiness = async () => {
+    setActionLoading("readiness");
+    try {
+      const res = await fetchWithAuth(`/api/inspection/${engagementId}/readiness`);
+      if (res.ok) {
+        toast({ title: "Readiness Refreshed", description: "Inspection readiness score has been recalculated." });
+        await fetchStats();
+      }
+    } catch (e) { toast({ title: "Error", description: "Failed to check readiness.", variant: "destructive" }); }
+    finally { setActionLoading(null); }
+  };
+
+  const handleAIAnalysis = async (type: "completeness" | "gap") => {
+    setActionLoading(`ai-${type}`);
+    try {
+      const endpoint = type === "completeness" ? "generate-completeness-analysis" : "generate-gap-summary";
+      const res = await fetchWithAuth(`/api/inspection/${engagementId}/${endpoint}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        toast({ title: "AI Analysis Complete", description: result.data?.content?.slice(0, 100) || "Analysis generated." });
+      } else {
+        toast({ title: "AI Analysis Failed", description: result.error || "AI capability unavailable.", variant: "destructive" });
+      }
+    } catch (e) { toast({ title: "Error", description: "Failed to run AI analysis.", variant: "destructive" }); }
+    finally { setActionLoading(null); }
+  };
+
+  const handleExport = async (exportType: string) => {
+    setActionLoading("export");
+    try {
       const firmName = firm?.displayName || firm?.name || "AuditWise";
       const packageContent = {
         firmName,
-        firmLogoUrl: firm?.logoUrl || null,
         exportDate: new Date().toISOString(),
         engagementId,
-        clientName: client?.name || data.engagementInfo.clientName,
-        engagementCode: engagement?.engagementCode || data.engagementInfo.code,
-        phases: data.phases,
-        keyMetrics: data.keyMetrics,
-        riskSummary: data.riskSummary,
-        auditMatters: data.auditMatters,
+        clientName: client?.name || "",
+        engagementCode: engagement?.engagementCode || "",
+        archiveStatus: archive?.status || "PENDING",
+        frozenSnapshot: archive?.frozenSnapshot,
+        archiveIndex,
+        stats,
       };
-      
-      const blob = new Blob([JSON.stringify(packageContent, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(packageContent, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      link.download = `${firmName.replace(/\s+/g, '_')}_Audit_Package_${engagement?.engagementCode || 'export'}_${new Date().toISOString().split('T')[0]}.json`;
+      link.download = `${firmName.replace(/\s+/g, "_")}_Archive_${engagement?.engagementCode || "export"}_${new Date().toISOString().split("T")[0]}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      
-      toast({
-        title: "Export Complete",
-        description: "Full audit package has been downloaded.",
+
+      await fetchWithAuth(`/api/inspection/${engagementId}/exports`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ exportType, exportFormat: "JSON" }),
       });
-    } catch (error) {
-      toast({
-        title: "Export Failed",
-        description: "Unable to export the audit package.",
-        variant: "destructive",
-      });
-    } finally {
-      setExporting(false);
-    }
+
+      toast({ title: "Export Complete", description: "Archive package has been downloaded." });
+    } catch (e) { toast({ title: "Export Failed", description: "Unable to export.", variant: "destructive" }); }
+    finally { setActionLoading(null); }
   };
 
   const handlePrintArchive = async () => {
-    setPrinting(true);
+    setActionLoading("print");
     try {
       const html2pdf = (await import("html2pdf.js")).default;
       const headerHtml = await getDocumentHeaderHtml(firm?.logoUrl, firm?.name);
-      
+      const m = stats?.metrics;
       const printContent = document.createElement("div");
       printContent.innerHTML = `
         <div style="font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto;">
           <div style="margin-bottom: 30px; border-bottom: 3px solid #1a365d; padding-bottom: 20px;">
             ${headerHtml}
-            <h1 style="color: #1a365d; margin-bottom: 10px; font-size: 24px; text-align: center;">AUDIT FILE ARCHIVE</h1>
-            <h2 style="color: #4a5568; font-weight: normal; font-size: 18px; text-align: center;">Inspection Ready Summary</h2>
+            <h1 style="color: #1a365d; margin-bottom: 10px; font-size: 24px; text-align: center;">INSPECTION ARCHIVE</h1>
+            <h2 style="color: #4a5568; font-weight: normal; font-size: 16px; text-align: center;">Immutable Engagement File</h2>
             <p style="color: #718096; font-size: 12px; text-align: center;">Generated: ${new Date().toLocaleString()}</p>
           </div>
-          
-          <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-            <h3 style="color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">Engagement Details</h3>
+          <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;">Engagement Details</h3>
             <table style="width: 100%; font-size: 12px;">
-              <tr><td style="padding: 5px 0;"><strong>Client:</strong></td><td>${client?.name || data.engagementInfo.clientName || "N/A"}</td></tr>
-              <tr><td style="padding: 5px 0;"><strong>Engagement Code:</strong></td><td>${engagement?.engagementCode || data.engagementInfo.code || "N/A"}</td></tr>
-              <tr><td style="padding: 5px 0;"><strong>Audit Opinion:</strong></td><td>${data.engagementInfo.auditOpinion || "Unmodified"}</td></tr>
-              <tr><td style="padding: 5px 0;"><strong>File Status:</strong></td><td>${data.engagementInfo.fileStatus || "LOCKED"}</td></tr>
+              <tr><td style="padding: 4px 0;"><strong>Client:</strong></td><td>${client?.name || "N/A"}</td></tr>
+              <tr><td style="padding: 4px 0;"><strong>Code:</strong></td><td>${engagement?.engagementCode || "N/A"}</td></tr>
+              <tr><td style="padding: 4px 0;"><strong>Archive Status:</strong></td><td>${archive?.status || "PENDING"}</td></tr>
+              <tr><td style="padding: 4px 0;"><strong>Readiness Score:</strong></td><td>${stats?.readinessScore || 0}%</td></tr>
             </table>
           </div>
-          
-          <div style="margin-bottom: 30px;">
-            <h3 style="color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">Key Metrics</h3>
+          <div style="margin-bottom: 20px;">
+            <h3 style="color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;">Key Metrics</h3>
             <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
               <tr>
-                <td style="padding: 10px; background: #edf2f7; border: 1px solid #e2e8f0; text-align: center;"><strong>Work Papers</strong><br/>${data.keyMetrics.totalWorkpapers}</td>
-                <td style="padding: 10px; background: #edf2f7; border: 1px solid #e2e8f0; text-align: center;"><strong>Findings</strong><br/>${data.keyMetrics.totalFindings}</td>
-                <td style="padding: 10px; background: #edf2f7; border: 1px solid #e2e8f0; text-align: center;"><strong>Open Items</strong><br/>${data.keyMetrics.openItems}</td>
-                <td style="padding: 10px; background: #edf2f7; border: 1px solid #e2e8f0; text-align: center;"><strong>Adjustments</strong><br/>${data.keyMetrics.adjustmentsCount}</td>
+                <td style="padding: 8px; background: #edf2f7; border: 1px solid #e2e8f0; text-align: center;"><strong>Evidence Files</strong><br/>${m?.totalWorkpapers || 0}</td>
+                <td style="padding: 8px; background: #edf2f7; border: 1px solid #e2e8f0; text-align: center;"><strong>Findings</strong><br/>${m?.totalFindings || 0}</td>
+                <td style="padding: 8px; background: #edf2f7; border: 1px solid #e2e8f0; text-align: center;"><strong>Open Items</strong><br/>${m?.openItems || 0}</td>
+                <td style="padding: 8px; background: #edf2f7; border: 1px solid #e2e8f0; text-align: center;"><strong>Audit Trail</strong><br/>${m?.auditTrailEntries || 0}</td>
               </tr>
             </table>
           </div>
-          
-          <div style="margin-bottom: 30px;">
-            <h3 style="color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">Phase Completion Status</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-              <thead>
-                <tr style="background: #edf2f7;">
-                  <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: left;">Phase</th>
-                  <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: center;">Status</th>
-                  <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: center;">Completion</th>
-                  <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: left;">Signed Off By</th>
-                  <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: left;">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${data.phases.map(phase => `
-                  <tr>
-                    <td style="border: 1px solid #e2e8f0; padding: 8px;">${phase.phase}</td>
-                    <td style="border: 1px solid #e2e8f0; padding: 8px; text-align: center; color: ${phase.status === 'Completed' ? '#276749' : '#c53030'};">${phase.status}</td>
-                    <td style="border: 1px solid #e2e8f0; padding: 8px; text-align: center;">${phase.completedItems}/${phase.totalItems}</td>
-                    <td style="border: 1px solid #e2e8f0; padding: 8px;">${phase.signedOffBy || '-'}</td>
-                    <td style="border: 1px solid #e2e8f0; padding: 8px;">${phase.signedOffDate || '-'}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-          
-          <div style="margin-bottom: 30px;">
-            <h3 style="color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">Risk Assessment Summary</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-              <thead>
-                <tr style="background: #edf2f7;">
-                  <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: left;">Risk Area</th>
-                  <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: center;">Risk Level</th>
-                  <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: left;">Response</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${data.riskSummary.map(risk => `
-                  <tr>
-                    <td style="border: 1px solid #e2e8f0; padding: 8px;">${risk.riskArea}</td>
-                    <td style="border: 1px solid #e2e8f0; padding: 8px; text-align: center; color: ${risk.riskLevel === 'Significant' ? '#c53030' : '#b7791f'};">${risk.riskLevel}</td>
-                    <td style="border: 1px solid #e2e8f0; padding: 8px;">${risk.response}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-          
-          <div style="margin-bottom: 30px;">
-            <h3 style="color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">Key Audit Matters</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-              <thead>
-                <tr style="background: #edf2f7;">
-                  <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: left;">Matter</th>
-                  <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: left;">Conclusion</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${data.auditMatters.map(matter => `
-                  <tr>
-                    <td style="border: 1px solid #e2e8f0; padding: 8px;">${matter.matter}</td>
-                    <td style="border: 1px solid #e2e8f0; padding: 8px;">${matter.conclusion}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-          
-          <div style="margin-top: 50px; border-top: 2px solid #e2e8f0; padding-top: 30px;">
-            <div style="display: flex; justify-content: space-between; margin-top: 30px;">
-              <div style="text-align: center; width: 30%;">
-                <div style="border-bottom: 1px solid #2d3748; margin-bottom: 10px; height: 50px;"></div>
-                <p style="font-size: 11px;"><strong>Prepared By</strong></p>
-              </div>
-              <div style="text-align: center; width: 30%;">
-                <div style="border-bottom: 1px solid #2d3748; margin-bottom: 10px; height: 50px;"></div>
-                <p style="font-size: 11px;"><strong>Reviewed By</strong></p>
-              </div>
-              <div style="text-align: center; width: 30%;">
-                <div style="border-bottom: 1px solid #2d3748; margin-bottom: 10px; height: 50px;"></div>
-                <p style="font-size: 11px;"><strong>Partner Approval</strong></p>
-              </div>
+          <div style="margin-top: 40px; border-top: 2px solid #e2e8f0; padding-top: 20px;">
+            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+              <div style="text-align: center; width: 30%;"><div style="border-bottom: 1px solid #2d3748; margin-bottom: 8px; height: 40px;"></div><p style="font-size: 11px;"><strong>Prepared By</strong></p></div>
+              <div style="text-align: center; width: 30%;"><div style="border-bottom: 1px solid #2d3748; margin-bottom: 8px; height: 40px;"></div><p style="font-size: 11px;"><strong>Reviewed By</strong></p></div>
+              <div style="text-align: center; width: 30%;"><div style="border-bottom: 1px solid #2d3748; margin-bottom: 8px; height: 40px;"></div><p style="font-size: 11px;"><strong>Partner Approval</strong></p></div>
             </div>
           </div>
         </div>
       `;
-
-      const options = {
+      await html2pdf().set({
         margin: 10,
-        filename: `Audit_Archive_${engagement?.engagementCode || 'export'}_${new Date().toISOString().split('T')[0]}.pdf`,
+        filename: `Archive_${engagement?.engagementCode || "export"}_${new Date().toISOString().split("T")[0]}.pdf`,
         image: { type: "jpeg" as const, quality: 0.98 },
         html2canvas: { scale: 2 },
-        jsPDF: { unit: "mm" as const, format: "a4" as const, orientation: "portrait" as const }
-      };
-
-      await html2pdf().set(options).from(printContent).save();
-      
-      toast({
-        title: "Print Complete",
-        description: "Archive PDF has been generated and downloaded.",
-      });
-    } catch (error) {
-      toast({
-        title: "Print Failed",
-        description: "Unable to generate the archive PDF.",
-        variant: "destructive",
-      });
-    } finally {
-      setPrinting(false);
-    }
+        jsPDF: { unit: "mm" as const, format: "a4" as const, orientation: "portrait" as const },
+      }).from(printContent).save();
+      toast({ title: "Print Complete", description: "Archive PDF has been generated." });
+    } catch (e) { toast({ title: "Print Failed", description: "Unable to generate PDF.", variant: "destructive" }); }
+    finally { setActionLoading(null); }
   };
 
   if (loading) {
@@ -336,8 +334,12 @@ export default function Inspection() {
     );
   }
 
+  const m = stats?.metrics;
+
   return (
     <div className="w-full px-4 py-3 space-y-4">
+      <SignOffBar phase="INSPECTION" section="inspection" className="mb-1" />
+      <AIAssistantPanel engagementId={engagementId || ""} phaseKey="inspection" className="mb-2" />
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <div className="p-1.5 rounded-lg bg-primary/10 flex-shrink-0">
@@ -345,437 +347,713 @@ export default function Inspection() {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold truncate" data-testid="text-inspection-title">Inspection Archive</h1>
+              <h1 className="text-lg font-semibold truncate">Inspection Archive</h1>
               <span className="text-xs text-muted-foreground hidden sm:inline">
-                {client?.name || data.engagementInfo.clientName} {engagement?.engagementCode && `(${engagement.engagementCode})`}
+                {client?.name} {engagement?.engagementCode && `(${engagement.engagementCode})`}
               </span>
             </div>
             <p className="text-xs text-muted-foreground truncate hidden md:block">
-              Read-only archive view of completed engagement - AOB/ICAP Inspection Ready
+              Final immutable archive — ISA 220 / ISA 230 / ISQM 1
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
-          <Badge variant="outline" className="text-xs" data-testid="badge-isa-220">
-            <Shield className="h-3 w-3 mr-1" />
-            ISA 220
-          </Badge>
-          <Badge variant="outline" className="text-xs" data-testid="badge-isqm-1">
-            <ClipboardCheck className="h-3 w-3 mr-1" />
-            ISQM 1
-          </Badge>
-          <Badge variant="outline" className="text-xs" data-testid="badge-isa-230">
-            <FileText className="h-3 w-3 mr-1" />
-            ISA 230
-          </Badge>
-          <Badge variant="outline" className="text-xs" data-testid="badge-isqm1-monitoring">
-            <Activity className="h-3 w-3 mr-1" />
-            ISQM 1 Monitoring
-          </Badge>
-          <Badge variant="outline" className="h-6 text-xs bg-purple-50 border-purple-200 text-purple-700" data-testid="badge-readonly">
-            <Lock className="h-3 w-3 mr-1" />
-            Read Only
-          </Badge>
+          <Badge variant="outline" className="text-xs"><Shield className="h-3 w-3 mr-1" />ISA 220</Badge>
+          <Badge variant="outline" className="text-xs"><FileText className="h-3 w-3 mr-1" />ISA 230</Badge>
+          <Badge variant="outline" className="text-xs"><Activity className="h-3 w-3 mr-1" />ISQM 1</Badge>
+          {isSealed && (
+            <Badge variant="outline" className="h-6 text-xs bg-purple-50 border-purple-200 text-purple-700">
+              <Lock className="h-3 w-3 mr-1" />{isReleased ? "Archived" : "Sealed"}
+            </Badge>
+          )}
         </div>
       </div>
-      <Card className="border-purple-200 bg-purple-50/30 dark:bg-purple-950/20">
-        <CardContent className="py-3">
-          <div className="flex items-start gap-3">
-            <Eye className="h-5 w-5 text-purple-600 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-medium text-purple-800 dark:text-purple-200">Inspection Mode Active</p>
-              <p className="text-purple-700 dark:text-purple-300">
-                This is a read-only view of the completed engagement file. All data is locked and cannot be modified. 
-                Use this view for quality reviews, AOB inspections, and archival purposes.
-              </p>
+
+      {isSealed && (
+        <Card className="border-purple-200 bg-purple-50/30 dark:bg-purple-950/20">
+          <CardContent className="py-3">
+            <div className="flex items-start gap-3">
+              <Lock className="h-5 w-5 text-purple-600 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-purple-800 dark:text-purple-200">
+                  {isReleased ? "Archive Released — Engagement Archived" : "Archive Sealed — Read Only"}
+                </p>
+                <p className="text-purple-700 dark:text-purple-300">
+                  {isReleased
+                    ? "This engagement has been archived. The file is immutable and ready for regulatory inspection."
+                    : "The archive is sealed. No modifications are allowed. Release to finalize archival."}
+                </p>
+              </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="flex flex-wrap h-auto gap-1">
+          <TabsTrigger value="dashboard" className="text-xs"><BarChart3 className="h-3 w-3 mr-1" />Dashboard</TabsTrigger>
+          <TabsTrigger value="reports" className="text-xs"><FileText className="h-3 w-3 mr-1" />Final Reports</TabsTrigger>
+          <TabsTrigger value="documents" className="text-xs"><FileCheck className="h-3 w-3 mr-1" />Key Documents</TabsTrigger>
+          <TabsTrigger value="trail" className="text-xs"><History className="h-3 w-3 mr-1" />Audit Trail</TabsTrigger>
+          <TabsTrigger value="papers" className="text-xs"><ClipboardList className="h-3 w-3 mr-1" />Working Papers</TabsTrigger>
+          <TabsTrigger value="review" className="text-xs"><Eye className="h-3 w-3 mr-1" />Review History</TabsTrigger>
+          <TabsTrigger value="index" className="text-xs"><Search className="h-3 w-3 mr-1" />Archive Index</TabsTrigger>
+          <TabsTrigger value="exports" className="text-xs"><FolderArchive className="h-3 w-3 mr-1" />Export & Release</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="dashboard" className="space-y-4 mt-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <MetricCard icon={<BarChart3 className="h-4 w-4 text-blue-500" />} label="Readiness" value={`${stats?.readinessScore || 0}%`} />
+            <MetricCard icon={<FileText className="h-4 w-4 text-indigo-500" />} label="Evidence Files" value={m?.totalWorkpapers || 0} />
+            <MetricCard icon={<AlertTriangle className="h-4 w-4 text-orange-500" />} label="Findings" value={m?.totalFindings || 0} />
+            <MetricCard icon={<AlertCircle className="h-4 w-4 text-red-500" />} label="Open Items" value={m?.openItems || 0} />
           </div>
-        </CardContent>
-      </Card>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <MetricCard icon={<ClipboardList className="h-4 w-4 text-green-500" />} label="Checklists" value={`${m?.checklistCompleted || 0}/${m?.checklistTotal || 0}`} />
+            <MetricCard icon={<Shield className="h-4 w-4 text-violet-500" />} label="Risks Covered" value={`${m?.risksAddressed || 0}/${m?.risksTotal || 0}`} />
+            <MetricCard icon={<CheckCircle2 className="h-4 w-4 text-teal-500" />} label="Tests Concluded" value={`${m?.testsWithConclusions || 0}/${m?.testsTotal || 0}`} />
+            <MetricCard icon={<History className="h-4 w-4 text-gray-500" />} label="Audit Trail" value={m?.auditTrailEntries || 0} />
+          </div>
 
-      <Card data-testid="card-signoff-status-bar">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <UserCheck className="h-5 w-5" />
-            Sign-off Status
-          </CardTitle>
-          <CardDescription>Maker-checker approval status for the inspection archive</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {(() => {
-            const preparedPhase = data.phases.find(p => p.signedOffBy && p.phase === "Pre-Planning") || data.phases.find(p => p.signedOffBy);
-            const reviewedPhase = data.phases.find(p => p.signedOffBy && (p.phase === "Execution" || p.phase === "EQCR"));
-            const partnerPhase = data.phases.find(p => p.signedOffBy && p.phase === "Finalization");
-            
-            const steps = [
-              {
-                label: "Prepared",
-                completed: !!preparedPhase?.signedOffBy,
-                user: preparedPhase?.signedOffBy,
-                date: preparedPhase?.signedOffDate,
-              },
-              {
-                label: "Reviewed",
-                completed: !!reviewedPhase?.signedOffBy,
-                user: reviewedPhase?.signedOffBy,
-                date: reviewedPhase?.signedOffDate,
-              },
-              {
-                label: "Partner Approved",
-                completed: !!partnerPhase?.signedOffBy,
-                user: partnerPhase?.signedOffBy,
-                date: partnerPhase?.signedOffDate,
-              },
-            ];
-
-            return (
-              <div className="flex items-center gap-2 flex-wrap" data-testid="signoff-steps">
-                {steps.map((step, idx) => (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base"><UserCheck className="h-5 w-5" />Archive Lifecycle</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2 flex-wrap">
+                {[
+                  { label: "Build", done: !!archive, status: archive?.status },
+                  { label: "Readiness ≥80%", done: (stats?.readinessScore || 0) >= 80 },
+                  { label: "Sealed", done: archive?.status === "SEALED" || archive?.status === "RELEASED" },
+                  { label: "Released", done: archive?.status === "RELEASED" },
+                ].map((step, idx, arr) => (
                   <div key={step.label} className="flex items-center gap-2">
-                    <div className={`flex items-center gap-2 rounded-md border px-3 py-2 ${step.completed ? "bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800" : "bg-muted/30 border-border"}`} data-testid={`signoff-step-${idx}`}>
-                      {step.completed ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
-                      ) : (
-                        <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      )}
-                      <div>
-                        <p className={`text-sm font-medium ${step.completed ? "text-green-800 dark:text-green-200" : "text-muted-foreground"}`} data-testid={`signoff-step-label-${idx}`}>{step.label}</p>
-                        {step.completed && step.user ? (
-                          <p className="text-xs text-muted-foreground" data-testid={`signoff-step-detail-${idx}`}>
-                            {step.user} &middot; {step.date}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-muted-foreground">Pending</p>
-                        )}
-                      </div>
+                    <div className={`flex items-center gap-2 rounded-md border px-3 py-2 ${step.done ? "bg-green-50 border-green-200 dark:bg-green-950/30" : "bg-muted/30"}`}>
+                      {step.done ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Clock className="h-4 w-4 text-muted-foreground" />}
+                      <p className={`text-sm font-medium ${step.done ? "text-green-800 dark:text-green-200" : "text-muted-foreground"}`}>{step.label}</p>
                     </div>
-                    {idx < steps.length - 1 && (
-                      <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    )}
+                    {idx < arr.length - 1 && <ArrowRight className="h-4 w-4 text-muted-foreground" />}
                   </div>
                 ))}
               </div>
-            );
-          })()}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      <div className="flex items-center gap-2 justify-end">
-        <Button 
-          variant="outline" 
-          onClick={handleExportFullPackage}
-          disabled={exporting}
-          data-testid="button-export-full-package"
-        >
-          {exporting ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Package className="h-4 w-4 mr-2" />}
-          Export Full Package
-        </Button>
-        <Button 
-          onClick={handlePrintArchive}
-          disabled={printing}
-          data-testid="button-print-archive"
-        >
-          {printing ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
-          Print Archive
-        </Button>
-      </div>
+          {(stats?.readinessIssues?.length ?? 0) > 0 && (
+            <Card className="border-amber-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base text-amber-700">
+                  <AlertTriangle className="h-5 w-5" />Readiness Issues ({stats!.readinessIssues.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {stats!.readinessIssues.map((issue: any, idx: number) => (
+                    <div key={idx} className="flex items-center gap-2 text-sm">
+                      <AlertCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                      <span>
+                        {issue.type === "OPEN_REVIEW_NOTES" && `${issue.count} open review note(s)`}
+                        {issue.type === "INCOMPLETE_CHECKLISTS" && `Checklists ${issue.percentage}% complete`}
+                        {issue.type === "UNADDRESSED_RISKS" && `${issue.count} unaddressed risk(s)`}
+                        {issue.type === "TESTS_WITHOUT_CONCLUSIONS" && `${issue.count} test(s) without conclusions`}
+                        {issue.type === "EQCR_NOT_CLEARED" && "EQCR not cleared"}
+                        {issue.type === "REPORT_NOT_SIGNED" && "Audit report not signed"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-        <Card className="border-0 shadow-sm">
-          <CardContent className="py-3 px-4">
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-blue-500" />
-              <div>
-                <p className="text-xs text-muted-foreground">Work Papers</p>
-                <p className="text-lg font-bold" data-testid="text-workpapers-count">{data.keyMetrics.totalWorkpapers}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm">
-          <CardContent className="py-3 px-4">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-orange-500" />
-              <div>
-                <p className="text-xs text-muted-foreground">Findings</p>
-                <p className="text-lg font-bold" data-testid="text-findings-count">{data.keyMetrics.totalFindings}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm">
-          <CardContent className="py-3 px-4">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-red-500" />
-              <div>
-                <p className="text-xs text-muted-foreground">Open Items</p>
-                <p className="text-lg font-bold" data-testid="text-open-items">{data.keyMetrics.openItems}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm">
-          <CardContent className="py-3 px-4">
-            <div className="flex items-center gap-2">
-              <FileCheck className="h-4 w-4 text-green-500" />
-              <div>
-                <p className="text-xs text-muted-foreground">Adjustments</p>
-                <p className="text-lg font-bold" data-testid="text-adjustments-count">{data.keyMetrics.adjustmentsCount}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm">
-          <CardContent className="py-3 px-4">
-            <div className="flex items-center gap-2">
-              <Lock className="h-4 w-4 text-purple-500" />
-              <div>
-                <p className="text-xs text-muted-foreground">File Status</p>
-                <p className="text-sm font-medium text-green-600" data-testid="text-file-status">LOCKED</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={handleCheckReadiness} disabled={!!actionLoading}>
+              {actionLoading === "readiness" ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              Refresh Readiness
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleAIAnalysis("completeness")} disabled={!!actionLoading || isSealed}>
+              {actionLoading === "ai-completeness" ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+              AI Completeness
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleAIAnalysis("gap")} disabled={!!actionLoading || isSealed}>
+              {actionLoading === "ai-gap" ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+              AI Gap Analysis
+            </Button>
+          </div>
+        </TabsContent>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-2" data-testid="phase-signoff-indicators">
-        {data.phases.map((phase, idx) => {
-          const isSigned = !!phase.signedOffBy;
-          return (
-            <Card key={phase.phase} className={`border shadow-sm ${isSigned ? "border-green-200 dark:border-green-800" : "border-border"}`} data-testid={`phase-signoff-card-${idx}`}>
-              <CardContent className="py-2 px-3">
-                <div className="flex items-center gap-2">
-                  {isSigned ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  ) : (
-                    <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium truncate" data-testid={`phase-signoff-name-${idx}`}>{phase.phase}</p>
-                    {isSigned ? (
-                      <p className="text-[10px] text-muted-foreground truncate" data-testid={`phase-signoff-signer-${idx}`}>{phase.signedOffBy} &middot; {phase.signedOffDate}</p>
-                    ) : (
-                      <p className="text-[10px] text-muted-foreground" data-testid={`phase-signoff-pending-${idx}`}>Pending sign-off</p>
-                    )}
+        <TabsContent value="reports" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Final Audit Reports</CardTitle>
+              <CardDescription>Signed reports and issued deliverables</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {finalReports?.report ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                    <FileText className="h-8 w-8 text-blue-500" />
+                    <div>
+                      <p className="font-medium">Audit Report</p>
+                      <p className="text-sm text-muted-foreground">
+                        Opinion: {finalReports.report.opinionType || "N/A"} |
+                        Signed: {finalReports.report.signedBy?.fullName || "Not signed"} |
+                        {finalReports.report.signedDate ? ` Date: ${new Date(finalReports.report.signedDate).toLocaleDateString()}` : " Unsigned"}
+                      </p>
+                    </div>
+                    <Badge className={finalReports.report.signedById ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}>
+                      {finalReports.report.signedById ? "Signed" : "Unsigned"}
+                    </Badge>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No audit report found.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {finalReports?.deliverables?.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Deliverables Register</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Deliverable</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {finalReports.deliverables.map((d: any) => (
+                      <TableRow key={d.id}>
+                        <TableCell className="font-medium">{d.name || d.title || "Untitled"}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{d.type || "N/A"}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline" className={
+                            d.status === "ISSUED" || d.status === "FINALIZED" ? "bg-green-50 text-green-700" :
+                            d.status === "APPROVED" ? "bg-blue-50 text-blue-700" : ""
+                          }>
+                            {d.status || "DRAFT"}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+
+          {finalReports?.signedReport && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">EQCR Signed Report</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                  <FileCheck className="h-6 w-6 text-green-500" />
+                  <div>
+                    <p className="font-medium">{finalReports.signedReport.fileName || "Signed Report"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Uploaded: {new Date(finalReports.signedReport.createdAt).toLocaleString()}
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
+          )}
+        </TabsContent>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ClipboardList className="h-5 w-5" />
-            Phase Completion Summary
-          </CardTitle>
-          <CardDescription>All phases are completed and locked for inspection</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead>Phase</TableHead>
-                <TableHead className="text-center">Status</TableHead>
-                <TableHead className="text-center">Completion</TableHead>
-                <TableHead>Signed Off By</TableHead>
-                <TableHead>Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.phases.map((phase, idx) => (
-                <TableRow key={phase.phase} data-testid={`row-phase-${idx}`}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {phase.status === "Completed" ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" data-testid={`icon-phase-completed-${idx}`} />
-                      ) : phase.status === "In Progress" ? (
-                        <Clock className="h-4 w-4 text-amber-500 flex-shrink-0" data-testid={`icon-phase-inprogress-${idx}`} />
-                      ) : (
-                        <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" data-testid={`icon-phase-notstarted-${idx}`} />
-                      )}
-                      <div>
-                        <p className="font-medium" data-testid={`text-phase-name-${idx}`}>{phase.phase}</p>
-                        {phase.signedOffBy && (
-                          <p className="text-xs text-muted-foreground" data-testid={`text-phase-signoff-info-${idx}`}>
-                            Signed by {phase.signedOffBy} on {phase.signedOffDate}
-                          </p>
-                        )}
-                      </div>
+        <TabsContent value="documents" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Key Signed Documents</CardTitle>
+              <CardDescription>Critical documents that form part of the archive</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[
+                  { label: "Engagement Letter", status: "SIGNED", icon: <FileText className="h-5 w-5 text-blue-500" /> },
+                  { label: "Independence Declarations", status: "COMPLETE", icon: <Shield className="h-5 w-5 text-green-500" /> },
+                  { label: "Client Acceptance Form", status: "APPROVED", icon: <UserCheck className="h-5 w-5 text-indigo-500" /> },
+                  { label: "Audit Report (Signed)", status: stats?.reportSigned ? "SIGNED" : "PENDING", icon: <FileCheck className="h-5 w-5 text-teal-500" /> },
+                  { label: "EQCR Clearance", status: stats?.eqcrClearance || "PENDING", icon: <CheckCircle2 className="h-5 w-5 text-violet-500" /> },
+                  { label: "Completion Memorandum", status: "FILED", icon: <BookOpen className="h-5 w-5 text-orange-500" /> },
+                ].map((doc, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      {doc.icon}
+                      <span className="text-sm font-medium">{doc.label}</span>
                     </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge 
-                      variant={phase.status === "Completed" ? "default" : phase.status === "In Progress" ? "secondary" : "destructive"}
-                      className={phase.status === "Completed" ? "bg-green-100 text-green-800" : phase.status === "In Progress" ? "bg-amber-100 text-amber-800" : ""}
-                      data-testid={`badge-phase-status-${idx}`}
-                    >
-                      {phase.status === "Completed" && <CheckCircle2 className="h-3 w-3 mr-1" />}
-                      {phase.status === "In Progress" && <Clock className="h-3 w-3 mr-1" />}
-                      {phase.status}
+                    <Badge variant="outline" className={
+                      ["SIGNED", "COMPLETE", "APPROVED", "CLEARED", "CLEARED_WITH_CONDITIONS", "FILED"].includes(doc.status)
+                        ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"
+                    }>
+                      {doc.status}
                     </Badge>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="font-mono text-sm" data-testid={`text-phase-completion-${idx}`}>{phase.completedItems}/{phase.totalItems}</span>
-                  </TableCell>
-                  <TableCell data-testid={`text-phase-signedby-${idx}`}>{phase.signedOffBy || "-"}</TableCell>
-                  <TableCell data-testid={`text-phase-signeddate-${idx}`}>{phase.signedOffDate || "-"}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      <Accordion type="multiple" defaultValue={["risks", "matters", "audit-trail"]} className="space-y-2">
-        <AccordionItem value="risks" className="border rounded-lg">
-          <AccordionTrigger className="px-4 hover:no-underline">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-orange-500" />
-              <span>Risk Assessment Summary</span>
-              <Badge variant="secondary" className="ml-2">{data.riskSummary.length} items</Badge>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>Risk Area</TableHead>
-                  <TableHead className="text-center">Risk Level</TableHead>
-                  <TableHead>Auditor Response</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.riskSummary.map((risk, idx) => (
-                  <TableRow key={idx} data-testid={`row-risk-${idx}`}>
-                    <TableCell className="font-medium">{risk.riskArea}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge 
-                        variant="outline" 
-                        className={risk.riskLevel === "Significant" ? "border-red-500 text-red-600" : "border-orange-500 text-orange-600"}
-                      >
-                        {risk.riskLevel}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{risk.response}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="matters" className="border rounded-lg">
-          <AccordionTrigger className="px-4 hover:no-underline">
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-blue-500" />
-              <span>Key Audit Matters</span>
-              <Badge variant="secondary" className="ml-2">{data.auditMatters.length} items</Badge>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>Matter</TableHead>
-                  <TableHead>Conclusion</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.auditMatters.map((matter, idx) => (
-                  <TableRow key={idx} data-testid={`row-matter-${idx}`}>
-                    <TableCell className="font-medium">{matter.matter}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{matter.conclusion}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="audit-trail" className="border rounded-lg" data-testid="accordion-audit-trail">
-          <AccordionTrigger className="px-4 hover:no-underline">
-            <div className="flex items-center gap-2">
-              <History className="h-4 w-4 text-indigo-500" />
-              <span>Inspection Audit Trail</span>
-              <Badge variant="secondary" className="ml-2">{data.phases.filter(p => p.signedOffBy).length} sign-offs</Badge>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            <div className="space-y-3" data-testid="audit-trail-timeline">
-              {data.phases
-                .filter(p => p.signedOffBy && p.signedOffDate)
-                .sort((a, b) => new Date(a.signedOffDate!).getTime() - new Date(b.signedOffDate!).getTime())
-                .map((phase, idx) => (
-                  <div key={phase.phase} className="flex items-start gap-3 relative" data-testid={`audit-trail-entry-${idx}`}>
-                    <div className="flex flex-col items-center">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        phase.status === "Completed" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
-                      }`}>
-                        {phase.status === "Completed" ? (
-                          <CheckCircle2 className="h-4 w-4" />
-                        ) : (
-                          <Clock className="h-4 w-4" />
-                        )}
-                      </div>
-                      {idx < data.phases.filter(p => p.signedOffBy && p.signedOffDate).length - 1 && (
-                        <div className="w-px h-6 bg-border mt-1" />
-                      )}
-                    </div>
-                    <div className="pt-1">
-                      <p className="text-sm font-medium" data-testid={`audit-trail-phase-${idx}`}>{phase.phase} - {phase.status}</p>
-                      <p className="text-xs text-muted-foreground" data-testid={`audit-trail-detail-${idx}`}>
-                        Signed off by <span className="font-medium">{phase.signedOffBy}</span> on {phase.signedOffDate}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {phase.completedItems}/{phase.totalItems} items completed
-                      </p>
-                    </div>
                   </div>
                 ))}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+              </div>
+            </CardContent>
+          </Card>
 
-      <Card className="bg-muted/30">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Shield className="h-5 w-5" />
-            Engagement Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Client Name</p>
-              <p className="text-sm font-medium" data-testid="text-client-name">{client?.name || data.engagementInfo.clientName || "N/A"}</p>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Engagement Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Client</p>
+                  <p className="text-sm font-medium">{client?.name || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Code</p>
+                  <p className="text-sm font-medium">{engagement?.engagementCode || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">EQCR Status</p>
+                  <Badge variant="outline">{stats?.eqcrStatus || "N/A"}</Badge>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">File Status</p>
+                  <Badge variant="outline" className={isReleased ? "bg-purple-50 text-purple-700" : isSealed ? "bg-blue-50 text-blue-700" : ""}>
+                    {isReleased ? "ARCHIVED" : isSealed ? "SEALED" : engagement?.status || "ACTIVE"}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="trail" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <History className="h-5 w-5" />
+                Audit Trail Log
+                <Badge variant="secondary" className="ml-2">{auditTrail.length} entries</Badge>
+              </CardTitle>
+              <CardDescription>Complete audit trail for engagement history reproducibility</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {auditTrail.length > 0 ? (
+                <div className="max-h-[500px] overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead>Date</TableHead>
+                        <TableHead>Action</TableHead>
+                        <TableHead>Entity</TableHead>
+                        <TableHead>User</TableHead>
+                        <TableHead>Justification</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {auditTrail.map((entry: any) => (
+                        <TableRow key={entry.id}>
+                          <TableCell className="text-xs whitespace-nowrap">{new Date(entry.createdAt).toLocaleString()}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">{entry.action}</Badge>
+                          </TableCell>
+                          <TableCell className="text-xs">{entry.entityType}</TableCell>
+                          <TableCell className="text-xs">{entry.user?.fullName || "System"}</TableCell>
+                          <TableCell className="text-xs max-w-[200px] truncate">{entry.justification || "-"}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No audit trail entries found.</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="papers" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ClipboardList className="h-5 w-5" />
+                Working Paper Freeze Snapshot
+                <Badge variant="secondary" className="ml-2">{workingPapers?.summary?.totalWorkpapers || 0} papers</Badge>
+              </CardTitle>
+              <CardDescription>Frozen snapshot of all working papers at time of archive</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {workingPapers?.workpapers?.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Reference</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
+                      <TableHead>Last Updated</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {workingPapers.workpapers.map((wp: any) => (
+                      <TableRow key={wp.id}>
+                        <TableCell className="font-mono text-xs">{wp.reference || "-"}</TableCell>
+                        <TableCell className="text-sm">{wp.title || "Untitled"}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline" className="text-xs">{wp.status || "N/A"}</Badge>
+                        </TableCell>
+                        <TableCell className="text-xs">{new Date(wp.updatedAt).toLocaleDateString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <p className="text-sm text-muted-foreground">No working papers found.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {workingPapers?.evidenceFiles?.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  Evidence Files
+                  <Badge variant="secondary">{workingPapers.evidenceFiles.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>File Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Uploaded</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {workingPapers.evidenceFiles.slice(0, 50).map((ef: any) => (
+                      <TableRow key={ef.id}>
+                        <TableCell className="text-sm">{ef.fileName}</TableCell>
+                        <TableCell className="text-xs">{ef.category || "-"}</TableCell>
+                        <TableCell className="text-xs">{ef.fileType || "-"}</TableCell>
+                        <TableCell className="text-xs">{new Date(ef.uploadedAt).toLocaleDateString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="review" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Review History Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {reviewHistory ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="text-center p-3 bg-muted/30 rounded-lg">
+                    <p className="text-2xl font-bold">{reviewHistory.summary?.totalReviewNotes || 0}</p>
+                    <p className="text-xs text-muted-foreground">Review Notes</p>
+                  </div>
+                  <div className="text-center p-3 bg-muted/30 rounded-lg">
+                    <p className="text-2xl font-bold">{reviewHistory.summary?.openReviewNotes || 0}</p>
+                    <p className="text-xs text-muted-foreground">Open Notes</p>
+                  </div>
+                  <div className="text-center p-3 bg-muted/30 rounded-lg">
+                    <p className="text-2xl font-bold">{reviewHistory.summary?.totalEqcrComments || 0}</p>
+                    <p className="text-xs text-muted-foreground">EQCR Comments</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Loading review history...</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {reviewHistory?.reviewNotes?.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Review Notes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Title</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
+                      <TableHead>Created By</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reviewHistory.reviewNotes.slice(0, 50).map((note: any) => (
+                      <TableRow key={note.id}>
+                        <TableCell className="text-sm font-medium">{note.title || "Untitled"}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={
+                            note.priority === "HIGH" ? "border-red-500 text-red-600" :
+                            note.priority === "MEDIUM" ? "border-amber-500 text-amber-600" : ""
+                          }>
+                            {note.priority || "N/A"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline" className={
+                            note.status === "RESOLVED" || note.status === "CLOSED" ? "bg-green-50 text-green-700" :
+                            note.status === "OPEN" ? "bg-red-50 text-red-700" : ""
+                          }>
+                            {note.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs">{note.createdByUser?.fullName || "-"}</TableCell>
+                        <TableCell className="text-xs">{new Date(note.createdAt).toLocaleDateString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+
+          {reviewHistory?.sectionSignOffs?.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Section Sign-offs</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Section</TableHead>
+                      <TableHead>Prepared By</TableHead>
+                      <TableHead>Reviewed By</TableHead>
+                      <TableHead>Partner</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reviewHistory.sectionSignOffs.map((so: any) => (
+                      <TableRow key={so.id}>
+                        <TableCell className="text-sm font-medium">{so.section || so.phase || "-"}</TableCell>
+                        <TableCell className="text-xs">{so.preparedBy?.fullName || "-"}</TableCell>
+                        <TableCell className="text-xs">{so.reviewedBy?.fullName || "-"}</TableCell>
+                        <TableCell className="text-xs">{so.partnerApproval?.fullName || "-"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="index" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Search className="h-5 w-5" />
+                Inspection-Ready Archive Index
+              </CardTitle>
+              <CardDescription>Structured index for regulator / inspection retrieval (AOB / ICAP)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {archiveIndex?.sections ? (
+                <div className="space-y-4">
+                  {archiveIndex.sections.map((section: any) => (
+                    <div key={section.ref} className="border rounded-lg p-3">
+                      <h4 className="font-medium text-sm mb-2">
+                        <Badge variant="outline" className="mr-2">{section.ref}</Badge>
+                        {section.title}
+                      </h4>
+                      <div className="space-y-1">
+                        {section.items.map((item: any) => (
+                          <div key={item.ref} className="flex items-center justify-between text-sm pl-4">
+                            <span className="text-muted-foreground">
+                              <span className="font-mono text-xs mr-2">{item.ref}</span>
+                              {item.description}
+                            </span>
+                            <Badge variant="secondary" className="text-xs">
+                              {typeof item.count === "number" ? `${item.count} items` : "-"}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  {archiveIndex.totals && (
+                    <div className="grid grid-cols-3 md:grid-cols-6 gap-2 pt-2">
+                      {Object.entries(archiveIndex.totals).map(([key, val]) => (
+                        <div key={key} className="text-center p-2 bg-muted/30 rounded">
+                          <p className="text-lg font-bold">{val as number}</p>
+                          <p className="text-[10px] text-muted-foreground capitalize">{key.replace(/([A-Z])/g, " $1")}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Search className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground mb-3">No archive index has been generated yet.</p>
+                  {isPartner && (
+                    <Button onClick={handleGenerateIndex} disabled={!!actionLoading}>
+                      {actionLoading === "index" ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
+                      Generate Archive Index
+                    </Button>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {archiveIndex && (
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" onClick={handleGenerateIndex} disabled={!!actionLoading}>
+                <RefreshCw className="h-4 w-4 mr-2" />Regenerate Index
+              </Button>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Engagement Code</p>
-              <p className="text-sm font-medium" data-testid="text-engagement-code">{engagement?.engagementCode || data.engagementInfo.code || "N/A"}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Audit Opinion</p>
-              <Badge variant="outline" className="bg-green-50 border-green-200 text-green-700" data-testid="text-audit-opinion">
-                <CheckCircle2 className="h-3 w-3 mr-1" />
-                {data.engagementInfo.auditOpinion || "Unmodified"}
-              </Badge>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Materiality</p>
-              <p className="text-sm font-medium" data-testid="text-materiality">
-                {data.keyMetrics.materialityAmount 
-                  ? `PKR ${formatAccounting(data.keyMetrics.materialityAmount)}`
-                  : "N/A"
-                }
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="exports" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Archive Actions</CardTitle>
+              <CardDescription>
+                {isReleased ? "Engagement is archived — export packages for inspection" :
+                 isSealed ? "Archive is sealed — release to finalize" :
+                 "Build, seal, and release the archive package"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {!isSealed && isPartner && (
+                  <>
+                    {!archive || archive.status === "PENDING" ? (
+                      <Button onClick={handleBuildArchive} disabled={!!actionLoading}>
+                        {actionLoading === "build" ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Package className="h-4 w-4 mr-2" />}
+                        Build Archive Package
+                      </Button>
+                    ) : archive.status === "BUILDING" ? (
+                      <Button onClick={handleSealArchive} disabled={!!actionLoading}>
+                        {actionLoading === "seal" ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Lock className="h-4 w-4 mr-2" />}
+                        Seal Archive
+                      </Button>
+                    ) : null}
+                  </>
+                )}
+
+                {isSealed && !isReleased && isPartner && (
+                  <Button onClick={handleReleaseArchive} disabled={!!actionLoading} variant="default">
+                    {actionLoading === "release" ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <FolderArchive className="h-4 w-4 mr-2" />}
+                    Release Archive
+                  </Button>
+                )}
+
+                <Button variant="outline" onClick={() => handleExport("FULL_ARCHIVE")} disabled={!!actionLoading}>
+                  {actionLoading === "export" ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                  Export Package
+                </Button>
+                <Button variant="outline" onClick={handlePrintArchive} disabled={!!actionLoading}>
+                  {actionLoading === "print" ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
+                  Print Archive PDF
+                </Button>
+              </div>
+
+              {archive && (
+                <Separator />
+              )}
+
+              {archive && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Status</p>
+                    <Badge variant="outline" className={
+                      archive.status === "RELEASED" ? "bg-purple-50 text-purple-700" :
+                      archive.status === "SEALED" ? "bg-blue-50 text-blue-700" :
+                      archive.status === "BUILDING" ? "bg-amber-50 text-amber-700" : ""
+                    }>
+                      {archive.status}
+                    </Badge>
+                  </div>
+                  {archive.sealedAt && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Sealed</p>
+                      <p className="text-sm">{new Date(archive.sealedAt).toLocaleString()}</p>
+                      {archive.sealedBy && <p className="text-xs text-muted-foreground">{archive.sealedBy.fullName}</p>}
+                    </div>
+                  )}
+                  {archive.releasedAt && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Released</p>
+                      <p className="text-sm">{new Date(archive.releasedAt).toLocaleString()}</p>
+                      {archive.releasedBy && <p className="text-xs text-muted-foreground">{archive.releasedBy.fullName}</p>}
+                    </div>
+                  )}
+                  {archive.packageHash && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Integrity Hash</p>
+                      <p className="font-mono text-xs">{archive.packageHash}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {exportLogs.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Export History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Date</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Format</TableHead>
+                      <TableHead>Exported By</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {exportLogs.map((exp: any) => (
+                      <TableRow key={exp.id}>
+                        <TableCell className="text-xs">{new Date(exp.exportedDate || exp.createdAt).toLocaleString()}</TableCell>
+                        <TableCell><Badge variant="outline" className="text-xs">{exp.exportType}</Badge></TableCell>
+                        <TableCell className="text-xs">{exp.exportFormat || "JSON"}</TableCell>
+                        <TableCell className="text-xs">{exp.exportedBy?.fullName || "-"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
+  );
+}
+
+function MetricCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
+  return (
+    <Card className="border-0 shadow-sm">
+      <CardContent className="py-3 px-4">
+        <div className="flex items-center gap-2">
+          {icon}
+          <div>
+            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="text-lg font-bold">{value}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -24,12 +24,13 @@ async function validateEngagementAccess(engagementId: string, userId: string, fi
   return { valid: true, engagement };
 }
 
-const OBSERVATION_TYPES = ["MISSTATEMENT", "CONTROL_DEFICIENCY", "MATERIAL_WEAKNESS", "SIGNIFICANT_DEFICIENCY", "OTHER"] as const;
-const OBSERVATION_STATUSES = ["OPEN", "UNDER_REVIEW", "PENDING_CLEARANCE", "CLEARED", "WAIVED", "CLOSED"] as const;
+const OBSERVATION_TYPES = ["MISSTATEMENT", "CONTROL_DEFICIENCY", "MATERIAL_WEAKNESS", "SIGNIFICANT_DEFICIENCY", "AUDIT_FINDING", "PJE_RECLASS", "MANAGEMENT_POINT", "COMPLIANCE_ISSUE", "OTHER"] as const;
+const OBSERVATION_STATUSES = ["OPEN", "UNDER_REVIEW", "MGMT_RESPONDED", "PENDING_CLEARANCE", "CLEARED", "ADJUSTED", "CARRIED_FORWARD", "WAIVED", "CLOSED"] as const;
 const OBSERVATION_SEVERITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
 
 const observationCreateSchema = z.object({
   observationRef: z.string().optional(),
+  title: z.string().optional(),
   type: z.enum(OBSERVATION_TYPES).default("MISSTATEMENT"),
   severity: z.enum(OBSERVATION_SEVERITIES).default("MEDIUM"),
   fsHeadWorkingPaperId: z.string().optional(),
@@ -43,6 +44,8 @@ const observationCreateSchema = z.object({
   effect: z.string().optional(),
   effectAmount: z.union([z.number(), z.string()]).optional().transform(val => val !== undefined ? String(val) : undefined),
   effectQualitative: z.string().optional(),
+  riskImplication: z.string().optional(),
+  recommendation: z.string().optional(),
   proposedAction: z.string().optional(),
   proposedAdjustmentType: z.string().optional(),
   proposedDebitAccount: z.string().optional(),
@@ -417,7 +420,7 @@ router.post("/:engagementId/:id/management-response", requireAuth, async (req: A
         managementAccepted: data.managementAccepted,
         managementRespondedById: req.user!.id,
         managementRespondedAt: new Date(),
-        status: "PENDING_CLEARANCE",
+        status: "MGMT_RESPONDED",
       },
       include: {
         identifiedBy: { select: { id: true, fullName: true, role: true } },

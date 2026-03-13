@@ -304,6 +304,118 @@ router.post("/:engagementId/checklists", requireAuth, requirePhaseUnlocked("FINA
   }
 });
 
+router.get("/:engagementId/finalization-stats", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    if (!access.valid) return res.status(404).json({ error: access.error });
+
+    const eid = req.params.engagementId;
+    const [events, gcAssessment, representations, memo, observations, adjustments, checklists] = await Promise.all([
+      prisma.subsequentEvent.findMany({
+        where: { engagementId: eid },
+        select: { id: true, eventReference: true, eventType: true, impactAssessment: true, reviewedById: true, partnerApprovedById: true },
+      }),
+      prisma.goingConcernAssessment.findFirst({
+        where: { engagementId: eid },
+        select: { id: true, overallConclusion: true, basisForConclusion: true, reviewedById: true, partnerApprovedById: true },
+      }),
+      prisma.writtenRepresentation.findMany({
+        where: { engagementId: eid },
+        select: { id: true, representationType: true, status: true, preparedById: true, reviewedById: true },
+      }),
+      prisma.completionMemo.findUnique({
+        where: { engagementId: eid },
+        select: {
+          id: true, summary: true, overallConclusion: true, unresolvedMatters: true,
+          subsequentEventsConclusion: true, goingConcernConclusion: true,
+          preparedById: true, managerReviewedById: true, partnerApprovedById: true,
+          preparedDate: true, managerReviewedDate: true, partnerApprovedDate: true,
+        },
+      }),
+      prisma.observation.findMany({
+        where: { engagementId: eid },
+        select: { id: true, status: true, severity: true, type: true },
+      }),
+      prisma.auditAdjustment.findMany({
+        where: { engagementId: eid },
+        select: { id: true, status: true, adjustmentType: true, managementAccepted: true, netImpact: true },
+      }),
+      prisma.complianceChecklist.findMany({
+        where: { engagementId: eid, checklistType: "COMPLETION" },
+        select: { id: true, status: true },
+      }),
+    ]);
+
+    const openFindings = observations.filter((o: any) => ["OPEN", "UNDER_REVIEW"].includes(o.status));
+    const criticalOpen = openFindings.filter((o: any) => ["HIGH", "CRITICAL"].includes(o.severity));
+    const resolvedFindings = observations.filter((o: any) => ["CLEARED", "ADJUSTED", "WAIVED", "CLOSED"].includes(o.status));
+    const pendingAdj = adjustments.filter((a: any) => a.status === "IDENTIFIED");
+    const uncorrectedAdj = adjustments.filter((a: any) => a.adjustmentType === "UNCORRECTED");
+    const eventsReviewed = events.filter((e: any) => e.reviewedById);
+
+    const mgmtRepObtained = representations.some((r: any) =>
+      (r.representationType === "MANAGEMENT" || r.representationType === "GENERAL") &&
+      (r.status === "OBTAINED" || r.status === "SIGNED" || r.status === "COMPLETED")
+    );
+
+    const completionProgress = {
+      checklistDone: checklists.length > 0 && checklists.every((c: any) => c.status === "COMPLETED" || c.status === "REVIEWED" || c.status === "APPROVED"),
+      subsequentEventsReviewed: events.length === 0 || events.every((e: any) => e.impactAssessment && e.reviewedById),
+      goingConcernAssessed: !!(gcAssessment?.overallConclusion && gcAssessment?.basisForConclusion),
+      representationObtained: mgmtRepObtained,
+      findingsAddressed: criticalOpen.length === 0 && pendingAdj.length === 0,
+      memoComplete: !!(memo?.overallConclusion),
+      managerReviewed: !!(memo?.managerReviewedById),
+      partnerApproved: !!(memo?.partnerApprovedById),
+    };
+
+    const doneCount = Object.values(completionProgress).filter(Boolean).length;
+    const totalCount = Object.keys(completionProgress).length;
+
+    res.json({
+      subsequentEvents: { total: events.length, reviewed: eventsReviewed.length, pending: events.length - eventsReviewed.length },
+      goingConcern: gcAssessment ? {
+        concluded: !!gcAssessment.overallConclusion,
+        conclusion: gcAssessment.overallConclusion,
+        reviewed: !!gcAssessment.reviewedById,
+        partnerApproved: !!gcAssessment.partnerApprovedById,
+      } : null,
+      representations: {
+        total: representations.length,
+        obtained: mgmtRepObtained,
+        items: representations,
+      },
+      completionMemo: memo ? {
+        hasSummary: !!memo.summary,
+        hasConclusion: !!memo.overallConclusion,
+        hasUnresolvedMatters: !!memo.unresolvedMatters,
+        managerReviewed: !!memo.managerReviewedById,
+        partnerApproved: !!memo.partnerApprovedById,
+        preparedDate: memo.preparedDate,
+        managerReviewedDate: memo.managerReviewedDate,
+        partnerApprovedDate: memo.partnerApprovedDate,
+      } : null,
+      findings: {
+        total: observations.length,
+        open: openFindings.length,
+        criticalOpen: criticalOpen.length,
+        resolved: resolvedFindings.length,
+      },
+      adjustments: {
+        total: adjustments.length,
+        pending: pendingAdj.length,
+        uncorrected: uncorrectedAdj.length,
+        uncorrectedTotal: uncorrectedAdj.reduce((sum: number, a: any) => sum + Math.abs(Number(a.netImpact) || 0), 0),
+      },
+      completionProgress,
+      completionPercent: totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0,
+      reportReady: doneCount === totalCount,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: "Failed to fetch finalization stats", details: error.message });
+  }
+});
+
 router.get("/:engagementId/pre-report-check", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);

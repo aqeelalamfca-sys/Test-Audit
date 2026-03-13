@@ -26,7 +26,7 @@ import { RiskAssessmentForm, ConclusionForm } from "@/components/fs-head-forms";
 import { useState, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { PageShell } from "@/components/page-shell";
-import { useModuleReadOnly } from "@/components/sign-off-bar";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { formatAccounting } from '@/lib/formatters';
@@ -3310,11 +3310,298 @@ function Step6Review({
   );
 }
 
+interface MappingStats {
+  totalAccounts: number;
+  mappedAccounts: number;
+  unmappedAccounts: number;
+  flaggedAccounts: number;
+  fsHeadCount: number;
+  mappingScore: number;
+  accountsByFsHead: Array<{ fsHead: string; count: number; balance: number }>;
+  unmappedList: Array<{ code: string; name: string; closingBalance: number; aiSuggestion: string | null; aiConfidence: number | null }>;
+  priorYearMappedCount: number;
+}
+
+function MappingOverviewPanel({ engagementId }: { engagementId: string }) {
+  const [activeTab, setActiveTab] = useState<'overview' | 'unmapped' | 'lead-schedules' | 'prior-year'>('overview');
+
+  const { data: coaAccounts, isLoading: coaLoading } = useQuery<any[]>({
+    queryKey: ['/api/import', engagementId, 'coa-accounts'],
+    queryFn: async () => {
+      const res = await fetchWithAuth(`/api/import/${engagementId}/coa-accounts`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!engagementId,
+  });
+
+  const { data: fsHeadsData } = useQuery<{ success: boolean; fsHeads: any[] }>({
+    queryKey: ['/api/engagements', engagementId, 'fs-heads'],
+  });
+
+  const stats: MappingStats = (() => {
+    const accounts = coaAccounts || [];
+    const total = accounts.length;
+    const mapped = accounts.filter((a: any) => a.fsLineItem).length;
+    const flagged = accounts.filter((a: any) => !a.fsLineItem && a.notesDisclosureRef).length;
+    const unmapped = total - mapped - flagged;
+    const score = total > 0 ? Math.round((mapped / total) * 100) : 0;
+
+    const fsHeadGroups: Record<string, { count: number; balance: number }> = {};
+    accounts.forEach((a: any) => {
+      if (a.fsLineItem) {
+        if (!fsHeadGroups[a.fsLineItem]) fsHeadGroups[a.fsLineItem] = { count: 0, balance: 0 };
+        fsHeadGroups[a.fsLineItem].count++;
+        fsHeadGroups[a.fsLineItem].balance += Number(a.closingBalance || 0);
+      }
+    });
+
+    const unmappedList = accounts
+      .filter((a: any) => !a.fsLineItem && !a.notesDisclosureRef)
+      .map((a: any) => ({
+        code: a.accountCode,
+        name: a.accountName,
+        closingBalance: Number(a.closingBalance || 0),
+        aiSuggestion: a.aiSuggestedFSLine,
+        aiConfidence: a.aiConfidence,
+      }));
+
+    const priorYearMapped = accounts.filter((a: any) => a.aiSuggestedFSLine).length;
+
+    return {
+      totalAccounts: total,
+      mappedAccounts: mapped,
+      unmappedAccounts: unmapped,
+      flaggedAccounts: flagged,
+      fsHeadCount: fsHeadsData?.fsHeads?.length || 0,
+      mappingScore: score,
+      accountsByFsHead: Object.entries(fsHeadGroups).map(([fsHead, data]) => ({ fsHead, ...data })).sort((a, b) => b.count - a.count),
+      unmappedList,
+      priorYearMappedCount: priorYearMapped,
+    };
+  })();
+
+  if (coaLoading) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="animate-pulse space-y-2">
+            <div className="h-6 bg-muted rounded w-48" />
+            <div className="h-20 bg-muted rounded" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const scoreColor = stats.mappingScore >= 95 ? "text-green-600" : stats.mappingScore >= 70 ? "text-amber-600" : "text-red-600";
+  const scoreBg = stats.mappingScore >= 95 ? "bg-green-100 border-green-300 dark:bg-green-950/20 dark:border-green-800" : stats.mappingScore >= 70 ? "bg-amber-100 border-amber-300 dark:bg-amber-950/20 dark:border-amber-800" : "bg-red-100 border-red-300 dark:bg-red-950/20 dark:border-red-800";
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Mapping Completeness
+            </CardTitle>
+            <Badge className={scoreBg} variant="secondary">
+              <span className={`font-bold ${scoreColor}`}>{stats.mappingScore}%</span>
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Progress value={stats.mappingScore} className="h-3" />
+
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="text-center p-2 bg-muted/30 rounded-md">
+              <p className="text-2xl font-bold">{stats.totalAccounts}</p>
+              <p className="text-xs text-muted-foreground">Total Accounts</p>
+            </div>
+            <div className="text-center p-2 bg-muted/30 rounded-md">
+              <p className="text-2xl font-bold text-green-600">{stats.mappedAccounts}</p>
+              <p className="text-xs text-muted-foreground">Mapped</p>
+            </div>
+            <div className="text-center p-2 bg-muted/30 rounded-md">
+              <p className="text-2xl font-bold text-red-600">{stats.unmappedAccounts}</p>
+              <p className="text-xs text-muted-foreground">Unmapped</p>
+            </div>
+            <div className="text-center p-2 bg-muted/30 rounded-md">
+              <p className="text-2xl font-bold text-amber-600">{stats.flaggedAccounts}</p>
+              <p className="text-xs text-muted-foreground">Flagged/Parked</p>
+            </div>
+            <div className="text-center p-2 bg-muted/30 rounded-md">
+              <p className="text-2xl font-bold text-blue-600">{stats.fsHeadCount}</p>
+              <p className="text-xs text-muted-foreground">FS Heads</p>
+            </div>
+          </div>
+
+          <div className="flex gap-1 border-b pb-1">
+            {[
+              { key: 'overview' as const, label: 'FS Head Groups' },
+              { key: 'unmapped' as const, label: `Unmapped (${stats.unmappedAccounts})`, color: stats.unmappedAccounts > 0 ? 'text-red-600' : '' },
+              { key: 'lead-schedules' as const, label: 'Lead Schedules' },
+              { key: 'prior-year' as const, label: 'Prior Year Reuse' },
+            ].map(tab => (
+              <Button
+                key={tab.key}
+                variant={activeTab === tab.key ? "secondary" : "ghost"}
+                size="sm"
+                className={`text-xs ${tab.color || ''}`}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                {tab.label}
+              </Button>
+            ))}
+          </div>
+
+          <div className="max-h-[350px] overflow-y-auto">
+            {activeTab === 'overview' && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>FS Head / Line Item</TableHead>
+                    <TableHead className="text-right">Accounts</TableHead>
+                    <TableHead className="text-right">Net Balance</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {stats.accountsByFsHead.length > 0 ? stats.accountsByFsHead.map(g => (
+                    <TableRow key={g.fsHead}>
+                      <TableCell className="font-medium">{g.fsHead}</TableCell>
+                      <TableCell className="text-right">{g.count}</TableCell>
+                      <TableCell className="text-right font-mono text-sm">{formatAccounting(g.balance)}</TableCell>
+                    </TableRow>
+                  )) : (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
+                        No accounts mapped yet. Use the FS Head Mapping section below to assign accounts.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
+
+            {activeTab === 'unmapped' && (
+              <div className="space-y-2">
+                {stats.unmappedList.length > 0 ? stats.unmappedList.map(a => (
+                  <div key={a.code} className="flex items-start gap-3 p-2 border rounded-md bg-red-50/50 dark:bg-red-950/10">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium">{a.code} — {a.name}</p>
+                      <p className="text-xs text-muted-foreground">Balance: {formatAccounting(a.closingBalance)}</p>
+                    </div>
+                    {a.aiSuggestion && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Sparkles className="h-3 w-3 text-purple-500" />
+                        <span className="text-xs text-purple-600">{a.aiSuggestion}</span>
+                        {a.aiConfidence != null && (
+                          <Badge variant="outline" className="text-[10px] px-1">{Math.round(a.aiConfidence * 100)}%</Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                    <p className="text-sm">All accounts are mapped or flagged</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'lead-schedules' && (
+              <div className="space-y-2">
+                {stats.accountsByFsHead.length > 0 ? stats.accountsByFsHead.map(g => (
+                  <Card key={g.fsHead} className="border">
+                    <CardContent className="p-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">{g.fsHead}</p>
+                        <p className="text-xs text-muted-foreground">{g.count} account(s)</p>
+                      </div>
+                      <p className="font-mono text-sm font-medium">{formatAccounting(g.balance)}</p>
+                    </CardContent>
+                  </Card>
+                )) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <FolderOpen className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm">Lead schedules populate from mapped accounts</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'prior-year' && (
+              <div className="space-y-3">
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-md border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <RotateCcw className="h-4 w-4 text-blue-500" />
+                    <p className="text-sm font-medium text-blue-800 dark:text-blue-300">Prior Year Mapping Reuse</p>
+                  </div>
+                  <p className="text-xs text-blue-600/70 dark:text-blue-400/70">
+                    {stats.priorYearMappedCount > 0
+                      ? `${stats.priorYearMappedCount} account(s) have AI-suggested mappings from prior year patterns. Review and accept suggestions in the mapping section below.`
+                      : "No prior year mapping data available. Mappings from this engagement will be available for reuse in future periods."}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {(stats.unmappedAccounts > 0 || stats.mappingScore < 95) && (
+            <div className="border-t pt-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-4 w-4 text-purple-500" />
+                <h3 className="text-sm font-semibold">AI Analysis</h3>
+              </div>
+              <div className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800">
+                {stats.unmappedAccounts > 0 ? (
+                  <>
+                    <p className="text-xs font-medium text-purple-800 dark:text-purple-300 mb-1">Mapping Actions Required</p>
+                    <p className="text-xs text-purple-700/80 dark:text-purple-400/80">
+                      {stats.unmappedAccounts} account(s) need mapping or flagging. Current completeness is {stats.mappingScore}% — minimum 95% required.
+                      {stats.priorYearMappedCount > 0 && ` ${stats.priorYearMappedCount} account(s) have AI suggestions from prior year patterns.`}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs font-medium text-purple-800 dark:text-purple-300 mb-1">Almost There</p>
+                    <p className="text-xs text-purple-700/80 dark:text-purple-400/80">
+                      All accounts are accounted for but mapping completeness is {stats.mappingScore}%. Review flagged accounts to improve the score.
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {stats.mappingScore >= 95 && stats.unmappedAccounts === 0 && (
+            <div className="border-t pt-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-4 w-4 text-purple-500" />
+                <h3 className="text-sm font-semibold">AI Analysis</h3>
+              </div>
+              <div className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800">
+                <p className="text-xs font-medium text-purple-800 dark:text-purple-300 mb-1">Mapping Complete</p>
+                <p className="text-xs text-purple-700/80 dark:text-purple-400/80">
+                  Mapping completeness is {stats.mappingScore}% with {stats.fsHeadCount} FS heads. The phase is ready for completion.
+                  Mapped accounts flow into materiality, risk assessment, and planning phases.
+                </p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function FSHeadsPage() {
   const params = useParams<{ engagementId: string }>();
   const engagementId = params.engagementId || "";
   const { engagement, client } = useEngagement();
-  const { isReadOnly: fsHeadsReadOnly } = useModuleReadOnly("EXECUTION", "FS_HEADS");
+  const { isReadOnly: fsHeadsReadOnly } = usePhaseRoleGuard("fs-heads", "EXECUTION");
   const contentSaveRef = useRef<{ save: () => Promise<boolean>; isDirty: boolean } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -3334,10 +3621,10 @@ export default function FSHeadsPage() {
   return (
     <PageShell
       showTopBar={false}
-      title="FS Heads Execution Wizard"
+      title="CoA / FS Mapping"
       subtitle={`${client?.name || "Engagement"} - ${engagement?.engagementCode || ""}`}
       icon={<Layers className="h-5 w-5 text-primary" />}
-      backHref={`/workspace/${engagementId}/execution`}
+      backHref={`/engagements`}
       dashboardHref="/engagements"
       saveFn={handleSave}
       hasUnsavedChanges={contentSaveRef.current?.isDirty || false}
@@ -3351,13 +3638,14 @@ export default function FSHeadsPage() {
       readOnly={fsHeadsReadOnly}
     >
       <div className="flex-1 overflow-auto p-4 space-y-4">
+        <MappingOverviewPanel engagementId={engagementId} />
         <FSHeadsContent engagementId={engagementId} saveRef={contentSaveRef} />
       </div>
 
       {engagementId && (
         <AICopilotToggle
           engagementId={engagementId}
-          auditPhase="execution"
+          auditPhase="coa-mapping"
         />
       )}
     </PageShell>

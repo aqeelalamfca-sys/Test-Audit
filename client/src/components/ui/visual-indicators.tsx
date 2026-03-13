@@ -62,7 +62,7 @@ const STATUS_CONFIG: Record<EntityStatus, { color: string; bgColor: string; icon
   },
 };
 
-export interface StatusBadgeProps {
+export interface EntityStatusBadgeProps {
   status: EntityStatus;
   markedBy?: string;
   markedAt?: Date | string;
@@ -71,14 +71,16 @@ export interface StatusBadgeProps {
   className?: string;
 }
 
-export function StatusBadge({
+export const StatusBadge = EntityStatusBadge;
+
+export function EntityStatusBadge({
   status,
   markedBy,
   markedAt,
   showTooltip = true,
   size = "md",
   className,
-}: StatusBadgeProps) {
+}: EntityStatusBadgeProps) {
   const config = STATUS_CONFIG[status];
   const sizeClasses = {
     sm: "text-xs px-1.5 py-0.5",
@@ -590,7 +592,7 @@ export function PhaseProgress({
     <div className={cn("p-3 border rounded-lg bg-white", className)}>
       <div className="flex items-center justify-between mb-2">
         <span className="font-medium text-sm">{phaseName}</span>
-        {signOffStatus && <StatusBadge status={signOffStatus} size="sm" showTooltip={false} />}
+        {signOffStatus && <EntityStatusBadge status={signOffStatus} size="sm" showTooltip={false} />}
       </div>
       <ProgressBar value={percentage} showPercentage size="sm" />
       <p className="text-xs text-muted-foreground mt-1">

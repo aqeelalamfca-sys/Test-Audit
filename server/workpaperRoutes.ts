@@ -544,6 +544,7 @@ router.get("/engagements/:engagementId/workpaper-index", requireAuth, async (req
       }
     };
     
+    /** Backend storage phases — see shared/phases.ts for canonical 19-phase workflow */
     const phases = ["ONBOARDING", "PRE_PLANNING", "PLANNING", "EXECUTION", "FINALIZATION", "REPORTING", "EQCR", "INSPECTION"];
     phases.forEach(phase => {
       index.summary.byPhase[phase] = {

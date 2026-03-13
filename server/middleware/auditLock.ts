@@ -93,6 +93,7 @@ export function requirePhaseInProgress(phase: AuditPhase) {
 }
 
 export function requirePreviousPhasesCompleted(phase: AuditPhase) {
+  /** Backend storage phases — see shared/phases.ts for canonical 19-phase workflow */
   const PHASE_ORDER: AuditPhase[] = [
     "ONBOARDING",
     "PRE_PLANNING",

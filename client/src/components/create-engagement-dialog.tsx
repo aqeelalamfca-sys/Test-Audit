@@ -314,7 +314,7 @@ export function EngagementDialog({
           });
           if (startRes.ok) {
             const startData = await startRes.json();
-            navigate(startData.resumeRoute || `/workspace/${result.id}/pre-planning`);
+            navigate(startData.resumeRoute || `/workspace/${result.id}/acceptance`);
           } else {
             navigate(`/engagements`);
           }

@@ -107,6 +107,7 @@ router.post("/initialize-data", requireAuth, requireRoles("FIRM_ADMIN"), async (
         });
         engagementsCreated.push(engagement.id);
 
+        /** Backend storage phases — see shared/phases.ts for canonical 19-phase workflow */
         const phases = ["ONBOARDING", "PRE_PLANNING", "PLANNING", "EXECUTION", "FINALIZATION", "REPORTING", "EQCR", "INSPECTION"];
         for (let j = 0; j < phases.length; j++) {
           const phaseStatus = j < 3 ? "COMPLETED" : j === 3 ? "IN_PROGRESS" : "NOT_STARTED";
