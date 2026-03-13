@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { prisma } from "./db";
 import { authMiddleware, jwtAuthMiddleware, requireAuth, requireMinRole, requireRoles, logAuditTrail, type AuthenticatedRequest } from "./auth";
-import { invalidatePhaseCache } from "./middleware/auditLock";
+import { invalidatePhaseCache, requirePhaseUnlocked } from "./middleware/auditLock";
 import authRoutes from "./authRoutes";
 import clientRoutes from "./clientRoutes";
 import ethicsRoutes from "./ethicsRoutes";
@@ -239,6 +239,123 @@ export async function registerRoutes(
   app.use("/api/review-notes-v2", reviewNoteRoutes);
   app.use("/api/notifications", userNotificationRoutes);
   app.use("/api/opinion-engine", opinionEngineRoutes);
+
+  app.get("/api/workspace/:engagementId/planning", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { engagementId } = req.params;
+      const firmId = req.user!.firmId;
+      const engagement = await prisma.engagement.findFirst({
+        where: { id: engagementId, firmId },
+        select: { id: true },
+      });
+      if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
+      const memo = await prisma.planningMemo.findUnique({
+        where: { engagementId },
+      });
+
+      if (!memo?.teamBriefingNotes) {
+        return res.json({ success: true, data: null });
+      }
+
+      try {
+        const data = JSON.parse(memo.teamBriefingNotes);
+        return res.json({ success: true, data: { data } });
+      } catch {
+        return res.json({ success: true, data: null });
+      }
+    } catch (error: any) {
+      console.error("Load planning data error:", error);
+      res.status(500).json({ error: "Failed to load planning data", details: error.message });
+    }
+  });
+
+  app.post("/api/workspace/:engagementId/planning/draft", requireAuth, requirePhaseUnlocked("PLANNING"), async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { engagementId } = req.params;
+      const firmId = req.user!.firmId;
+      const engagement = await prisma.engagement.findFirst({
+        where: { id: engagementId, firmId },
+        select: { id: true },
+      });
+      if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
+      const payload = req.body?.data || req.body;
+      const jsonStr = JSON.stringify(payload);
+
+      const existing = await prisma.planningMemo.findUnique({ where: { engagementId } });
+      if (existing) {
+        await prisma.planningMemo.update({
+          where: { engagementId },
+          data: { teamBriefingNotes: jsonStr },
+        });
+      } else {
+        const team = await prisma.engagementTeam.findFirst({ where: { engagementId } });
+        await prisma.planningMemo.create({
+          data: {
+            engagementId,
+            preparedById: team?.userId || req.user!.id,
+            teamBriefingNotes: jsonStr,
+          },
+        });
+      }
+
+      res.json({ success: true, message: "Draft saved" });
+    } catch (error: any) {
+      console.error("Save planning draft error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  app.put("/api/workspace/:engagementId/planning", requireAuth, requirePhaseUnlocked("PLANNING"), async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { engagementId } = req.params;
+      const firmId = req.user!.firmId;
+      const engagement = await prisma.engagement.findFirst({
+        where: { id: engagementId, firmId },
+        select: { id: true },
+      });
+      if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
+      const payload = req.body?.data || req.body;
+      const jsonStr = JSON.stringify(payload);
+
+      const existing = await prisma.planningMemo.findUnique({ where: { engagementId } });
+      if (existing) {
+        await prisma.planningMemo.update({
+          where: { engagementId },
+          data: { teamBriefingNotes: jsonStr },
+        });
+      } else {
+        const team = await prisma.engagementTeam.findFirst({ where: { engagementId } });
+        await prisma.planningMemo.create({
+          data: {
+            engagementId,
+            preparedById: team?.userId || req.user!.id,
+            teamBriefingNotes: jsonStr,
+          },
+        });
+      }
+
+      logAuditTrail(
+        req.user!.id,
+        "PLANNING_DATA_SAVED",
+        "planning_memo",
+        engagementId,
+        null,
+        null,
+        engagementId,
+        "Planning data saved",
+        req.ip,
+        req.get("user-agent")
+      ).catch(err => console.error("Audit trail error:", err));
+
+      res.json({ success: true, message: "Planning data saved" });
+    } catch (error: any) {
+      console.error("Save planning data error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
 
   app.get("/api/secp/opinions", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {
