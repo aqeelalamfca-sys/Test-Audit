@@ -346,18 +346,34 @@ function Router() {
       {/* Redirect bare /workspace to engagements */}
       <Route path="/workspace" component={WorkspaceRedirect} />
       
-      {/* Workspace routes (require engagementId + access check) */}
+      {/* Canonical 19-phase workspace routes */}
+      <Route path="/workspace/:engagementId/acceptance" component={GuardedPrePlanning} />
+      <Route path="/workspace/:engagementId/independence" component={GuardedEthicsIndependence} />
+      <Route path="/workspace/:engagementId/tb-gl-upload" component={GuardedInformationRequisition} />
+      <Route path="/workspace/:engagementId/validation" component={GuardedPostUploadWorkflow} />
+      <Route path="/workspace/:engagementId/coa-mapping" component={GuardedFSHeadsPage} />
+      <Route path="/workspace/:engagementId/materiality" component={GuardedPlanning} />
+      <Route path="/workspace/:engagementId/risk-assessment" component={GuardedPlanning} />
+      <Route path="/workspace/:engagementId/planning-strategy" component={GuardedPlanning} />
+      <Route path="/workspace/:engagementId/procedures-sampling" component={GuardedExecution} />
+      <Route path="/workspace/:engagementId/execution-testing" component={GuardedExecution} />
+      <Route path="/workspace/:engagementId/evidence-linking" component={GuardedEvidenceVault} />
+      <Route path="/workspace/:engagementId/observations" component={GuardedObservations} />
+      <Route path="/workspace/:engagementId/adjustments" component={GuardedFinalization} />
+      <Route path="/workspace/:engagementId/finalization" component={GuardedFinalization} />
+      <Route path="/workspace/:engagementId/opinion-reports" component={GuardedPrintView} />
+      <Route path="/workspace/:engagementId/eqcr" component={GuardedEQCR} />
+      <Route path="/workspace/:engagementId/inspection" component={GuardedInspection} />
+
+      {/* Legacy workspace routes (backward compat) */}
       <Route path="/workspace/:engagementId/requisition" component={GuardedInformationRequisition} />
       <Route path="/workspace/:engagementId/pre-planning" component={GuardedPrePlanning} />
       <Route path="/workspace/:engagementId/planning" component={GuardedPlanning} />
       <Route path="/workspace/:engagementId/execution" component={GuardedExecution} />
       <Route path="/workspace/:engagementId/fs-heads" component={GuardedFSHeadsPage} />
       <Route path="/workspace/:engagementId/checklists" component={GuardedComplianceChecklists} />
-      <Route path="/workspace/:engagementId/finalization" component={GuardedFinalization} />
       <Route path="/workspace/:engagementId/deliverables" component={GuardedPrintView} />
-      <Route path="/workspace/:engagementId/eqcr" component={GuardedEQCR} />
       <Route path="/workspace/:engagementId/evidence" component={GuardedEvidenceVault} />
-      <Route path="/workspace/:engagementId/inspection" component={GuardedInspection} />
       <Route path="/workspace/:engagementId/qcr-dashboard" component={GuardedInspectionDashboard} />
       <Route path="/workspace/:engagementId/audit-health" component={GuardedAuditHealthDashboard} />
       <Route path="/workspace/:engagementId/workflow-health" component={GuardedWorkflowHealthPage} />
@@ -365,10 +381,8 @@ function Router() {
       <Route path="/workspace/:engagementId/control" component={GuardedEngagementControl} />
       <Route path="/workspace/:engagementId/ethics" component={GuardedEthicsIndependence} />
       <Route path="/workspace/:engagementId/tb-review" component={GuardedTBReview} />
-
       <Route path="/workspace/:engagementId/import" component={GuardedImportWizard} />
       <Route path="/workspace/:engagementId/outputs" component={GuardedOutputsPage} />
-      <Route path="/workspace/:engagementId/observations" component={GuardedObservations} />
       <Route path="/workspace/:engagementId/post-upload-workflow" component={GuardedPostUploadWorkflow} />
       <Route path="/workspace/:engagementId/standards-matrix" component={GuardedStandardsMatrix} />
       <Route path="/workspace/:engagementId/compliance-simulation" component={GuardedComplianceSimulation} />

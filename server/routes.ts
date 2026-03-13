@@ -240,6 +240,65 @@ export async function registerRoutes(
   app.use("/api/notifications", userNotificationRoutes);
   app.use("/api/opinion-engine", opinionEngineRoutes);
 
+  // Phase Gate Engine API
+  const { evaluatePhaseGates, evaluateAllGates, canAdvanceToPhase } = await import("./services/phaseGateEngine");
+
+  async function verifyEngagementAccess(req: AuthenticatedRequest, res: Response): Promise<boolean> {
+    const engagementId = req.params.engagementId;
+    const firmId = req.user!.firmId;
+    const userId = req.user!.id;
+    const role = req.user!.role;
+    const isPrivileged = ["PARTNER", "FIRM_ADMIN"].includes(role);
+
+    const engagement = await prisma.engagement.findFirst({
+      where: {
+        id: engagementId,
+        firmId,
+        ...(isPrivileged ? {} : { team: { some: { userId } } }),
+      },
+      select: { id: true },
+    });
+
+    if (!engagement) {
+      res.status(404).json({ error: "Engagement not found or access denied" });
+      return false;
+    }
+    return true;
+  }
+
+  app.get("/api/phase-gates/:engagementId", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      if (!(await verifyEngagementAccess(req, res))) return;
+      const snapshot = await evaluateAllGates(req.params.engagementId);
+      res.json(snapshot);
+    } catch (error) {
+      console.error("Phase gate evaluation error:", error);
+      res.status(500).json({ error: "Failed to evaluate phase gates" });
+    }
+  });
+
+  app.get("/api/phase-gates/:engagementId/:phaseKey", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      if (!(await verifyEngagementAccess(req, res))) return;
+      const evaluation = await evaluatePhaseGates(req.params.engagementId, req.params.phaseKey);
+      res.json(evaluation);
+    } catch (error) {
+      console.error("Phase gate evaluation error:", error);
+      res.status(500).json({ error: "Failed to evaluate phase gate" });
+    }
+  });
+
+  app.post("/api/phase-gates/:engagementId/:phaseKey/advance", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      if (!(await verifyEngagementAccess(req, res))) return;
+      const result = await canAdvanceToPhase(req.params.engagementId, req.params.phaseKey);
+      res.json(result);
+    } catch (error) {
+      console.error("Phase advance check error:", error);
+      res.status(500).json({ error: "Failed to check phase advancement" });
+    }
+  });
+
   app.get("/api/workspace/:engagementId/planning", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { engagementId } = req.params;

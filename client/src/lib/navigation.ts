@@ -1,3 +1,8 @@
+import {
+  CANONICAL_PHASES,
+  OLD_ROUTE_TO_NEW_SLUG,
+} from "../../../shared/phases";
+
 export interface PhaseProgress {
   phase: string;
   status: string;
@@ -19,29 +24,19 @@ export interface EngagementWithPhases {
   lastRoute?: string | null;
 }
 
-const PHASE_ORDER = [
-  "ONBOARDING",
-  "PRE_PLANNING",
-  "REQUISITION",
-  "PLANNING",
-  "EXECUTION",
-  "FINALIZATION",
-  "REPORTING",
-  "EQCR",
-  "INSPECTION"
-];
+const PHASE_ORDER = CANONICAL_PHASES
+  .filter(p => p.order >= 2)
+  .map(p => p.backendPhase)
+  .filter((v, i, a) => a.indexOf(v) === i);
 
-const PHASE_ROUTES: Record<string, string> = {
-  "ONBOARDING": "pre-planning",
-  "PRE_PLANNING": "pre-planning",
-  "REQUISITION": "requisition",
-  "PLANNING": "planning",
-  "EXECUTION": "execution",
-  "FINALIZATION": "finalization",
-  "REPORTING": "finalization",
-  "EQCR": "eqcr",
-  "INSPECTION": "inspection",
-};
+const PHASE_ROUTES: Record<string, string> = {};
+const _seen = new Set<string>();
+for (const phase of CANONICAL_PHASES) {
+  if (!_seen.has(phase.backendPhase)) {
+    PHASE_ROUTES[phase.backendPhase] = phase.routeSlug;
+    _seen.add(phase.backendPhase);
+  }
+}
 
 export function getPhaseRoute(engagementId: string, phase: string): string {
   const phaseLower = phase?.toLowerCase() || "";
@@ -151,7 +146,7 @@ export function getSmartWorkspaceRoute(engagement: EngagementWithPhases): string
   const hasData = hasAnyPhaseData(phases);
   
   if (!hasData) {
-    return `/workspace/${id}/pre-planning`;
+    return `/workspace/${id}/acceptance`;
   }
   
   if (phases && phases.length > 0) {
@@ -193,7 +188,7 @@ export function getSmartWorkspaceRoute(engagement: EngagementWithPhases): string
     }
   }
   
-  return `/workspace/${id}/pre-planning`;
+  return `/workspace/${id}/acceptance`;
 }
 
 export function getButtonLabel(engagement: EngagementWithPhases): { label: string; tooltip: string } {

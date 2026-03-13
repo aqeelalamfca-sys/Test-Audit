@@ -81,6 +81,28 @@ Optional:
 - Build: `npm run build`
 - Run: `node dist/index.cjs`
 
+## Phase Architecture (19-Phase System)
+
+The canonical audit workflow uses 19 phases defined in `shared/phases.ts` (single source of truth). The phases are grouped into 6 categories:
+
+- **Onboarding** (0-1): client-creation, engagement-setup
+- **Data Import** (2-6): acceptance, independence, tb-gl-upload, validation, coa-mapping
+- **Planning** (7-9): materiality, risk-assessment, planning-strategy
+- **Fieldwork** (10-14): procedures-sampling, execution-testing, evidence-linking, observations, adjustments
+- **Completion** (15-16): finalization, opinion-reports
+- **Quality & Archive** (17-18): eqcr, inspection
+
+Key files:
+- `shared/phases.ts` — Canonical phase registry with gates, roles, AI capabilities, ISA refs
+- `server/services/phaseGateEngine.ts` — Backend gate evaluation engine
+- `server/routes.ts` — Phase gate API endpoints (`/api/phase-gates/:engagementId`)
+- `client/src/lib/workspace-context.tsx` — Frontend phase routing (imports from shared/phases.ts)
+- `client/src/lib/navigation.ts` — Smart routing and phase helpers
+- `client/src/components/app-sidebar.tsx` — Sidebar with grouped 19-phase navigation
+- `client/src/App.tsx` — All workspace routes (canonical + legacy backward-compat)
+
+Old route slugs (pre-planning, requisition, planning, execution, etc.) are preserved as legacy routes for backward compatibility.
+
 ## Feature Status
 
 - ISA 320 Materiality: Complete
