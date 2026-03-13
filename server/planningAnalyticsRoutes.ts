@@ -46,10 +46,12 @@ const FS_HEAD_LABELS: Record<string, string> = {
   INVESTMENTS: "Investments",
 };
 
-function determineStatus(movementPct: number, performanceMateriality: number, balance: number): 'Expected' | 'Requires Explanation' | 'Risk-Indicative' {
+function determineStatus(movementPct: number, movementAmt: number, performanceMateriality: number): 'Expected' | 'Requires Explanation' | 'Risk-Indicative' {
   const absMovement = Math.abs(movementPct);
-  if (absMovement > 50 || Math.abs(balance) > performanceMateriality * 2) return 'Risk-Indicative';
-  if (absMovement > 20 || Math.abs(balance) > performanceMateriality) return 'Requires Explanation';
+  const absAmtChange = Math.abs(movementAmt);
+  if (absMovement > 50 && absAmtChange > performanceMateriality) return 'Risk-Indicative';
+  if (absMovement > 50 || (absMovement > 20 && absAmtChange > performanceMateriality)) return 'Requires Explanation';
+  if (absMovement > 20) return 'Requires Explanation';
   return 'Expected';
 }
 
@@ -191,8 +193,11 @@ router.post("/:engagementId/analyze", requireAuth, requirePhaseUnlocked("PLANNIN
       if (!acc.fsLineItem) continue;
       const key = acc.fsLineItem.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '');
       const existing = fsHeadTotals.get(key) || { current: 0, prior: 0, label: acc.fsLineItem };
-      existing.current += acc.closingBalance ? parseFloat(acc.closingBalance.toString()) : 0;
-      existing.prior += acc.openingBalance ? parseFloat(acc.openingBalance.toString()) : 0;
+      const rawClosing = acc.closingBalance ? parseFloat(acc.closingBalance.toString()) : 0;
+      const rawOpening = acc.openingBalance ? parseFloat(acc.openingBalance.toString()) : 0;
+      const sign = acc.nature === 'CR' ? -1 : 1;
+      existing.current += rawClosing * sign;
+      existing.prior += rawOpening * sign;
       existing.label = acc.fsLineItem;
       fsHeadTotals.set(key, existing);
     }
@@ -274,8 +279,8 @@ router.post("/:engagementId/analyze", requireAuth, requirePhaseUnlocked("PLANNIN
         expectationRationale: generateRationale(key, basis, data.current, data.prior)
       });
 
-      const status = determineStatus(movementPct, performanceMateriality, data.current);
-      const isMaterial = Math.abs(data.current) > performanceMateriality;
+      const status = determineStatus(movementPct, movement, performanceMateriality);
+      const isMaterial = Math.abs(movement) > performanceMateriality;
 
       trendAnalysis.push({
         id: `TREND-${String(idx + 1).padStart(3, '0')}`, fsHeadKey: key,
@@ -577,7 +582,7 @@ router.get("/:engagementId", requireAuth, async (req: AuthenticatedRequest, res:
   }
 });
 
-router.post("/:engagementId/save-narration", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post("/:engagementId/save-narration", requireAuth, requirePhaseUnlocked("PLANNING"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { engagementId } = req.params;
     const { narration } = req.body as { narration: PlanningNarration };
