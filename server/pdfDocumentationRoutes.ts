@@ -91,14 +91,17 @@ router.post("/generate", requireAuth, requireRoles("FIRM_ADMIN", "PARTNER"), asy
 
     const newVersion = (latestVersion?.version || 0) + 1;
 
-    const clientName = engagement.client?.name?.replace(/[^a-zA-Z0-9]/g, "") || "Client";
+    const firmData = await prisma.firm.findUnique({ where: { id: engagement.firmId }, select: { name: true } });
+    const firmSlug = (firmData?.name || "Firm").replace(/[^a-zA-Z0-9]/g, "_").substring(0, 20);
+    const clientName = engagement.client?.name?.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30) || "Client";
+    const engCode = engagement.engagementCode?.replace(/[^a-zA-Z0-9-]/g, "") || "";
     const fiscalYear = engagement.fiscalYearEnd 
       ? `FY${new Date(engagement.fiscalYearEnd).getFullYear()}`
       : "FYUnknown";
     const attachmentSuffix = withAttachments ? "WithAttachments" : "WithoutAttachments";
     const dateStr = new Date().toISOString().split("T")[0].replace(/-/g, "");
     
-    const fileName = `${clientName}_${fiscalYear}_FullAuditFile_${attachmentSuffix}_${dateStr}.pdf`;
+    const fileName = `${firmSlug}_${clientName}_${engCode}_${fiscalYear}_FullAuditFile_${attachmentSuffix}_${dateStr}.pdf`;
 
     const log = await prisma.pDFGenerationLog.create({
       data: {

@@ -553,12 +553,17 @@ export default function Finalization() {
         headers: { "Content-Type": "application/json" },
       });
       const result = await response.json();
-      if (result.success) {
-        const warningCount = result.preReportWarnings?.length || 0;
+      if (!response.ok) {
+        const blockerList = result.blockers?.length > 0 ? `: ${result.blockers.join(", ")}` : "";
+        toast({
+          title: "Cannot Generate Outputs",
+          description: (result.error || "Failed to generate outputs") + blockerList,
+          variant: "destructive",
+        });
+      } else if (result.success) {
         toast({
           title: "Finalization Outputs Generated",
-          description: `Created ${result.outputsCreated} outputs, ${result.outputsSkipped} already existed.${warningCount > 0 ? ` Warning: ${warningCount} pre-report blocker(s) remain — resolve before issuance.` : ""}`,
-          variant: warningCount > 0 ? "destructive" : "default",
+          description: `Created ${result.outputsCreated} outputs, ${result.outputsSkipped} already existed.`,
         });
       } else {
         toast({
@@ -2182,18 +2187,18 @@ export default function Finalization() {
             </CardHeader>
             <CardContent>
               {preReportCheck && !preReportCheck.readyForRelease && (
-                <div className="mb-4 rounded-lg border border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20 p-4">
+                <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/5 p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <AlertCircle className="h-5 w-5 text-yellow-600" />
-                    <h4 className="font-semibold text-yellow-700 dark:text-yellow-500">Pre-Report Warnings</h4>
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <h4 className="font-semibold text-destructive">Pre-Report Blockers</h4>
                   </div>
                   <p className="text-sm text-muted-foreground mb-2">
-                    You can generate draft outputs, but these items must be resolved before deliverables can be issued:
+                    The following items must be resolved before finalization outputs can be generated or deliverables issued:
                   </p>
                   <ul className="space-y-1">
                     {preReportCheck.issues.map((issue, idx) => (
                       <li key={idx} className="text-sm flex items-center gap-2">
-                        <AlertCircle className="h-3 w-3 text-yellow-600 flex-shrink-0" />
+                        <AlertCircle className="h-3 w-3 text-destructive flex-shrink-0" />
                         <span>{issue.message}</span>
                       </li>
                     ))}
@@ -2211,7 +2216,7 @@ export default function Finalization() {
                     });
                     generateFinalizationOutputs();
                   }}
-                  disabled={isGeneratingOutputs || fileStatus === "locked"}
+                  disabled={isGeneratingOutputs || fileStatus === "locked" || (preReportCheck && !preReportCheck.readyForRelease)}
                   data-testid="button-generate-audit-report"
                 >
                   <div className="flex items-center gap-3">
@@ -2232,7 +2237,7 @@ export default function Finalization() {
                     });
                     generateFinalizationOutputs();
                   }}
-                  disabled={isGeneratingOutputs || fileStatus === "locked"}
+                  disabled={isGeneratingOutputs || fileStatus === "locked" || (preReportCheck && !preReportCheck.readyForRelease)}
                   data-testid="button-generate-mgmt-letter"
                 >
                   <div className="flex items-center gap-3">
@@ -2253,7 +2258,7 @@ export default function Finalization() {
                     });
                     generateFinalizationOutputs();
                   }}
-                  disabled={isGeneratingOutputs || fileStatus === "locked"}
+                  disabled={isGeneratingOutputs || fileStatus === "locked" || (preReportCheck && !preReportCheck.readyForRelease)}
                   data-testid="button-generate-rep-letter"
                 >
                   <div className="flex items-center gap-3">
@@ -2274,7 +2279,7 @@ export default function Finalization() {
                     });
                     generateFinalizationOutputs();
                   }}
-                  disabled={isGeneratingOutputs || fileStatus === "locked"}
+                  disabled={isGeneratingOutputs || fileStatus === "locked" || (preReportCheck && !preReportCheck.readyForRelease)}
                   data-testid="button-generate-final-fs"
                 >
                   <div className="flex items-center gap-3">
@@ -2295,7 +2300,7 @@ export default function Finalization() {
                     });
                     generateFinalizationOutputs();
                   }}
-                  disabled={isGeneratingOutputs || fileStatus === "locked"}
+                  disabled={isGeneratingOutputs || fileStatus === "locked" || (preReportCheck && !preReportCheck.readyForRelease)}
                   data-testid="button-generate-signoff"
                 >
                   <div className="flex items-center gap-3">
