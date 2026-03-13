@@ -397,7 +397,7 @@ router.post("/:engagementId/save", requireAuth, async (req: AuthenticatedRequest
       benchmarkType, benchmarkAmount, percentApplied, overallMateriality, performanceMateriality,
       trivialThreshold, pmPercentage, trivialPercentage, rationale, benchmarkJustification,
       sourceDataSnapshot, qualitativeFactors, riskAdjustments, specificMateriality,
-      overrideHistory, stepProgress,
+      stepProgress,
     } = req.body;
 
     if (!benchmarkType || overallMateriality === undefined) {
@@ -411,6 +411,10 @@ router.post("/:engagementId/save", requireAuth, async (req: AuthenticatedRequest
 
     if (existing && existing.isLocked) {
       return res.status(403).json({ error: "Materiality is locked. Unlock or create a new version to make changes." });
+    }
+
+    if (existing && ["APPROVED", "PENDING_APPROVAL"].includes(existing.status)) {
+      return res.status(403).json({ error: "Materiality is approved/pending approval. Only partners can modify via override." });
     }
 
     let result;
@@ -430,7 +434,6 @@ router.post("/:engagementId/save", requireAuth, async (req: AuthenticatedRequest
           qualitativeFactors: qualitativeFactors || undefined,
           riskAdjustments: riskAdjustments || undefined,
           specificMateriality: specificMateriality || undefined,
-          overrideHistory: overrideHistory || undefined,
           stepProgress: stepProgress || undefined,
           isStale: false, staleReason: null,
           preparedById: userId, preparedAt: new Date(),
@@ -453,7 +456,6 @@ router.post("/:engagementId/save", requireAuth, async (req: AuthenticatedRequest
           qualitativeFactors: qualitativeFactors || undefined,
           riskAdjustments: riskAdjustments || undefined,
           specificMateriality: specificMateriality || undefined,
-          overrideHistory: overrideHistory || undefined,
           stepProgress: stepProgress || undefined,
           preparedById: userId, preparedAt: new Date(),
         },
@@ -484,6 +486,9 @@ router.post("/:engagementId/partner-override", requireAuth, async (req: Authenti
     if (!["PARTNER", "FIRM_ADMIN"].includes(userRole)) {
       return res.status(403).json({ error: "Only partners can apply materiality overrides" });
     }
+
+    const engagement = await prisma.engagement.findFirst({ where: { id: engagementId, firmId } });
+    if (!engagement) return res.status(404).json({ error: "Engagement not found" });
 
     const { overrides, reason, effectOnTesting } = req.body;
     if (!overrides || !reason) {
@@ -549,6 +554,9 @@ router.post("/:engagementId/revert-override", requireAuth, async (req: Authentic
       return res.status(403).json({ error: "Only partners can revert overrides" });
     }
 
+    const engagement = await prisma.engagement.findFirst({ where: { id: engagementId, firmId } });
+    if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
     const { overrideId } = req.body;
     if (!overrideId) return res.status(400).json({ error: "overrideId is required" });
 
@@ -595,6 +603,9 @@ router.post("/:engagementId/finalize", requireAuth, async (req: AuthenticatedReq
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
+    const engagement = await prisma.engagement.findFirst({ where: { id: engagementId, firmId } });
+    if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
     const { action } = req.body;
 
     const existing = await prisma.materialitySet.findFirst({
@@ -602,6 +613,22 @@ router.post("/:engagementId/finalize", requireAuth, async (req: AuthenticatedReq
       orderBy: { versionId: "desc" },
     });
     if (!existing) return res.status(404).json({ error: "No materiality set found" });
+
+    const VALID_TRANSITIONS: Record<string, string[]> = {
+      submit_review: ["DRAFT"],
+      review: ["PENDING_REVIEW"],
+      approve: ["PENDING_APPROVAL"],
+      lock: ["APPROVED"],
+      unlock: ["LOCKED"],
+    };
+
+    if (!VALID_TRANSITIONS[action]) {
+      return res.status(400).json({ error: "Invalid action. Use: submit_review, review, approve, lock, unlock" });
+    }
+
+    if (!VALID_TRANSITIONS[action].includes(existing.status)) {
+      return res.status(400).json({ error: `Cannot ${action} from status '${existing.status}'. Required: ${VALID_TRANSITIONS[action].join("/")}` });
+    }
 
     const updateData: Record<string, unknown> = {};
 
@@ -625,9 +652,6 @@ router.post("/:engagementId/finalize", requireAuth, async (req: AuthenticatedReq
       if (!["PARTNER", "FIRM_ADMIN"].includes(userRole)) {
         return res.status(403).json({ error: "Only partners can lock materiality" });
       }
-      if (existing.status !== "APPROVED") {
-        return res.status(400).json({ error: "Materiality must be approved before locking" });
-      }
       updateData.status = "LOCKED";
       updateData.isLocked = true;
       updateData.lockedAt = new Date();
@@ -640,8 +664,6 @@ router.post("/:engagementId/finalize", requireAuth, async (req: AuthenticatedReq
       updateData.isLocked = false;
       updateData.lockedAt = null;
       updateData.lockedById = null;
-    } else {
-      return res.status(400).json({ error: "Invalid action. Use: submit_review, review, approve, lock, unlock" });
     }
 
     const result = await prisma.materialitySet.update({ where: { id: existing.id }, data: updateData });
@@ -788,6 +810,9 @@ router.post("/:engagementId/push-downstream", requireAuth, async (req: Authentic
     const firmId = req.user!.firmId;
     if (!firmId) return res.status(400).json({ error: "User not associated with a firm" });
 
+    const engagement = await prisma.engagement.findFirst({ where: { id: engagementId, firmId } });
+    if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
     const matSet = await prisma.materialitySet.findFirst({
       where: { engagementId, status: { in: ["APPROVED", "LOCKED"] } },
       orderBy: { versionId: "desc" },
@@ -812,8 +837,8 @@ router.post("/:engagementId/push-downstream", requireAuth, async (req: Authentic
       try {
         await prisma.materialityAllocation.upsert({
           where: { engagementId_fsHeadId: { engagementId, fsHeadId: wp.id } },
-          update: { allocatedPM, trivialAmount: trivial, materialityId: matSet.id, rationale: `Auto-allocated from ISA 320 v${matSet.versionId}` },
-          create: { engagementId, fsHeadId: wp.id, materialityId: matSet.id, allocatedPM, trivialAmount: trivial, rationale: `Auto-allocated from ISA 320 v${matSet.versionId}` },
+          update: { allocatedPM, trivialAmount: trivial, rationale: `Auto-allocated from ISA 320 v${matSet.versionId}` },
+          create: { engagementId, fsHeadId: wp.id, allocatedPM, trivialAmount: trivial, rationale: `Auto-allocated from ISA 320 v${matSet.versionId}` },
         });
         allocationsUpdated++;
       } catch {
