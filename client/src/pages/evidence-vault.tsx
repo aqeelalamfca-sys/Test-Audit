@@ -182,6 +182,10 @@ interface VaultTemplate {
   phase: string;
   fsLineItems: string[];
   isaParagraph: string;
+  sourceZip: string;
+  linkedModule: string;
+  prefillCapable: boolean;
+  prefillFields: string[];
 }
 
 interface VaultCatalogResponse {
@@ -191,6 +195,7 @@ interface VaultCatalogResponse {
     filteredCount: number;
     categories: string[];
     subCategories: string[];
+    modules: string[];
   };
 }
 
@@ -199,6 +204,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   PLANNING: "Planning",
   REPORTING: "Reports & Letters",
   CONFIRMATION: "Confirmations",
+  COMPLETION: "Completion",
   OTHER: "Other",
   ISQM: "ISQM Documents",
   ISQM_REFERENCE: "ISQM Reference",
@@ -209,16 +215,38 @@ const CATEGORY_COLORS: Record<string, string> = {
   PLANNING: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
   REPORTING: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
   CONFIRMATION: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+  COMPLETION: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300",
   OTHER: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300",
   ISQM: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300",
   ISQM_REFERENCE: "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300",
+};
+
+const MODULE_LABELS: Record<string, string> = {
+  "execution-fs-heads": "FS Heads",
+  "execution-substantive": "Substantive Testing",
+  "execution-confirmations": "Confirmations",
+  "planning": "Planning",
+  "planning-risk": "Risk Assessment",
+  "planning-materiality": "Materiality",
+  "data-intake": "Data Intake",
+  "evidence-vault": "Evidence Vault",
+  "finalization-reporting": "Reporting",
+  "finalization-completion": "Completion",
+  "engagement-setup": "Engagement Setup",
+  "isqm-governance": "ISQM Governance",
+  "isqm-resources": "ISQM Resources",
+  "isqm-monitoring": "ISQM Monitoring",
+  "isqm-eqcr": "ISQM EQCR",
 };
 
 function TemplateLibraryTab() {
   const [vaultSearch, setVaultSearch] = useState("");
   const [vaultCategory, setVaultCategory] = useState("ALL");
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [previewTemplate, setPreviewTemplate] = useState<VaultTemplate | null>(null);
   const { toast } = useToast();
+  const params = useParams<{ engagementId: string }>();
+  const engagementId = params?.engagementId;
 
   const { data: catalogData, isLoading: catalogLoading } = useQuery<VaultCatalogResponse>({
     queryKey: ["/api/template-vault/catalog"],
@@ -229,23 +257,70 @@ function TemplateLibraryTab() {
     },
   });
 
+  interface PreviewData {
+    template: VaultTemplate;
+    preview: {
+      type: string;
+      description?: string;
+      sheets?: string[];
+      fileSize?: number;
+      lastModified?: string | null;
+      prefillFields: string[];
+      prefillCapable?: boolean;
+      linkedModule?: string;
+      sourceZip?: string;
+    };
+  }
+
+  const { data: previewData } = useQuery<PreviewData>({
+    queryKey: ["/api/template-vault/preview", previewTemplate?.id],
+    queryFn: async () => {
+      const res = await fetchWithAuth(`/api/template-vault/preview/${previewTemplate!.id}`);
+      if (!res.ok) throw new Error("Failed to load preview");
+      return res.json();
+    },
+    enabled: !!previewTemplate,
+  });
+
+  const downloadFile = async (url: string, fileName: string) => {
+    const res = await fetchWithAuth(url);
+    if (!res.ok) throw new Error("Download failed");
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  };
+
   const handleDownload = async (template: VaultTemplate) => {
     setDownloading(template.id);
     try {
-      const res = await fetchWithAuth(`/api/template-vault/download/${template.id}`);
-      if (!res.ok) throw new Error("Download failed");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = template.fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast({ title: "Downloaded", description: `${template.fileName} downloaded successfully` });
+      await downloadFile(`/api/template-vault/download/${template.id}`, template.fileName === "__GENERATED__" ? `${template.reference}_Template.xlsx` : template.fileName);
+      toast({ title: "Downloaded", description: `${template.title} downloaded successfully` });
     } catch {
       toast({ title: "Error", description: "Failed to download template", variant: "destructive" });
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  const handlePrefilledDownload = async (template: VaultTemplate) => {
+    setDownloading(`prefill-${template.id}`);
+    try {
+      const url = engagementId
+        ? `/api/template-vault/download-prefilled/${template.id}?engagementId=${engagementId}`
+        : `/api/template-vault/download-prefilled/${template.id}`;
+      const fileName = template.fileName === "__GENERATED__"
+        ? `${template.reference}_Prefilled.xlsx`
+        : template.fileName;
+      await downloadFile(url, fileName);
+      toast({ title: "Downloaded", description: `${template.title} (prefilled) downloaded successfully` });
+    } catch {
+      toast({ title: "Error", description: "Failed to download prefilled template", variant: "destructive" });
     } finally {
       setDownloading(null);
     }
@@ -276,112 +351,247 @@ function TemplateLibraryTab() {
   };
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-indigo-50/50 to-transparent dark:from-indigo-950/20 border-b border-border/50 pb-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 flex-shrink-0">
-              <Library className="h-5 w-5" />
-            </div>
-            <div className="space-y-1 min-w-0">
-              <CardTitle className="text-lg">Template Library</CardTitle>
-              <CardDescription>
-                {catalogData?.meta.totalTemplates || 0} standardized working paper templates, confirmation letters, and ISQM documents
-              </CardDescription>
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-3 mt-4">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search templates..."
-              value={vaultSearch}
-              onChange={(e) => setVaultSearch(e.target.value)}
-              className="pl-9 h-9"
-            />
-          </div>
-          <Select value={vaultCategory} onValueChange={setVaultCategory}>
-            <SelectTrigger className="w-[200px] h-9">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All Categories</SelectItem>
-              <SelectItem value="WORKING_PAPER">Working Papers</SelectItem>
-              <SelectItem value="PLANNING">Planning</SelectItem>
-              <SelectItem value="REPORTING">Reports & Letters</SelectItem>
-              <SelectItem value="CONFIRMATION">Confirmations</SelectItem>
-              <SelectItem value="ISQM">ISQM Documents</SelectItem>
-              <SelectItem value="ISQM_REFERENCE">ISQM Reference</SelectItem>
-              <SelectItem value="OTHER">Other</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-4">
-        {catalogLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <Library className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p>No templates found matching your criteria</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([subCat, items]) => (
-              <div key={subCat}>
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <FolderOpen className="h-4 w-4" />
-                  {subCat}
-                  <Badge variant="secondary" className="text-xs">{items.length}</Badge>
-                </h3>
-                <div className="grid gap-2">
-                  {items.sort((a, b) => a.reference.localeCompare(b.reference)).map(template => (
-                    <div
-                      key={template.id}
-                      className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group"
-                    >
-                      <div className="flex-shrink-0">{fileIcon(template.fileType)}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-muted-foreground">{template.reference}</span>
-                          <span className="font-medium text-sm truncate">{template.title}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">{template.description}</p>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {template.isaParagraph && (
-                          <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">{template.isaParagraph}</Badge>
-                        )}
-                        <Badge className={`text-[10px] ${CATEGORY_COLORS[template.category] || ""}`}>
-                          {CATEGORY_LABELS[template.category] || template.category}
-                        </Badge>
-                        <Badge variant="secondary" className="text-[10px] uppercase">{template.fileType}</Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          disabled={downloading === template.id}
-                          onClick={() => handleDownload(template)}
-                        >
-                          {downloading === template.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <FileDown className="h-3.5 w-3.5" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+    <>
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-indigo-50/50 to-transparent dark:from-indigo-950/20 border-b border-border/50 pb-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 flex-shrink-0">
+                <Library className="h-5 w-5" />
               </div>
-            ))}
+              <div className="space-y-1 min-w-0">
+                <CardTitle className="text-lg">Template Library</CardTitle>
+                <CardDescription>
+                  {catalogData?.meta.totalTemplates || 0} standardized working paper templates, confirmation letters, and ISQM documents
+                </CardDescription>
+              </div>
+            </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <div className="flex flex-wrap gap-3 mt-4">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search templates..."
+                value={vaultSearch}
+                onChange={(e) => setVaultSearch(e.target.value)}
+                className="pl-9 h-9"
+              />
+            </div>
+            <Select value={vaultCategory} onValueChange={setVaultCategory}>
+              <SelectTrigger className="w-[200px] h-9">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Categories</SelectItem>
+                <SelectItem value="WORKING_PAPER">Working Papers</SelectItem>
+                <SelectItem value="PLANNING">Planning</SelectItem>
+                <SelectItem value="REPORTING">Reports & Letters</SelectItem>
+                <SelectItem value="CONFIRMATION">Confirmations</SelectItem>
+                <SelectItem value="COMPLETION">Completion</SelectItem>
+                <SelectItem value="ISQM">ISQM Documents</SelectItem>
+                <SelectItem value="ISQM_REFERENCE">ISQM Reference</SelectItem>
+                <SelectItem value="OTHER">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {catalogLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Library className="h-12 w-12 mx-auto mb-3 opacity-30" />
+              <p>No templates found matching your criteria</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([subCat, items]) => (
+                <div key={subCat}>
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <FolderOpen className="h-4 w-4" />
+                    {subCat}
+                    <Badge variant="secondary" className="text-xs">{items.length}</Badge>
+                  </h3>
+                  <div className="grid gap-2">
+                    {items.sort((a, b) => a.reference.localeCompare(b.reference)).map(template => (
+                      <div
+                        key={template.id}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group"
+                      >
+                        <div className="flex-shrink-0">{fileIcon(template.fileType)}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-xs text-muted-foreground">{template.reference}</span>
+                            <span className="font-medium text-sm truncate">{template.title}</span>
+                            {template.prefillCapable && (
+                              <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-700 dark:text-emerald-400">Prefill</Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-xs text-muted-foreground truncate">{template.description}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {template.isaParagraph && (
+                            <Badge variant="outline" className="text-[10px] hidden lg:inline-flex">{template.isaParagraph}</Badge>
+                          )}
+                          <Badge variant="outline" className="text-[10px] hidden md:inline-flex">
+                            {MODULE_LABELS[template.linkedModule] || template.linkedModule}
+                          </Badge>
+                          <Badge className={`text-[10px] ${CATEGORY_COLORS[template.category] || ""}`}>
+                            {CATEGORY_LABELS[template.category] || template.category}
+                          </Badge>
+                          <Badge variant="secondary" className="text-[10px] uppercase">{template.fileType}</Badge>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => setPreviewTemplate(template)}
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Preview details</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                disabled={downloading === template.id}
+                                onClick={() => handleDownload(template)}
+                              >
+                                {downloading === template.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <FileDown className="h-3.5 w-3.5" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Download template</TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {previewTemplate && fileIcon(previewTemplate.fileType)}
+              {previewTemplate?.title}
+            </DialogTitle>
+            <DialogDescription>{previewTemplate?.reference}</DialogDescription>
+          </DialogHeader>
+          {previewTemplate && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">{previewTemplate.description}</p>
+              <Separator />
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Category:</span>
+                  <Badge className={`ml-2 text-[10px] ${CATEGORY_COLORS[previewTemplate.category] || ""}`}>
+                    {CATEGORY_LABELS[previewTemplate.category] || previewTemplate.category}
+                  </Badge>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Phase:</span>
+                  <span className="ml-2 font-medium">{previewTemplate.phase}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Module:</span>
+                  <span className="ml-2 font-medium">{MODULE_LABELS[previewTemplate.linkedModule] || previewTemplate.linkedModule}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">File Type:</span>
+                  <span className="ml-2 font-medium uppercase">{previewTemplate.fileType}</span>
+                </div>
+                {previewTemplate.isaParagraph && (
+                  <div>
+                    <span className="text-muted-foreground">ISA Reference:</span>
+                    <span className="ml-2 font-medium">{previewTemplate.isaParagraph}</span>
+                  </div>
+                )}
+                <div>
+                  <span className="text-muted-foreground">Source:</span>
+                  <span className="ml-2 font-medium text-xs">{previewTemplate.sourceZip}</span>
+                </div>
+                {previewData?.preview.type === "file" && previewData.preview.fileSize ? (
+                  <div>
+                    <span className="text-muted-foreground">File Size:</span>
+                    <span className="ml-2 font-medium">{(previewData.preview.fileSize / 1024).toFixed(1)} KB</span>
+                  </div>
+                ) : null}
+                {previewData?.preview.type === "generated" && previewData.preview.sheets ? (
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Sheets:</span>
+                    <div className="flex gap-1 mt-1 flex-wrap">
+                      {previewData.preview.sheets.map(s => (
+                        <Badge key={s} variant="outline" className="text-[10px]">{s}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                {previewTemplate.fsLineItems.length > 0 && (
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">FS Line Items:</span>
+                    <div className="flex gap-1 mt-1 flex-wrap">
+                      {previewTemplate.fsLineItems.map(fs => (
+                        <Badge key={fs} variant="outline" className="text-[10px]">{fs}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {previewTemplate.prefillCapable && previewTemplate.prefillFields.length > 0 && (
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Prefill Fields:</span>
+                    <div className="flex gap-1 mt-1 flex-wrap">
+                      {previewTemplate.prefillFields.map(f => (
+                        <Badge key={f} variant="secondary" className="text-[10px]">{f}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <Separator />
+              <DialogFooter className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={downloading === previewTemplate.id}
+                  onClick={() => handleDownload(previewTemplate)}
+                >
+                  {downloading === previewTemplate.id ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileDown className="h-4 w-4 mr-2" />}
+                  Download Blank
+                </Button>
+                {previewTemplate.prefillCapable && (
+                  <Button
+                    size="sm"
+                    disabled={downloading === `prefill-${previewTemplate.id}`}
+                    onClick={() => handlePrefilledDownload(previewTemplate)}
+                  >
+                    {downloading === `prefill-${previewTemplate.id}` ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                    Download Prefilled
+                  </Button>
+                )}
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
