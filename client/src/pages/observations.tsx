@@ -2,6 +2,8 @@ import { useState, useMemo } from "react";
 import { useParams } from "wouter";
 import { useEngagement } from "@/lib/workspace-context";
 import { AIAssistantPanel } from "@/components/ai-assistant-panel";
+import { SignOffBar } from "@/components/sign-off-bar";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -162,6 +164,7 @@ export default function Observations() {
   const { engagementId: contextEngagementId, engagement, client } = useEngagement();
   const engagementId = params.engagementId || contextEngagementId || undefined;
   const { toast } = useToast();
+  const roleGuard = usePhaseRoleGuard("observations", "EXECUTION");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
@@ -510,6 +513,7 @@ export default function Observations() {
 
   return (
     <div className="flex flex-col h-full">
+      <SignOffBar phase="EXECUTION" section="observations" className="mx-6 mt-2" />
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">

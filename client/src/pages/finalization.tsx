@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/lib/auth";
 import { PageShell } from "@/components/page-shell";
-import { useModuleReadOnly } from "@/components/sign-off-bar";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { useFinalizationSaveBridge } from "@/hooks/use-finalization-save-bridge";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -141,7 +141,7 @@ export default function Finalization() {
     refreshEngagement 
   } = useEngagement();
   const engagementId = params.engagementId || contextEngagementId || undefined;
-  const { isReadOnly: finalizationReadOnly } = useModuleReadOnly("FINALIZATION", "FINALIZATION");
+  const { isReadOnly: finalizationReadOnly } = usePhaseRoleGuard("finalization", "FINALIZATION");
   const { user } = useAuth();
   const currentUserRole = user?.role || "staff";
   const isPartner = currentUserRole.toLowerCase() === "partner" || currentUserRole.toLowerCase() === "admin";

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "wouter";
 import { AIAssistantPanel } from "@/components/ai-assistant-panel";
+import { SignOffBar } from "@/components/sign-off-bar";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { useEngagement } from "@/lib/workspace-context";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -173,6 +175,7 @@ export default function AcceptanceContinuance() {
   const { user } = useAuth();
   const engagementId = params.engagementId || contextEngagementId || "";
   const { toast } = useToast();
+  const roleGuard = usePhaseRoleGuard("acceptance", "PRE_PLANNING");
 
   const [form, setForm] = useState<AcceptanceFormData>(DEFAULT_FORM);
   const [activeTab, setActiveTab] = useState("client-type");
@@ -334,6 +337,7 @@ export default function AcceptanceContinuance() {
 
   return (
     <div className="page-container space-y-4">
+      <SignOffBar phase="PRE_PLANNING" section="acceptance" className="mb-1" />
       <AIAssistantPanel engagementId={engagementId} phaseKey="acceptance" className="mb-2" />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

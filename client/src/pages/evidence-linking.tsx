@@ -52,6 +52,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { PhaseApprovalControl, PhaseLockIndicator } from "@/components/phase-approval-control";
 import { PageShell } from "@/components/page-shell";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 
 interface EvidenceStats {
   totalFiles: number;
@@ -232,6 +233,7 @@ export default function EvidenceLinking() {
   } = useEngagement();
   const engagementId = params.engagementId || contextEngagementId || undefined;
   const { toast } = useToast();
+  const roleGuard = usePhaseRoleGuard("evidence-linking", "EXECUTION");
   const [activeTab, setActiveTab] = useState("dashboard");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterSourceType, setFilterSourceType] = useState("all");
@@ -346,6 +348,9 @@ export default function EvidenceLinking() {
       backHref={`/workspace/${engagementId}/execution-testing`}
       nextHref={`/workspace/${engagementId}/observations`}
       dashboardHref="/engagements"
+      signoffPhase="EXECUTION"
+      signoffSection="evidence-linking"
+      readOnly={roleGuard.isReadOnly}
       showBack={true}
       showSaveProgress={true}
       showSaveNext={true}

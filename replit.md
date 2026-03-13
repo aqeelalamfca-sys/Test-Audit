@@ -103,6 +103,10 @@ Key files:
 - `client/src/lib/form-constants.ts` — Shared form dropdown options (cities, entity types, industries, frameworks, etc.)
 - `client/src/components/app-sidebar.tsx` — Sidebar with grouped 19-phase navigation
 - `client/src/components/engagement-workspace-shell.tsx` — Unified workspace shell (header, breadcrumbs, progress ribbon, prev/next, AI panel, gate alerts)
+- `client/src/hooks/use-phase-role-guard.ts` — Role-based phase guard hook (canView/canEdit/canReview/canApprove/canReopen/canArchive/isReadOnly)
+- `client/src/components/sign-off-bar.tsx` — Section sign-off bar (prepare/review/approve/return flow) with contextual action labels
+- `server/sectionSignOffRoutes.ts` — Sign-off API endpoints (prepare/review/approve/return/lock/unlock)
+- `server/services/signOffAuthority.ts` — Role authority matrix for sign-off actions
 - `client/src/App.tsx` — All workspace routes (canonical + legacy backward-compat)
 
 **Engagement Workspace Shell**: All workspace routes render inside `EngagementWorkspaceShell`, which provides:
@@ -117,6 +121,15 @@ Key files:
 Old route slugs (pre-planning, requisition, planning, execution, etc.) are now **redirects** to canonical slugs. Legacy workspace routes (`/workspace/:id/requisition`, `/workspace/:id/pre-planning`, etc.) redirect to their canonical equivalents. Standalone tool routes (checklists, audit-health, workflow-health, standards-matrix, compliance-simulation, qcr-dashboard) are also wrapped in the shell for consistent UX.
 
 **Phase order derivation**: All frontend UI components (workspace-ribbon, global-status-bar, phase-gates-panel, global-progress-panel, standards-matrix) now reference the canonical 19-phase system. Backend PHASE_ORDER arrays remain aligned with Prisma's `AuditPhase` enum (8 high-level storage phases) with cross-reference comments to `shared/phases.ts`.
+
+### Role-Based Sign-Off System
+All 18 workspace phase pages use a standardized prepare → review → approve workflow:
+- **`usePhaseRoleGuard(phaseKey, signOffPhase)`** — Single hook returning `{ canView, canEdit, canReview, canApprove, canReopen, canArchive, isReadOnly, userRole, phaseKey }` based on `shared/phases.ts` rolePermissions + lock status
+- **`SignOffBar`** — Contextual action bar showing "Send for Review" / "Mark Reviewed" / "Approve" / "Return for Rework" per role and status
+- **PageShell pages** receive `signoffPhase`, `signoffSection`, `readOnly={roleGuard.isReadOnly}` props
+- **Non-PageShell pages** render `<SignOffBar phase="..." section="..." />` directly
+- Role hierarchy: STAFF(1) → SENIOR(2) → MANAGER(3) → EQCR(4) → PARTNER(5) → FIRM_ADMIN(6)
+- `useModuleReadOnly` (in sign-off-bar.tsx) is now only used internally by `usePhaseRoleGuard`
 
 ### AI Native Assistant (Unified Across All Phases)
 - **Orchestrator**: `server/services/aiPhaseOrchestrator.ts` — Registry of AI capabilities per phase (all 19 phases)

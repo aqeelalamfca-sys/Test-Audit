@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { PageShell } from "@/components/page-shell";
-import { useModuleReadOnly } from "@/components/sign-off-bar";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { AICopilotToggle } from "@/components/ai-copilot-panel";
 import { cn } from "@/lib/utils";
 import AuditProgramSection, { type AccountHeadProgram } from "@/components/AuditProgramSection";
@@ -123,7 +123,7 @@ export default function ProceduresSampling() {
   const params = useParams<{ engagementId: string }>();
   const { engagementId: contextEngagementId, engagement, client } = useEngagement();
   const engagementId = params.engagementId || contextEngagementId || undefined;
-  const { isReadOnly } = useModuleReadOnly("EXECUTION", "EXECUTION");
+  const { isReadOnly } = usePhaseRoleGuard("procedures-sampling", "EXECUTION");
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
@@ -220,6 +220,9 @@ export default function ProceduresSampling() {
     <PageShell
       title="Procedures & Sampling"
       subtitle={`${client?.name || ""} — ${engagement?.name || ""}`}
+      signoffPhase="EXECUTION"
+      signoffSection="procedures-sampling"
+      readOnly={isReadOnly}
     >
       <AIAssistantPanel engagementId={engagementId || ""} phaseKey="procedures-sampling" className="mb-4" />
       <div className="space-y-6">

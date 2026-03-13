@@ -22,6 +22,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { PageShell } from "@/components/page-shell";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { useEQCRSaveBridge } from "@/hooks/use-eqcr-save-bridge";
 import { useAuth } from "@/lib/auth";
 import { getDocumentHeaderHtml } from "@/lib/pdf-logo";
@@ -116,6 +117,7 @@ export default function EQCR() {
     refreshEngagement
   } = useEngagement();
   const engagementId = params.engagementId || contextEngagementId || undefined;
+  const roleGuard = usePhaseRoleGuard("eqcr", "EQCR");
   const { toast } = useToast();
   const { firm } = useAuth();
 
@@ -633,6 +635,9 @@ export default function EQCR() {
       backHref={`/workspace/${engagementId}/opinion-reports`}
       nextHref={`/workspace/${engagementId}/inspection`}
       dashboardHref="/engagements"
+      signoffPhase="EQCR"
+      signoffSection="eqcr"
+      readOnly={roleGuard.isReadOnly}
       saveFn={async () => {
         try {
           await saveEngine.saveFinal();

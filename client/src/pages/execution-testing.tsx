@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { PageShell } from "@/components/page-shell";
-import { useModuleReadOnly } from "@/components/sign-off-bar";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { AICopilotToggle } from "@/components/ai-copilot-panel";
 import { cn } from "@/lib/utils";
 
@@ -119,7 +119,7 @@ export default function ExecutionTesting() {
   const params = useParams<{ engagementId: string }>();
   const { engagementId: contextEngagementId, engagement, client } = useEngagement();
   const engagementId = params.engagementId || contextEngagementId || undefined;
-  const { isReadOnly } = useModuleReadOnly("EXECUTION", "EXECUTION");
+  const { isReadOnly } = usePhaseRoleGuard("execution-testing", "EXECUTION");
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -205,6 +205,9 @@ export default function ExecutionTesting() {
     <PageShell
       title="Execution Testing"
       subtitle={`${client?.name || ""} — ${engagement?.name || ""}`}
+      signoffPhase="EXECUTION"
+      signoffSection="execution-testing"
+      readOnly={isReadOnly}
     >
       <AIAssistantPanel engagementId={engagementId || ""} phaseKey="execution-testing" className="mb-4" />
       <div className="space-y-6">

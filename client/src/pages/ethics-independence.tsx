@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "wouter";
 import { AIAssistantPanel } from "@/components/ai-assistant-panel";
+import { SignOffBar } from "@/components/sign-off-bar";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { useEngagement } from "@/lib/workspace-context";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -135,6 +137,7 @@ export default function EthicsIndependence() {
   const { user } = useAuth();
   const engagementId = params.engagementId || contextEngagementId || "";
   const { toast } = useToast();
+  const roleGuard = usePhaseRoleGuard("independence", "PRE_PLANNING");
 
   const [form, setForm] = useState<EthicsFormData>(DEFAULT_FORM);
   const [activeTab, setActiveTab] = useState("declarations");
@@ -303,6 +306,7 @@ export default function EthicsIndependence() {
 
   return (
     <div className="page-container space-y-4">
+      <SignOffBar phase="PRE_PLANNING" section="independence" className="mb-1" />
       <AIAssistantPanel engagementId={engagementId} phaseKey="independence" className="mb-2" />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

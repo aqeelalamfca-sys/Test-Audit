@@ -26,7 +26,7 @@ import { RiskAssessmentForm, ConclusionForm } from "@/components/fs-head-forms";
 import { useState, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { PageShell } from "@/components/page-shell";
-import { useModuleReadOnly } from "@/components/sign-off-bar";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { formatAccounting } from '@/lib/formatters';
@@ -3601,7 +3601,7 @@ export default function FSHeadsPage() {
   const params = useParams<{ engagementId: string }>();
   const engagementId = params.engagementId || "";
   const { engagement, client } = useEngagement();
-  const { isReadOnly: fsHeadsReadOnly } = useModuleReadOnly("EXECUTION", "FS_HEADS");
+  const { isReadOnly: fsHeadsReadOnly } = usePhaseRoleGuard("fs-heads", "EXECUTION");
   const contentSaveRef = useRef<{ save: () => Promise<boolean>; isDirty: boolean } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 

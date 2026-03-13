@@ -24,7 +24,7 @@ import { AccordionFormSection, FormSectionItem, createDefaultFormSectionItems } 
 import { AuditProgramSection, AccountHeadProgram, createDefaultAuditPrograms } from "@/components/AuditProgramSection";
 import { PageShell } from "@/components/page-shell";
 import { GLWorkflow } from "@/components/GLWorkflow";
-import { useModuleReadOnly } from "@/components/sign-off-bar";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { usePlanningSaveBridge } from "@/hooks/use-planning-save-bridge";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -326,7 +326,7 @@ export default function Planning() {
     refreshEngagement 
   } = useEngagement();
   const engagementId = params.engagementId || contextEngagementId || undefined;
-  const { isReadOnly: planningReadOnly } = useModuleReadOnly("PLANNING", "PLANNING");
+  const { isReadOnly: planningReadOnly } = usePhaseRoleGuard("planning-strategy", "PLANNING");
   const [, setLocation] = useLocation();
   const currentPath = window.location.pathname;
   const isRiskAssessmentRoute = currentPath.includes("/risk-assessment");

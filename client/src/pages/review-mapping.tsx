@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, Link } from "wouter";
 import { useEngagement } from "@/lib/workspace-context";
 import { AIAssistantPanel } from "@/components/ai-assistant-panel";
+import { SignOffBar } from "@/components/sign-off-bar";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -108,6 +110,7 @@ export default function ReviewMapping() {
   } = useEngagement();
   const engagementId = params.engagementId || contextEngagementId || undefined;
   const { toast } = useToast();
+  const roleGuard = usePhaseRoleGuard("coa-mapping", "REQUISITION");
 
   const [fsHeads, setFsHeads] = useState<FSHead[]>([]);
   const [tbEntries, setTbEntries] = useState<TBEntry[]>([]);
@@ -639,6 +642,7 @@ export default function ReviewMapping() {
 
   return (
     <div className="flex flex-col h-full">
+      <SignOffBar phase="REQUISITION" section="coa-mapping" className="mx-4 mt-2" />
       <div className="flex flex-col gap-2 p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

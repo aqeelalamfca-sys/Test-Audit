@@ -24,6 +24,7 @@ import {
 import { format } from "date-fns";
 import html2pdf from "html2pdf.js";
 import { PageShell } from "@/components/page-shell";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { useDeliverablesSaveBridge } from "@/hooks/use-deliverables-save-bridge";
 import { useEngagement } from "@/lib/workspace-context";
 import { useAuth } from "@/lib/auth";
@@ -128,6 +129,7 @@ export default function OpinionReportsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { client, engagement } = useEngagement();
   const { firm } = useAuth();
+  const roleGuard = usePhaseRoleGuard("opinion-reports", "REPORTING");
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -370,6 +372,9 @@ export default function OpinionReportsPage() {
       backHref={`/workspace/${engagementId}/finalization`}
       nextHref={`/workspace/${engagementId}/eqcr`}
       dashboardHref="/engagements"
+      signoffPhase="REPORTING"
+      signoffSection="opinion-reports"
+      readOnly={roleGuard.isReadOnly}
       saveFn={async () => {
         try {
           await saveEngine.saveFinal();

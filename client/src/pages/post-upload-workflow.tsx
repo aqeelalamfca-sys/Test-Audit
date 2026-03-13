@@ -1,6 +1,8 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { AIAssistantPanel } from "@/components/ai-assistant-panel";
+import { SignOffBar } from "@/components/sign-off-bar";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -766,6 +768,7 @@ export default function PostUploadWorkflow() {
   const { activeEngagement } = useWorkspace();
   const engagementId = params.engagementId || activeEngagement?.id || "";
   const { toast } = useToast();
+  const roleGuard = usePhaseRoleGuard("validation", "REQUISITION");
   const [expandedExceptions, setExpandedExceptions] = useState(false);
 
   const { data: dashboard, isLoading, isError, refetch, isFetching } = useQuery<WorkflowDashboard>({
@@ -818,6 +821,7 @@ export default function PostUploadWorkflow() {
 
   return (
     <div className="page-container">
+      <SignOffBar phase="REQUISITION" section="validation" className="mb-1" />
       <AIAssistantPanel engagementId={engagementId} phaseKey="validation" className="mb-3" />
       <ValidationResultsPanel engagementId={engagementId} />
 

@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Link } from "wouter";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { PageShell } from "@/components/page-shell";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { useRequisitionSaveBridge } from "@/hooks/use-requisition-save-bridge";
 import {
   ACCOUNT_CLASSES,
@@ -144,6 +145,7 @@ export default function InformationRequisition() {
     refreshEngagement 
   } = useEngagement();
   const engagementId = params.engagementId || contextEngagementId || undefined;
+  const roleGuard = usePhaseRoleGuard("tb-gl-upload", "REQUISITION");
   const { activeEngagement } = useWorkspace();
   const { toast } = useToast();
   const { token } = useAuth();
@@ -3293,6 +3295,9 @@ export default function InformationRequisition() {
       backHref={`/engagements`}
       nextHref={engagementId ? `/workspace/${engagementId}/pre-planning` : undefined}
       dashboardHref="/engagements"
+      signoffPhase="REQUISITION"
+      signoffSection="tb-gl-upload"
+      readOnly={roleGuard.isReadOnly}
       saveFn={async () => {
         try {
           await saveEngine.saveFinal();
