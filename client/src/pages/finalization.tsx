@@ -358,7 +358,7 @@ export default function Finalization() {
             if (data.writtenRepEvidence) setWrittenRepEvidence(data.writtenRepEvidence);
             if (data.writtenRepOutputs) setWrittenRepOutputs(data.writtenRepOutputs);
             if (data.reportingOpinionChecklist) setReportingOpinionChecklist(data.reportingOpinionChecklist);
-            if (data.reportingOpinionType) setReportingOpinionType(data.reportingOpinionType);
+            if (data.reportingOpinionType !== undefined) setReportingOpinionType(data.reportingOpinionType);
             if (data.reportingEvidence) setReportingEvidence(data.reportingEvidence);
             if (data.reportingOutputs) setReportingOutputs(data.reportingOutputs);
             if (data.otherInfoChecklist) setOtherInfoChecklist(data.otherInfoChecklist);
