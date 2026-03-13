@@ -193,6 +193,15 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - **Gates**: strategy-documented, scope-defined, team-allocated (soft), planning-memo-complete
 - **Prerequisite**: Risk assessment phase must have documented risks
 
+### Procedures & Sampling (Phase 10)
+- **Page**: `client/src/pages/procedures-sampling.tsx` — dedicated standalone page with 4 tabs
+- **Tabs**: Risk-Procedure Matrix, Audit Program, Sampling, Assertions
+- **Features**: Phase overview header with 6 stat cards (total/linked/assertions/high-risk/sampling/reviewed), coverage % composite score, gate warnings for ISA 330/530/220/315 compliance, prerequisite enforcement, AI support badges, downstream linkage to execution/evidence/conclusions
+- **Backend**: `server/planningRoutes.ts` — GET `/api/planning/:engagementId/procedures-stats` returns comprehensive procedure/risk/sampling statistics with FS area coverage breakdown
+- **Gates**: procedures-linked (hard), high-risk-procedures-exist (hard), assertions-covered (hard), sampling-populations-defined (hard), sampling-rationale-documented (soft), reviewer-status-clear (soft)
+- **AI capabilities**: procedure-suggestions, sample-rationale-wording, missing-procedure-coverage
+- **Prerequisite**: Planning strategy phase must be complete
+
 ## Feature Status
 
 - ISA 320 Materiality: Complete
@@ -201,6 +210,7 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - Data Intake: Complete (TB, GL, AR, AP, Bank import with reconciliation)
 - Risk Assessment: Complete (8-tab focused view, status overview, AI support, 7 gates)
 - Planning Strategy: Complete (7-tab focused view, status overview, prerequisite enforcement, AI support, 4 gates)
+- Procedures & Sampling: Complete (4-tab focused view, risk-procedure matrix, audit program designer, ISA 530 sampling, assertion coverage, 6 gates)
 - Execution Module: Working paper system with FS head mapping
 - Review Notes: Complete with notifications
 - Document Management: Complete with S3/local storage

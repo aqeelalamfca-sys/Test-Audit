@@ -962,6 +962,136 @@ router.get("/:engagementId/strategy-stats", requireAuth, async (req: Authenticat
   }
 });
 
+router.get("/:engagementId/procedures-stats", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const engagementId = req.params.engagementId;
+    const [
+      allProcedures,
+      risks,
+      samplingFrameCount,
+      materialityCalc,
+    ] = await Promise.all([
+      prisma.engagementProcedure.findMany({
+        where: { engagementId },
+        select: {
+          id: true,
+          title: true,
+          category: true,
+          procedureType: true,
+          status: true,
+          assertions: true,
+          linkedRiskIds: true,
+          linkedAccountIds: true,
+          sampleSize: true,
+          samplingMethod: true,
+          populationSize: true,
+          reviewedById: true,
+          performedById: true,
+          workpaperRef: true,
+        },
+      }),
+      prisma.riskAssessment.findMany({
+        where: { engagementId },
+        select: {
+          id: true,
+          fsArea: true,
+          riskOfMaterialMisstatement: true,
+          isSignificantRisk: true,
+          isFraudRisk: true,
+          assertion: true,
+          assertionImpacts: true,
+        },
+      }),
+      prisma.samplingFrame.count({ where: { engagementId } }),
+      prisma.materialityCalculation.findFirst({
+        where: { engagementId },
+        select: { overallMateriality: true, performanceMateriality: true },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+    const totalProcedures = allProcedures.length;
+    const linkedToRisks = allProcedures.filter(p => p.linkedRiskIds.length > 0).length;
+    const withAssertions = allProcedures.filter(p => p.assertions.length > 0).length;
+    const withSampling = allProcedures.filter(p => p.sampleSize && p.sampleSize > 0).length;
+    const withPopulation = allProcedures.filter(p => p.populationSize && p.populationSize > 0 && p.samplingMethod).length;
+    const reviewed = allProcedures.filter(p => p.reviewedById).length;
+    const completed = allProcedures.filter(p => p.status === "COMPLETED").length;
+    const inProgress = allProcedures.filter(p => p.status === "IN_PROGRESS").length;
+
+    const highRisks = risks.filter(r =>
+      r.riskOfMaterialMisstatement === "HIGH" ||
+      r.riskOfMaterialMisstatement === "SIGNIFICANT" ||
+      r.isSignificantRisk
+    );
+    const highRiskIds = new Set(highRisks.map(r => r.id));
+    const coveredHighRiskIds = new Set<string>();
+    for (const proc of allProcedures) {
+      for (const riskId of proc.linkedRiskIds) {
+        if (highRiskIds.has(riskId)) coveredHighRiskIds.add(riskId);
+      }
+    }
+
+    const byCategory: Record<string, number> = {};
+    const byType: Record<string, number> = {};
+    const byStatus: Record<string, number> = {};
+    for (const p of allProcedures) {
+      byCategory[p.category] = (byCategory[p.category] || 0) + 1;
+      byType[p.procedureType] = (byType[p.procedureType] || 0) + 1;
+      byStatus[p.status] = (byStatus[p.status] || 0) + 1;
+    }
+
+    const assertionCoverage: Record<string, number> = {};
+    for (const p of allProcedures) {
+      for (const a of p.assertions) {
+        assertionCoverage[a] = (assertionCoverage[a] || 0) + 1;
+      }
+    }
+
+    const fsAreaCoverage: Record<string, { procedures: number; risks: number; highRisks: number; covered: boolean }> = {};
+    for (const risk of risks) {
+      const area = risk.fsArea || "UNCLASSIFIED";
+      if (!fsAreaCoverage[area]) fsAreaCoverage[area] = { procedures: 0, risks: 0, highRisks: 0, covered: false };
+      fsAreaCoverage[area].risks++;
+      if (highRiskIds.has(risk.id)) fsAreaCoverage[area].highRisks++;
+    }
+    for (const proc of allProcedures) {
+      for (const riskId of proc.linkedRiskIds) {
+        const risk = risks.find(r => r.id === riskId);
+        if (risk?.fsArea && fsAreaCoverage[risk.fsArea]) {
+          fsAreaCoverage[risk.fsArea].procedures++;
+          fsAreaCoverage[risk.fsArea].covered = true;
+        }
+      }
+    }
+
+    res.json({
+      totalProcedures,
+      linkedToRisks,
+      withAssertions,
+      withSampling,
+      withPopulation,
+      reviewed,
+      completed,
+      inProgress,
+      notStarted: totalProcedures - completed - inProgress,
+      totalRisks: risks.length,
+      highRiskCount: highRisks.length,
+      highRiskCovered: coveredHighRiskIds.size,
+      samplingFrameCount,
+      overallMateriality: materialityCalc?.overallMateriality ? Number(materialityCalc.overallMateriality) : null,
+      performanceMateriality: materialityCalc?.performanceMateriality ? Number(materialityCalc.performanceMateriality) : null,
+      byCategory,
+      byType,
+      byStatus,
+      assertionCoverage,
+      fsAreaCoverage,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: "Failed to fetch procedures stats", details: error.message });
+  }
+});
+
 router.get("/:engagementId/risks/fs-level", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const risks = await prisma.riskAssessment.findMany({

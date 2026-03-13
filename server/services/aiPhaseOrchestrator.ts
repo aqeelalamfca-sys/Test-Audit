@@ -286,6 +286,16 @@ const AI_CAPABILITY_REGISTRY: Record<string, PhaseAICapability[]> = {
       isaReference: "ISA 530",
     },
   ],
+  "missing-procedure-coverage": [
+    {
+      id: "missing-procedure-coverage",
+      label: "Missing Procedure Coverage Alerts",
+      description: "Identify FS areas, assertions, or risks that lack linked procedures and suggest coverage improvements",
+      promptType: "audit_program_text",
+      requiresContext: ["risks", "assertions", "fs_heads", "procedures", "sampling_plans"],
+      isaReference: "ISA 330",
+    },
+  ],
   "execution-documentation-narration": [
     {
       id: "execution-documentation-narration",
@@ -402,8 +412,11 @@ Ensure the strategy responds to assessed risks from the risk assessment phase.
 Flag any risk areas without planned responses or insufficient coverage.`,
 
   "procedures-sampling": `You are assisting with audit procedure design and sampling per ISA 330/530.
-Focus on linking procedures to assessed risks and determining sample sizes.
-Consider the appropriateness of testing approaches for each assertion.`,
+Design procedures linked to specific risks, FS heads, and assertions. For each FS area, ensure coverage of relevant assertions (existence, completeness, accuracy, valuation, rights, presentation).
+Distinguish between control testing (tests of controls per ISA 330.8) and substantive testing (tests of details and analytical procedures per ISA 330.18).
+For sampling: define populations clearly, select appropriate methods (statistical/non-statistical), determine sample sizes based on risk level and materiality, document selection basis and rationale.
+Flag any high-risk areas without procedures, assertions without coverage, and sampling-dependent procedures without defined populations.
+Consider the procedure library for standard templates and allow custom procedures for entity-specific needs.`,
 
   "execution-testing": `You are assisting with audit execution documentation per ISA 230.
 Focus on clear documentation of procedures performed, results obtained, and conclusions drawn.

@@ -538,14 +538,106 @@ async function evaluateSingleGate(
         const procCount = await prisma.engagementProcedure.count({
           where: { engagementId },
         });
-        passed = procCount > 0;
-        if (passed) message = `${procCount} procedures linked`;
+        const linkedCount = await prisma.engagementProcedure.count({
+          where: { engagementId, linkedRiskIds: { isEmpty: false } },
+        });
+        passed = procCount > 0 && linkedCount > 0;
+        if (passed) message = `${linkedCount}/${procCount} procedures linked to risks`;
+        else message = procCount === 0 ? "No procedures defined" : "No procedures linked to risks";
         break;
       }
 
-      case "sampling-defined": {
-        passed = isBackendPhaseActive(statusMap, "EXECUTION");
-        if (passed) message = "Execution phase active";
+      case "high-risk-procedures-exist": {
+        const highRisks = await prisma.riskAssessment.findMany({
+          where: {
+            engagementId,
+            OR: [
+              { riskOfMaterialMisstatement: "HIGH" },
+              { riskOfMaterialMisstatement: "SIGNIFICANT" },
+              { isSignificantRisk: true },
+            ],
+          },
+          select: { id: true, fsArea: true },
+        });
+        if (highRisks.length === 0) {
+          passed = true;
+          message = "No high-risk areas identified";
+        } else {
+          const highRiskIds = highRisks.map(r => r.id);
+          const procsForHighRisk = await prisma.engagementProcedure.findMany({
+            where: { engagementId },
+            select: { linkedRiskIds: true },
+          });
+          const coveredRiskIds = new Set<string>();
+          for (const proc of procsForHighRisk) {
+            for (const riskId of proc.linkedRiskIds) {
+              if (highRiskIds.includes(riskId)) coveredRiskIds.add(riskId);
+            }
+          }
+          passed = coveredRiskIds.size >= highRisks.length;
+          if (passed) message = `All ${highRisks.length} high-risk areas have procedures`;
+          else message = `${coveredRiskIds.size}/${highRisks.length} high-risk areas covered — ${highRisks.length - coveredRiskIds.size} still need procedures`;
+        }
+        break;
+      }
+
+      case "assertions-covered": {
+        const procsWithAssertions = await prisma.engagementProcedure.count({
+          where: { engagementId, assertions: { isEmpty: false } },
+        });
+        const totalProcs = await prisma.engagementProcedure.count({
+          where: { engagementId },
+        });
+        passed = totalProcs > 0 && procsWithAssertions >= totalProcs * 0.8;
+        if (passed) message = `${procsWithAssertions}/${totalProcs} procedures have assertion coverage`;
+        else message = totalProcs === 0 ? "No procedures defined" : `${procsWithAssertions}/${totalProcs} procedures have assertions (80% required)`;
+        break;
+      }
+
+      case "sampling-populations-defined": {
+        const samplingProcs = await prisma.engagementProcedure.findMany({
+          where: {
+            engagementId,
+            sampleSize: { not: null, gt: 0 },
+          },
+          select: { id: true, populationSize: true, samplingMethod: true },
+        });
+        if (samplingProcs.length === 0) {
+          passed = true;
+          message = "No sampling-dependent procedures";
+        } else {
+          const withPopulation = samplingProcs.filter(p => p.populationSize && p.populationSize > 0 && p.samplingMethod).length;
+          passed = withPopulation >= samplingProcs.length;
+          if (passed) message = `All ${samplingProcs.length} sampling procedures have population and method defined`;
+          else message = `${withPopulation}/${samplingProcs.length} sampling procedures have population defined`;
+        }
+        break;
+      }
+
+      case "sampling-defined":
+      case "sampling-rationale-documented": {
+        const samplingFrames = await prisma.samplingFrame.count({
+          where: { engagementId },
+        });
+        const procsWithSampling = await prisma.engagementProcedure.count({
+          where: { engagementId, sampleSize: { not: null, gt: 0 } },
+        });
+        passed = samplingFrames > 0 || procsWithSampling > 0;
+        if (passed) message = `${samplingFrames} sampling frames, ${procsWithSampling} procedures with sample sizes`;
+        else message = "No sampling parameters defined";
+        break;
+      }
+
+      case "reviewer-status-clear": {
+        const totalProcsForReview = await prisma.engagementProcedure.count({
+          where: { engagementId },
+        });
+        const reviewedProcs = await prisma.engagementProcedure.count({
+          where: { engagementId, reviewedById: { not: null } },
+        });
+        passed = totalProcsForReview === 0 || reviewedProcs >= totalProcsForReview * 0.5;
+        if (passed) message = totalProcsForReview === 0 ? "No procedures to review" : `${reviewedProcs}/${totalProcsForReview} procedures reviewed`;
+        else message = `${reviewedProcs}/${totalProcsForReview} procedures reviewed (50% required)`;
         break;
       }
 
@@ -671,7 +763,7 @@ export async function evaluatePhaseGates(
       prerequisitesMet = false;
       continue;
     }
-    const prereqPhase = PHASES.find(p => p.key === prereq.key);
+    const prereqPhase = CANONICAL_PHASES.find(p => p.key === prereq.key);
     if (prereqPhase) {
       const prereqGates = await evaluateGatesForPhase(engagementId, prereqPhase, statusMap);
       const prereqHardGatesFailed = prereqGates.filter(g => g.type === "hard" && !g.passed);
