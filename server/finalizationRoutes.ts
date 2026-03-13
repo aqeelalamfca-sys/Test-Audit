@@ -12,13 +12,12 @@ export interface PreReportIssue {
   message: string;
 }
 
-export async function computePreReportBlockers(engagementId: string): Promise<{ readyForRelease: boolean; issues: PreReportIssue[] }> {
-  const [openNotes, unapprovedTests, incompleteMemo, eqcr, report] = await Promise.all([
+export async function computePreDraftBlockers(engagementId: string): Promise<{ readyForDraft: boolean; issues: PreReportIssue[] }> {
+  const [openNotes, unapprovedTests, incompleteMemo, eqcr] = await Promise.all([
     prisma.reviewNote.count({ where: { engagementId, status: "OPEN" } }),
     prisma.substantiveTest.count({ where: { engagementId, managerApprovedById: null } }),
     prisma.completionMemo.findUnique({ where: { engagementId } }),
     prisma.eQCRAssignment.findUnique({ where: { engagementId } }),
-    prisma.auditReport.findUnique({ where: { engagementId } }),
   ]);
 
   const issues: PreReportIssue[] = [];
@@ -26,6 +25,17 @@ export async function computePreReportBlockers(engagementId: string): Promise<{ 
   if (unapprovedTests > 0) issues.push({ type: "UNAPPROVED_TESTS", count: unapprovedTests, message: `${unapprovedTests} unapproved substantive tests` });
   if (!incompleteMemo?.partnerApprovedById) issues.push({ type: "COMPLETION_MEMO", message: "Completion memo not approved" });
   if (eqcr?.isRequired && eqcr.status !== "CLEARED") issues.push({ type: "EQCR", message: "EQCR clearance required" });
+
+  return { readyForDraft: issues.length === 0, issues };
+}
+
+export async function computePreReportBlockers(engagementId: string): Promise<{ readyForRelease: boolean; issues: PreReportIssue[] }> {
+  const [draftCheck, report] = await Promise.all([
+    computePreDraftBlockers(engagementId),
+    prisma.auditReport.findUnique({ where: { engagementId } }),
+  ]);
+
+  const issues = [...draftCheck.issues];
   if (!report?.partnerApprovedById) issues.push({ type: "REPORT", message: "Audit report not approved" });
 
   return { readyForRelease: issues.length === 0, issues };
@@ -136,9 +146,9 @@ router.post("/:engagementId/report", requireAuth, requirePhaseUnlocked("REPORTIN
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
-    const preCheck = await computePreReportBlockers(req.params.engagementId);
-    if (!preCheck.readyForRelease) {
-      return res.status(400).json({ error: "Pre-report blockers must be resolved", blockers: preCheck.issues });
+    const draftCheck = await computePreDraftBlockers(req.params.engagementId);
+    if (!draftCheck.readyForDraft) {
+      return res.status(400).json({ error: "Completion-phase blockers must be resolved before report drafting", blockers: draftCheck.issues });
     }
 
     const report = await prisma.auditReport.upsert({
