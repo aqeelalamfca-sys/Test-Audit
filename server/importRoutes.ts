@@ -41,8 +41,7 @@ async function autoClassifyAndSync(engagementId: string, userId?: string, firmId
 
       const updates: Array<{ id: string; accountClass: string; accountSubclass: string; fsHeadKey: string; source: string; confidence: number }> = [];
       for (const record of records) {
-        const rec = record as any;
-        if (rec.classificationSource === 'MANUAL') continue;
+        if ((record as Record<string, unknown>).classificationSource === 'MANUAL') continue;
 
         const classification = classifyAccount(record.accountCode, record.accountName || '')
           || getDefaultClassificationForCode(record.accountCode);
@@ -2302,8 +2301,7 @@ router.post("/:engagementId/data/tb/auto-classify", async (req: Request, res: Re
 
     const updates: Array<{ id: string; accountClass: string; accountSubclass: string; fsHeadKey: string; source: string; confidence: number }> = [];
     for (const record of records) {
-      const rec = record as any;
-      if (!overwriteManual && rec.classificationSource === 'MANUAL') {
+      if (!overwriteManual && (record as Record<string, unknown>).classificationSource === 'MANUAL') {
         skippedCount++;
         continue;
       }

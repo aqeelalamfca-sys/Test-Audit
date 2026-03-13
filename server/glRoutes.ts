@@ -357,7 +357,7 @@ router.post("/upload/:engagementId", requireAuth, upload.single("file"), async (
   }
 });
 
-router.get("/batches/:engagementId", async (req: Request, res: Response) => {
+router.get("/batches/:engagementId", requireAuth, async (req: Request, res: Response) => {
   try {
     const { engagementId } = req.params;
     const { includeSuperseded } = req.query;
@@ -373,7 +373,7 @@ router.get("/batches/:engagementId", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/batch/:batchId", async (req: Request, res: Response) => {
+router.get("/batch/:batchId", requireAuth, async (req: Request, res: Response) => {
   try {
     const { batchId } = req.params;
     const ctx = getContext(req);
@@ -390,7 +390,7 @@ router.get("/batch/:batchId", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/batch/:batchId/errors", async (req: Request, res: Response) => {
+router.get("/batch/:batchId/errors", requireAuth, async (req: Request, res: Response) => {
   try {
     const { batchId } = req.params;
     const errors = await glService.getValidationErrors(batchId);
@@ -530,7 +530,7 @@ router.post("/batch/:batchId/change-request", requireAuth, requireRole("MANAGER"
   }
 });
 
-router.post("/batch/:batchId/detect-duplicates", async (req: Request, res: Response) => {
+router.post("/batch/:batchId/detect-duplicates", requireAuth, async (req: Request, res: Response) => {
   try {
     const { batchId } = req.params;
     const ctx = getContext(req);
@@ -543,7 +543,7 @@ router.post("/batch/:batchId/detect-duplicates", async (req: Request, res: Respo
   }
 });
 
-router.post("/entry/:entryId/override-duplicate", async (req: Request, res: Response) => {
+router.post("/entry/:entryId/override-duplicate", requireAuth, async (req: Request, res: Response) => {
   try {
     const { entryId } = req.params;
     const { reason } = req.body;
@@ -565,7 +565,7 @@ router.post("/entry/:entryId/override-duplicate", async (req: Request, res: Resp
   }
 });
 
-router.post("/batch/:batchId/generate-clusters", async (req: Request, res: Response) => {
+router.post("/batch/:batchId/generate-clusters", requireAuth, async (req: Request, res: Response) => {
   try {
     const { batchId } = req.params;
     const ctx = getContext(req);
@@ -578,7 +578,7 @@ router.post("/batch/:batchId/generate-clusters", async (req: Request, res: Respo
   }
 });
 
-router.get("/batch/:batchId/clusters", async (req: Request, res: Response) => {
+router.get("/batch/:batchId/clusters", requireAuth, async (req: Request, res: Response) => {
   try {
     const { batchId } = req.params;
     const clusters = await glService.getClusterPreview(batchId);
@@ -588,7 +588,7 @@ router.get("/batch/:batchId/clusters", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/cluster/:clusterId/review", async (req: Request, res: Response) => {
+router.post("/cluster/:clusterId/review", requireAuth, async (req: Request, res: Response) => {
   try {
     const { clusterId } = req.params;
     const { action, notes } = req.body;
@@ -610,7 +610,7 @@ router.post("/cluster/:clusterId/review", async (req: Request, res: Response) =>
   }
 });
 
-router.post("/error/:errorId/resolve", async (req: Request, res: Response) => {
+router.post("/error/:errorId/resolve", requireAuth, async (req: Request, res: Response) => {
   try {
     const { errorId } = req.params;
     const { notes } = req.body;
@@ -632,7 +632,7 @@ router.post("/error/:errorId/resolve", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/batch/:batchId/audit-log", async (req: Request, res: Response) => {
+router.get("/batch/:batchId/audit-log", requireAuth, async (req: Request, res: Response) => {
   try {
     const { batchId } = req.params;
     const logs = await glService.getAuditLog(batchId);
