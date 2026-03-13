@@ -136,6 +136,11 @@ router.post("/:engagementId/report", requireAuth, requirePhaseUnlocked("REPORTIN
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
+    const blockers = await computePreReportBlockers(req.params.engagementId);
+    if (blockers.length > 0) {
+      return res.status(400).json({ error: "Pre-report blockers must be resolved", blockers });
+    }
+
     const report = await prisma.auditReport.upsert({
       where: { engagementId: req.params.engagementId },
       update: { ...req.body },
@@ -154,9 +159,9 @@ router.post("/:engagementId/report/partner-approve", requireAuth, requireMinRole
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
-    const eqcr = await prisma.eQCRAssignment.findUnique({ where: { engagementId: req.params.engagementId } });
-    if (eqcr?.isRequired && eqcr.status !== "CLEARED") {
-      return res.status(400).json({ error: "EQCR clearance required before report approval" });
+    const blockers = await computePreReportBlockers(req.params.engagementId);
+    if (blockers.length > 0) {
+      return res.status(400).json({ error: "Pre-report blockers must be resolved before approval", blockers });
     }
 
     const report = await prisma.auditReport.update({
@@ -175,6 +180,11 @@ router.post("/:engagementId/report/sign", requireAuth, requireMinRole("PARTNER")
   try {
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
+
+    const blockers = await computePreReportBlockers(req.params.engagementId);
+    if (blockers.length > 0) {
+      return res.status(400).json({ error: "Pre-report blockers must be resolved before signing", blockers });
+    }
 
     const existing = await prisma.auditReport.findUnique({ where: { engagementId: req.params.engagementId } });
     if (!existing?.partnerApprovedById) {
