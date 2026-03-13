@@ -1,0 +1,336 @@
+[1G[0K⠙[1G[0K[Cache] Using in-memory cache backend
+[DB] Checking database readiness (max 90s)...
+7:50:35 AM INFO  [express] serving on 0.0.0.0:5000
+[DB] Database ready after 1 attempt(s).
+Seeding permissions...
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+Created/updated 61 permissions
+Role permissions assigned
+7:50:40 AM INFO  [startup] Permissions seeded successfully
+[Seed] SuperAdmin password does not meet policy: Password must be at least 10 characters, Password must contain at least one lowercase letter, Password must contain at least one uppercase letter, Password must contain at least one number, Password must contain at least one special character (@$!%*?&#^)
+[Seed] SuperAdmin will NOT be created. Fix the password and restart.
+7:50:40 AM INFO  [startup] SuperAdmin seeded successfully
+[Seed] Plans seeding complete
+7:50:40 AM INFO  [startup] Plans seeded successfully
+Test users seeded successfully
+Demo data validation passed:
+  - COA: 96 accounts
+  - GL Entries: 775 transactions
+  - TB Rows: 96
+  - AR Parties: 18
+  - AP Parties: 18
+  - Bank Accounts: 4
+  - Opening Balance: DR=626,750,000 CR=626,750,000
+  - TB Closing: DR=1,682,495,000 CR=1,682,495,000
+Seeding demo data...
+Demo data already exists, checking second client...
+Checking second client (Al-Baraka Textiles)...
+  Second client engagement already exists, skipping...
+  Al-Baraka TB data already exists, skipping TB/GL/CoA seeding...
+  [ENG-2026-003] FSHead/WP data already exists, skipping...
+Checking all-phase data completeness...
+  All-phase data already seeded, skipping...
+Linkage data already exists, skipping...
+  [ENG-2025-001] Import data already exists, skipping...
+  [ENG-2025-002] Import data already exists, skipping...
+  [ENG-2026-003] Import data already exists, skipping...
+7:50:41 AM INFO  [express] HTTP request {"method":"GET","path":"/api/auth/ping","statusCode":304,"durationMs":21}
+[seedCompleteAudit] Data completeness verified for ENG-2026-003.
+7:50:41 AM INFO  [startup] Demo data seeded successfully
+Templates seeded: 0 created, 68 already existed (68 total)
+7:50:41 AM INFO  [startup] Standard templates seeded successfully
+7:50:41 AM INFO  [express] HTTP request {"method":"GET","path":"/api/auth/me","statusCode":200,"durationMs":20}
+7:50:42 AM INFO  [express] HTTP request {"method":"GET","path":"/api/review-notes-v2/stats/summary","statusCode":304,"durationMs":56}
+7:50:42 AM INFO  [express] HTTP request {"method":"GET","path":"/api/enforcement/ai-config","statusCode":304,"durationMs":50}
+7:50:42 AM INFO  [express] HTTP request {"method":"GET","path":"/api/auth/ping","statusCode":200,"durationMs":22}
+7:50:42 AM INFO  [express] HTTP request {"method":"GET","path":"/api/tenant/subscription","statusCode":304,"durationMs":41}
+7:50:42 AM INFO  [express] HTTP request {"method":"GET","path":"/api/hard-controls/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80","statusCode":304,"durationMs":57}
+7:50:42 AM INFO  [express] HTTP request {"method":"GET","path":"/api/workspace/engagements","statusCode":200,"durationMs":33}
+7:50:42 AM INFO  [express] HTTP request {"method":"GET","path":"/api/clients/authorized","statusCode":304,"durationMs":16}
+7:50:42 AM INFO  [express] HTTP request {"method":"PATCH","path":"/api/engagements/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/progress","statusCode":200,"durationMs":354}
+7:50:44 AM INFO  [rls] RLS enabled {"enabled":97,"skipped":30}
+7:50:44 AM INFO  [express] HTTP request {"method":"GET","path":"/api/engagements/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/fs-heads-summary","statusCode":304,"durationMs":25}
+7:50:44 AM INFO  [express] HTTP request {"method":"POST","path":"/api/ai/copilot/analysis","statusCode":403,"durationMs":56}
+7:50:47 AM INFO  [express] HTTP request {"method":"POST","path":"/api/ai/copilot/analysis","statusCode":403,"durationMs":37}
+7:50:49 AM INFO  [express] HTTP request {"method":"POST","path":"/api/ai/copilot/analysis","statusCode":403,"durationMs":34}
+7:50:50 AM INFO  [express] HTTP request {"method":"GET","path":"/api/auth/ping","statusCode":200,"durationMs":10}
+7:50:50 AM INFO  [express] HTTP request {"method":"PATCH","path":"/api/engagements/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/progress","statusCode":200,"durationMs":70}
+7:50:50 AM INFO  [express] HTTP request {"method":"GET","path":"/api/workspace/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/evidence","statusCode":304,"durationMs":27}
+7:50:50 AM INFO  [express] HTTP request {"method":"GET","path":"/api/evidence/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/all-attachments","statusCode":304,"durationMs":36}
+7:50:50 AM INFO  [express] HTTP request {"method":"GET","path":"/api/evidence/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/cross-phase-links","statusCode":304,"durationMs":26}
+7:50:51 AM INFO  [express] HTTP request {"method":"GET","path":"/api/section-signoffs/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/evidence/evidence","statusCode":304,"durationMs":14}
+7:51:13 AM INFO  [express] HTTP request {"method":"GET","path":"/api/enforcement/status/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80","statusCode":304,"durationMs":31}
+7:51:17 AM INFO  [express] HTTP request {"method":"GET","path":"/api/auth/ping","statusCode":200,"durationMs":11}
+7:51:17 AM INFO  [express] HTTP request {"method":"GET","path":"/api/workspace/engagements/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/access","statusCode":200,"durationMs":19}
+7:51:17 AM INFO  [express] HTTP request {"method":"PATCH","path":"/api/engagements/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/progress","statusCode":200,"durationMs":94}
+7:51:17 AM INFO  [express] HTTP request {"method":"GET","path":"/api/compliance/checklists/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80","statusCode":304,"durationMs":20}
+7:51:27 AM INFO  [express] HTTP request {"method":"GET","path":"/api/auth/ping","statusCode":200,"durationMs":12}
+7:51:27 AM INFO  [express] HTTP request {"method":"PATCH","path":"/api/engagements/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/progress","statusCode":200,"durationMs":38}
+7:51:28 AM INFO  [express] HTTP request {"method":"GET","path":"/api/section-signoffs/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/FINALIZATION/FINALIZATION","statusCode":304,"durationMs":44}
+7:51:28 AM INFO  [express] HTTP request {"method":"GET","path":"/api/engagements/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/coa","statusCode":304,"durationMs":32}
+7:51:28 AM INFO  [express] HTTP request {"method":"GET","path":"/api/finalization/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/pre-report-check","statusCode":304,"durationMs":44}
+7:51:28 AM INFO  [express] HTTP request {"method":"GET","path":"/api/workspace/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/finalization","statusCode":304,"durationMs":27}
+7:51:28 AM INFO  [express] HTTP request {"method":"GET","path":"/api/fs-draft/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80","statusCode":200,"durationMs":70}
+7:51:42 AM INFO  [express] HTTP request {"method":"GET","path":"/api/notifications","statusCode":304,"durationMs":13}
+7:51:42 AM INFO  [express] HTTP request {"method":"GET","path":"/api/review-notes-v2/stats/summary","statusCode":304,"durationMs":16}
+7:51:46 AM INFO  [express] HTTP request {"method":"GET","path":"/api/enforcement/status/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80","statusCode":304,"durationMs":26}
+7:51:49 AM INFO  [express] HTTP request {"method":"GET","path":"/api/auth/ping","statusCode":200,"durationMs":10}
+7:51:49 AM INFO  [express] HTTP request {"method":"GET","path":"/api/workspace/engagements/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/access","statusCode":304,"durationMs":17}
+7:51:49 AM INFO  [express] HTTP request {"method":"PATCH","path":"/api/engagements/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/progress","statusCode":200,"durationMs":33}
+7:51:50 AM INFO  [express] HTTP request {"method":"GET","path":"/api/section-signoffs/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/deliverables/deliverables","statusCode":200,"durationMs":32}
+7:51:50 AM INFO  [express] HTTP request {"method":"GET","path":"/api/auth/me","statusCode":304,"durationMs":30}
+7:51:50 AM INFO  [express] HTTP request {"method":"GET","path":"/api/engagements/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80","statusCode":200,"durationMs":50}
+7:51:50 AM INFO  [express] HTTP request {"method":"GET","path":"/api/deliverables/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80","statusCode":200,"durationMs":35}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m7:52:04 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+7:52:12 AM INFO  [express] HTTP request {"method":"GET","path":"/api/notifications","statusCode":304,"durationMs":16}
+7:52:12 AM INFO  [express] HTTP request {"method":"GET","path":"/api/auth/ping","statusCode":304,"durationMs":10}
+7:52:12 AM INFO  [express] HTTP request {"method":"PATCH","path":"/api/engagements/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/progress","statusCode":200,"durationMs":48}
+7:52:13 AM INFO  [express] HTTP request {"method":"GET","path":"/api/eqcr/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/assignment","statusCode":200,"durationMs":23}
+7:52:13 AM INFO  [express] HTTP request {"method":"GET","path":"/api/section-signoffs/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/eqcr/eqcr","statusCode":200,"durationMs":13}
+7:52:37 AM INFO  [express] HTTP request {"method":"GET","path":"/api/enforcement/status/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80","statusCode":304,"durationMs":34}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m7:52:38 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m [33m(x2)[39m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m7:52:39 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m [33m(x3)[39m
+7:52:40 AM INFO  [express] HTTP request {"method":"GET","path":"/api/auth/ping","statusCode":304,"durationMs":12}
+7:52:40 AM INFO  [express] HTTP request {"method":"GET","path":"/api/workspace/engagements/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/access","statusCode":200,"durationMs":23}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m7:52:40 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m [33m(x4)[39m
+7:52:40 AM INFO  [express] HTTP request {"method":"PATCH","path":"/api/engagements/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/progress","statusCode":200,"durationMs":244}
+7:52:40 AM INFO  [express] HTTP request {"method":"GET","path":"/api/workspace/f7724edb-1b3a-4002-b3b7-d3ff3df0dd80/inspection","statusCode":200,"durationMs":19}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m7:52:41 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/finalization.tsx, /src/index.css[22m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m7:52:41 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/evidence-vault.tsx, /src/index.css[22m
+7:52:42 AM INFO  [express] HTTP request {"method":"GET","path":"/api/review-notes-v2/stats/summary","statusCode":304,"durationMs":39}
+7:52:42 AM INFO  [express] HTTP request {"method":"GET","path":"/api/notifications","statusCode":304,"durationMs":178}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m7:53:02 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/eqcr.tsx, /src/index.css[22m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m7:53:03 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/fs-heads.tsx, /src/index.css[22m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m7:53:03 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/print-view.tsx, /src/index.css[22m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m7:53:04 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
