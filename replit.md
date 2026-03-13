@@ -223,7 +223,7 @@ The Planning module (`/planning/:engagementId`) is restructured into 16 ISA-link
 - **B**: Financial Statements — FS review and analysis
 - **C**: Entity Controls — entity understanding sections
 - **D**: Analytical Procedures (ISA 520) — full analytics dashboard with horizontal/vertical/ratio/reasonableness analysis, fluctuation flags, risk linkage, editable narration, export. Backend: `server/planningAnalyticsRoutes.ts`, Frontend: `client/src/components/planning/analytical-procedures-panel.tsx`, Types: `shared/models/planningAnalyticsTypes.ts`. Auto-loads saved analytics on page load, shows read-only when planning locked. CR accounts sign-normalized.
-- **E**: Materiality — ISA 320 materiality calculations
+- **E**: Materiality — ISA 320 guided 10-step materiality workflow. Backend: `server/isa320MaterialityRoutes.ts` (mounted at `/api/isa320-materiality`), Frontend: `client/src/components/planning/isa320-materiality-panel.tsx`. Features: auto-pull source data from TB/GL/FS, smart benchmark recommendation engine, qualitative factor assessment, specific materiality, partner override with audit trail + revert, strict status transitions (DRAFT→PENDING_REVIEW→PENDING_APPROVAL→APPROVED→LOCKED), ISA 320 memo generation/print, push-downstream to risk/sampling, stale-status detection. Firm-ownership verified on all endpoints. `MaterialitySet` model extended with JSON fields: sourceDataSnapshot, qualitativeFactors, riskAdjustments, overrideHistory, documentationMemo, pmPercentage, trivialPercentage, benchmarkJustification, stepProgress, isStale/staleReason
 - **F**: Significant Accounts — auto-identified from TB/FS data
 - **G**: Risk Assessment — ISA 315 risk identification
 - **H**: Fraud Risk — ISA 240 fraud risk assessment with brainstorming
