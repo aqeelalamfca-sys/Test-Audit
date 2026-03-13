@@ -368,6 +368,16 @@ The Execution module's FS Heads wizard has been upgraded into a fully linked, IS
 - **TBEntry** has `movementDebit`, `movementCredit`, `closingDebit`, `closingCredit` — not simple `debit`/`credit`.
 - `fsAreaToCategory()` helper maps FSArea enum values to high-level categories (ASSETS, LIABILITIES, EQUITY, INCOME, EXPENSES) for planning dashboard analytics.
 
+## Template Vault (Task 7)
+
+- **Backend**: `server/templateVaultRoutes.ts` — mounted at `/api/template-vault`
+  - `GET /catalog` — returns 76 classified templates with search/filter support
+  - `GET /download/:templateId` — streams files with path traversal protection
+  - `GET /stats` — category/phase/fileType breakdown
+- **Template files**: `server/template-vault/working-papers/` (57 files) and `server/template-vault/isqm/` (19 files)
+- **Categories**: WORKING_PAPER (BS.01-BS.28, PL.01-PL.08, AE.01-AE.04), PLANNING (PR.00-PR.06), REPORTING (RP.07-RP.FS), CONFIRMATION (CF.BK-CF.AR), ISQM, ISQM_REFERENCE, OTHER
+- **Frontend**: Template Library tab in `evidence-vault.tsx` — grouped by sub-category, searchable, filterable, one-click download
+
 ## Post-Merge Setup
 
 Script: `scripts/post-merge.sh` (configured in `.replit` [postMerge] section, timeout 300s)

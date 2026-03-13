@@ -1,7 +1,7 @@
 import { Router, Response } from "express";
 import { prisma } from "./db";
 import { requireAuth, requireMinRole, logAuditTrail, type AuthenticatedRequest } from "./auth";
-import { computePreDraftBlockers, computePreReportBlockers } from "./finalizationRoutes";
+import { computePreDraftBlockers, computePreReportBlockers } from "./services/preReportBlockerService";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
