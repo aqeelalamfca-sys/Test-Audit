@@ -38,6 +38,7 @@ function retryImport<T>(importFn: () => Promise<T>, retries = 3): Promise<T> {
 // Lazy-loaded pages for code splitting (performance optimization)
 const Planning = lazy(() => retryImport(() => import("@/pages/planning")));
 const PrePlanning = lazy(() => retryImport(() => import("@/pages/pre-planning")));
+const AcceptanceContinuance = lazy(() => retryImport(() => import("@/pages/acceptance-continuance")));
 const FirmWideControlsLazy = lazy(() => retryImport(() => import("@/pages/firm-wide-controls")));
 const InformationRequisition = lazy(() => retryImport(() => import("@/pages/information-requisition")));
 const FSHeadsPage = lazy(() => retryImport(() => import("@/pages/fs-heads")));
@@ -295,7 +296,7 @@ function WorkspaceResumeRedirect(props: { params?: { engagementId?: string } }) 
 }
 
 // Shelled workspace components — each wraps inside EngagementWorkspaceShell
-const ShelledAcceptance = createShelledComponent(PrePlanning, "Acceptance", "acceptance");
+const ShelledAcceptance = createShelledComponent(AcceptanceContinuance, "Acceptance", "acceptance");
 const ShelledIndependence = createShelledComponent(EthicsIndependence, "Independence", "independence");
 const ShelledTbGlUpload = createShelledComponent(InformationRequisition, "TbGlUpload", "tb-gl-upload");
 const ShelledValidation = createShelledComponent(PostUploadWorkflow, "Validation", "validation");

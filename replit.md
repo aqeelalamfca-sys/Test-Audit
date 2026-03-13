@@ -85,8 +85,8 @@ Optional:
 
 The canonical audit workflow uses 19 phases defined in `shared/phases.ts` (single source of truth). The phases are grouped into 6 categories:
 
-- **Onboarding** (0-1): client-creation, engagement-setup
-- **Data Import** (2-6): acceptance, independence, tb-gl-upload, validation, coa-mapping
+- **Onboarding** (0-3): client-creation, engagement-setup, acceptance, independence
+- **Data Import** (4-6): tb-gl-upload, validation, coa-mapping
 - **Planning** (7-9): materiality, risk-assessment, planning-strategy
 - **Fieldwork** (10-14): procedures-sampling, execution-testing, evidence-linking, observations, adjustments
 - **Completion** (15-16): finalization, opinion-reports
@@ -134,6 +134,23 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 ### Cleanup Report
 - Full cleanup report at `docs/CLEANUP_REPORT.md`
 
+### Acceptance & Continuance (Phase 2)
+- **Page**: `client/src/pages/acceptance-continuance.tsx` — dedicated standalone page with 8 tabs
+- **Tabs**: Prospective/Recurring, Acceptance Factors, Management Integrity, Competence & Resources, Preconditions, Engagement Letter Readiness, Continuance Assessment, Acceptance Conclusion
+- **Features**: Completeness tracker, auto-save, AI assistant panel, mandatory partner approval dialog with audit trail
+- **Backend**: `server/ethicsRoutes.ts` — acceptance-data GET/PUT, acceptance-approve PATCH endpoints
+- **Model**: `AcceptanceContinuanceDecision` (Prisma)
+- **Gates**: acceptance-checklist (hard), continuance-assessed (hard), engagement-letter-issued (hard), acceptance-approved (hard)
+
+### Independence / Ethics (Phase 3)
+- **Page**: `client/src/pages/ethics-independence.tsx` — dedicated standalone page with 8 tabs
+- **Tabs**: Independence Confirmations, Conflicts of Interest, Non-Audit Services, Safeguards, Ethics Compliance, Restricted Relationships, Partner/Staff Declarations, Ethics Conclusion
+- **Features**: Real-time declaration tracking from backend, threat/safeguard display, completeness tracker, AI assistant panel, partner approval & lock dialog with audit trail
+- **Backend**: `server/ethicsRoutes.ts` — existing declaration/threat/conflict endpoints + ethics-approve PATCH
+- **Models**: `IndependenceDeclaration`, `ThreatRegister`, `Safeguard`, `EthicsConfirmation`, `ConflictOfInterest` (Prisma)
+- **Gates**: independence-confirmed (hard), conflicts-resolved (hard), ethics-declarations (hard), ethics-approved (hard)
+- **Gate enforcement**: TB/GL Upload (phase 4) requires BOTH acceptance AND independence phases to be approved
+
 ## Feature Status
 
 - ISA 320 Materiality: Complete
@@ -145,3 +162,5 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - Review Notes: Complete with notifications
 - Document Management: Complete with S3/local storage
 - Multi-tenant: Firm-based isolation with RLS
+- Acceptance & Continuance: Complete (8-section form, partner approval, AI, audit trail)
+- Independence / Ethics: Complete (8-section form, declaration tracking, partner approval, AI, audit trail)

@@ -38,6 +38,72 @@ export interface AIGenerationResult {
 }
 
 const AI_CAPABILITY_REGISTRY: Record<string, PhaseAICapability[]> = {
+  "client-summary-draft": [
+    {
+      id: "client-summary-draft",
+      label: "Draft Client Summary",
+      description: "Generate a summary of the client profile based on entered data",
+      promptType: "client_summary",
+      requiresContext: ["client_profile"],
+    },
+  ],
+  "engagement-setup-summary": [
+    {
+      id: "engagement-setup-summary",
+      label: "Engagement Setup Summary",
+      description: "Summarize the engagement setup including team, scope, and timeline",
+      promptType: "engagement_summary",
+      requiresContext: ["engagement_profile", "team_members"],
+    },
+  ],
+  "missing-field-alerts": [
+    {
+      id: "missing-field-alerts",
+      label: "Missing Field Alerts",
+      description: "Identify incomplete or missing required fields in the current form and suggest values",
+      promptType: "missing_fields",
+      requiresContext: ["form_data", "required_fields"],
+    },
+  ],
+  "acceptance-summary-draft": [
+    {
+      id: "acceptance-summary-draft",
+      label: "Draft Acceptance Summary",
+      description: "Generate a summary narrative for the acceptance and continuance assessment",
+      promptType: "acceptance_summary",
+      requiresContext: ["client_profile", "engagement_type", "acceptance_factors"],
+      isaReference: "ISA 220",
+    },
+  ],
+  "conclusion-wording": [
+    {
+      id: "conclusion-wording",
+      label: "Conclusion Wording Assistant",
+      description: "Draft professional conclusion text based on assessment results and findings",
+      promptType: "conclusion_draft",
+      requiresContext: ["assessment_results", "findings"],
+    },
+  ],
+  "ethics-warning-alerts": [
+    {
+      id: "ethics-warning-alerts",
+      label: "Ethics Warning Alerts",
+      description: "Identify potential ethical conflicts and independence threats requiring attention",
+      promptType: "ethics_alerts",
+      requiresContext: ["client_profile", "team_members", "declarations"],
+      isaReference: "IESBA Code",
+    },
+  ],
+  "missing-declaration-summary": [
+    {
+      id: "missing-declaration-summary",
+      label: "Missing Declaration Summary",
+      description: "Summarize outstanding independence declarations and suggest follow-up actions",
+      promptType: "declaration_summary",
+      requiresContext: ["declarations", "team_members"],
+      isaReference: "IESBA Code",
+    },
+  ],
   "acceptance-checklist-drafting": [
     {
       id: "acceptance-checklist-drafting",

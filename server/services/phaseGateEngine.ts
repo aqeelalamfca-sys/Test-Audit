@@ -114,17 +114,107 @@ async function evaluateSingleGate(
         break;
       }
 
-      case "acceptance-checklist":
-      case "engagement-letter": {
-        passed = isBackendPhaseActive(statusMap, "PRE_PLANNING");
-        if (passed) message = "Pre-planning phase is active";
+      case "acceptance-checklist": {
+        const accDecision = await prisma.acceptanceContinuanceDecision.findUnique({
+          where: { engagementId },
+          select: { id: true, decision: true },
+        });
+        passed = !!accDecision && !!accDecision.decision;
+        if (passed) message = "Acceptance checklist addressed";
         break;
       }
 
-      case "independence-confirmed":
+      case "continuance-assessed": {
+        const contDecision = await prisma.acceptanceContinuanceDecision.findUnique({
+          where: { engagementId },
+          select: { id: true, decision: true, isReengagement: true },
+        });
+        passed = !!contDecision && (!!contDecision.decision || !contDecision.isReengagement);
+        if (passed) message = "Continuance assessment completed";
+        break;
+      }
+
+      case "engagement-letter-issued": {
+        const letter = await prisma.engagementLetter.findFirst({
+          where: { engagementId },
+          select: { id: true, status: true },
+        });
+        passed = !!letter && ["APPROVED", "SENT", "ACCEPTED"].includes(letter.status);
+        if (!letter) {
+          const accDecisionForLetter = await prisma.acceptanceContinuanceDecision.findUnique({
+            where: { engagementId },
+            select: { partnerApprovedAt: true },
+          });
+          passed = !!accDecisionForLetter?.partnerApprovedAt;
+        }
+        if (passed) message = "Engagement letter issued or acceptance approved";
+        break;
+      }
+
+      case "acceptance-approved": {
+        const approvedDecision = await prisma.acceptanceContinuanceDecision.findUnique({
+          where: { engagementId },
+          select: { partnerApprovedAt: true, decision: true },
+        });
+        passed = !!approvedDecision?.partnerApprovedAt && approvedDecision.decision === "APPROVED";
+        if (passed) message = "Acceptance approved by partner";
+        break;
+      }
+
+      case "independence-confirmed": {
+        const teamForIndep = await prisma.engagementTeam.findMany({
+          where: { engagementId },
+          select: { userId: true },
+        });
+        const indepDeclarations = await prisma.independenceDeclaration.findMany({
+          where: { engagementId },
+          select: { userId: true },
+        });
+        const teamIds = teamForIndep.map(t => t.userId);
+        const declaredIds = indepDeclarations.map(d => d.userId);
+        const pendingIndep = teamIds.filter(id => !declaredIds.includes(id));
+        passed = teamIds.length > 0 && pendingIndep.length === 0;
+        if (passed) message = `All ${teamIds.length} team members confirmed independence`;
+        else message = `${pendingIndep.length} of ${teamIds.length} team members have not declared`;
+        break;
+      }
+
+      case "conflicts-resolved": {
+        const engForConflicts = await prisma.engagement.findUnique({
+          where: { id: engagementId },
+          select: { clientId: true },
+        });
+        if (engForConflicts) {
+          const unresolvedConflicts = await prisma.conflictOfInterest.count({
+            where: {
+              clientId: engForConflicts.clientId,
+              status: { in: ["IDENTIFIED", "UNDER_REVIEW"] },
+            },
+          });
+          passed = unresolvedConflicts === 0;
+          if (passed) message = "All conflicts resolved";
+          else message = `${unresolvedConflicts} unresolved conflict(s)`;
+        }
+        break;
+      }
+
       case "ethics-declarations": {
-        passed = isBackendPhaseActive(statusMap, "PRE_PLANNING");
-        if (passed) message = "Pre-planning phase is active";
+        const ethicsConf = await prisma.ethicsConfirmation.findUnique({
+          where: { engagementId },
+          select: { allDeclarationsComplete: true, allThreatsResolved: true },
+        });
+        passed = !!ethicsConf?.allDeclarationsComplete;
+        if (passed) message = "Ethics declarations complete";
+        break;
+      }
+
+      case "ethics-approved": {
+        const ethicsApproval = await prisma.ethicsConfirmation.findUnique({
+          where: { engagementId },
+          select: { isLocked: true, lockedById: true },
+        });
+        passed = !!ethicsApproval?.isLocked;
+        if (passed) message = "Ethics conclusion approved by partner";
         break;
       }
 
@@ -354,13 +444,24 @@ export async function evaluatePhaseGates(
   const blockers: string[] = [];
   const warnings: string[] = [];
 
-  const prerequisitesMet = prerequisites.every(prereq => {
+  let prerequisitesMet = true;
+  for (const prereq of prerequisites) {
     const active = isBackendPhaseActive(statusMap, prereq.backendPhase);
     if (!active) {
       blockers.push(`Prerequisite "${prereq.label}" (${prereq.backendPhase}) is not active or completed`);
+      prerequisitesMet = false;
+      continue;
     }
-    return active;
-  });
+    const prereqPhase = PHASES.find(p => p.key === prereq.key);
+    if (prereqPhase) {
+      const prereqGates = await evaluateGatesForPhase(engagementId, prereqPhase, statusMap);
+      const prereqHardGatesFailed = prereqGates.filter(g => g.type === "hard" && !g.passed);
+      if (prereqHardGatesFailed.length > 0) {
+        blockers.push(`Prerequisite "${prereq.label}" has unmet hard gates: ${prereqHardGatesFailed.map(g => g.label).join(", ")}`);
+        prerequisitesMet = false;
+      }
+    }
+  }
 
   const gateResults = await evaluateGatesForPhase(engagementId, phase, statusMap);
   const gates: GateCheckResult[] = gateResults;
