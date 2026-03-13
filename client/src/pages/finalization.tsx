@@ -2205,109 +2205,28 @@ export default function Finalization() {
                   </ul>
                 </div>
               )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="space-y-3">
+                <div className="text-sm text-muted-foreground">
+                  Generates all finalization outputs in one batch: Audit Report Draft (ISA 700), Governance Letter (ISA 260),
+                  Representation Letter (ISA 580), Final Audited Financial Statements, and Partner Sign-Off Sheet (ISA 220).
+                </div>
                 <Button
-                  variant="outline"
-                  className="justify-start h-auto py-3 px-4"
+                  className="w-full h-auto py-4 px-6"
                   onClick={() => {
                     toast({
-                      title: "Generating Audit Report Draft",
-                      description: "Creating FIN-RPT-001 - Audit Report Draft (ISA 700)...",
+                      title: "Generating Finalization Outputs",
+                      description: "Creating all Phase 5 finalization documents...",
                     });
                     generateFinalizationOutputs();
                   }}
                   disabled={isGeneratingOutputs || fileStatus === "locked" || (preReportCheck && !preReportCheck.readyForRelease)}
-                  data-testid="button-generate-audit-report"
+                  data-testid="button-generate-all-outputs"
                 >
                   <div className="flex items-center gap-3">
-                    <FileSignature className="h-5 w-5 text-blue-600" />
+                    <FileSignature className="h-5 w-5" />
                     <div className="text-left">
-                      <div className="font-medium">Audit Report Draft</div>
-                      <div className="text-xs text-muted-foreground">ISA 700 - DOCX</div>
-                    </div>
-                  </div>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="justify-start h-auto py-3 px-4"
-                  onClick={() => {
-                    toast({
-                      title: "Generating Management Letter",
-                      description: "Creating FIN-GOV-001 - Governance Letter (ISA 260)...",
-                    });
-                    generateFinalizationOutputs();
-                  }}
-                  disabled={isGeneratingOutputs || fileStatus === "locked" || (preReportCheck && !preReportCheck.readyForRelease)}
-                  data-testid="button-generate-mgmt-letter"
-                >
-                  <div className="flex items-center gap-3">
-                    <MessageSquare className="h-5 w-5 text-purple-600" />
-                    <div className="text-left">
-                      <div className="font-medium">Management Letter</div>
-                      <div className="text-xs text-muted-foreground">ISA 260 - DOCX</div>
-                    </div>
-                  </div>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="justify-start h-auto py-3 px-4"
-                  onClick={() => {
-                    toast({
-                      title: "Generating Representation Letter",
-                      description: "Creating FIN-RL-001 - Management Representation Letter (ISA 580)...",
-                    });
-                    generateFinalizationOutputs();
-                  }}
-                  disabled={isGeneratingOutputs || fileStatus === "locked" || (preReportCheck && !preReportCheck.readyForRelease)}
-                  data-testid="button-generate-rep-letter"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-green-600" />
-                    <div className="text-left">
-                      <div className="font-medium">Representation Letter</div>
-                      <div className="text-xs text-muted-foreground">ISA 580 - DOCX</div>
-                    </div>
-                  </div>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="justify-start h-auto py-3 px-4"
-                  onClick={() => {
-                    toast({
-                      title: "Generating Final F.S.",
-                      description: "Creating FIN-FS-001 - Final Audited Financial Statements (ISA 700)...",
-                    });
-                    generateFinalizationOutputs();
-                  }}
-                  disabled={isGeneratingOutputs || fileStatus === "locked" || (preReportCheck && !preReportCheck.readyForRelease)}
-                  data-testid="button-generate-final-fs"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileSpreadsheet className="h-5 w-5 text-orange-600" />
-                    <div className="text-left">
-                      <div className="font-medium">Final Audited F.S.</div>
-                      <div className="text-xs text-muted-foreground">ISA 700 - XLSX</div>
-                    </div>
-                  </div>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="justify-start h-auto py-3 px-4"
-                  onClick={() => {
-                    toast({
-                      title: "Generating Partner Sign-Off",
-                      description: "Creating FIN-SIGN-001 - Partner Sign-Off Sheet (ISA 220)...",
-                    });
-                    generateFinalizationOutputs();
-                  }}
-                  disabled={isGeneratingOutputs || fileStatus === "locked" || (preReportCheck && !preReportCheck.readyForRelease)}
-                  data-testid="button-generate-signoff"
-                >
-                  <div className="flex items-center gap-3">
-                    <ClipboardCheck className="h-5 w-5 text-indigo-600" />
-                    <div className="text-left">
-                      <div className="font-medium">Partner Sign-Off</div>
-                      <div className="text-xs text-muted-foreground">ISA 220 - DOCX</div>
+                      <div className="font-medium">Generate All Finalization Outputs</div>
+                      <div className="text-xs opacity-80">5 documents: Report, Letters, F.S., Sign-Off</div>
                     </div>
                   </div>
                 </Button>

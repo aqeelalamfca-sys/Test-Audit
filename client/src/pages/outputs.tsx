@@ -207,7 +207,7 @@ export default function OutputsPage() {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (deliveryStatusFilter && deliveryStatusFilter !== "all") params.append("status", deliveryStatusFilter);
-      const response = await fetchWithAuth(`/api/engagements/${engagementId}/deliverables?${params.toString()}`);
+      const response = await fetchWithAuth(`/api/deliverables/${engagementId}?${params.toString()}`);
       if (!response.ok) throw new Error("Failed to fetch deliverables");
       return response.json();
     },
