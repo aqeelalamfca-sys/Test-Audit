@@ -54,7 +54,7 @@ import { Sparkles } from "lucide-react";
 import { PhaseApprovalControl, PhaseLockIndicator } from "@/components/phase-approval-control";
 import { SyncPlanningToExecution } from "@/components/sync-planning-to-execution";
 import { MaterialitySetPanel, AuditPlanPanel, ProceduresMatrixPanel } from "@/components/control-pack";
-import { ISA320MaterialityPanel } from "@/components/isa320-materiality-panel";
+import { ISA320MaterialityPanel as ISA320MaterialityPanelNew } from "@/components/planning/isa320-materiality-panel";
 import { ISA300StrategyPanel } from "@/components/isa300-strategy-panel";
 import ISA530SamplingPanel from "@/components/isa530-sampling-panel";
 import {
@@ -2084,10 +2084,6 @@ export default function Planning() {
     { refNo: "CHK-042", checkItem: "ISA 320.13 - Documentation requirements met" },
     { refNo: "CHK-043", checkItem: "ISA 320.14 - Communication of materiality" }
   ]));
-  const [materialityQualitative, setMaterialityQualitative] = useState({
-    fraudRisk: false, regulatory: false, debtCovenant: false, goingConcern: false, sensitiveDisclosures: false, publicInterest: false
-  });
-
   // Section 5: Analytical Procedures
   const [analyticalProcedures, setAnalyticalProcedures] = useState({
     analyticalPlan: "",
@@ -5531,201 +5527,12 @@ export default function Planning() {
 
         {/* Tab 4: Materiality */}
         <TabsContent value="materiality" className="space-y-4 mt-3" data-testid="tab-content-materiality">
-          {/* AI-Driven ISA 320 Materiality Analysis Panel */}
           {engagementId && (
-            <ISA320MaterialityPanel 
-              engagementId={engagementId} 
-              onMaterialityCalculated={(result) => {
-                // Update local state with AI-calculated materiality
-                if (result.step4_materialityLevels) {
-                  setMateriality(prev => ({
-                    ...prev,
-                    selectedBenchmark: result.step2_benchmarkSelection?.selectedBenchmark?.toLowerCase() || prev.selectedBenchmark,
-                    benchmarkPercentage: String(result.step3_riskAdjustedPercentage?.finalPercentage || prev.benchmarkPercentage),
-                    benchmarkRationale: result.step8_documentation?.benchmarkSelectionRationale || prev.benchmarkRationale,
-                  }));
-                }
-                // Update qualitative factors based on AI assessment
-                if (result.step5_qualitativeFactors?.factors) {
-                  const factors = result.step5_qualitativeFactors.factors;
-                  setMaterialityQualitative(prev => ({
-                    ...prev,
-                    fraudRisk: factors.find(f => f.factor === 'Fraud Risk Present')?.present || false,
-                    regulatory: factors.find(f => f.factor === 'Regulatory Sensitivity')?.present || false,
-                    debtCovenant: factors.find(f => f.factor === 'Debt Covenant Compliance')?.present || false,
-                    goingConcern: factors.find(f => f.factor === 'Going Concern Uncertainty')?.present || false,
-                    sensitiveDisclosures: factors.find(f => f.factor === 'Industry Specific Sensitivity')?.present || false,
-                    publicInterest: factors.find(f => f.factor === 'Public Interest Considerations')?.present || false,
-                  }));
-                }
-              }}
+            <ISA320MaterialityPanelNew
+              engagementId={engagementId}
+              readOnly={planningReadOnly}
             />
           )}
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calculator className="h-5 w-5" />
-                    Manual Materiality Determination
-                  </CardTitle>
-                  <CardDescription>ISA 320 Compliant - Manual controls for materiality in planning and performing an audit</CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" data-testid="btn-calculate-materiality"
-                    disabled={!draftFsData && !trialBalance.fileUploaded}
-                    title={!draftFsData && !trialBalance.fileUploaded ? "Upload Trial Balance data first to calculate materiality" : "Calculate materiality thresholds"}
-                    onClick={() => {
-                      const pbt = safeNum(trialBalance.profitBeforeTax);
-                      const rev = safeNum(trialBalance.revenue);
-                      const assets = safeNum(trialBalance.totalAssets);
-                      let benchmark = 'pbt';
-                      if (pbt <= 0 && rev > 0) benchmark = 'revenue';
-                      else if (pbt <= 0 && assets > 0) benchmark = 'assets';
-                      setMateriality(prev => ({ ...prev, selectedBenchmark: benchmark, benchmarkPercentage: benchmark === 'pbt' ? '5' : benchmark === 'revenue' ? '2' : '1' }));
-                      saveEngine.signalChange();
-                      toast({ title: "Materiality Calculated", description: `Benchmark set to ${benchmark.toUpperCase()} with standard ISA 320 percentage.` });
-                    }}
-                  >
-                    <Calculator className="h-4 w-4 mr-2" />
-                    Calculate
-                  </Button>
-                  <Button size="sm" data-testid="btn-apply-partner-override"
-                    onClick={() => {
-                      const overrideValue = prompt("Enter Partner Override for Overall Materiality (amount):");
-                      if (overrideValue && !isNaN(Number(overrideValue))) {
-                        const om = Number(overrideValue);
-                        const pbt = safeNum(trialBalance.profitBeforeTax) || safeNum(trialBalance.revenue) || om;
-                        const pct = pbt > 0 ? ((om / pbt) * 100).toFixed(2) : '5';
-                        setMateriality(prev => ({ ...prev, benchmarkPercentage: pct }));
-                        saveEngine.signalChange();
-                        toast({ title: "Partner Override Applied", description: `Overall Materiality overridden to ${Number(overrideValue).toLocaleString()}.` });
-                      }
-                    }}
-                  >
-                    <UserCheck className="h-4 w-4 mr-2" />
-                    Apply Partner Override
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Database className="h-4 w-4" />
-                    Auto-Extracted from Trial Balance
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Profit Before Tax</p>
-                      <p className="font-semibold">{materialityCalc.pbt ? formatAccounting(materialityCalc.pbt) : 'Not set'}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Revenue</p>
-                      <p className="font-semibold">{materialityCalc.revenue ? formatAccounting(materialityCalc.revenue) : 'Not set'}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Total Assets</p>
-                      <p className="font-semibold">{materialityCalc.assets ? formatAccounting(materialityCalc.assets) : 'Not set'}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Total Equity</p>
-                      <p className="font-semibold">{materialityCalc.equity ? formatAccounting(materialityCalc.equity) : 'Not set'}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between"><Label>Benchmark Selection Rationale <span className="text-destructive">*</span></Label><AIAssistButton fieldName="benchmarkRationale" fieldLabel="Benchmark Selection Rationale" promptType={getPromptType("benchmarkRationale")} context={`Materiality benchmark rationale per ISA 320 for ${engagement?.engagementCode || "engagement"}`} engagementId={engagementId} page="planning" section="materiality" onInsert={(c) => setMateriality(p => ({...p, benchmarkRationale: c}))} currentValue={materiality.benchmarkRationale} /></div>
-                    <Textarea 
-                      value={materiality.benchmarkRationale}
-                      onChange={(e) => setMateriality(p => ({...p, benchmarkRationale: e.target.value}))}
-                      placeholder="Rationale for benchmark selection (ISA 320.9)..."
-                      rows={3}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Selected Benchmark <span className="text-destructive">*</span></Label>
-                    <Select value={materiality.selectedBenchmark} onValueChange={(v) => setMateriality(p => ({...p, selectedBenchmark: v}))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pbt">Profit Before Tax (5%)</SelectItem>
-                        <SelectItem value="revenue">Revenue (0.5% - 2%)</SelectItem>
-                        <SelectItem value="assets">Total Assets (1%)</SelectItem>
-                        <SelectItem value="equity">Equity (5%)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Benchmark Percentage <span className="text-destructive">*</span></Label>
-                    <div className="flex items-center gap-2">
-                      <Input 
-                        type="number" 
-                        value={materiality.benchmarkPercentage}
-                        onChange={(e) => setMateriality(p => ({...p, benchmarkPercentage: e.target.value}))}
-                        className="w-24"
-                      />
-                      <span>%</span>
-                    </div>
-                  </div>
-                </div>
-                <Card className="bg-gradient-to-br from-primary/5 to-primary/10">
-                  <CardHeader>
-                    <CardTitle className="text-lg">Calculated Materiality</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center p-3 bg-background rounded-lg">
-                      <span>Overall Materiality (ISA 320.10)</span>
-                      <span className="text-xl font-bold text-primary">{formatAccounting(materialityCalc.overallMateriality)}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-background rounded-lg">
-                      <span>Performance Materiality (75%)</span>
-                      <span className="text-lg font-semibold">{formatAccounting(materialityCalc.performanceMateriality)}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-background rounded-lg">
-                      <span>Specific Materiality (50% of OM)</span>
-                      <span className="text-lg font-semibold">{formatAccounting(materialityCalc.overallMateriality * 0.5)}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-background rounded-lg">
-                      <span>Clearly Trivial Threshold (5% of OM)</span>
-                      <span className="font-medium">{formatAccounting(materialityCalc.trivialThreshold)}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Specific materiality applies to sensitive classes (e.g., Directors' Remuneration, Related Party Transactions). 
-                      Clearly trivial threshold per ISA 450.A2 — misstatements below this amount need not be accumulated.
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Qualitative Factors Considered <span className="text-destructive">*</span></Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {Object.entries(materialityQualitative).map(([key, value]) => (
-                    <div key={key} className="flex items-center space-x-2">
-                      <Checkbox checked={value} onCheckedChange={(c) => setMaterialityQualitative(p => ({...p, [key]: !!c}))} />
-                      <Label className="text-sm font-normal">
-                        {key === "fraudRisk" && "Fraud risk present"}
-                        {key === "regulatory" && "Regulatory reporting requirements"}
-                        {key === "debtCovenant" && "Debt covenant compliance"}
-                        {key === "goingConcern" && "Going concern considerations"}
-                        {key === "sensitiveDisclosures" && "Sensitive industry disclosures"}
-                        {key === "publicInterest" && "Public interest considerations"}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
         </TabsContent>
 
         {/* Tab D: Analytical Procedures (ISA 520) */}
