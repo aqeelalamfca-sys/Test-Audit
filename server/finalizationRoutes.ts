@@ -6,6 +6,31 @@ import { z } from "zod";
 
 const router = Router();
 
+export interface PreReportIssue {
+  type: string;
+  count?: number;
+  message: string;
+}
+
+export async function computePreReportBlockers(engagementId: string): Promise<{ readyForRelease: boolean; issues: PreReportIssue[] }> {
+  const [openNotes, unapprovedTests, incompleteMemo, eqcr, report] = await Promise.all([
+    prisma.reviewNote.count({ where: { engagementId, status: "OPEN" } }),
+    prisma.substantiveTest.count({ where: { engagementId, managerApprovedById: null } }),
+    prisma.completionMemo.findUnique({ where: { engagementId } }),
+    prisma.eQCRAssignment.findUnique({ where: { engagementId } }),
+    prisma.auditReport.findUnique({ where: { engagementId } }),
+  ]);
+
+  const issues: PreReportIssue[] = [];
+  if (openNotes > 0) issues.push({ type: "OPEN_REVIEW_NOTES", count: openNotes, message: `${openNotes} open review notes` });
+  if (unapprovedTests > 0) issues.push({ type: "UNAPPROVED_TESTS", count: unapprovedTests, message: `${unapprovedTests} unapproved substantive tests` });
+  if (!incompleteMemo?.partnerApprovedById) issues.push({ type: "COMPLETION_MEMO", message: "Completion memo not approved" });
+  if (eqcr?.isRequired && eqcr.status !== "CLEARED") issues.push({ type: "EQCR", message: "EQCR clearance required" });
+  if (!report?.partnerApprovedById) issues.push({ type: "REPORT", message: "Audit report not approved" });
+
+  return { readyForRelease: issues.length === 0, issues };
+}
+
 async function validateEngagementAccess(engagementId: string, userId: string, firmId: string | null | undefined) {
   if (!firmId) return { valid: false, error: "User not associated with a firm" };
   const engagement = await prisma.engagement.findFirst({ where: { id: engagementId, firmId } });
@@ -275,28 +300,13 @@ router.post("/:engagementId/checklists", requireAuth, requirePhaseUnlocked("FINA
   }
 });
 
-// Pre-report checklist validation
 router.get("/:engagementId/pre-report-check", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
-    const [openNotes, unapprovedTests, incompleteMemo, eqcr, report] = await Promise.all([
-      prisma.reviewNote.count({ where: { engagementId: req.params.engagementId, status: "OPEN" } }),
-      prisma.substantiveTest.count({ where: { engagementId: req.params.engagementId, managerApprovedById: null } }),
-      prisma.completionMemo.findUnique({ where: { engagementId: req.params.engagementId } }),
-      prisma.eQCRAssignment.findUnique({ where: { engagementId: req.params.engagementId } }),
-      prisma.auditReport.findUnique({ where: { engagementId: req.params.engagementId } }),
-    ]);
-
-    const issues = [];
-    if (openNotes > 0) issues.push({ type: "OPEN_REVIEW_NOTES", count: openNotes, message: `${openNotes} open review notes` });
-    if (unapprovedTests > 0) issues.push({ type: "UNAPPROVED_TESTS", count: unapprovedTests, message: `${unapprovedTests} unapproved substantive tests` });
-    if (!incompleteMemo?.partnerApprovedById) issues.push({ type: "COMPLETION_MEMO", message: "Completion memo not approved" });
-    if (eqcr?.isRequired && eqcr.status !== "CLEARED") issues.push({ type: "EQCR", message: "EQCR clearance required" });
-    if (!report?.partnerApprovedById) issues.push({ type: "REPORT", message: "Audit report not approved" });
-
-    res.json({ readyForRelease: issues.length === 0, issues });
+    const result = await computePreReportBlockers(req.params.engagementId);
+    res.json(result);
   } catch (error: any) {
     res.status(500).json({ error: "Failed to check", details: error.message });
   }
