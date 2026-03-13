@@ -295,13 +295,13 @@ router.post("/:engagementId/run-analysis", requireAuth, async (req: Authenticate
 
     const updated = await getEngineWithRelations(req.params.engagementId);
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id, "OPINION_ENGINE_ANALYSIS", "opinion_engine", engine.id,
       null, { score, aiCategory, findingsCount: findings.length },
       req.params.engagementId,
       `AI opinion analysis completed: ${aiCategory} (score: ${score})`,
       req.ip, req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(updated);
   } catch (error: any) {
@@ -405,13 +405,13 @@ router.post("/:engagementId/partner-sign", requireAuth, requireMinRole("PARTNER"
       include: { findings: { orderBy: { createdAt: "desc" } }, aiRuns: { orderBy: { createdAt: "desc" }, take: 5 } },
     });
 
-    await logAuditTrail(
+    logAuditTrail(
       req.user!.id, "OPINION_ENGINE_PARTNER_SIGN", "opinion_engine", engine.id,
       null, { partnerCategory, partnerConclusion },
       req.params.engagementId,
       `Partner signed opinion: ${partnerCategory}`,
       req.ip, req.get("user-agent")
-    );
+    ).catch(err => console.error("Audit trail error:", err));
 
     res.json(updated);
   } catch (error: any) {

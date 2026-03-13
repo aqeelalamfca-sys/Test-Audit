@@ -156,13 +156,11 @@ router.post("/:engagementId", requireAuth, requireMinRole("SENIOR"), async (req:
       }
     });
     
-    await logAuditTrail(
-      req.user!.id,
-      "DELIVERABLE_CREATED",
-      `Created deliverable: ${data.deliverableType}`,
-      engagementId,
-      { deliverableId: deliverable.id, type: data.deliverableType }
-    );
+    logAuditTrail(
+      req.user!.id, "DELIVERABLE_CREATED", "deliverable", deliverable.id,
+      null, { type: data.deliverableType }, engagementId,
+      `Created deliverable: ${data.deliverableType}`, req.ip, req.get("user-agent")
+    ).catch(err => console.error("Audit trail error:", err));
     
     res.json(deliverable);
   } catch (error) {
@@ -208,13 +206,11 @@ router.put("/:id", requireAuth, requireMinRole("SENIOR"), async (req: Authentica
       }
     });
     
-    await logAuditTrail(
-      req.user!.id,
-      "DELIVERABLE_UPDATED",
-      `Updated deliverable: ${deliverable.deliverableType}`,
-      existing.engagementId,
-      { deliverableId: id, changes: data }
-    );
+    logAuditTrail(
+      req.user!.id, "DELIVERABLE_UPDATED", "deliverable", id,
+      null, { changes: data }, existing.engagementId,
+      `Updated deliverable: ${deliverable.deliverableType}`, req.ip, req.get("user-agent")
+    ).catch(err => console.error("Audit trail error:", err));
     
     res.json(deliverable);
   } catch (error) {
@@ -245,13 +241,11 @@ router.post("/:id/review", requireAuth, requireMinRole("MANAGER"), async (req: A
       }
     });
     
-    await logAuditTrail(
-      req.user!.id,
-      "DELIVERABLE_REVIEWED",
-      `Reviewed deliverable: ${deliverable.deliverableType}`,
-      deliverable.engagementId,
-      { deliverableId: id }
-    );
+    logAuditTrail(
+      req.user!.id, "DELIVERABLE_REVIEWED", "deliverable", id,
+      null, { reviewedById: req.user!.id }, deliverable.engagementId,
+      `Reviewed deliverable: ${deliverable.deliverableType}`, req.ip, req.get("user-agent")
+    ).catch(err => console.error("Audit trail error:", err));
     
     res.json(deliverable);
   } catch (error) {
@@ -287,13 +281,11 @@ router.post("/:id/approve", requireAuth, requireMinRole("PARTNER"), async (req: 
       }
     });
     
-    await logAuditTrail(
-      req.user!.id,
-      "DELIVERABLE_APPROVED",
-      `Approved deliverable: ${deliverable.deliverableType}`,
-      deliverable.engagementId,
-      { deliverableId: id }
-    );
+    logAuditTrail(
+      req.user!.id, "DELIVERABLE_APPROVED", "deliverable", id,
+      null, { approvedById: req.user!.id }, deliverable.engagementId,
+      `Approved deliverable: ${deliverable.deliverableType}`, req.ip, req.get("user-agent")
+    ).catch(err => console.error("Audit trail error:", err));
     
     res.json(deliverable);
   } catch (error) {
@@ -333,13 +325,11 @@ router.post("/:id/issue", requireAuth, requireMinRole("PARTNER"), async (req: Au
       }
     });
     
-    await logAuditTrail(
-      req.user!.id,
-      "DELIVERABLE_ISSUED",
-      `Issued deliverable: ${deliverable.deliverableType}`,
-      deliverable.engagementId,
-      { deliverableId: id, opinionType: deliverable.opinionType }
-    );
+    logAuditTrail(
+      req.user!.id, "DELIVERABLE_ISSUED", "deliverable", id,
+      null, { opinionType: deliverable.opinionType }, deliverable.engagementId,
+      `Issued deliverable: ${deliverable.deliverableType}`, req.ip, req.get("user-agent")
+    ).catch(err => console.error("Audit trail error:", err));
     
     res.json(deliverable);
   } catch (error) {
@@ -398,13 +388,11 @@ router.post("/:id/upload", requireAuth, requireMinRole("SENIOR"), upload.single(
       }
     });
     
-    await logAuditTrail(
-      req.user!.id,
-      "DELIVERABLE_FILE_UPLOADED",
-      `Uploaded file: ${file.originalname} (v${nextVersion})`,
-      deliverable.engagementId,
-      { deliverableId: id, fileId: deliverableFile.id, version: nextVersion }
-    );
+    logAuditTrail(
+      req.user!.id, "DELIVERABLE_FILE_UPLOADED", "deliverable_file", deliverableFile.id,
+      null, { deliverableId: id, version: nextVersion, fileName: file.originalname }, deliverable.engagementId,
+      `Uploaded file: ${file.originalname} (v${nextVersion})`, req.ip, req.get("user-agent")
+    ).catch(err => console.error("Audit trail error:", err));
     
     res.json(deliverableFile);
   } catch (error) {
@@ -467,13 +455,11 @@ router.get("/file/:fileId/download", requireAuth, async (req: AuthenticatedReque
       return res.status(404).json({ error: "File not found on disk" });
     }
     
-    await logAuditTrail(
-      req.user!.id,
-      "DELIVERABLE_FILE_DOWNLOADED",
-      `Downloaded file: ${file.originalName}`,
-      file.deliverable.engagementId,
-      { deliverableId: file.deliverableId, fileId }
-    );
+    logAuditTrail(
+      req.user!.id, "DELIVERABLE_FILE_DOWNLOADED", "deliverable_file", fileId,
+      null, { deliverableId: file.deliverableId, fileName: file.originalName }, file.deliverable.engagementId,
+      `Downloaded file: ${file.originalName}`, req.ip, req.get("user-agent")
+    ).catch(err => console.error("Audit trail error:", err));
     
     res.download(file.filePath, file.originalName);
   } catch (error) {
@@ -529,13 +515,11 @@ router.delete("/file/:fileId", requireAuth, requireMinRole("SENIOR"), async (req
       }
     }
     
-    await logAuditTrail(
-      req.user!.id,
-      "DELIVERABLE_FILE_DELETED",
-      `Deleted file: ${file.originalName}`,
-      file.deliverable.engagementId,
-      { deliverableId: file.deliverableId, fileId }
-    );
+    logAuditTrail(
+      req.user!.id, "DELIVERABLE_FILE_DELETED", "deliverable_file", fileId,
+      null, { deliverableId: file.deliverableId, fileName: file.originalName }, file.deliverable.engagementId,
+      `Deleted file: ${file.originalName}`, req.ip, req.get("user-agent")
+    ).catch(err => console.error("Audit trail error:", err));
     
     res.json({ success: true });
   } catch (error) {
