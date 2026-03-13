@@ -150,16 +150,13 @@ export default function InformationRequisition() {
   const [dataIntakeSubTab, setDataIntakeSubTab] = useState('upload');
 
   const DATA_INTAKE_TABS = [
-    { id: 'upload', label: 'Upload' },
+    { id: 'upload', label: 'Upload Wizard' },
     { id: 'tb', label: 'Trial Balance' },
-    { id: 'gl', label: 'GL' },
+    { id: 'gl', label: 'General Ledger' },
     { id: 'ap', label: 'AP' },
     { id: 'ar', label: 'AR' },
     { id: 'bank', label: 'Bank' },
-    { id: 'confirmations', label: 'Confirmations' },
-    { id: 'mapping', label: 'FS Mapping' },
-    { id: 'draft-fs', label: 'Draft FS' },
-    { id: 'checks', label: 'Checks' },
+    { id: 'batches', label: 'Import Logs' },
   ];
 
   const [requests, setRequests] = useState<InformationRequest[]>([]);
@@ -386,6 +383,30 @@ export default function InformationRequisition() {
     observations: string[];
     recommendations: string[];
   } | null>(null);
+
+  // Batch tracking state
+  const [importBatches, setImportBatches] = useState<Array<{
+    id: string;
+    batchNumber: string;
+    fileName: string | null;
+    fileSize: number | null;
+    fileType: string | null;
+    sourceTag: string | null;
+    periodTag: string | null;
+    status: string;
+    totalRows: number;
+    processedRows: number;
+    errorCount: number;
+    warningCount: number;
+    uploadedBy: { fullName: string; email: string } | null;
+    uploadedAt: string;
+    validatedAt: string | null;
+    createdAt: string;
+  }>>([]);
+  const [loadingBatches, setLoadingBatches] = useState(false);
+  const [uploadSourceTag, setUploadSourceTag] = useState('');
+  const [uploadPeriodTag, setUploadPeriodTag] = useState('');
+  const [uploadFileType, setUploadFileType] = useState('');
 
   // Workbook Validation State
   const [workbookFile, setWorkbookFile] = useState<File | null>(null);
@@ -1092,6 +1113,28 @@ export default function InformationRequisition() {
     }
   };
 
+  const fetchBatches = useCallback(async () => {
+    if (!effectiveEngagementId) return;
+    setLoadingBatches(true);
+    try {
+      const response = await fetchWithAuth(`/api/import/${effectiveEngagementId}/batches`);
+      if (response.ok) {
+        const data = await response.json();
+        setImportBatches(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch batches:", error);
+    } finally {
+      setLoadingBatches(false);
+    }
+  }, [effectiveEngagementId]);
+
+  useEffect(() => {
+    if (dataIntakeSubTab === 'batches') {
+      fetchBatches();
+    }
+  }, [dataIntakeSubTab, fetchBatches]);
+
   // GL/TB Upload Handlers - Template Downloads
   const handleDownloadTemplate = useCallback(async (type: 'tb' | 'gl', format: 'csv' | 'xlsx') => {
     try {
@@ -1731,6 +1774,9 @@ export default function InformationRequisition() {
       if (trialBalance.reportingPeriodEnd) {
         formData.append('period_end', trialBalance.reportingPeriodEnd);
       }
+      if (uploadSourceTag) formData.append('sourceTag', uploadSourceTag);
+      if (uploadPeriodTag) formData.append('periodTag', uploadPeriodTag);
+      if (uploadFileType) formData.append('fileType', uploadFileType);
 
       const response = await fetchWithAuth(`/api/audit/engagements/${effectiveEngagementId}/imports/workbook`, {
         method: 'POST',
@@ -3240,7 +3286,7 @@ export default function InformationRequisition() {
 
   return (
     <PageShell
-      title="Data Intake"
+      title="TB / GL Upload"
       subtitle=""
       showTopBar={false}
       backHref={`/engagements`}

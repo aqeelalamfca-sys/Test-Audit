@@ -151,6 +151,21 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - **Gates**: independence-confirmed (hard), conflicts-resolved (hard), ethics-declarations (hard), ethics-approved (hard)
 - **Gate enforcement**: TB/GL Upload (phase 4) requires BOTH acceptance AND independence phases to be approved
 
+### TB/GL Upload (Phase 4)
+- **Page**: `client/src/pages/information-requisition.tsx` — refactored as focused upload page
+- **Tabs**: Upload Wizard, Trial Balance, General Ledger, AP, AR, Bank, Import Logs
+- **Features**: File type selection, source/period tagging, batch tracking with batch IDs, template checks, import logs via BatchTrackingTable
+- **Backend**: `server/importRoutes.ts` — GET `/api/import/:engagementId/batches` returns batch tracking data
+- **Sub-components**: `information-requisition/SummaryTab.tsx` (upload wizard with tagging), `information-requisition/ReviewCoaSection.tsx` (tab routing + BatchTrackingTable)
+- **Gates**: tb-uploaded (hard), gl-uploaded (hard), batch-tracked (hard), template-checked (hard)
+
+### Validation & Parsing (Phase 5)
+- **Page**: `client/src/pages/post-upload-workflow.tsx` — refactored with structured validation results panel
+- **Features**: ValidationResultsPanel at top showing passed checks (green), warnings (amber), blockers (red) from backend; parser summary stats (TB rows, GL entries, pass rate); AI analysis section for corrective actions and data quality; pipeline dashboard below for workflow tracking
+- **Backend**: `server/importRoutes.ts` — GET `/api/import/:engagementId/validation-results` returns structured { passedChecks, warnings, blockers, parserSummary }
+- **Gates**: tb-validated (hard), gl-reconciled (hard), duplicates-cleared (hard), blockers-resolved (hard)
+- **Gate enforcement**: Validation blockers prevent COA Mapping and Materiality completion (recursive prerequisite checks in phaseGateEngine.ts)
+
 ## Feature Status
 
 - ISA 320 Materiality: Complete
@@ -164,3 +179,5 @@ Old route slugs (pre-planning, requisition, planning, execution, etc.) are now *
 - Multi-tenant: Firm-based isolation with RLS
 - Acceptance & Continuance: Complete (8-section form, partner approval, AI, audit trail)
 - Independence / Ethics: Complete (8-section form, declaration tracking, partner approval, AI, audit trail)
+- TB/GL Upload: Complete (batch tracking, source/period tagging, import logs, template checks)
+- Validation & Parsing: Complete (structured results panel, AI analysis, blocker enforcement)

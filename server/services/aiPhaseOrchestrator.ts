@@ -124,6 +124,42 @@ const AI_CAPABILITY_REGISTRY: Record<string, PhaseAICapability[]> = {
       isaReference: "IESBA Code",
     },
   ],
+  "upload-template-guidance": [
+    {
+      id: "upload-template-guidance",
+      label: "Upload Template Guidance",
+      description: "Explain expected file format, required columns, and common template issues for TB/GL uploads",
+      promptType: "template_guidance",
+      requiresContext: ["file_type", "template_structure"],
+    },
+  ],
+  "validation-error-explainer": [
+    {
+      id: "validation-error-explainer",
+      label: "Explain Validation Errors",
+      description: "Explain validation errors in simple language and help users understand what went wrong",
+      promptType: "validation_explainer",
+      requiresContext: ["validation_errors", "data_context"],
+    },
+  ],
+  "corrective-action-suggestions": [
+    {
+      id: "corrective-action-suggestions",
+      label: "Suggest Corrective Actions",
+      description: "Recommend specific corrective actions to resolve validation blockers and warnings",
+      promptType: "corrective_actions",
+      requiresContext: ["validation_errors", "data_sample"],
+    },
+  ],
+  "data-quality-summary": [
+    {
+      id: "data-quality-summary",
+      label: "Data Quality Summary",
+      description: "Provide an overall data quality assessment summarizing passed checks, warnings, and blockers",
+      promptType: "quality_summary",
+      requiresContext: ["validation_results", "tb_summary", "gl_summary"],
+    },
+  ],
   "data-quality-explanations": [
     {
       id: "data-quality-explanations",

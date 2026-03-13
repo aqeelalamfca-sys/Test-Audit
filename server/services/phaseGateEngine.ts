@@ -220,7 +220,7 @@ async function evaluateSingleGate(
 
       case "tb-uploaded": {
         const tbCount = await prisma.trialBalanceLine.count({
-          where: { engagementId },
+          where: { trialBalance: { engagementId } },
         });
         passed = tbCount > 0;
         if (passed) message = `${tbCount} TB rows imported`;
@@ -228,7 +228,7 @@ async function evaluateSingleGate(
       }
 
       case "gl-uploaded": {
-        const glCount = await prisma.glEntry.count({
+        const glCount = await prisma.gLEntry.count({
           where: { engagementId },
         });
         passed = glCount > 0;
@@ -236,18 +236,80 @@ async function evaluateSingleGate(
         break;
       }
 
-      case "tb-validated": {
-        const tbRows = await prisma.trialBalanceLine.count({
+      case "batch-tracked": {
+        const batchCount = await prisma.importBatch.count({
           where: { engagementId },
         });
-        passed = tbRows > 0;
-        if (passed) message = "TB data present and validated";
+        passed = batchCount > 0;
+        if (passed) message = `${batchCount} upload batch(es) tracked`;
+        break;
+      }
+
+      case "template-checked": {
+        const validatedBatch = await prisma.importBatch.findFirst({
+          where: { engagementId, validatedAt: { not: null } },
+        });
+        passed = !!validatedBatch;
+        if (passed) message = "Template format verified";
+        break;
+      }
+
+      case "tb-validated": {
+        const tbRows = await prisma.trialBalanceLine.count({
+          where: { trialBalance: { engagementId } },
+        });
+        if (tbRows === 0) {
+          message = "No TB data to validate";
+          break;
+        }
+        const tbBlockers = await prisma.reconIssue.count({
+          where: { engagementId, tab: "TB", blocking: true, resolvedAt: null },
+        });
+        passed = tbRows > 0 && tbBlockers === 0;
+        if (passed) message = "TB data validated — no blockers";
+        else message = `${tbBlockers} unresolved TB blocker(s)`;
         break;
       }
 
       case "gl-reconciled": {
-        passed = isBackendPhaseActive(statusMap, "REQUISITION");
-        if (passed) message = "Data intake phase active";
+        const glCount = await prisma.gLEntry.count({
+          where: { engagementId },
+        });
+        if (glCount === 0) {
+          message = "No GL data to reconcile";
+          break;
+        }
+        const reconBlockers = await prisma.reconIssue.count({
+          where: { engagementId, tab: "GL", blocking: true, resolvedAt: null },
+        });
+        passed = glCount > 0 && reconBlockers === 0;
+        if (passed) message = "GL reconciled to TB — no blockers";
+        else message = `${reconBlockers} unresolved GL reconciliation blocker(s)`;
+        break;
+      }
+
+      case "duplicates-cleared": {
+        const dupIssues = await prisma.reconIssue.count({
+          where: {
+            engagementId,
+            ruleCode: { contains: "DUPLICATE" },
+            blocking: true,
+            resolvedAt: null,
+          },
+        });
+        passed = dupIssues === 0;
+        if (passed) message = "No unresolved duplicate entries";
+        else message = `${dupIssues} unresolved duplicate issue(s)`;
+        break;
+      }
+
+      case "blockers-resolved": {
+        const allBlockers = await prisma.reconIssue.count({
+          where: { engagementId, blocking: true, resolvedAt: null },
+        });
+        passed = allBlockers === 0;
+        if (passed) message = "All validation blockers resolved";
+        else message = `${allBlockers} unresolved blocker(s) remain`;
         break;
       }
 
