@@ -1,7 +1,7 @@
 import { Router, Response } from "express";
 import { prisma } from "./db";
 import { requireAuth, logAuditTrail, type AuthenticatedRequest } from "./auth";
-import { computePreReportBlockers } from "./finalizationRoutes";
+import { computePreDraftBlockers } from "./finalizationRoutes";
 import { z } from "zod";
 import path from "path";
 import fs from "fs";
@@ -426,8 +426,8 @@ router.post("/engagements/:engagementId/outputs/generate-phase5", requireAuth, a
       return res.status(404).json({ error: "Engagement not found" });
     }
 
-    const preCheck = await computePreReportBlockers(engagementId);
-    if (!preCheck.readyForRelease) {
+    const preCheck = await computePreDraftBlockers(engagementId);
+    if (!preCheck.readyForDraft) {
       return res.status(400).json({
         error: "Cannot generate finalization outputs: pre-report blockers exist",
         blockers: preCheck.issues.map(i => i.message),
