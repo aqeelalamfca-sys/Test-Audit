@@ -214,6 +214,22 @@ The Data Intake module provides a centralized, linked workflow for importing, va
 ### Auto-Reconciliation
 - After data import, `triggerPostImportReconciliation()` in `importRoutes.ts` automatically runs the full reconciliation scan, updating gate statuses and generating exception records.
 
+## Compliance Checklists
+
+Regulatory compliance checklists per engagement (`/compliance-checklists/:engagementId`):
+
+- **Backend**: `server/routes/regulatoryComplianceRoutes.ts` mounted at `/api/compliance/checklists`
+- **Frontend**: `client/src/pages/compliance-checklists.tsx`
+- **Checklist types**: Companies Act 2017, FBR Tax, FBR WHT, FBR NTN, SECP, SECP XBRL, ISA Documentation, ISQM Quality Control, Custom
+- **Features**:
+  - **Bulk Excel/CSV upload**: Column auto-detection (law/regulation, section/rule, applicability, requirement, status, evidence, remarks). Empty rows filtered. Status auto-mapped (Compliant→COMPLETED, Non-Compliant→IN_PROGRESS, etc.)
+  - **Template download**: Per-type Excel template with styled header + instructions sheet. Uses ExcelJS
+  - **Evidence attachments**: Per-row file upload (PDF, images, Word, Excel, CSV, text — max 15MB). Files stored in `uploads/checklist-evidence/`. Inline display with download/delete. Stored as JSON array `evidenceAttachments` in each checklist item
+  - **Role guards**: All mutating endpoints require `SENIOR` role minimum
+  - **Auth**: File uploads use `fetchWithAuth` for proper auth token handling (token key: `auditwise_token`)
+- **Data model**: `ComplianceChecklist` with `items` JSON array, unique per `(engagementId, checklistType)`
+- **APIs**: GET list, POST upsert, GET template/:type, POST bulk-upload, POST evidence-upload/:type/:ref, DELETE evidence/:type/:ref/:id, GET evidence-download/:type/:ref/:id, GET export
+
 ## Planning Module (ISA-Linked A-P Tabs)
 
 The Planning module (`/planning/:engagementId`) is restructured into 16 ISA-linked tabs (A-P):
