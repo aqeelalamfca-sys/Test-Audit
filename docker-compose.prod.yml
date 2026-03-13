@@ -194,20 +194,20 @@ services:
     volumes:
       - ./nginx/default.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/nginx-ssl.conf:/etc/nginx/nginx-ssl.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
       - ./docker/nginx-entrypoint.sh:/docker-entrypoint-custom.sh:ro
       - certbot-webroot:/var/www/certbot:ro
+      - nginx-ssl:/etc/nginx/ssl:ro
     depends_on:
       frontend:
-        condition: service_healthy
+        condition: service_started
       backend:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost/api/health 2>/dev/null || wget -q --spider https://localhost/api/health 2>/dev/null || exit 1"]
       interval: 15s
       timeout: 5s
-      retries: 5
-      start_period: 30s
+      retries: 10
+      start_period: 60s
     deploy:
       resources:
         limits:
@@ -235,4 +235,6 @@ volumes:
   logs:
     driver: local
   certbot-webroot:
+    driver: local
+  nginx-ssl:
     driver: local
