@@ -4,20 +4,16 @@ import { requireAuth, requireMinRole, logAuditTrail, type AuthenticatedRequest }
 import { requirePhaseUnlocked, preventDeletionAfterFinalization } from "./middleware/auditLock";
 import { computePreDraftBlockers, computePreReportBlockers } from "./services/preReportBlockerService";
 import { z } from "zod";
+import { validateEngagementAccess } from "./lib/validateEngagementAccess";
 
 const router = Router();
 
-async function validateEngagementAccess(engagementId: string, userId: string, firmId: string | null | undefined) {
-  if (!firmId) return { valid: false, error: "User not associated with a firm" };
-  const engagement = await prisma.engagement.findFirst({ where: { id: engagementId, firmId } });
-  if (!engagement) return { valid: false, error: "Engagement not found" };
-  return { valid: true, engagement };
-}
+
 
 // Subsequent Events
 router.get("/:engagementId/subsequent-events", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const events = await prisma.subsequentEvent.findMany({
@@ -37,7 +33,7 @@ router.get("/:engagementId/subsequent-events", requireAuth, async (req: Authenti
 
 router.post("/:engagementId/subsequent-events", requireAuth, requirePhaseUnlocked("FINALIZATION"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const event = await prisma.subsequentEvent.create({
@@ -55,7 +51,7 @@ router.post("/:engagementId/subsequent-events", requireAuth, requirePhaseUnlocke
 // Written Representations
 router.get("/:engagementId/representations", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const reps = await prisma.writtenRepresentation.findMany({
@@ -74,7 +70,7 @@ router.get("/:engagementId/representations", requireAuth, async (req: Authentica
 
 router.post("/:engagementId/representations", requireAuth, requirePhaseUnlocked("FINALIZATION"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const rep = await prisma.writtenRepresentation.create({
@@ -89,7 +85,7 @@ router.post("/:engagementId/representations", requireAuth, requirePhaseUnlocked(
 // Audit Report
 router.get("/:engagementId/report", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const report = await prisma.auditReport.findUnique({
@@ -109,7 +105,7 @@ router.get("/:engagementId/report", requireAuth, async (req: AuthenticatedReques
 
 router.post("/:engagementId/report", requireAuth, requirePhaseUnlocked("REPORTING"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const draftCheck = await computePreDraftBlockers(req.params.engagementId);
@@ -138,7 +134,7 @@ router.post("/:engagementId/report", requireAuth, requirePhaseUnlocked("REPORTIN
 
 router.post("/:engagementId/report/partner-approve", requireAuth, requireMinRole("PARTNER"), requirePhaseUnlocked("REPORTING"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const draftCheck = await computePreDraftBlockers(req.params.engagementId);
@@ -160,7 +156,7 @@ router.post("/:engagementId/report/partner-approve", requireAuth, requireMinRole
 
 router.post("/:engagementId/report/sign", requireAuth, requireMinRole("PARTNER"), requirePhaseUnlocked("REPORTING"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const draftCheck = await computePreDraftBlockers(req.params.engagementId);
@@ -188,7 +184,7 @@ router.post("/:engagementId/report/sign", requireAuth, requireMinRole("PARTNER")
 // Management Letter
 router.get("/:engagementId/management-letter", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const letter = await prisma.managementLetter.findUnique({
@@ -206,7 +202,7 @@ router.get("/:engagementId/management-letter", requireAuth, async (req: Authenti
 
 router.post("/:engagementId/management-letter", requireAuth, requirePhaseUnlocked("FINALIZATION"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const letterAllowedFields = ["subject", "findings", "recommendations", "managementResponses", "letterBody"];
@@ -229,7 +225,7 @@ router.post("/:engagementId/management-letter", requireAuth, requirePhaseUnlocke
 // Completion Memo
 router.get("/:engagementId/completion-memo", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const memo = await prisma.completionMemo.findUnique({
@@ -248,7 +244,7 @@ router.get("/:engagementId/completion-memo", requireAuth, async (req: Authentica
 
 router.post("/:engagementId/completion-memo", requireAuth, requirePhaseUnlocked("FINALIZATION"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const memoAllowedFields = ["summary", "unresolvedMatters", "subsequentEventsConclusion", "goingConcernConclusion", "overallConclusion", "memoText"];
@@ -271,7 +267,7 @@ router.post("/:engagementId/completion-memo", requireAuth, requirePhaseUnlocked(
 // Compliance Checklists
 router.get("/:engagementId/checklists", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const checklists = await prisma.complianceChecklist.findMany({
@@ -290,7 +286,7 @@ router.get("/:engagementId/checklists", requireAuth, async (req: AuthenticatedRe
 
 router.post("/:engagementId/checklists", requireAuth, requirePhaseUnlocked("FINALIZATION"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const checklist = await prisma.complianceChecklist.upsert({
@@ -306,7 +302,7 @@ router.post("/:engagementId/checklists", requireAuth, requirePhaseUnlocked("FINA
 
 router.get("/:engagementId/finalization-stats", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const eid = req.params.engagementId;
@@ -418,7 +414,7 @@ router.get("/:engagementId/finalization-stats", requireAuth, async (req: Authent
 
 router.get("/:engagementId/pre-report-check", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const [draftResult, releaseResult] = await Promise.all([

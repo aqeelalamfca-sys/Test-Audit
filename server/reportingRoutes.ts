@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { requireAuth, type AuthenticatedRequest } from "./auth";
 import { reportingService } from "./services/reportingService";
 import { z } from "zod";
+import { validateEngagementAccess } from "./lib/validateEngagementAccess";
 
 const router = Router();
 
@@ -18,26 +19,7 @@ function parseDateRange(query: any): { from?: Date; to?: Date } | undefined {
   };
 }
 
-async function validateEngagementAccess(
-  engagementId: string,
-  firmId: string | null
-): Promise<{ valid: boolean; error?: string }> {
-  if (!firmId) {
-    return { valid: false, error: "User not associated with a firm" };
-  }
 
-  const { prisma } = await import("./db");
-  const engagement = await prisma.engagement.findUnique({
-    where: { id: engagementId },
-    select: { firmId: true },
-  });
-
-  if (!engagement || engagement.firmId !== firmId) {
-    return { valid: false, error: "Engagement not found or access denied" };
-  }
-
-  return { valid: true };
-}
 
 router.get(
   "/:engagementId/engagement-progress",

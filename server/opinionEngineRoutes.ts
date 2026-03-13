@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { prisma } from "./db";
 import { requireAuth, requireMinRole, logAuditTrail, type AuthenticatedRequest } from "./auth";
 import { z } from "zod";
+import { validateEngagementAccess } from "./lib/validateEngagementAccess";
 
 const router = Router();
 
@@ -9,12 +10,7 @@ const VALID_CATEGORIES = ["UNMODIFIED", "QUALIFIED", "ADVERSE", "DISCLAIMER"] as
 const VALID_DECISIONS = ["PENDING", "ACCEPTED", "REVISED", "REJECTED", "OVERRIDDEN"] as const;
 const VALID_RELIABILITY = ["HIGH", "MODERATE", "LIMITED", "INSUFFICIENT"] as const;
 
-async function validateEngagementAccess(engagementId: string, userId: string, firmId: string | null | undefined) {
-  if (!firmId) return { valid: false as const, error: "User not associated with a firm" };
-  const engagement = await prisma.engagement.findFirst({ where: { id: engagementId, firmId } });
-  if (!engagement) return { valid: false as const, error: "Engagement not found" };
-  return { valid: true as const, engagement };
-}
+
 
 async function getEngine(engagementId: string) {
   return prisma.opinionEngine.findFirst({
@@ -33,7 +29,7 @@ async function getEngineWithRelations(engagementId: string) {
 
 router.get("/:engagementId", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     let engine = await getEngineWithRelations(req.params.engagementId);
@@ -58,7 +54,7 @@ router.get("/:engagementId", requireAuth, async (req: AuthenticatedRequest, res:
 
 router.put("/:engagementId", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const engine = await getEngine(req.params.engagementId);
@@ -97,7 +93,7 @@ router.put("/:engagementId", requireAuth, async (req: AuthenticatedRequest, res:
 
 router.post("/:engagementId/run-analysis", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const engine = await getEngine(req.params.engagementId);
@@ -312,7 +308,7 @@ router.post("/:engagementId/run-analysis", requireAuth, async (req: Authenticate
 
 router.put("/:engagementId/findings/:findingId", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const engine = await getEngine(req.params.engagementId);
@@ -354,7 +350,7 @@ router.put("/:engagementId/findings/:findingId", requireAuth, async (req: Authen
 
 router.delete("/:engagementId/findings/:findingId", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const engine = await getEngine(req.params.engagementId);
@@ -375,7 +371,7 @@ router.delete("/:engagementId/findings/:findingId", requireAuth, async (req: Aut
 
 router.post("/:engagementId/partner-sign", requireAuth, requireMinRole("PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const engine = await getEngine(req.params.engagementId);
@@ -421,7 +417,7 @@ router.post("/:engagementId/partner-sign", requireAuth, requireMinRole("PARTNER"
 
 router.post("/:engagementId/lock", requireAuth, requireMinRole("PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const engine = await getEngine(req.params.engagementId);
@@ -448,7 +444,7 @@ router.post("/:engagementId/lock", requireAuth, requireMinRole("PARTNER"), async
 
 router.get("/:engagementId/data-sources", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const [materiality, misstatements, goingConcern, risks, deficiencies, events] = await Promise.all([
@@ -475,7 +471,7 @@ router.get("/:engagementId/data-sources", requireAuth, async (req: Authenticated
 
 router.get("/:engagementId/opinion-reports-stats", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
     const eid = req.params.engagementId;

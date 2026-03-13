@@ -1,6 +1,7 @@
 import { Router, Response } from "express";
 import { prisma } from "./db";
 import { z } from "zod";
+import { validateEngagementAccess } from "./lib/validateEngagementAccess";
 
 const router = Router();
 
@@ -32,14 +33,7 @@ function requireMinRole(minRole: string) {
   };
 }
 
-async function validateEngagementAccess(engagementId: string, userId: string, firmId: string | undefined) {
-  if (!firmId) return { valid: false, error: "User not associated with a firm" };
-  const engagement = await prisma.engagement.findFirst({
-    where: { id: engagementId, firmId },
-  });
-  if (!engagement) return { valid: false, error: "Engagement not found" };
-  return { valid: true, engagement };
-}
+
 
 async function logAuditTrail(
   userId: string,
@@ -107,7 +101,7 @@ const substantiveTestSchema = z.object({
 
 router.get("/:engagementId/tests", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -136,7 +130,7 @@ router.get("/:engagementId/tests", requireAuth, async (req: AuthenticatedRequest
 
 router.post("/:engagementId/tests", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -172,7 +166,7 @@ router.post("/:engagementId/tests", requireAuth, async (req: AuthenticatedReques
 
 router.patch("/:engagementId/tests/:testId", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -206,7 +200,7 @@ router.patch("/:engagementId/tests/:testId", requireAuth, async (req: Authentica
 
 router.post("/:engagementId/tests/:testId/review", requireAuth, requireMinRole("SENIOR"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -239,7 +233,7 @@ router.post("/:engagementId/tests/:testId/review", requireAuth, requireMinRole("
 
 router.post("/:engagementId/tests/:testId/manager-approve", requireAuth, requireMinRole("MANAGER"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -315,7 +309,7 @@ router.post("/:engagementId/calculate-sample-size", requireAuth, async (req: Aut
 // Sample Items
 router.get("/:engagementId/tests/:testId/samples", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -335,7 +329,7 @@ router.get("/:engagementId/tests/:testId/samples", requireAuth, async (req: Auth
 
 router.post("/:engagementId/tests/:testId/samples", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -363,7 +357,7 @@ router.post("/:engagementId/tests/:testId/samples", requireAuth, async (req: Aut
 // Misstatements
 router.get("/:engagementId/misstatements", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -386,7 +380,7 @@ router.get("/:engagementId/misstatements", requireAuth, async (req: Authenticate
 
 router.post("/:engagementId/misstatements", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -417,7 +411,7 @@ router.post("/:engagementId/misstatements", requireAuth, async (req: Authenticat
 
 router.patch("/:engagementId/misstatements/:id", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -447,7 +441,7 @@ router.patch("/:engagementId/misstatements/:id", requireAuth, async (req: Authen
 
 router.get("/:engagementId/misstatement-summary", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }

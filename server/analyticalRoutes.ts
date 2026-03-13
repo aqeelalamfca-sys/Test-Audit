@@ -1,6 +1,7 @@
 import { Router, Response } from "express";
 import { prisma } from "./db";
 import { z } from "zod";
+import { validateEngagementAccess } from "./lib/validateEngagementAccess";
 
 const router = Router();
 
@@ -32,14 +33,7 @@ function requireMinRole(minRole: string) {
   };
 }
 
-async function validateEngagementAccess(engagementId: string, userId: string, firmId: string | undefined) {
-  if (!firmId) return { valid: false, error: "User not associated with a firm" };
-  const engagement = await prisma.engagement.findFirst({
-    where: { id: engagementId, firmId },
-  });
-  if (!engagement) return { valid: false, error: "Engagement not found" };
-  return { valid: true, engagement };
-}
+
 
 async function logAuditTrail(
   userId: string, action: string, entityType: string, entityId: string | null,
@@ -54,7 +48,7 @@ async function logAuditTrail(
 // Trial Balance Import
 router.post("/:engagementId/trial-balance", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -109,7 +103,7 @@ router.post("/:engagementId/trial-balance", requireAuth, async (req: Authenticat
 
 router.get("/:engagementId/trial-balance", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -132,7 +126,7 @@ router.get("/:engagementId/trial-balance", requireAuth, async (req: Authenticate
 // Analytical Procedures
 router.get("/:engagementId/procedures", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -171,7 +165,7 @@ const analyticalProcedureSchema = z.object({
 
 router.post("/:engagementId/procedures", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -208,7 +202,7 @@ router.post("/:engagementId/procedures", requireAuth, async (req: AuthenticatedR
 
 router.patch("/:engagementId/procedures/:id", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -257,7 +251,7 @@ router.patch("/:engagementId/procedures/:id", requireAuth, async (req: Authentic
 
 router.post("/:engagementId/procedures/:id/escalate", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -291,7 +285,7 @@ router.post("/:engagementId/procedures/:id/escalate", requireAuth, async (req: A
 
 router.post("/:engagementId/procedures/:id/review", requireAuth, requireMinRole("SENIOR"), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -314,7 +308,7 @@ router.post("/:engagementId/procedures/:id/review", requireAuth, requireMinRole(
 // Auto-calculate ratios
 router.post("/:engagementId/procedures/:id/calculate-ratios", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
@@ -367,7 +361,7 @@ router.post("/:engagementId/procedures/:id/calculate-ratios", requireAuth, async
 // Variance alerts
 router.get("/:engagementId/variance-alerts", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
+    const access = await validateEngagementAccess(req.params.engagementId, req.user!.firmId);
     if (!access.valid) {
       return res.status(404).json({ error: access.error });
     }
