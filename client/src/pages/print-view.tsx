@@ -117,12 +117,14 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function generatePDFFileName(clientName: string, fiscalYearEnd: string | undefined, deliverableType: string): string {
-  const cleanClientName = clientName.replace(/[^a-zA-Z0-9]/g, "_");
+function generatePDFFileName(firmName: string | undefined, clientName: string, engagementCode: string | undefined, fiscalYearEnd: string | undefined, deliverableType: string): string {
+  const cleanFirm = (firmName || "Firm").replace(/[^a-zA-Z0-9]/g, "_").substring(0, 20);
+  const cleanClientName = clientName.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30);
+  const engCode = (engagementCode || "").replace(/[^a-zA-Z0-9-]/g, "");
   const fy = fiscalYearEnd ? format(new Date(fiscalYearEnd), "yyyy") : "FY";
   const type = deliverableType.replace(/_/g, "");
   const date = format(new Date(), "yyyyMMdd");
-  return `${cleanClientName}_${fy}_${type}_${date}.pdf`;
+  return `${cleanFirm}_${cleanClientName}_${engCode}_${fy}_${type}_${date}.pdf`;
 }
 
 export default function PrintView() {
@@ -399,7 +401,7 @@ export default function PrintView() {
 
     const options = {
       margin: 10,
-      filename: generatePDFFileName(clientName, fiscalYearEnd, deliverable.deliverableType),
+      filename: generatePDFFileName(firm?.name, clientName, engagement?.engagementCode, fiscalYearEnd, deliverable.deliverableType),
       image: { type: "jpeg" as const, quality: 0.98 },
       html2canvas: { scale: 2 },
       jsPDF: { unit: "mm" as const, format: "a4" as const, orientation: "portrait" as const }

@@ -297,8 +297,11 @@ router.get("/engagements/:engagementId/outputs/:outputId/download", requireAuth,
     }
 
     const clientSlug = (engagement as any).client?.name?.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30) || "Client";
+    const firmName = await prisma.firm.findUnique({ where: { id: req.user!.firmId! }, select: { name: true } });
+    const firmSlug = firmName?.name?.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 20) || "Firm";
     const engCode = engagement.engagementCode?.replace(/[^a-zA-Z0-9-]/g, "") || "";
-    const filename = `${clientSlug}_${engCode}_${output.outputCode}-v${output.version}.${output.outputFormat.toLowerCase()}`;
+    const yearEnd = engagement.fiscalYearEnd ? new Date(engagement.fiscalYearEnd).getFullYear().toString() : "FY";
+    const filename = `${firmSlug}_${clientSlug}_${engCode}_${yearEnd}_${output.outputCode}-v${output.version}.${output.outputFormat.toLowerCase()}`;
     
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.sendFile(filePath);
@@ -424,6 +427,12 @@ router.post("/engagements/:engagementId/outputs/generate-phase5", requireAuth, a
     }
 
     const preCheck = await computePreReportBlockers(engagementId);
+    if (!preCheck.readyForRelease) {
+      return res.status(400).json({
+        error: "Cannot generate finalization outputs: pre-report blockers exist",
+        blockers: preCheck.issues.map(i => i.message),
+      });
+    }
 
     const result = await generatePhase5Outputs(engagementId, req.user!.id);
 
@@ -439,7 +448,6 @@ router.post("/engagements/:engagementId/outputs/generate-phase5", requireAuth, a
       outputsCreated: result.outputsCreated,
       outputsSkipped: result.outputsSkipped,
       details: result.details,
-      preReportWarnings: preCheck.readyForRelease ? [] : preCheck.issues.map(i => i.message),
     });
   } catch (error) {
     console.error("Error generating Phase 5 outputs:", error);
