@@ -640,6 +640,7 @@ export default function PrePlanning() {
 
   return (
     <PageShell
+      showTopBar={false}
       title="Pre-Planning Phase"
       subtitle={`${client?.name || "Select Client"}${engagement?.engagementCode ? ` (${engagement.engagementCode})` : ""}`}
       icon={<ClipboardCheck className="h-6 w-6 text-primary" />}

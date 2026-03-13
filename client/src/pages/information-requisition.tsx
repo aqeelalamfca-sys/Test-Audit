@@ -3243,6 +3243,7 @@ export default function InformationRequisition() {
     <PageShell
       title="Data Intake"
       subtitle=""
+      showTopBar={false}
       backHref={`/engagements`}
       nextHref={engagementId ? `/workspace/${engagementId}/pre-planning` : undefined}
       dashboardHref="/engagements"

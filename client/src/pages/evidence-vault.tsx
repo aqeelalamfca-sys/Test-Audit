@@ -876,6 +876,7 @@ export default function EvidenceVault() {
 
   return (
     <PageShell
+      showTopBar={false}
       title="Evidence Vault"
       subtitle={`${client?.name || "Select Client"}${engagement?.engagementCode ? ` (${engagement.engagementCode})` : ""}`}
       icon={<FolderOpen className="h-6 w-6 text-primary" />}

@@ -3333,6 +3333,7 @@ export default function FSHeadsPage() {
 
   return (
     <PageShell
+      showTopBar={false}
       title="FS Heads Execution Wizard"
       subtitle={`${client?.name || "Engagement"} - ${engagement?.engagementCode || ""}`}
       icon={<Layers className="h-5 w-5 text-primary" />}

@@ -646,6 +646,7 @@ export default function Finalization() {
 
   return (
     <PageShell
+      showTopBar={false}
       title="Finalization"
       subtitle={`${client?.name || ""} ${engagement?.engagementCode ? `(${engagement.engagementCode})` : ""}`}
       icon={<FileCheck className="h-5 w-5 text-primary" />}

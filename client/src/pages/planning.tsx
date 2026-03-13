@@ -3096,6 +3096,7 @@ export default function Planning() {
 
   return (
     <PageShell
+      showTopBar={false}
       title="Audit Planning Phase"
       subtitle={`${client?.name || ""} ${engagement?.engagementCode ? `(${engagement.engagementCode})` : ""}`}
       icon={<Calculator className="h-5 w-5 text-primary" />}

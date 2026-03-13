@@ -191,6 +191,7 @@ export default function Execution() {
 
   return (
     <PageShell
+      showTopBar={false}
       title="Execution Phase"
       subtitle={`${client?.name || ""} ${engagement?.engagementCode ? `(${engagement.engagementCode})` : ""}`}
       icon={<ClipboardList className="h-5 w-5 text-primary" />}

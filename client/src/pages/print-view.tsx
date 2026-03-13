@@ -432,6 +432,7 @@ export default function PrintView() {
 
   return (
     <PageShell
+      showTopBar={false}
       title="Deliverables"
       subtitle={`Audit deliverables register & print view${client?.name ? ` | ${client.name}` : ""}${engagement?.engagementCode ? ` (${engagement.engagementCode})` : ""}`}
       icon={<Printer className="h-6 w-6 text-primary" />}

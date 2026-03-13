@@ -527,6 +527,7 @@ export default function EQCR() {
 
   return (
     <PageShell
+      showTopBar={false}
       title="EQCR - Engagement Quality Control Review"
       subtitle={`ISQM 1, ISQM 2${client?.name ? ` | ${client.name}` : ""}${engagement?.engagementCode ? ` (${engagement.engagementCode})` : ""}`}
       icon={<Shield className="h-5 w-5 text-primary" />}
