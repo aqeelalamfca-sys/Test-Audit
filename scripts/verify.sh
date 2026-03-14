@@ -39,16 +39,20 @@ echo ""
 
 echo "[1/4] Docker Status"
 check "docker compose running" bash -c 'docker compose ps --status running -q | grep -q .'
-check "auditwise-app container up" bash -c 'docker inspect --format="{{.State.Running}}" auditwise-app 2>/dev/null | grep -qx true'
+check "auditwise-backend container up" bash -c 'docker inspect --format="{{.State.Running}}" auditwise-backend 2>/dev/null | grep -qx true'
+check "auditwise-frontend container up" bash -c 'docker inspect --format="{{.State.Running}}" auditwise-frontend 2>/dev/null | grep -qx true'
+check "auditwise-nginx container up" bash -c 'docker inspect --format="{{.State.Running}}" auditwise-nginx 2>/dev/null | grep -qx true'
 check "auditwise-db container up" bash -c 'docker inspect --format="{{.State.Running}}" auditwise-db 2>/dev/null | grep -qx true'
 echo ""
 
 echo "[2/4] Local Health Checks"
-check_cmd "GET /health (port 5000)" curl -sf --max-time 5 http://127.0.0.1:5000/api/health
+check_cmd "GET backend /api/health (port 5000)" curl -sf --max-time 5 http://127.0.0.1:5000/api/health
 check_cmd "GET /__healthz (liveness)" curl -sf --max-time 5 http://127.0.0.1:5000/__healthz
 check "GET / returns HTML" bash -c 'curl -sf --max-time 5 http://127.0.0.1:5000/ | grep -q "<html"'
 check "GET /login SPA route" bash -c 'curl -sf --max-time 5 http://127.0.0.1:5000/login | grep -q "<html"'
 check_cmd "GET /api/health/full (deep)" curl -sf --max-time 10 http://127.0.0.1:5000/api/health/full
+check_cmd "GET nginx /api/health (port 80)" curl -sf --max-time 5 http://127.0.0.1/api/health
+check "GET nginx / returns HTML" bash -c 'curl -sf --max-time 5 http://127.0.0.1/ | grep -q "<html"'
 echo ""
 
 echo "[3/4] NGINX & SSL (skip if not on VPS)"

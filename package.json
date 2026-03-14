@@ -136,7 +136,10 @@
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "tsx script/build.ts",
     "start": "NODE_ENV=production node dist/index.cjs",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "deploy:preflight": "node scripts/preflight-deploy.mjs",
+    "verify:windows": "powershell -ExecutionPolicy Bypass -File scripts/verify.ps1",
+    "diagnose:windows": "powershell -ExecutionPolicy Bypass -File scripts/diagnose.ps1"
   },
   "overrides": {
     "drizzle-kit": {
