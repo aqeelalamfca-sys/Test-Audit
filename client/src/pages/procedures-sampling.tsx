@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import { useEngagement } from "@/lib/workspace-context";
-import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -224,8 +223,7 @@ export default function ProceduresSampling() {
       signoffSection="procedures-sampling"
       readOnly={isReadOnly}
     >
-      <AIAssistantPanel engagementId={engagementId || ""} phaseKey="procedures-sampling" className="mb-2.5" />
-      <div className="space-y-3">
+<div className="space-y-3">
         {!allPrereqsMet && prerequisites.length > 0 && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />

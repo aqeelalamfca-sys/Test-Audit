@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, Link } from "wouter";
 import { useEngagement } from "@/lib/workspace-context";
-import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { SignOffBar } from "@/components/sign-off-bar";
 import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -785,8 +784,7 @@ export default function ReviewMapping() {
       </div>
 
       <div className="px-3 pt-3">
-        <AIAssistantPanel engagementId={engagementId || ""} phaseKey="coa-mapping" />
-      </div>
+</div>
       <div className="flex flex-1 overflow-hidden">
         <div className="w-72 border-r flex flex-col">
           <div className="p-3 border-b flex items-center justify-between">

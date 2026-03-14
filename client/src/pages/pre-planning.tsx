@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
-import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { useEngagement } from "@/lib/workspace-context";
 import { Button } from "@/components/ui/button";
 import { SimpleTabNavigation } from "@/components/numbered-tab-navigation";
@@ -667,8 +666,7 @@ export default function PrePlanning() {
     >
     <div className="w-full bg-background" data-testid="preplanning-wizard-page">
       <div className="px-3 pt-2">
-        <AIAssistantPanel engagementId={engagementId} phaseKey="engagement-setup" />
-      </div>
+</div>
       <div className="px-3 py-2 space-y-2">
         <Tabs value={activeStep} onValueChange={(v) => setActiveStep(v as StepId)}>
           <SimpleTabNavigation

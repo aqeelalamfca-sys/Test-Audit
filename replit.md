@@ -62,6 +62,18 @@ Every engagement workspace page has a collapsible "Conclusion" section at the bo
 - **Authority model**: Each role has an authority level (STAFF=1, SENIOR=2, MANAGER=3, EQCR=4, PARTNER=5, FIRM_ADMIN=6). Multiple users can add their own conclusions on the same page. Same user's re-save supersedes their previous entry (with history preserved)
 - **Audit trail**: All conclusion actions logged via `logAuditTrail()`
 
+## Universal AI Assistant Drawer
+
+A slide-in drawer accessible from every workspace page via the "AI Assistant" button in the workspace shell header:
+- **Component**: `client/src/components/ai-assistant-drawer.tsx` — uses shadcn Sheet (Radix Dialog) for right-side slide-in
+- **Backend**: `POST /api/ai/copilot-enhanced/seed-conclusion` — gathers page data, engagement context, materiality, risks, existing conclusions, and generates professional audit text via AI (with template fallback)
+- **Modes**: `draft` (seed conclusion), `summary` (draft summary), `missing-fields` (completeness check), `review-section` (reviewer assessment), `fill-narratives` (narrative generation)
+- **Text injection**: Dispatches `ai-conclusion-text` CustomEvent with `{text, action, pageKey}`. Actions: insert, replace, append. The `PageConclusionPanel` listens and auto-opens the editor with the text
+- **Context-aware**: Uses `usePageAIContext` hook for route detection, page profiles, and standards
+- **Standards panel**: Shows applicable ISA/ISQM standards for the current page
+- **Page templates**: Displays page-specific suggestion templates from page profiles
+- **Integration**: Mounted in `engagement-workspace-shell.tsx` alongside existing Copilot panel. Per-page inline AI panels (acceptance, ethics) replaced by this universal drawer
+
 ## Sidebar Navigation (Accordion)
 
 The workspace sidebar uses collapsible accordion menus for phase groups:

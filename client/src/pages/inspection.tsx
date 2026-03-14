@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "wouter";
-import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { SignOffBar } from "@/components/sign-off-bar";
 import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { useEngagement } from "@/lib/workspace-context";
@@ -339,8 +338,7 @@ export default function Inspection() {
   return (
     <div className="w-full px-3 py-3 space-y-2.5">
       <SignOffBar phase="INSPECTION" section="inspection" className="mb-1" />
-      <AIAssistantPanel engagementId={engagementId || ""} phaseKey="inspection" className="mb-2" />
-      <div className="flex items-center justify-between gap-2">
+<div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <div className="p-1.5 rounded-lg bg-primary/10 flex-shrink-0">
             <Archive className="h-5 w-5 text-primary" />

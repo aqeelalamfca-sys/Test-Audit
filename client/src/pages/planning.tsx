@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link, useLocation } from "wouter";
-import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { ModuleTemplates } from "@/components/module-templates";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -3186,14 +3185,7 @@ export default function Planning() {
       headerActions={null}
     >
       <div className="px-3 py-2 space-y-2">
-
-      <AIAssistantPanel
-        engagementId={engagementId || ""}
-        phaseKey={isRiskAssessmentRoute ? "risk-assessment" : isPlanningStrategyRoute ? "planning-strategy" : "materiality"}
-        className="mb-3"
-      />
-
-      {isRiskAssessmentRoute && engagementId && (
+{isRiskAssessmentRoute && engagementId && (
         <RiskAssessmentPhaseHeader engagementId={engagementId} />
       )}
 

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "wouter";
-import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { SignOffBar } from "@/components/sign-off-bar";
 import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { useEngagement } from "@/lib/workspace-context";
@@ -46,7 +45,6 @@ import {
   XCircle,
   Save,
   Loader2,
-  Bot,
   X,
   FileText,
   Users,
@@ -155,9 +153,6 @@ export default function EthicsIndependence() {
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [approvalNotes, setApprovalNotes] = useState("");
   const [approving, setApproving] = useState(false);
-  const [showAI, setShowAI] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiResult, setAiResult] = useState("");
 
   const isPartner = user?.role === "PARTNER" || user?.role === "FIRM_ADMIN";
   const hasLoadedRef = useRef(false);
@@ -265,32 +260,6 @@ export default function EthicsIndependence() {
     }
   };
 
-  const requestAI = async (capability: string) => {
-    setAiLoading(true);
-    setAiResult("");
-    try {
-      const ctx = {
-        clientName: client?.name || "",
-        engagementCode: engagement?.engagementCode || "",
-        declarations,
-        threats,
-        conflicts,
-        ethicsStatus,
-        form,
-      };
-      setAiResult(
-        capability === "ethics-warning-alerts"
-          ? generateEthicsWarnings(ctx)
-          : capability === "missing-declaration-summary"
-          ? generateMissingDeclarations(ctx)
-          : capability === "conclusion-wording"
-          ? generateEthicsConclusion(ctx)
-          : "AI capability not available."
-      );
-    } finally {
-      setAiLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -307,7 +276,6 @@ export default function EthicsIndependence() {
   return (
     <div className="page-container space-y-2.5">
       <SignOffBar phase="PRE_PLANNING" section="independence" className="mb-1" />
-      <AIAssistantPanel engagementId={engagementId} phaseKey="independence" className="mb-2" />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-primary/10">
@@ -327,9 +295,6 @@ export default function EthicsIndependence() {
               <Lock className="h-3 w-3 mr-1" /> Approved & Locked
             </Badge>
           )}
-          <Button variant="outline" size="sm" onClick={() => setShowAI(!showAI)}>
-            <Bot className="h-4 w-4 mr-1" /> AI Assistant
-          </Button>
           {isPartner && !isApproved && (
             <Button size="sm" variant="default" onClick={() => setShowApproveDialog(true)} disabled={completeness < 50}>
               <CheckCircle2 className="h-4 w-4 mr-1" /> Approve
@@ -789,35 +754,6 @@ export default function EthicsIndependence() {
           </Tabs>
         </div>
 
-        {showAI && (
-          <div className="w-80 shrink-0">
-            <Card className="sticky top-4">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm flex items-center gap-2"><Bot className="h-4 w-4" /> AI Assistant</CardTitle>
-                  <Button variant="ghost" size="icon" onClick={() => setShowAI(false)}><X className="h-4 w-4" /></Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => requestAI("ethics-warning-alerts")} disabled={aiLoading}>
-                  <AlertTriangle className="h-3 w-3 mr-2" /> Ethics Warning Alerts
-                </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => requestAI("missing-declaration-summary")} disabled={aiLoading}>
-                  <Users className="h-3 w-3 mr-2" /> Missing Declarations Summary
-                </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => requestAI("conclusion-wording")} disabled={aiLoading}>
-                  <FileText className="h-3 w-3 mr-2" /> Suggest Conclusion Wording
-                </Button>
-                {aiLoading && <div className="flex items-center justify-center py-2"><Loader2 className="h-5 w-5 animate-spin" /></div>}
-                {aiResult && (
-                  <div className="mt-3 p-3 bg-muted rounded-lg text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
-                    {aiResult}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
       </div>
 
       <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>

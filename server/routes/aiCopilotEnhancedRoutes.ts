@@ -388,6 +388,152 @@ router.get("/standards/search/:query", requireAuth, async (req: AuthenticatedReq
   }
 });
 
+router.post("/seed-conclusion", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { pageId, engagementId, existingText, mode } = z.object({
+      pageId: z.string(),
+      engagementId: z.string().uuid(),
+      existingText: z.string().optional(),
+      mode: z.enum(["draft", "summary", "missing-fields", "review-section", "fill-narratives"]).default("draft"),
+    }).parse(req.body);
+
+    const profile = getPageProfile(pageId);
+    const standards = getStandardsByPage(pageId);
+
+    let engagementContext = "";
+    let formDataContext = "";
+    try {
+      const engagement = await prisma.engagement.findFirst({
+        where: { id: engagementId, firmId: req.user!.firmId ?? undefined },
+        select: {
+          id: true,
+          engagementCode: true,
+          currentPhase: true,
+          fiscalYearEnd: true,
+          status: true,
+          clientId: true,
+        },
+      });
+
+      if (engagement) {
+        const client = await prisma.client.findUnique({
+          where: { id: engagement.clientId },
+          select: { name: true, industry: true, entityType: true },
+        });
+        const [materiality, riskCount, observationCount] = await Promise.all([
+          prisma.materialityAssessment.findFirst({
+            where: { engagementId },
+            select: { overallMateriality: true, performanceMateriality: true, benchmark: true },
+            orderBy: { createdAt: "desc" },
+          }),
+          prisma.riskAssessment.count({ where: { engagementId } }),
+          prisma.observation.count({ where: { engagementId } }),
+        ]);
+
+        engagementContext = [
+          `Client: ${client?.name || "Unknown"}`,
+          `Industry: ${client?.industry || "Not specified"}`,
+          `Entity Type: ${client?.entityType || "Not specified"}`,
+          `Engagement Code: ${engagement.engagementCode}`,
+          `Phase: ${engagement.currentPhase}`,
+          `Status: ${engagement.status}`,
+          `FY End: ${engagement.fiscalYearEnd || "Not set"}`,
+          materiality ? `Overall Materiality: ${materiality.overallMateriality} (PM: ${materiality.performanceMateriality}, Benchmark: ${materiality.benchmark})` : "",
+          `Risks Identified: ${riskCount}`,
+          `Observations: ${observationCount}`,
+        ].filter(Boolean).join("\n");
+
+        const existingConclusions = await prisma.$queryRaw<Array<{ status: string; conclusionText: string; userName: string; userRole: string }>>`
+          SELECT status, "conclusionText", "userName", "userRole"
+          FROM "PageConclusion"
+          WHERE "engagementId" = ${engagementId} AND "pageKey" = ${pageId} AND "isSuperseded" = false
+          ORDER BY "authorityLevel" DESC
+          LIMIT 5
+        `;
+        if (existingConclusions.length > 0) {
+          formDataContext = "\nEXISTING CONCLUSIONS ON THIS PAGE:\n" +
+            existingConclusions.map(c => `- ${c.userName} (${c.userRole}): [${c.status}] ${c.conclusionText}`).join("\n");
+        }
+      }
+    } catch (_e) {}
+
+    const standardsContext = standards.slice(0, 5).map(s => `${s.code}: ${s.summary}`).join("\n");
+
+    const modePrompts: Record<string, string> = {
+      "draft": `Draft a professional conclusion for the "${profile?.module || pageId}" page. The conclusion should be suitable for a statutory audit file. Include a definitive status assessment (Satisfactory / Unsatisfactory / Satisfactory with Recommendation), reference applicable standards, and state the basis for the conclusion.`,
+      "summary": `Draft a comprehensive summary of the work performed on the "${profile?.module || pageId}" page. Include key findings, procedures performed, and overall assessment suitable for an audit working paper.`,
+      "missing-fields": `Review the "${profile?.module || pageId}" page context and identify any missing fields, incomplete areas, or documentation gaps. List each item with its significance and the applicable standard reference. Format as a numbered checklist.`,
+      "review-section": `Perform a reviewer-level assessment of the "${profile?.module || pageId}" page. Check for completeness, consistency with standards, professional skepticism, and documentation quality. Provide specific recommendations for improvement.`,
+      "fill-narratives": `Generate professional narrative text for all empty fields on the "${profile?.module || pageId}" page. For each field, provide a ready-to-use narrative that is specific to this engagement and references applicable standards. Format each with the field name followed by the suggested text.`,
+    };
+
+    const prompt = `${modePrompts[mode]}
+
+PAGE CONTEXT:
+Module: ${profile?.module || pageId}
+Objective: ${profile?.objective || "Complete page documentation"}
+Expected Outputs: ${profile?.expectedOutputs?.join(", ") || "Working paper documentation"}
+
+ENGAGEMENT CONTEXT:
+${engagementContext || "No engagement context available"}
+
+APPLICABLE STANDARDS:
+${standardsContext || "No specific standards mapped"}
+${formDataContext}
+${existingText ? `\nCURRENT EXISTING TEXT:\n${existingText}` : ""}
+
+REQUIREMENTS:
+- Write in professional statutory audit language
+- Be specific to this client and engagement context
+- Reference specific ISA/ISQM paragraphs where applicable
+- Keep the output structured, concise, and ready for use
+- Use definitive language appropriate for audit conclusions`;
+
+    let content: string;
+    let generated = true;
+    try {
+      const aiSettings = await fetchAISettings(req.user!.firmId!);
+      const result = await generateAIContent(aiSettings, {
+        prompt,
+        context: engagementContext,
+        systemPrompt: "You are a senior statutory auditor drafting professional audit documentation for a Pakistani audit firm under ISA and ICAP standards. Your output must be ready for direct inclusion in an audit file with minimal editing. Do not add disclaimers or meta-commentary about AI assistance.",
+        maxTokens: 3000,
+        temperature: 0.5,
+      });
+      if (!result.content || result.content.trim().length === 0) {
+        throw new Error("Empty AI response");
+      }
+      content = result.content;
+    } catch (_aiErr) {
+      generated = false;
+      const moduleName = profile?.module || pageId;
+      const objective = profile?.objective || "the applicable audit requirements";
+      content = mode === "draft"
+        ? `Based on our review of the ${moduleName} documentation and evaluation of ${objective}, the work performed is considered [Satisfactory/Unsatisfactory]. All applicable requirements under ${standards.length > 0 ? standards.map(s => s.code).join(", ") : "relevant ISA standards"} have been addressed. The evidence obtained provides a reasonable basis for this conclusion.\n\nThis conclusion is subject to review by the engagement partner.`
+        : mode === "summary"
+        ? `SUMMARY — ${moduleName}\n\nWork performed on this section covers ${objective}. Key procedures included [describe procedures]. ${engagementContext ? `\nEngagement context: ${engagementContext.split("\n").slice(0, 3).join("; ")}` : ""}\n\nFindings: [To be documented]\nConclusion: [Pending assessment]`
+        : mode === "missing-fields"
+        ? `COMPLETENESS CHECK — ${moduleName}\n\n${profile?.requiredEvidence?.map((e, i) => `${i + 1}. ${e} — [Verify completion]`).join("\n") || "1. Review all required fields for completeness\n2. Verify supporting documentation\n3. Confirm standard references"}`
+        : `SECTION REVIEW — ${moduleName}\n\nObjective: ${objective}\nStatus: [Requires assessment]\n\nRecommendations:\n1. Verify completeness of documentation\n2. Confirm adherence to applicable standards\n3. Review for consistency with engagement strategy`;
+    }
+
+    res.json({
+      content,
+      mode,
+      pageId,
+      generated,
+      module: profile?.module || pageId,
+      disclaimer: "AI-assisted — subject to professional judgment",
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid request", details: error.errors });
+    }
+    console.error("Seed conclusion error:", error);
+    res.status(500).json({ error: "Failed to generate conclusion content" });
+  }
+});
+
 router.get("/standards/:code", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const code = req.params.code;

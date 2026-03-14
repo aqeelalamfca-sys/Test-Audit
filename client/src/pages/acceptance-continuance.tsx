@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "wouter";
-import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { SignOffBar } from "@/components/sign-off-bar";
 import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { useEngagement } from "@/lib/workspace-context";
@@ -37,11 +36,9 @@ import {
   XCircle,
   Save,
   Loader2,
-  Bot,
   X,
   FileText,
   Users,
-  Scale,
   ClipboardCheck,
   Building2,
   Briefcase,
@@ -188,9 +185,6 @@ export default function AcceptanceContinuance() {
   const [approvalComments, setApprovalComments] = useState("");
   const [approvalDecision, setApprovalDecision] = useState<"APPROVED" | "REJECTED">("APPROVED");
   const [approving, setApproving] = useState(false);
-  const [showAI, setShowAI] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiResult, setAiResult] = useState("");
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const hasLoadedRef = useRef(false);
 
@@ -303,30 +297,6 @@ export default function AcceptanceContinuance() {
     }
   };
 
-  const requestAI = async (capability: string) => {
-    setAiLoading(true);
-    setAiResult("");
-    try {
-      const context = {
-        clientName: client?.name || "",
-        engagementCode: engagement?.engagementCode || "",
-        form,
-        capability,
-      };
-      setAiResult(
-        capability === "acceptance-summary-draft"
-          ? generateAcceptanceSummary(context)
-          : capability === "missing-field-alerts"
-          ? generateMissingAlerts(form)
-          : capability === "conclusion-wording"
-          ? generateConclusionWording(context)
-          : "AI capability not available."
-      );
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -338,7 +308,6 @@ export default function AcceptanceContinuance() {
   return (
     <div className="page-container space-y-2.5">
       <SignOffBar phase="PRE_PLANNING" section="acceptance" className="mb-1" />
-      <AIAssistantPanel engagementId={engagementId} phaseKey="acceptance" className="mb-2" />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-primary/10">
@@ -359,9 +328,6 @@ export default function AcceptanceContinuance() {
             </Badge>
           )}
           {saving && <Badge variant="outline"><Loader2 className="h-3 w-3 animate-spin mr-1" /> Saving...</Badge>}
-          <Button variant="outline" size="sm" onClick={() => setShowAI(!showAI)}>
-            <Bot className="h-4 w-4 mr-1" /> AI Assistant
-          </Button>
           <Button size="sm" onClick={() => saveData(form)} disabled={saving}>
             <Save className="h-4 w-4 mr-1" /> Save
           </Button>
@@ -764,35 +730,6 @@ export default function AcceptanceContinuance() {
           </Tabs>
         </div>
 
-        {showAI && (
-          <div className="w-80 shrink-0">
-            <Card className="sticky top-4">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm flex items-center gap-2"><Bot className="h-4 w-4" /> AI Assistant</CardTitle>
-                  <Button variant="ghost" size="icon" onClick={() => setShowAI(false)}><X className="h-4 w-4" /></Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => requestAI("acceptance-summary-draft")} disabled={aiLoading}>
-                  <FileText className="h-3 w-3 mr-2" /> Draft Acceptance Summary
-                </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => requestAI("missing-field-alerts")} disabled={aiLoading}>
-                  <AlertTriangle className="h-3 w-3 mr-2" /> Check Missing Fields
-                </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => requestAI("conclusion-wording")} disabled={aiLoading}>
-                  <Scale className="h-3 w-3 mr-2" /> Suggest Conclusion Wording
-                </Button>
-                {aiLoading && <div className="flex items-center justify-center py-2"><Loader2 className="h-5 w-5 animate-spin" /></div>}
-                {aiResult && (
-                  <div className="mt-3 p-3 bg-muted rounded-lg text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
-                    {aiResult}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
       </div>
 
       <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>

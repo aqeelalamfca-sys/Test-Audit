@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
@@ -164,6 +164,28 @@ export function PageConclusionPanel({ engagementId, pageKey }: PageConclusionPan
   const myCurrentConclusion = currentConclusions.find(c => c.userId === currentUserId);
   const otherConclusions = currentConclusions.filter(c => c.userId !== currentUserId);
   const supersededConclusions = conclusions.filter(c => c.isSuperseded);
+
+  const handleAIText = useCallback((e: Event) => {
+    const detail = (e as CustomEvent).detail;
+    if (!detail?.text || (detail.pageKey && detail.pageKey !== pageKey)) return;
+
+    setIsExpanded(true);
+    setIsEditing(true);
+    setEditingId(myCurrentConclusion?.id || null);
+
+    if (detail.action === "replace") {
+      setEditText(detail.text);
+    } else if (detail.action === "append") {
+      setEditText((prev) => prev ? `${prev}\n\n${detail.text}` : detail.text);
+    } else {
+      setEditText((prev) => prev || detail.text);
+    }
+  }, [pageKey, myCurrentConclusion]);
+
+  useEffect(() => {
+    window.addEventListener("ai-conclusion-text", handleAIText);
+    return () => window.removeEventListener("ai-conclusion-text", handleAIText);
+  }, [handleAIText]);
 
   const handleStartNew = () => {
     setEditText("");

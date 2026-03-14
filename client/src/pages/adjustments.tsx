@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams } from "wouter";
 import { useEngagement } from "@/lib/workspace-context";
-import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { SignOffBar } from "@/components/sign-off-bar";
 import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -388,8 +387,7 @@ export default function Adjustments() {
       </div>
 
       <div className="px-3 pt-3">
-        <AIAssistantPanel engagementId={engagementId || ""} phaseKey="adjustments" />
-      </div>
+</div>
       <div className="flex-1 overflow-auto p-2.5 space-y-2.5">
         <div className="flex items-center gap-2 mb-2">
           <Badge variant="outline" className="text-xs">

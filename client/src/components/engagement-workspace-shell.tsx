@@ -4,10 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useWorkspace } from "@/lib/workspace-context";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Loader2, Sparkles, X } from "lucide-react";
+import { AlertTriangle, Bot, Loader2, Sparkles } from "lucide-react";
 import { getPhaseByKey } from "../../../shared/phases";
 import { AICopilotEnhanced } from "@/components/ai-copilot-enhanced";
 import { PageConclusionPanel } from "@/components/page-conclusion-panel";
+import { AIAssistantDrawer } from "@/components/ai-assistant-drawer";
 
 interface EngagementWorkspaceShellProps {
   children: ReactNode;
@@ -32,6 +33,7 @@ interface EngagementPhaseState {
 export function EngagementWorkspaceShell({ children, phaseSlug, engagementId }: EngagementWorkspaceShellProps) {
   const { activeEngagement } = useWorkspace();
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
   const [location] = useLocation();
 
   const derivedPageKey = useMemo(() => {
@@ -96,18 +98,33 @@ export function EngagementWorkspaceShell({ children, phaseSlug, engagementId }: 
             </div>
           </div>
 
-          {currentCanonical && (
-            <Button
-              variant={aiPanelOpen ? "default" : "ghost"}
-              size="sm"
-              className={`h-7 px-2.5 shrink-0 gap-1.5 text-xs ${aiPanelOpen ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700" : ""}`}
-              onClick={() => setAiPanelOpen(!aiPanelOpen)}
-              title="Toggle Audit Copilot"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              {!aiPanelOpen && "Copilot"}
-            </Button>
-          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {currentCanonical && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-2.5 gap-1.5 text-xs"
+                onClick={() => setAiDrawerOpen(true)}
+                title="Open AI Assistant"
+              >
+                <Bot className="h-3.5 w-3.5" />
+                AI Assistant
+              </Button>
+            )}
+
+            {currentCanonical && (
+              <Button
+                variant={aiPanelOpen ? "default" : "ghost"}
+                size="sm"
+                className={`h-7 px-2.5 gap-1.5 text-xs ${aiPanelOpen ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700" : ""}`}
+                onClick={() => setAiPanelOpen(!aiPanelOpen)}
+                title="Toggle Audit Copilot"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                {!aiPanelOpen && "Copilot"}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -157,6 +174,13 @@ export function EngagementWorkspaceShell({ children, phaseSlug, engagementId }: 
           />
         )}
       </div>
+
+      <AIAssistantDrawer
+        open={aiDrawerOpen}
+        onOpenChange={setAiDrawerOpen}
+        engagementId={engagementId}
+        pageKey={derivedPageKey}
+      />
     </div>
   );
 }

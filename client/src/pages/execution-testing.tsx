@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import { useEngagement } from "@/lib/workspace-context";
-import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -209,8 +208,7 @@ export default function ExecutionTesting() {
       signoffSection="execution-testing"
       readOnly={isReadOnly}
     >
-      <AIAssistantPanel engagementId={engagementId || ""} phaseKey="execution-testing" className="mb-2.5" />
-      <div className="space-y-3">
+<div className="space-y-3">
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
