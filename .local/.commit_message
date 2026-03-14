@@ -1,0 +1,25 @@
+feat: enhance compliance checklists with bulk upload, template download, and evidence attachments
+
+Backend (server/routes/regulatoryComplianceRoutes.ts):
+- Bulk upload endpoint with Excel (.xlsx) and CSV parsing via ExcelJS
+- Column auto-detection for law/regulation, section/rule, applicability, requirement, status, evidence, remarks
+- Empty row filtering to skip blank entries
+- Excel template download per checklist type with styled header and instructions sheet
+- Evidence file upload/download/delete per checklist item row (max 15MB)
+- Role-based access control (SENIOR+) on all mutating endpoints
+- Firm-ownership verification on all routes
+
+Frontend (client/src/pages/compliance-checklists.tsx):
+- Upload dialog with drag & drop, file preview, and inline template download
+- Per-row evidence attachment button with inline file list showing type badges, sizes
+- Evidence download via blob/fetch with proper auth (fetchWithAuth with auditwise_token)
+- Evidence delete on hover with confirmation
+- Unsaved changes indicator per checklist
+- Cleaned up unused imports
+
+Code review fixes applied:
+- Fixed auth token key (was auth_token, corrected to auditwise_token via fetchWithAuth)
+- Added proper CSV parsing support (stream-based)
+- Rejected unsupported .xls format
+- Added requireMinRole("SENIOR") to evidence upload/delete routes
+- Added empty row validation in bulk import
