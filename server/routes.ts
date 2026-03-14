@@ -84,6 +84,7 @@ import planningDashboardRoutes from "./planningDashboardRoutes";
 import reviewNoteRoutes from "./routes/reviewNoteRoutes";
 import userNotificationRoutes from "./routes/userNotificationRoutes";
 import opinionEngineRoutes from "./opinionEngineRoutes";
+import pageConclusionRoutes from "./routes/pageConclusionRoutes";
 import firmControlComplianceLogRoutes from "./routes/firmControlComplianceLogRoutes";
 import { attachEnforcementContext, enforceInspectionMode } from "./middleware/enforcementMiddleware";
 import { withTenantContext } from "./middleware/tenantDbContext";
@@ -245,6 +246,7 @@ export async function registerRoutes(
   app.use("/api/review-notes-v2", reviewNoteRoutes);
   app.use("/api/notifications", userNotificationRoutes);
   app.use("/api/opinion-engine", opinionEngineRoutes);
+  app.use("/api/page-conclusions", pageConclusionRoutes);
 
   // Phase Gate Engine API
   const { evaluatePhaseGates, evaluateAllGates, canAdvanceToPhase } = await import("./services/phaseGateEngine");

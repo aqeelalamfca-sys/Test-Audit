@@ -13268,3 +13268,23 @@ model OpinionAiRun {
 
   @@index([opinionEngineId])
 }
+
+model PageConclusion {
+  id              String   @id @default(uuid())
+  engagementId    String
+  pageKey         String
+  userId          String
+  userName        String
+  userRole        String
+  authorityLevel  Int      @default(0)
+  status          String   @default("N/A")
+  conclusionText  String
+  isSuperseded    Boolean  @default(false)
+  supersededById  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([engagementId, pageKey])
+  @@index([userId])
+  @@index([engagementId, pageKey, userId])
+}

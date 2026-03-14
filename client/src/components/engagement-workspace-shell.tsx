@@ -1,5 +1,5 @@
 import { ReactNode, useMemo, useState } from "react";
-import { Redirect } from "wouter";
+import { Redirect, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useWorkspace } from "@/lib/workspace-context";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, Loader2, Sparkles, X } from "lucide-react";
 import { getPhaseByKey } from "../../../shared/phases";
 import { AICopilotEnhanced } from "@/components/ai-copilot-enhanced";
+import { PageConclusionPanel } from "@/components/page-conclusion-panel";
 
 interface EngagementWorkspaceShellProps {
   children: ReactNode;
@@ -31,6 +32,13 @@ interface EngagementPhaseState {
 export function EngagementWorkspaceShell({ children, phaseSlug, engagementId }: EngagementWorkspaceShellProps) {
   const { activeEngagement } = useWorkspace();
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [location] = useLocation();
+
+  const derivedPageKey = useMemo(() => {
+    if (phaseSlug) return phaseSlug;
+    const match = location.match(/\/workspace\/[^/]+\/(.+)/);
+    return match ? match[1].replace(/\//g, "-") : "unknown";
+  }, [phaseSlug, location]);
 
   const { data: phaseState, isLoading: phaseStateLoading, isFetched: phaseStateFetched } = useQuery<EngagementPhaseState>({
     queryKey: ["phase-state", engagementId],
@@ -134,6 +142,10 @@ export function EngagementWorkspaceShell({ children, phaseSlug, engagementId }: 
             )}
 
             {children}
+
+            {engagementId && derivedPageKey !== "unknown" && (
+              <PageConclusionPanel engagementId={engagementId} pageKey={derivedPageKey} />
+            )}
           </div>
         </div>
 

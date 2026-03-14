@@ -52,6 +52,16 @@ The workspace shell includes a page-aware AI Copilot panel that provides:
 - **Frontend**: 5-tab panel (Overview, Standards, AI Actions, Review, Next Steps) integrated into `engagement-workspace-shell.tsx` via `AICopilotEnhanced` component
 - **Hook**: `use-page-ai-context.ts` — extracts `pageId` from current route, maps slug to profile key, fetches context from backend
 
+## Universal Page Conclusion System
+
+Every engagement workspace page has a collapsible "Conclusion" section at the bottom:
+- **Backend**: `server/routes/pageConclusionRoutes.ts` — GET/POST/PATCH endpoints using raw SQL (`prisma.$queryRaw/$executeRaw`) since PageConclusion model was added after Prisma client generation
+- **Database**: `PageConclusion` table with engagementId, pageKey, userId, userName, userRole, authorityLevel, status, conclusionText, isSuperseded, supersededById, timestamps
+- **Frontend**: `client/src/components/page-conclusion-panel.tsx` — collapsible panel with text area, status dropdown (Satisfactory/Unsatisfactory/Satisfactory with Recommendation/N/A), save, re-edit, conclusion trail
+- **Integration**: Mounted in `engagement-workspace-shell.tsx` after `{children}`, auto-derives pageKey from phaseSlug or route
+- **Authority model**: Each role has an authority level (STAFF=1, SENIOR=2, MANAGER=3, EQCR=4, PARTNER=5, FIRM_ADMIN=6). Multiple users can add their own conclusions on the same page. Same user's re-save supersedes their previous entry (with history preserved)
+- **Audit trail**: All conclusion actions logged via `logAuditTrail()`
+
 ## Sidebar Navigation (Accordion)
 
 The workspace sidebar uses collapsible accordion menus for phase groups:
