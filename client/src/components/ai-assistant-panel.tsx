@@ -68,3 +68,4 @@ const AiAssistantPanel: React.FC<Props> = ({ phaseKey, engagementId, className }
 };
 
 export default AiAssistantPanel;
+export { AiAssistantPanel as AIAssistantPanel };
