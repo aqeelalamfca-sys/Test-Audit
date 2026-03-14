@@ -156,7 +156,7 @@ export default function PlatformFeedback() {
     const feedbackItem = item as any;
     return (
       <Card key={feedbackItem.id} data-testid={`feedback-card-${feedbackItem.id}`} className="border-l-2 border-l-transparent hover:border-l-primary/40 transition-colors">
-        <CardContent className="py-3 px-4">
+        <CardContent className="py-3 px-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 mb-1 flex-wrap">
@@ -197,7 +197,7 @@ export default function PlatformFeedback() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 space-y-4">
+    <div className="max-w-6xl mx-auto p-2.5 space-y-2.5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <Link href="/platform">
@@ -231,26 +231,26 @@ export default function PlatformFeedback() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card>
-          <CardContent className="py-3 px-4 text-center">
-            <div className="text-2xl font-bold text-red-600" data-testid="stat-open">{totalOpen}</div>
+          <CardContent className="py-3 px-3 text-center">
+            <div className="text-lg font-bold text-red-600" data-testid="stat-open">{totalOpen}</div>
             <p className="text-xs text-muted-foreground">Open</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="py-3 px-4 text-center">
-            <div className="text-2xl font-bold text-yellow-600" data-testid="stat-in-review">{totalInReview}</div>
+          <CardContent className="py-3 px-3 text-center">
+            <div className="text-lg font-bold text-yellow-600" data-testid="stat-in-review">{totalInReview}</div>
             <p className="text-xs text-muted-foreground">In Review</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="py-3 px-4 text-center">
-            <div className="text-2xl font-bold text-blue-600" data-testid="stat-acknowledged">{totalAcknowledged}</div>
+          <CardContent className="py-3 px-3 text-center">
+            <div className="text-lg font-bold text-blue-600" data-testid="stat-acknowledged">{totalAcknowledged}</div>
             <p className="text-xs text-muted-foreground">Acknowledged</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="py-3 px-4 text-center">
-            <div className="text-2xl font-bold text-green-600" data-testid="stat-resolved">{totalResolved}</div>
+          <CardContent className="py-3 px-3 text-center">
+            <div className="text-lg font-bold text-green-600" data-testid="stat-resolved">{totalResolved}</div>
             <p className="text-xs text-muted-foreground">Resolved</p>
           </CardContent>
         </Card>
@@ -306,17 +306,17 @@ export default function PlatformFeedback() {
           )}
         </div>
 
-        <TabsContent value="all" className="mt-4 space-y-2">
+        <TabsContent value="all" className="mt-2.5 space-y-2">
           {isLoading ? (
             <Card>
-              <CardContent className="py-8 text-center">
+              <CardContent className="py-2 text-center">
                 <RefreshCw className="h-6 w-6 mx-auto animate-spin text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">Loading feedback...</p>
               </CardContent>
             </Card>
           ) : !feedbackData?.items?.length ? (
             <Card>
-              <CardContent className="py-8 text-center">
+              <CardContent className="py-2 text-center">
                 <CheckCircle2 className="h-8 w-8 mx-auto text-green-500 mb-2" />
                 <p className="text-sm font-medium">No feedback items</p>
                 <p className="text-xs text-muted-foreground">No issues or gaps have been reported by any firm yet.</p>
@@ -327,17 +327,17 @@ export default function PlatformFeedback() {
           )}
         </TabsContent>
 
-        <TabsContent value="by-firm" className="mt-4 space-y-3">
+        <TabsContent value="by-firm" className="mt-2.5 space-y-3">
           {firmLoading ? (
             <Card>
-              <CardContent className="py-8 text-center">
+              <CardContent className="py-2 text-center">
                 <RefreshCw className="h-6 w-6 mx-auto animate-spin text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">Loading firm feedback...</p>
               </CardContent>
             </Card>
           ) : firmFeedback.length === 0 ? (
             <Card>
-              <CardContent className="py-8 text-center">
+              <CardContent className="py-2 text-center">
                 <CheckCircle2 className="h-8 w-8 mx-auto text-green-500 mb-2" />
                 <p className="text-sm font-medium">No firm feedback</p>
                 <p className="text-xs text-muted-foreground">No firms have reported any issues yet.</p>
@@ -351,7 +351,7 @@ export default function PlatformFeedback() {
                 <Collapsible key={firm.id} open={isExpanded} onOpenChange={() => toggleFirm(firm.id)}>
                   <Card data-testid={`firm-feedback-card-${firm.id}`}>
                     <CollapsibleTrigger asChild>
-                      <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-3 px-4">
+                      <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-3 px-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             {firm.logoUrl ? (

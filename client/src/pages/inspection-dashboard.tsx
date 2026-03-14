@@ -134,8 +134,8 @@ export default function InspectionDashboard() {
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       <header className="sticky top-0 z-50 bg-slate-800 border-b border-slate-700">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="px-3 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
             <Shield className="w-6 h-6 text-blue-400" />
             <div className="flex items-center gap-3">
               <span className="font-semibold text-lg">{qcrSummary?.clientName || 'Client'}</span>
@@ -149,8 +149,8 @@ export default function InspectionDashboard() {
             <InspectionModeToggle mode={inspectionMode} setMode={setInspectionMode} />
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className={`px-4 py-1.5 rounded-full ${verdictColors[qcrSummary?.verdict || 'FAIL']} font-bold text-sm`}>
+          <div className="flex items-center gap-2.5">
+            <div className={`px-3 py-1.5 rounded-full ${verdictColors[qcrSummary?.verdict || 'FAIL']} font-bold text-sm`}>
               {qcrSummary?.verdict || 'FAIL'}
             </div>
             <div className="flex items-center gap-2 bg-slate-700 px-3 py-1.5 rounded-lg">
@@ -162,7 +162,7 @@ export default function InspectionDashboard() {
         </div>
 
         {inspectionMode === 'AOB_SIMULATION' && (
-          <div className="bg-red-900/50 border-t border-red-500 px-4 py-2 flex items-center justify-between">
+          <div className="bg-red-900/50 border-t border-red-500 px-3 py-2 flex items-center justify-between">
             <div className="flex items-center gap-3 text-red-200 text-sm">
               <Lock className="w-4 h-4" />
               <span>AOB SIMULATION MODE - Read-only, evidence-only scoring, zero assumptions</span>
@@ -177,7 +177,7 @@ export default function InspectionDashboard() {
       </header>
 
       <div className="flex">
-        <aside className="w-64 min-h-screen bg-slate-800 border-r border-slate-700 py-4">
+        <aside className="w-64 min-h-0 bg-slate-800 border-r border-slate-700 py-2">
           <nav className="space-y-1 px-2">
             {sections.map((section) => (
               <button
@@ -196,7 +196,7 @@ export default function InspectionDashboard() {
           </nav>
         </aside>
 
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-3">
           {activeSection === 'overview' && (
             <OverviewSection 
               qcrSummary={qcrSummary} 
@@ -231,7 +231,7 @@ function InspectionModeToggle({ mode, setMode }: { mode: InspectionMode; setMode
         <button
           key={m}
           onClick={() => setMode(m)}
-          className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2 ${
+          className={`px-3 py-2 text-sm font-medium transition-colors flex items-center gap-2 ${
             mode === m 
               ? modeConfig[m].bg + ' ' + modeConfig[m].text
               : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
@@ -277,13 +277,13 @@ function ExportMenu() {
       </button>
       {isOpen && (
         <div className="absolute right-0 top-full mt-2 w-48 bg-slate-700 border border-slate-600 rounded-lg shadow-xl z-50">
-          <button className="w-full px-4 py-2 text-left text-sm hover:bg-slate-600 flex items-center gap-2">
+          <button className="w-full px-3 py-2 text-left text-sm hover:bg-slate-600 flex items-center gap-2">
             <FileText className="w-4 h-4" /> AOB Report (PDF)
           </button>
-          <button className="w-full px-4 py-2 text-left text-sm hover:bg-slate-600 flex items-center gap-2">
+          <button className="w-full px-3 py-2 text-left text-sm hover:bg-slate-600 flex items-center gap-2">
             <FileCheck className="w-4 h-4" /> ICAP QCR Summary
           </button>
-          <button className="w-full px-4 py-2 text-left text-sm hover:bg-slate-600 flex items-center gap-2">
+          <button className="w-full px-3 py-2 text-left text-sm hover:bg-slate-600 flex items-center gap-2">
             <Folder className="w-4 h-4" /> Evidence Pack (ZIP)
           </button>
         </div>
@@ -317,9 +317,9 @@ function OverviewSection({ qcrSummary, aobReadiness, inspectionMode, selectedIns
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Inspection Overview</h1>
+        <h1 className="text-lg font-bold">Inspection Overview</h1>
         {inspectionMode === 'AOB_SIMULATION' && (
           <div className="flex items-center gap-2 text-sm text-slate-400">
             <Shuffle className="w-4 h-4" />
@@ -328,7 +328,7 @@ function OverviewSection({ qcrSummary, aobReadiness, inspectionMode, selectedIns
         )}
       </div>
       
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 gap-2.5">
         <KPICard 
           label="Overall Compliance" 
           value={`${qcrSummary?.score || 0}%`} 
@@ -355,8 +355,8 @@ function OverviewSection({ qcrSummary, aobReadiness, inspectionMode, selectedIns
         />
       </div>
 
-      <div className="bg-slate-800 rounded-xl p-5">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+      <div className="bg-slate-800 rounded-xl p-3">
+        <h3 className="text-lg font-semibold mb-2.5 flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-blue-400" />
           ISA-wise Compliance Heatmap
         </h3>
@@ -391,7 +391,7 @@ function OverviewSection({ qcrSummary, aobReadiness, inspectionMode, selectedIns
             </tbody>
           </table>
         </div>
-        <div className="flex items-center gap-3 mt-4 text-xs text-slate-400">
+        <div className="flex items-center gap-3 mt-2.5 text-xs text-slate-400">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-red-500"></div>
             Critical Gap (&lt;60%)
@@ -407,8 +407,8 @@ function OverviewSection({ qcrSummary, aobReadiness, inspectionMode, selectedIns
         </div>
       </div>
 
-      <div className="bg-slate-800 rounded-xl p-5">
-        <h3 className="text-lg font-semibold mb-4">Phase Timeline</h3>
+      <div className="bg-slate-800 rounded-xl p-3">
+        <h3 className="text-lg font-semibold mb-2.5">Phase Timeline</h3>
         <div className="flex items-center justify-between">
           {phaseTimeline.map((phase, i) => (
             <div key={phase.phase} className="flex-1 relative">
@@ -439,7 +439,7 @@ function OverviewSection({ qcrSummary, aobReadiness, inspectionMode, selectedIns
       </div>
 
       {qcrSummary?.reportIssuanceBlocked && (
-        <div className="bg-red-900/50 border border-red-500 rounded-xl p-5">
+        <div className="bg-red-900/50 border border-red-500 rounded-xl p-3">
           <div className="flex items-center gap-3 mb-3">
             <Lock className="w-6 h-6 text-red-400" />
             <h3 className="text-lg font-semibold text-red-300">Report Issuance Blocked</h3>
@@ -478,11 +478,11 @@ function KPICard({ label, value, color, icon }: { label: string; value: string |
   };
 
   return (
-    <div className={`rounded-xl p-4 border ${colorClasses[color]}`}>
+    <div className={`rounded-xl p-2.5 border ${colorClasses[color]}`}>
       <div className="flex items-center justify-between mb-2">
         {icon}
       </div>
-      <div className="text-3xl font-bold text-white mb-1">{value}</div>
+      <div className="text-xl font-bold text-white mb-1">{value}</div>
       <div className="text-sm text-slate-400">{label}</div>
     </div>
   );
@@ -506,17 +506,17 @@ function SectionDetailView({ sectionNumber, engagementId, isReadOnly }: { sectio
 
   return (
     <div className="flex gap-3">
-      <div className="flex-1 space-y-4">
+      <div className="flex-1 space-y-2.5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">{section?.sectionTitle}</h1>
+            <h1 className="text-lg font-bold">{section?.sectionTitle}</h1>
             <p className="text-slate-400 text-sm mt-1">
               {section?.isaReferences?.join(', ')}
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2.5">
             <div className="text-right">
-              <div className="text-2xl font-mono font-bold">
+              <div className="text-lg font-mono font-bold">
                 {section?.sectionScore}/{section?.maxScore}
               </div>
               <div className="text-sm text-slate-400">Section Score</div>
@@ -540,11 +540,11 @@ function SectionDetailView({ sectionNumber, engagementId, isReadOnly }: { sectio
           <table className="w-full text-sm">
             <thead className="bg-slate-700">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold">Checkpoint</th>
-                <th className="px-4 py-3 text-center font-semibold w-20">Status</th>
-                <th className="px-4 py-3 text-center font-semibold w-24">Severity</th>
-                <th className="px-4 py-3 text-left font-semibold w-32">Evidence</th>
-                <th className="px-4 py-3 text-left font-semibold">System Comment</th>
+                <th className="px-3 py-3 text-left font-semibold">Checkpoint</th>
+                <th className="px-3 py-3 text-center font-semibold w-20">Status</th>
+                <th className="px-3 py-3 text-center font-semibold w-24">Severity</th>
+                <th className="px-3 py-3 text-left font-semibold w-32">Evidence</th>
+                <th className="px-3 py-3 text-left font-semibold">System Comment</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700">
@@ -554,11 +554,11 @@ function SectionDetailView({ sectionNumber, engagementId, isReadOnly }: { sectio
                   className={`hover:bg-slate-750 cursor-pointer ${selectedCheckpoint?.id === cp.id ? 'bg-slate-700' : ''}`}
                   onClick={() => setSelectedCheckpoint(cp)}
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-3">
                     <div className="font-medium">{cp.checkpoint}</div>
                     <div className="text-xs text-slate-400 mt-1">{cp.isaReference}</div>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-3 py-3 text-center">
                     {cp.status === 'COMPLIANT' ? (
                       <CheckCircle className="w-5 h-5 text-green-500 mx-auto" />
                     ) : cp.status === 'PARTIAL' ? (
@@ -567,14 +567,14 @@ function SectionDetailView({ sectionNumber, engagementId, isReadOnly }: { sectio
                       <XCircle className="w-5 h-5 text-red-500 mx-auto" />
                     )}
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-3 py-3 text-center">
                     {cp.severity && (
                       <span className={`px-2 py-0.5 text-xs rounded ${severityColors[cp.severity as keyof typeof severityColors]}`}>
                         {cp.severity}
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-3">
                     {cp.evidenceReference ? (
                       <button className="flex items-center gap-1 text-blue-400 hover:text-blue-300 text-sm">
                         <Eye className="w-4 h-4" />
@@ -587,7 +587,7 @@ function SectionDetailView({ sectionNumber, engagementId, isReadOnly }: { sectio
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm text-slate-400 max-w-xs truncate">
+                  <td className="px-3 py-3 text-sm text-slate-400 max-w-xs truncate">
                     {cp.reviewerConclusion || 'No comment'}
                   </td>
                 </tr>
@@ -597,8 +597,8 @@ function SectionDetailView({ sectionNumber, engagementId, isReadOnly }: { sectio
         </div>
       </div>
 
-      <div className="w-80 space-y-4">
-        <div className="bg-slate-800 rounded-xl p-4">
+      <div className="w-80 space-y-2.5">
+        <div className="bg-slate-800 rounded-xl p-2.5">
           <h3 className="font-semibold mb-3 flex items-center gap-2">
             <Eye className="w-4 h-4 text-blue-400" />
             Evidence Preview
@@ -613,7 +613,7 @@ function SectionDetailView({ sectionNumber, engagementId, isReadOnly }: { sectio
           )}
         </div>
 
-        <div className="bg-slate-800 rounded-xl p-4">
+        <div className="bg-slate-800 rounded-xl p-2.5">
           <h3 className="font-semibold mb-3 flex items-center gap-2">
             <History className="w-4 h-4 text-blue-400" />
             Audit Trail
@@ -639,7 +639,7 @@ function SectionDetailView({ sectionNumber, engagementId, isReadOnly }: { sectio
         </div>
 
         {selectedCheckpoint && !selectedCheckpoint.evidenceReference && (
-          <div className="bg-slate-800 rounded-xl p-4">
+          <div className="bg-slate-800 rounded-xl p-2.5">
             <h3 className="font-semibold mb-3 flex items-center gap-2 text-amber-400">
               <AlertTriangle className="w-4 h-4" />
               Override Justification
@@ -674,13 +674,13 @@ function FindingsKanbanView({ qcrSummary }: { qcrSummary?: QCRSummary }) {
   })) || [];
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Findings & Remediation</h1>
+    <div className="space-y-2.5">
+      <h1 className="text-lg font-bold">Findings & Remediation</h1>
 
-      <div className="grid grid-cols-4 gap-4 h-[calc(100vh-200px)]">
+      <div className="grid grid-cols-4 gap-2.5 h-[calc(100vh-200px)]">
         {columns.map((col) => (
-          <div key={col.id} className={`bg-slate-800 rounded-xl p-4 border-t-4 ${col.color} flex flex-col`}>
-            <div className="flex items-center justify-between mb-4">
+          <div key={col.id} className={`bg-slate-800 rounded-xl p-2.5 border-t-4 ${col.color} flex flex-col`}>
+            <div className="flex items-center justify-between mb-2.5">
               <h3 className="font-semibold">{col.label}</h3>
               <span className="px-2 py-0.5 bg-slate-700 rounded text-sm">{col.count}</span>
             </div>
@@ -727,12 +727,12 @@ function FindingsKanbanView({ qcrSummary }: { qcrSummary?: QCRSummary }) {
 
 function RiskAssessmentView({ engagementId }: { engagementId: string }) {
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Risk Assessment (ISA 315/330)</h1>
+    <div className="space-y-2.5">
+      <h1 className="text-lg font-bold">Risk Assessment (ISA 315/330)</h1>
       
-      <div className="bg-slate-800 rounded-xl p-5">
-        <h3 className="text-lg font-semibold mb-4">Risk Coverage Matrix</h3>
-        <p className="text-slate-400 text-sm mb-4">
+      <div className="bg-slate-800 rounded-xl p-3">
+        <h3 className="text-lg font-semibold mb-2.5">Risk Coverage Matrix</h3>
+        <p className="text-slate-400 text-sm mb-2.5">
           Empty cells indicate risks without responsive procedures (automatic fail per ISA 330)
         </p>
         
@@ -790,7 +790,7 @@ function RiskAssessmentView({ engagementId }: { engagementId: string }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-red-900/30 border border-red-500 rounded-xl p-5">
+        <div className="bg-red-900/30 border border-red-500 rounded-xl p-3">
           <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-red-300">
             <AlertTriangle className="w-5 h-5" />
             Fraud Risks (ISA 240)
@@ -807,7 +807,7 @@ function RiskAssessmentView({ engagementId }: { engagementId: string }) {
           </ul>
         </div>
 
-        <div className="bg-amber-900/30 border border-amber-500 rounded-xl p-5">
+        <div className="bg-amber-900/30 border border-amber-500 rounded-xl p-3">
           <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-amber-300">
             <AlertCircle className="w-5 h-5" />
             Going Concern (ISA 570)
@@ -825,10 +825,10 @@ function RiskAssessmentView({ engagementId }: { engagementId: string }) {
 
 function MaterialitySamplingView({ engagementId }: { engagementId: string }) {
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Materiality & Sampling (ISA 320/450/530)</h1>
+    <div className="space-y-2.5">
+      <h1 className="text-lg font-bold">Materiality & Sampling (ISA 320/450/530)</h1>
       
-      <div className="bg-red-900/30 border border-red-500 rounded-xl p-5">
+      <div className="bg-red-900/30 border border-red-500 rounded-xl p-3">
         <div className="flex items-center gap-3 mb-3">
           <XCircle className="w-6 h-6 text-red-400" />
           <h3 className="text-lg font-semibold text-red-300">CRITICAL: No Materiality Calculation</h3>
@@ -840,28 +840,28 @@ function MaterialitySamplingView({ engagementId }: { engagementId: string }) {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-slate-800 rounded-xl p-5">
+        <div className="bg-slate-800 rounded-xl p-3">
           <h3 className="font-semibold mb-3">Overall Materiality</h3>
-          <div className="text-3xl font-mono text-red-400">NOT SET</div>
+          <div className="text-xl font-mono text-red-400">NOT SET</div>
           <div className="text-sm text-slate-400 mt-2">Benchmark: -</div>
           <div className="text-sm text-slate-400">Percentage: -</div>
         </div>
         
-        <div className="bg-slate-800 rounded-xl p-5">
+        <div className="bg-slate-800 rounded-xl p-3">
           <h3 className="font-semibold mb-3">Performance Materiality</h3>
-          <div className="text-3xl font-mono text-red-400">NOT SET</div>
+          <div className="text-xl font-mono text-red-400">NOT SET</div>
           <div className="text-sm text-slate-400 mt-2">PM Factor: 50-75% of OM</div>
         </div>
         
-        <div className="bg-slate-800 rounded-xl p-5">
+        <div className="bg-slate-800 rounded-xl p-3">
           <h3 className="font-semibold mb-3">Trivial Threshold</h3>
-          <div className="text-3xl font-mono text-red-400">NOT SET</div>
+          <div className="text-xl font-mono text-red-400">NOT SET</div>
           <div className="text-sm text-slate-400 mt-2">Trivial: ≤5% of OM</div>
         </div>
       </div>
 
-      <div className="bg-slate-800 rounded-xl p-5">
-        <h3 className="text-lg font-semibold mb-4">Sampling Analysis (ISA 530)</h3>
+      <div className="bg-slate-800 rounded-xl p-3">
+        <h3 className="text-lg font-semibold mb-2.5">Sampling Analysis (ISA 530)</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-700">
@@ -894,7 +894,7 @@ function MaterialitySamplingView({ engagementId }: { engagementId: string }) {
             </tbody>
           </table>
         </div>
-        <p className="text-red-400 text-sm mt-4">
+        <p className="text-red-400 text-sm mt-2.5">
           All 48 substantive tests have sample sizes but 0 have population values, sampling method, or rationale documented.
           This violates ISA 530.6.
         </p>
@@ -915,18 +915,18 @@ function SECPView({ engagementId, aobReadiness }: { engagementId: string; aobRea
   ];
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">SECP & Listed Entity Requirements</h1>
+    <div className="space-y-2.5">
+      <h1 className="text-lg font-bold">SECP & Listed Entity Requirements</h1>
       
       {aobReadiness?.entityProfile?.type !== 'Listed' ? (
-        <div className="bg-slate-800 rounded-xl p-5">
+        <div className="bg-slate-800 rounded-xl p-3">
           <p className="text-slate-400">
             Entity is not classified as Listed. SECP enhanced requirements do not apply.
           </p>
         </div>
       ) : (
         <>
-          <div className="bg-purple-900/30 border border-purple-500 rounded-xl p-5">
+          <div className="bg-purple-900/30 border border-purple-500 rounded-xl p-3">
             <div className="flex items-center gap-3 mb-3">
               <Building2 className="w-6 h-6 text-purple-400" />
               <h3 className="text-lg font-semibold text-purple-300">Listed Entity - Enhanced Requirements Apply</h3>
@@ -940,16 +940,16 @@ function SECPView({ engagementId, aobReadiness }: { engagementId: string; aobRea
             <table className="w-full">
               <thead className="bg-slate-700">
                 <tr>
-                  <th className="px-4 py-3 text-left">SECP Requirement</th>
-                  <th className="px-4 py-3 text-center w-32">Status</th>
-                  <th className="px-4 py-3 text-center w-32">Blocking</th>
+                  <th className="px-3 py-3 text-left">SECP Requirement</th>
+                  <th className="px-3 py-3 text-center w-32">Status</th>
+                  <th className="px-3 py-3 text-center w-32">Blocking</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700">
                 {secpChecks.map((check, i) => (
                   <tr key={i}>
-                    <td className="px-4 py-3">{check.requirement}</td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-3 py-3">{check.requirement}</td>
+                    <td className="px-3 py-3 text-center">
                       {check.status === 'compliant' ? (
                         <CheckCircle className="w-5 h-5 text-green-500 mx-auto" />
                       ) : check.status === 'pending' ? (
@@ -958,7 +958,7 @@ function SECPView({ engagementId, aobReadiness }: { engagementId: string; aobRea
                         <XCircle className="w-5 h-5 text-red-500 mx-auto" />
                       )}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-3 py-3 text-center">
                       {check.status === 'fail' && (
                         <Lock className="w-5 h-5 text-red-500 mx-auto" />
                       )}
@@ -969,7 +969,7 @@ function SECPView({ engagementId, aobReadiness }: { engagementId: string; aobRea
             </table>
           </div>
 
-          <div className="bg-red-900/50 border border-red-500 rounded-xl p-5">
+          <div className="bg-red-900/50 border border-red-500 rounded-xl p-3">
             <div className="flex items-center gap-3">
               <Lock className="w-6 h-6 text-red-400" />
               <div>
@@ -988,11 +988,11 @@ function SECPView({ engagementId, aobReadiness }: { engagementId: string; aobRea
 
 function AuditTrailView({ engagementId }: { engagementId: string }) {
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Audit Trail (Forensic View)</h1>
+    <div className="space-y-2.5">
+      <h1 className="text-lg font-bold">Audit Trail (Forensic View)</h1>
       
-      <div className="bg-slate-800 rounded-xl p-5">
-        <div className="flex items-center gap-3 mb-4 text-slate-400">
+      <div className="bg-slate-800 rounded-xl p-3">
+        <div className="flex items-center gap-3 mb-2.5 text-slate-400">
           <Lock className="w-5 h-5" />
           <span className="text-sm">This view is immutable. All actions are permanently logged.</span>
         </div>
@@ -1004,7 +1004,7 @@ function AuditTrailView({ engagementId }: { engagementId: string }) {
             { time: '2026-01-27 07:10:15', user: 'Manager User', action: 'Evidence File Uploaded', entity: 'EvidenceFile', detail: 'Bank Confirmation.pdf' },
             { time: '2026-01-27 07:05:22', user: 'Staff Auditor', action: 'Substantive Test Completed', entity: 'SubstantiveTest', detail: 'Revenue Cutoff Test' },
           ].map((log, i) => (
-            <div key={i} className="flex items-start gap-4 p-3 bg-slate-700 rounded-lg">
+            <div key={i} className="flex items-start gap-2.5 p-3 bg-slate-700 rounded-lg">
               <div className="text-xs text-slate-400 font-mono w-36">{log.time}</div>
               <div className="w-32 text-sm">{log.user}</div>
               <div className="flex-1">

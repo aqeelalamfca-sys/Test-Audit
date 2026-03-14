@@ -113,19 +113,19 @@ export function SourceDrilldownModal({
             <TabsTrigger value="summary">Summary</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="entries" className="mt-4">
+          <TabsContent value="entries" className="mt-2.5">
             <ScrollArea className="h-[400px]">
               {isLoading ? (
                 <div className="flex items-center justify-center h-[300px]">
                   <div className="text-center">
-                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2.5"></div>
                     <p className="text-muted-foreground">Loading source entries...</p>
                   </div>
                 </div>
               ) : !hasEntries ? (
                 <div className="flex items-center justify-center h-[300px]">
                   <div className="text-center">
-                    <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <Database className="h-12 w-12 text-muted-foreground mx-auto mb-2.5" />
                     <p className="text-lg font-medium mb-2">No Source Entries Found</p>
                     <p className="text-sm text-muted-foreground">
                       {sourceType === "gl-to-tb" 
@@ -217,9 +217,9 @@ export function SourceDrilldownModal({
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="summary" className="mt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-muted/30 rounded-lg p-4">
+          <TabsContent value="summary" className="mt-2.5">
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="bg-muted/30 rounded-lg p-2.5">
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">Source Summary</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between">
@@ -239,7 +239,7 @@ export function SourceDrilldownModal({
                 </div>
               </div>
               
-              <div className="bg-muted/30 rounded-lg p-4">
+              <div className="bg-muted/30 rounded-lg p-2.5">
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">Target Summary</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between">
@@ -260,7 +260,7 @@ export function SourceDrilldownModal({
               </div>
             </div>
 
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="mt-2.5 p-3 bg-blue-50 rounded-lg border border-blue-200">
               <p className="text-xs text-blue-800">
                 <strong>ISA 230 Audit Trail:</strong> This drill-down provides complete traceability from 
                 {sourceType === "gl-to-tb" 
@@ -272,7 +272,7 @@ export function SourceDrilldownModal({
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-end gap-2 mt-4">
+        <div className="flex justify-end gap-2 mt-2.5">
           <Button variant="outline" onClick={onClose}>Close</Button>
         </div>
       </DialogContent>

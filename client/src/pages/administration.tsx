@@ -251,7 +251,7 @@ function FirmLogoUpload({ currentLogoUrl, onLogoChange }: { currentLogoUrl: stri
           </button>
         </div>
       ) : (
-        <label className={`flex items-center gap-2 border border-dashed rounded-lg px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors text-sm text-muted-foreground ${uploading ? "opacity-50 pointer-events-none" : ""}`} data-testid="label-upload-firm-logo">
+        <label className={`flex items-center gap-2 border border-dashed rounded-lg px-3 py-3 cursor-pointer hover:bg-muted/50 transition-colors text-sm text-muted-foreground ${uploading ? "opacity-50 pointer-events-none" : ""}`} data-testid="label-upload-firm-logo">
           <Upload className="h-4 w-4" />
           {uploading ? "Uploading..." : "Upload logo"}
           <input type="file" accept=".svg,.png,.jpg,.jpeg,.webp" className="hidden" onChange={handleFileSelect} data-testid="input-firm-logo-file" />
@@ -349,11 +349,11 @@ function FirmSettingTab() {
   };
 
   if (isLoading) {
-    return <Card><CardContent className="py-8 text-center text-muted-foreground">Loading firm profile...</CardContent></Card>;
+    return <Card><CardContent className="py-2 text-center text-muted-foreground">Loading firm profile...</CardContent></Card>;
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Firm Profile</h3>
@@ -371,7 +371,7 @@ function FirmSettingTab() {
           <CardDescription>Firm identity and registration details</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
             <div className="space-y-1.5">
               <Label>Firm Legal Name <span className="text-red-500">*</span></Label>
               <Input value={form.name || ""} onChange={(e) => setForm({ ...form, name: e.target.value })} data-testid="input-firm-name" />
@@ -410,7 +410,7 @@ function FirmSettingTab() {
           <CardDescription>Communication and web details</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
             <div className="space-y-1.5">
               <Label>Email</Label>
               <Input type="email" value={form.email || ""} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="firm@example.com" data-testid="input-firm-email" />
@@ -457,7 +457,7 @@ function FirmSettingTab() {
         </CardHeader>
         <CardContent>
           {partners.length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground text-sm">
+            <div className="text-center py-3 text-muted-foreground text-sm">
               No partners added yet. Click "Add Partner" to begin.
             </div>
           ) : (
@@ -513,7 +513,7 @@ function FirmSettingTab() {
         </CardHeader>
         <CardContent>
           {offices.length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground text-sm">
+            <div className="text-center py-3 text-muted-foreground text-sm">
               No offices added yet. Click "Add Office" to begin.
             </div>
           ) : (
@@ -611,7 +611,7 @@ function AuditLogTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <div className="flex gap-2 border-b pb-2">
         <Button
           variant={logType === "system" ? "default" : "outline"}
@@ -669,7 +669,7 @@ function AuditLogTab() {
                 </div>
               ))}
               {(!systemLogs || systemLogs.length === 0) && (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-2 text-muted-foreground">
                   No system audit log entries yet. Changes to administration settings, roles, and templates will appear here.
                 </div>
               )}
@@ -707,11 +707,11 @@ function AuditLogTab() {
           </CardHeader>
           <CardContent>
             {clientLogsLoading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading client audit trail...</div>
+              <div className="text-center py-2 text-muted-foreground">Loading client audit trail...</div>
             ) : (
               <div className="space-y-2">
                 {clientLogs?.logs?.map((entry) => (
-                  <div key={entry.id} className="flex items-start justify-between p-3 border rounded-lg gap-4" data-testid={`client-log-${entry.id}`}>
+                  <div key={entry.id} className="flex items-start justify-between p-3 border rounded-lg gap-2.5" data-testid={`client-log-${entry.id}`}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge className={getActionColor(entry.action)}>{entry.action}</Badge>
@@ -752,7 +752,7 @@ function AuditLogTab() {
                   </div>
                 ))}
                 {(!clientLogs?.logs || clientLogs.logs.length === 0) && (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-2 text-muted-foreground">
                     {selectedClient
                       ? "No audit trail entries for the selected client."
                       : "No client audit trail entries yet. All engagement-level changes will appear here."}
@@ -761,7 +761,7 @@ function AuditLogTab() {
               </div>
             )}
             {clientLogs?.pagination && clientLogs.pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-4 pt-3 border-t">
+              <div className="flex items-center justify-between mt-2.5 pt-3 border-t">
                 <div className="text-sm text-muted-foreground">
                   Page {clientLogs.pagination.page} of {clientLogs.pagination.totalPages} ({clientLogs.pagination.total} entries)
                 </div>
@@ -843,7 +843,7 @@ function TemplatesTab() {
   }, {} as Record<string, DocumentTemplate[]>);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -858,7 +858,7 @@ function TemplatesTab() {
         </CardHeader>
         {showForm && (
           <CardContent className="border-t">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-3">
               <div className="space-y-2">
                 <Label>Template Code</Label>
                 <Input
@@ -903,7 +903,7 @@ function TemplatesTab() {
                 />
               </div>
             </div>
-            <div className="flex justify-end mt-4">
+            <div className="flex justify-end mt-2.5">
               <Button
                 onClick={() => createMutation.mutate(newTemplate)}
                 disabled={!newTemplate.templateCode || !newTemplate.templateName || createMutation.isPending}
@@ -917,10 +917,10 @@ function TemplatesTab() {
       </Card>
 
       {isLoading ? (
-        <Card><CardContent className="py-8 text-center text-muted-foreground">Loading templates...</CardContent></Card>
+        <Card><CardContent className="py-2 text-center text-muted-foreground">Loading templates...</CardContent></Card>
       ) : Object.keys(grouped).length === 0 ? (
         <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
+          <CardContent className="py-2 text-center text-muted-foreground">
             No document templates configured yet. Click "+ Add Template" to create your first template.
           </CardContent>
         </Card>
@@ -1097,18 +1097,18 @@ export default function Administration() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="firm" className="space-y-4 mt-3">
+        <TabsContent value="firm" className="space-y-2.5 mt-3">
           <FirmSettingTab />
         </TabsContent>
 
-        <TabsContent value="settings" className="space-y-4 mt-3">
+        <TabsContent value="settings" className="space-y-2.5 mt-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Card>
               <CardHeader>
                 <CardTitle>Maker-Checker Controls</CardTitle>
                 <CardDescription>Configure approval workflow requirements (ISA 220)</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2.5">
                 <div className="space-y-2">
                   <Label>Maker-Checker Mode</Label>
                   <Select 
@@ -1148,7 +1148,7 @@ export default function Administration() {
                 <CardTitle>Sign-Off Requirements</CardTitle>
                 <CardDescription>Digital signature and authentication settings</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <Label>Require Digital Signatures</Label>
                   <Switch 
@@ -1179,7 +1179,7 @@ export default function Administration() {
                 <CardTitle>QR/EQCR Requirements</CardTitle>
                 <CardDescription>Quality review and EQCR trigger settings (ISQM 1)</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <Label>Default QR Required</Label>
                   <Switch 
@@ -1216,7 +1216,7 @@ export default function Administration() {
                 <CardTitle>AI Governance</CardTitle>
                 <CardDescription>AI output labeling and approval settings</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <Label>AI Features Enabled</Label>
                   <Switch 
@@ -1253,7 +1253,7 @@ export default function Administration() {
                 <CardTitle>Audit Trail Settings</CardTitle>
                 <CardDescription>Immutable logging configuration (ISA 230)</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <Label>Immutable Audit Trail</Label>
                   <Switch 
@@ -1290,7 +1290,7 @@ export default function Administration() {
                 <CardTitle>RBAC Settings</CardTitle>
                 <CardDescription>Role-based access control configuration</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <Label>Enforce RBAC</Label>
                   <Switch 
@@ -1331,7 +1331,7 @@ export default function Administration() {
                 <CardDescription>Current configuration version and status</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2.5">
                   <Badge variant="outline">Version {settings.version}</Badge>
                   <span className="text-sm text-muted-foreground">
                     All changes are versioned and logged in the immutable audit trail
@@ -1342,16 +1342,16 @@ export default function Administration() {
           )}
         </TabsContent>
 
-        <TabsContent value="rbac" className="space-y-4 mt-3">
+        <TabsContent value="rbac" className="space-y-2.5 mt-3">
           <Card>
             <CardHeader>
               <CardTitle>Role Configurations</CardTitle>
               <CardDescription>Configure capabilities for each role in the firm</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 {roleConfigs?.map((role) => (
-                  <div key={role.id} className="border rounded-lg p-4 space-y-3">
+                  <div key={role.id} className="border rounded-lg p-2.5 space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-semibold">{role.displayName}</h4>
@@ -1359,7 +1359,7 @@ export default function Administration() {
                       </div>
                       <Badge variant="outline">Level {role.hierarchyLevel}</Badge>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-sm">
                       <div className="flex items-center gap-2">
                         {role.canActAsReviewer ? (
                           <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -1407,7 +1407,7 @@ export default function Administration() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="users" className="space-y-4 mt-3">
+        <TabsContent value="users" className="space-y-2.5 mt-3">
           <Card>
             <CardHeader>
               <CardTitle>User Management</CardTitle>
@@ -1415,11 +1415,11 @@ export default function Administration() {
             </CardHeader>
             <CardContent>
               {users?.roleDistribution && (
-                <div className="mb-3 grid grid-cols-4 gap-4">
+                <div className="mb-3 grid grid-cols-4 gap-2.5">
                   {users.roleDistribution.map((rd: any) => (
                     <Card key={rd.role}>
                       <CardContent className="pt-4">
-                        <div className="text-2xl font-bold">{rd._count}</div>
+                        <div className="text-lg font-bold">{rd._count}</div>
                         <div className="text-sm text-muted-foreground">{rd.role}</div>
                       </CardContent>
                     </Card>
@@ -1450,17 +1450,17 @@ export default function Administration() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="flags" className="space-y-4 mt-3">
+        <TabsContent value="flags" className="space-y-2.5 mt-3">
           <Card>
             <CardHeader>
               <CardTitle>Engagement Flag Configuration</CardTitle>
               <CardDescription>Configure automatic QR/EQCR triggers based on engagement characteristics</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="border rounded-lg p-4">
+              <div className="space-y-2.5">
+                <div className="border rounded-lg p-2.5">
                   <h4 className="font-semibold mb-2">Default Triggers (from Settings)</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-2 gap-2.5 text-sm">
                     <div className="flex items-center gap-2">
                       {settings?.eqcrRequiredForPIE ? (
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -1503,11 +1503,11 @@ export default function Administration() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="templates" className="space-y-4 mt-3">
+        <TabsContent value="templates" className="space-y-2.5 mt-3">
           <TemplatesTab />
         </TabsContent>
 
-        <TabsContent value="audit" className="space-y-4 mt-3">
+        <TabsContent value="audit" className="space-y-2.5 mt-3">
           <AuditLogTab />
         </TabsContent>
       </Tabs>

@@ -260,7 +260,7 @@ export function AIAssistBanner({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             {isGenerating ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-purple-600 mr-2" />
@@ -287,7 +287,7 @@ export function AIAssistBanner({
                   </p>
                 </div>
 
-                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-start gap-3 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
                   <Checkbox
                     id="confirm-ai"
                     checked={confirmed}

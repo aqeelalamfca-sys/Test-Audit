@@ -131,7 +131,7 @@ function RoleMatrixTab({ onClose }: { onClose: () => void }) {
   const categories = Object.keys(permsByCategory).sort();
 
   return (
-    <div className="space-y-4" data-testid="tab-role-matrix">
+    <div className="space-y-2.5" data-testid="tab-role-matrix">
       <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200/50">
         <CardContent className="p-3 flex items-start gap-2 text-sm">
           <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
@@ -245,7 +245,7 @@ function RoleMatrixTab({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <Checkbox checked disabled className="h-3 w-3" />
             <span>Granted</span>
@@ -387,7 +387,7 @@ function UsersTab() {
   });
 
   return (
-    <div className="space-y-4" data-testid="tab-users">
+    <div className="space-y-2.5" data-testid="tab-users">
       <div className="flex items-center justify-between gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -405,7 +405,7 @@ function UsersTab() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Add New User</DialogTitle></DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-2.5">
               <div>
                 <Label>Full Name *</Label>
                 <Input data-testid="input-user-fullname" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
@@ -452,7 +452,7 @@ function UsersTab() {
         <div className="space-y-2">
           {(users || []).map((user: any) => (
             <Card key={user.id} data-testid={`card-user-${user.id}`}>
-              <CardContent className="p-4 flex items-center justify-between">
+              <CardContent className="p-2.5 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold" data-testid={`text-user-name-${user.id}`}>{user.fullName}</span>
@@ -522,7 +522,7 @@ function UsersTab() {
             <DialogTitle>Edit User</DialogTitle>
           </DialogHeader>
           {editUser && (
-            <div className="space-y-4">
+            <div className="space-y-2.5">
               <div>
                 <Label>Full Name</Label>
                 <Input

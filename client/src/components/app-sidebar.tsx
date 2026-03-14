@@ -137,7 +137,7 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
 
   return (
     <Sidebar className={`border-r ${sidebarClasses.border}`}>
-      <SidebarHeader className={`border-b px-4 py-3 ${sidebarClasses.border} ${sidebarClasses.headerBg}`}>
+      <SidebarHeader className={`border-b px-3 py-3 ${sidebarClasses.border} ${sidebarClasses.headerBg}`}>
         <Link href={homeLink} className="flex items-center gap-2.5" data-testid="link-home">
           <div className={`flex h-8 w-8 items-center justify-center rounded-lg font-bold text-sm flex-shrink-0 ${theme.avatarBg} ${theme.avatarText}`}>
             {headerInitials}

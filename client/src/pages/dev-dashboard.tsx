@@ -7,7 +7,7 @@ import { ArrowLeft, Code, Database, Server, Settings } from "lucide-react";
 export default function DevDashboard() {
   return (
     <div className="page-container">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2.5">
         <Link href="/">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -29,7 +29,7 @@ export default function DevDashboard() {
         <Badge variant="outline">Development Mode</Badge>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">

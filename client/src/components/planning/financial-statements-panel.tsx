@@ -203,7 +203,7 @@ export function FinancialStatementsPanel({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2.5">
         <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -222,7 +222,7 @@ export function FinancialStatementsPanel({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 text-sm">
               {[
                 { label: "Total Assets", value: fsSummary.totalAssets, fallback: trialBalance.totalAssets, color: "text-green-700 dark:text-green-400" },
                 { label: "Total Liabilities", value: fsSummary.totalLiabilities, fallback: null, color: "text-red-600 dark:text-red-400" },
@@ -267,10 +267,10 @@ export function FinancialStatementsPanel({
             <TabsTrigger value="trial-balance" className="gap-1.5 text-xs"><Database className="h-3.5 w-3.5" />Trial Balance</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="balance-sheet" className="mt-4">
+          <TabsContent value="balance-sheet" className="mt-2.5">
             {draftFsData?.balanceSheet?.sections ? (
               <>
-                <div className="hidden print:block text-center mb-6">
+                <div className="hidden print:block text-center mb-3">
                   <h2 className="text-lg font-bold uppercase">{clientName}</h2>
                   <h3 className="text-base font-semibold mt-1">Statement of Financial Position</h3>
                   <p className="text-sm text-muted-foreground mt-1">As at {periodEnd}</p>
@@ -299,10 +299,10 @@ export function FinancialStatementsPanel({
             )}
           </TabsContent>
 
-          <TabsContent value="profit-loss" className="mt-4">
+          <TabsContent value="profit-loss" className="mt-2.5">
             {draftFsData?.profitLoss?.sections ? (
               <>
-                <div className="hidden print:block text-center mb-6">
+                <div className="hidden print:block text-center mb-3">
                   <h2 className="text-lg font-bold uppercase">{clientName}</h2>
                   <h3 className="text-base font-semibold mt-1">Statement of Profit or Loss</h3>
                   <p className="text-sm text-muted-foreground mt-1">For the year ended {periodEnd}</p>
@@ -328,7 +328,7 @@ export function FinancialStatementsPanel({
             )}
           </TabsContent>
 
-          <TabsContent value="socf" className="mt-4">
+          <TabsContent value="socf" className="mt-2.5">
             <FSSoCF
               draftFsData={draftFsData}
               fsPriorYear={fsPriorYear}
@@ -341,7 +341,7 @@ export function FinancialStatementsPanel({
             />
           </TabsContent>
 
-          <TabsContent value="soce" className="mt-4">
+          <TabsContent value="soce" className="mt-2.5">
             <FSSoCE
               draftFsData={draftFsData}
               fsPriorYear={fsPriorYear}
@@ -354,7 +354,7 @@ export function FinancialStatementsPanel({
             />
           </TabsContent>
 
-          <TabsContent value="notes" className="mt-4">
+          <TabsContent value="notes" className="mt-2.5">
             <FSNotes
               draftFsData={draftFsData}
               coaAccounts={coaAccounts}
@@ -365,7 +365,7 @@ export function FinancialStatementsPanel({
             />
           </TabsContent>
 
-          <TabsContent value="trial-balance" className="mt-3 space-y-4">
+          <TabsContent value="trial-balance" className="mt-3 space-y-2.5">
             <div className="flex items-start gap-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md p-3">
               <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
               <div className="flex-1">
@@ -383,8 +383,8 @@ export function FinancialStatementsPanel({
             {trialBalance.fileUploaded ? (
               <Card>
                 <CardHeader><CardTitle className="text-sm">Trial Balance Summary</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <CardContent className="space-y-2.5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
                     {[
                       { label: "File Name", value: trialBalance.fileName || "Uploaded File" },
                       { label: "Total Assets", value: trialBalance.totalAssets ? formatAccounting(Number(String(trialBalance.totalAssets).replace(/,/g, ''))) : '-' },

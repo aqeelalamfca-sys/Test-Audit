@@ -47,7 +47,7 @@ export function PlanningDashboard({ engagementId, onNavigateToTab }: PlanningDas
   const { engagement, client, intakeReadiness, draftFsSummary, planningCompletion, completionPercentage, riskSignals, nextActions, riskSummary, canCompletePlanning } = data;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -74,7 +74,7 @@ export function PlanningDashboard({ engagementId, onNavigateToTab }: PlanningDas
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Planning Progress</span>
-              <span className="text-2xl font-bold tabular-nums">{completionPercentage}%</span>
+              <span className="text-lg font-bold tabular-nums">{completionPercentage}%</span>
             </div>
             <Progress value={completionPercentage} className="h-2" />
           </CardContent>
@@ -87,7 +87,7 @@ export function PlanningDashboard({ engagementId, onNavigateToTab }: PlanningDas
               <AlertTriangle className="h-4 w-4 text-violet-500" />
             </div>
             <div className="flex items-baseline gap-3">
-              <span className="text-2xl font-bold tabular-nums">{riskSummary?.totalRisks || 0}</span>
+              <span className="text-lg font-bold tabular-nums">{riskSummary?.totalRisks || 0}</span>
               <div className="flex gap-2 text-xs">
                 {riskSummary?.significantRisks > 0 && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">{riskSummary.significantRisks} significant</Badge>}
                 {riskSummary?.fraudRisks > 0 && <Badge className="text-[10px] px-1.5 py-0 bg-orange-500">{riskSummary.fraudRisks} fraud</Badge>}
@@ -103,7 +103,7 @@ export function PlanningDashboard({ engagementId, onNavigateToTab }: PlanningDas
               <Database className="h-4 w-4 text-emerald-500" />
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold tabular-nums">{data.intakeGatesPassed}/{data.intakeGatesTotal}</span>
+              <span className="text-lg font-bold tabular-nums">{data.intakeGatesPassed}/{data.intakeGatesTotal}</span>
               <span className="text-xs text-muted-foreground">gates passed</span>
             </div>
             {intakeReadiness.openIssueCount > 0 && (
@@ -127,7 +127,7 @@ export function PlanningDashboard({ engagementId, onNavigateToTab }: PlanningDas
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
         <Card className="lg:col-span-2">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">

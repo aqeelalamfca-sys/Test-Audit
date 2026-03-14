@@ -121,7 +121,7 @@ export default function AdminDashboard() {
 
   if (user?.role !== "FIRM_ADMIN") {
     return (
-      <div className="px-4 py-3">
+      <div className="px-3 py-3">
         <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -139,7 +139,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="page-container">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2.5">
         <Link href="/">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -154,7 +154,7 @@ export default function AdminDashboard() {
             <Shield className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+            <h1 className="text-lg font-bold">Admin Dashboard</h1>
             <p className="text-muted-foreground">System administration and configuration</p>
           </div>
         </div>
@@ -180,14 +180,14 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5 text-blue-500" />
               <div>
                 <p className="text-sm text-muted-foreground">Total Users</p>
-                <p className="text-2xl font-bold">{statsLoading ? "..." : stats.totalUsers}</p>
+                <p className="text-lg font-bold">{statsLoading ? "..." : stats.totalUsers}</p>
               </div>
             </div>
           </CardContent>
@@ -198,7 +198,7 @@ export default function AdminDashboard() {
               <Building2 className="h-5 w-5 text-green-500" />
               <div>
                 <p className="text-sm text-muted-foreground">Total Clients</p>
-                <p className="text-2xl font-bold">{statsLoading ? "..." : stats.totalClients}</p>
+                <p className="text-lg font-bold">{statsLoading ? "..." : stats.totalClients}</p>
               </div>
             </div>
           </CardContent>
@@ -209,7 +209,7 @@ export default function AdminDashboard() {
               <FileText className="h-5 w-5 text-purple-500" />
               <div>
                 <p className="text-sm text-muted-foreground">Engagements</p>
-                <p className="text-2xl font-bold">{statsLoading ? "..." : stats.totalEngagements}</p>
+                <p className="text-lg font-bold">{statsLoading ? "..." : stats.totalEngagements}</p>
               </div>
             </div>
           </CardContent>
@@ -220,7 +220,7 @@ export default function AdminDashboard() {
               <Activity className="h-5 w-5 text-orange-500" />
               <div>
                 <p className="text-sm text-muted-foreground">Active Sessions</p>
-                <p className="text-2xl font-bold">{statsLoading ? "..." : stats.activeSessions}</p>
+                <p className="text-lg font-bold">{statsLoading ? "..." : stats.activeSessions}</p>
               </div>
             </div>
           </CardContent>
@@ -235,7 +235,7 @@ export default function AdminDashboard() {
           <TabsTrigger value="logs">Audit Logs</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="users" className="space-y-4">
+        <TabsContent value="users" className="space-y-2.5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -251,7 +251,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               {usersLoading ? (
-                <div className="flex items-center justify-center py-4">
+                <div className="flex items-center justify-center py-2">
                   <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
               ) : userSummary?.users && userSummary.users.length > 0 ? (
@@ -288,7 +288,7 @@ export default function AdminDashboard() {
                   </TableBody>
                 </Table>
               ) : (
-                <p className="text-muted-foreground text-center py-4">No users found. Create users from the User Management page to get started.</p>
+                <p className="text-muted-foreground text-center py-2">No users found. Create users from the User Management page to get started.</p>
               )}
             </CardContent>
           </Card>
@@ -301,9 +301,9 @@ export default function AdminDashboard() {
               <CardDescription>Role-based access control configuration (ISA 220, ISQM-1)</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 {roleHierarchy.map((role, index) => (
-                  <div key={role.role} className="border rounded-lg p-4">
+                  <div key={role.role} className="border rounded-lg p-2.5">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <Badge className={index === 0 ? "bg-purple-100 text-purple-700" : index < 4 ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}>
@@ -335,11 +335,11 @@ export default function AdminDashboard() {
               <CardTitle>System Settings</CardTitle>
               <CardDescription>Configure system-wide settings and preferences</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="space-y-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 <Card>
                   <CardContent className="pt-6">
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-3 mb-2.5">
                       <Settings className="h-5 w-5 text-blue-500" />
                       <h3 className="font-semibold">General Settings</h3>
                     </div>
@@ -352,7 +352,7 @@ export default function AdminDashboard() {
                 </Card>
                 <Card>
                   <CardContent className="pt-6">
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-3 mb-2.5">
                       <Shield className="h-5 w-5 text-green-500" />
                       <h3 className="font-semibold">Firm Controls (ISQM-1)</h3>
                     </div>
@@ -415,7 +415,7 @@ export default function AdminDashboard() {
                   </TableBody>
                 </Table>
               ) : (
-                <p className="text-muted-foreground text-center py-4">No audit logs available yet. Activity will be logged as users interact with the system.</p>
+                <p className="text-muted-foreground text-center py-2">No audit logs available yet. Activity will be logged as users interact with the system.</p>
               )}
             </CardContent>
           </Card>

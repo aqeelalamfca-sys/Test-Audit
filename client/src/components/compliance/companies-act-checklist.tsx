@@ -316,8 +316,8 @@ export function CompaniesActChecklist({ engagementId }: { engagementId?: string 
   };
 
   return (
-    <div className="space-y-6" data-testid="companies-act-checklist">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+    <div className="space-y-3" data-testid="companies-act-checklist">
+      <div className="flex items-start justify-between gap-2.5 flex-wrap">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold flex items-center gap-2" data-testid="text-checklist-title">
             <Scale className="h-5 w-5 text-primary" />
@@ -349,8 +349,8 @@ export function CompaniesActChecklist({ engagementId }: { engagementId?: string 
 
       <Card data-testid="card-checklist-summary">
         <CardContent className="pt-4 pb-4 space-y-3">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center justify-between gap-2.5 flex-wrap">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <StatBadge label="Met" count={stats.met} className="bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300" />
               <StatBadge label="Partial" count={stats.partial} className="bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300" />
               <StatBadge label="Not Met" count={stats.notMet} className="bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300" />
@@ -388,7 +388,7 @@ export function CompaniesActChecklist({ engagementId }: { engagementId?: string 
           const groupTotal = group.items.length;
           return (
             <AccordionItem key={group.id} value={group.id} className="border rounded-md" data-testid={`group-${group.id}`}>
-              <AccordionTrigger className="px-4 py-3 hover:no-underline" data-testid={`trigger-${group.id}`}>
+              <AccordionTrigger className="px-3 py-3 hover:no-underline" data-testid={`trigger-${group.id}`}>
                 <div className="flex items-center gap-3 flex-1 text-left">
                   <BookOpen className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -400,12 +400,12 @@ export function CompaniesActChecklist({ engagementId }: { engagementId?: string 
                   </Badge>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
+              <AccordionContent className="px-3 pb-4">
                 <div className="space-y-3">
                   {group.items.map(item => (
                     <div
                       key={item.id}
-                      className={`rounded-md border p-4 space-y-3 ${
+                      className={`rounded-md border p-2.5 space-y-3 ${
                         item.status === "met"
                           ? "border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-950/20"
                           : item.status === "partial"

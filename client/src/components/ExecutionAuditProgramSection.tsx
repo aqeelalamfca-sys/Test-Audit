@@ -254,7 +254,7 @@ export function ExecutionAuditProgramSection({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -267,7 +267,7 @@ export function ExecutionAuditProgramSection({
                 </CardDescription>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2.5">
               {isLocked && (
                 <Badge variant="secondary" className="gap-1">
                   <Lock className="h-3 w-3" />
@@ -281,14 +281,14 @@ export function ExecutionAuditProgramSection({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5">
             <Card className="bg-blue-50 dark:bg-blue-900/20">
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Overall Progress</p>
-                    <p className="text-2xl font-bold">{progressPercent}%</p>
+                    <p className="text-lg font-bold">{progressPercent}%</p>
                   </div>
                   <BarChart3 className="h-8 w-8 text-blue-500" />
                 </div>
@@ -303,7 +303,7 @@ export function ExecutionAuditProgramSection({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Satisfactory</p>
-                    <p className="text-2xl font-bold text-green-600">{satisfactoryCount}</p>
+                    <p className="text-lg font-bold text-green-600">{satisfactoryCount}</p>
                   </div>
                   <CheckCircle2 className="h-8 w-8 text-green-500" />
                 </div>
@@ -314,7 +314,7 @@ export function ExecutionAuditProgramSection({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Further Work</p>
-                    <p className="text-2xl font-bold text-amber-600">{furtherWorkCount}</p>
+                    <p className="text-lg font-bold text-amber-600">{furtherWorkCount}</p>
                   </div>
                   <AlertTriangle className="h-8 w-8 text-amber-500" />
                 </div>
@@ -325,7 +325,7 @@ export function ExecutionAuditProgramSection({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Unsatisfactory</p>
-                    <p className="text-2xl font-bold text-red-600">{unsatisfactoryCount}</p>
+                    <p className="text-lg font-bold text-red-600">{unsatisfactoryCount}</p>
                   </div>
                   <FileX className="h-8 w-8 text-red-500" />
                 </div>
@@ -375,8 +375,8 @@ export function ExecutionAuditProgramSection({
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="space-y-2.5 p-2.5 bg-muted/30 rounded-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-sm">
                         <div>
                           <Label className="text-xs text-muted-foreground">TB Coverage</Label>
                           <p>{program.tbCoverage.join(", ")}</p>
@@ -397,12 +397,12 @@ export function ExecutionAuditProgramSection({
                         <Label className="font-medium">Audit Procedures - Execution & Evidence</Label>
 
                         {program.procedures.length === 0 ? (
-                          <div className="text-center py-8 text-muted-foreground">
+                          <div className="text-center py-2 text-muted-foreground">
                             <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-50" />
                             <p>No procedures synced from Planning. Click "Sync from Planning" to load.</p>
                           </div>
                         ) : (
-                          <div className="space-y-4">
+                          <div className="space-y-2.5">
                             {program.procedures.map((procedure, idx) => {
                               const hasEvidence = procedure.workingPapers.length > 0;
                               const hasConcluded = procedure.conclusion !== "pending";
@@ -416,12 +416,12 @@ export function ExecutionAuditProgramSection({
                                 <div 
                                   key={procedure.id} 
                                   className={cn(
-                                    "border rounded-lg p-4 space-y-4",
+                                    "border rounded-lg p-2.5 space-y-2.5",
                                     procedure.isReviewed && "bg-green-50/50 dark:bg-green-900/10 border-green-200",
                                     (procedure.conclusion === "unsatisfactory-misstatement" || procedure.conclusion === "unsatisfactory-control-deficiency") && "border-red-200 bg-red-50/30"
                                   )}
                                 >
-                                  <div className="flex items-start justify-between gap-4">
+                                  <div className="flex items-start justify-between gap-2.5">
                                     <div className="flex items-start gap-3 flex-1">
                                       <span className="text-sm font-mono text-muted-foreground mt-1">{idx + 1}.</span>
                                       <div className="flex-1 space-y-2">
@@ -491,7 +491,7 @@ export function ExecutionAuditProgramSection({
 
                                   <Separator />
 
-                                  <div className="space-y-4 bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-lg">
+                                  <div className="space-y-2.5 bg-blue-50/50 dark:bg-blue-900/10 p-2.5 rounded-lg">
                                     <div className="flex items-center gap-2">
                                       <Shield className="h-4 w-4 text-blue-600" />
                                       <Label className="font-medium text-blue-800 dark:text-blue-300">
@@ -574,8 +574,8 @@ export function ExecutionAuditProgramSection({
                                               <DialogHeader>
                                                 <DialogTitle>Upload Working Papers</DialogTitle>
                                               </DialogHeader>
-                                              <div className="space-y-4">
-                                                <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                                              <div className="space-y-2.5">
+                                                <div className="border-2 border-dashed rounded-lg p-2.5 text-center">
                                                   <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
                                                   <p className="text-sm text-muted-foreground mb-2">
                                                     Drag and drop files here, or click to select
@@ -648,7 +648,7 @@ export function ExecutionAuditProgramSection({
                                       )}
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                                       <div className="space-y-2">
                                         <Label className="text-sm">
                                           Conclusion <span className="text-destructive">*</span>

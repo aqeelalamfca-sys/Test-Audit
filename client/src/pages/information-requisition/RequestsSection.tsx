@@ -751,7 +751,7 @@ Audit Team`);
                         How would you like to apply the {TEMPLATE_OPTIONS.find(t => t.value === selectedTemplate)?.label} template?
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <div className="py-4 space-y-3">
+                    <div className="py-2 space-y-3">
                       <Button 
                         className="w-full justify-start" 
                         variant="outline"
@@ -859,7 +859,7 @@ Audit Team`);
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="text-center py-4 text-muted-foreground">Loading requests...</div>
+            <div className="text-center py-2 text-muted-foreground">Loading requests...</div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -942,7 +942,7 @@ Audit Team`);
                   
                   {requests.length === 0 && !isAddingNew ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-4 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-2 text-muted-foreground">
                         No information requests yet. Click "Add Row" to create one.
                       </TableCell>
                     </TableRow>
@@ -1145,7 +1145,7 @@ Audit Team`);
               Files uploaded by the client for this request
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-2">
             {attachmentDialogId && (
               <AttachmentsList 
                 attachments={requests.find(r => r.id === attachmentDialogId)?.attachments || []}
@@ -1172,7 +1172,7 @@ Audit Team`);
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-2.5 py-2">
             <div className="space-y-2">
               <Label htmlFor="email-to">To (comma-separated)</Label>
               <Input
@@ -1263,7 +1263,7 @@ Audit Team`);
 function AttachmentsList({ attachments }: { attachments: Attachment[] }) {
   if (attachments.length === 0) {
     return (
-      <div className="text-center py-4 text-muted-foreground">
+      <div className="text-center py-2 text-muted-foreground">
         <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
         <p className="text-sm">No attachments uploaded yet</p>
       </div>

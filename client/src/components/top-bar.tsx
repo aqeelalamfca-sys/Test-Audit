@@ -189,7 +189,7 @@ export function TopBar({}: TopBarProps) {
   const roleBadgeCls = getRoleBadgeClasses(theme);
 
   return (
-    <header className="h-12 border-b border-border/40 bg-background/95 backdrop-blur-sm flex items-center px-4 gap-3 flex-shrink-0">
+    <header className="h-12 border-b border-border/40 bg-background/95 backdrop-blur-sm flex items-center px-3 gap-3 flex-shrink-0">
       <SidebarTrigger data-testid="button-sidebar-toggle" />
 
       <Badge data-testid="badge-beta-version" variant="outline" className="bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-[10px] font-semibold tracking-wider uppercase px-1.5 py-0 h-5 flex-shrink-0">
@@ -201,7 +201,7 @@ export function TopBar({}: TopBarProps) {
       {isSuperAdmin ? (
         <div className="flex-1" />
       ) : (
-      <div className="flex items-center gap-6 flex-1">
+      <div className="flex items-center gap-3 flex-1">
         {isWorkspaceRoute && workspaceEngagement ? (
           <div className="flex items-center gap-3 flex-1">
             <div className="flex items-center gap-1.5 whitespace-nowrap" title={workspaceClient?.name || "Unknown Client"}>
@@ -239,7 +239,7 @@ export function TopBar({}: TopBarProps) {
             <GlobalSaveIndicator showDetails={true} />
           </div>
         ) : (
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2.5">
             <DropdownMenu open={clientOpen} onOpenChange={setClientOpen}>
               <DropdownMenuTrigger asChild>
                 <Button 
@@ -270,7 +270,7 @@ export function TopBar({}: TopBarProps) {
                 <DropdownMenuSeparator />
                 <div className="max-h-64 overflow-y-auto">
                   {filteredClients.length === 0 ? (
-                    <div className="p-4 text-center">
+                    <div className="p-2.5 text-center">
                       <p className="text-sm text-muted-foreground mb-2">
                         {clients?.length === 0 ? "No clients found" : "No matching clients"}
                       </p>
@@ -334,7 +334,7 @@ export function TopBar({}: TopBarProps) {
               </SelectTrigger>
               <SelectContent>
                 {clientEngagements.length === 0 ? (
-                  <div className="p-4 text-center">
+                  <div className="p-2.5 text-center">
                     <p className="text-sm text-muted-foreground mb-2">
                       {selectedClientId ? "No engagements found" : "Select a client first"}
                     </p>
@@ -422,7 +422,7 @@ export function TopBar({}: TopBarProps) {
               </div>
               <DropdownMenuSeparator />
               {notifications.length === 0 ? (
-                <div className="py-6 text-center text-sm text-muted-foreground">
+                <div className="py-3 text-center text-sm text-muted-foreground">
                   No notifications yet
                 </div>
               ) : (

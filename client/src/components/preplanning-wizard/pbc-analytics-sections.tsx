@@ -116,7 +116,7 @@ const FormSection = ({
         </div>
       </div>
     </CardHeader>
-    <CardContent className="pt-6 space-y-6">
+    <CardContent className="pt-6 space-y-3">
       {children}
     </CardContent>
   </Card>
@@ -245,7 +245,7 @@ export function PBCTrackerSection({
   ).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <FormSection
         icon={<FolderOpen className="h-5 w-5" />}
         title="PBC Tracker (Prepared By Client)"
@@ -289,7 +289,7 @@ export function PBCTrackerSection({
                 <TableRow>
                   <TableCell
                     colSpan={readOnly ? 6 : 7}
-                    className="text-center text-sm text-muted-foreground py-8"
+                    className="text-center text-sm text-muted-foreground py-2"
                   >
                     No PBC items added yet. Click "Add Item" to begin.
                   </TableCell>
@@ -473,7 +473,7 @@ export function PreliminaryAnalyticsSection({
   const anomalyCount = data.procedures.filter((p) => p.anomalyFlag).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <FormSection
         icon={<TrendingUp className="h-5 w-5" />}
         title="Preliminary Analytical Procedures (ISA 520)"
@@ -543,7 +543,7 @@ export function PreliminaryAnalyticsSection({
                 <TableRow>
                   <TableCell
                     colSpan={readOnly ? 8 : 9}
-                    className="text-center text-sm text-muted-foreground py-8"
+                    className="text-center text-sm text-muted-foreground py-2"
                   >
                     No analytical procedures added yet. Click "Add Procedure" to begin.
                   </TableCell>
@@ -685,7 +685,7 @@ export function PreliminaryAnalyticsSection({
         </div>
 
         {data.procedures.some((p) => p.anomalyFlag) && (
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <SectionDivider
               title="Investigation Notes"
               icon={<AlertTriangle className="h-4 w-4" />}

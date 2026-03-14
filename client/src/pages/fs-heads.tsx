@@ -353,9 +353,9 @@ function FSHeadsContent({ engagementId, saveRef }: { engagementId: string; saveR
     return (
       <Card data-testid="empty-state">
         <CardContent className="py-12 text-center">
-          <Brain className="h-16 w-16 mx-auto mb-4 opacity-30" />
+          <Brain className="h-16 w-16 mx-auto mb-2.5 opacity-30" />
           <h3 className="font-semibold text-lg tracking-tight mb-2">No FS Heads Available</h3>
-          <p className="text-muted-foreground text-sm max-w-md mx-auto mb-6">
+          <p className="text-muted-foreground text-sm max-w-md mx-auto mb-3">
             Generate FS Head working papers from your Chart of Accounts and Trial Balance.
           </p>
           <Button
@@ -377,7 +377,7 @@ function FSHeadsContent({ engagementId, saveRef }: { engagementId: string; saveR
   }
 
   return (
-    <div className="grid grid-cols-12 gap-4">
+    <div className="grid grid-cols-12 gap-2.5">
       {showGenerateResult && (
         <div className="col-span-12">
           <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800">
@@ -388,7 +388,7 @@ function FSHeadsContent({ engagementId, saveRef }: { engagementId: string; saveR
                   <p className="font-medium text-green-800 dark:text-green-200 mb-2">
                     {showGenerateResult.message}
                   </p>
-                  <div className="grid grid-cols-5 gap-4 text-sm text-green-700 dark:text-green-300">
+                  <div className="grid grid-cols-5 gap-2.5 text-sm text-green-700 dark:text-green-300">
                     <div><span className="font-medium">{showGenerateResult.summary?.totalFsHeads}</span> FS Heads</div>
                     <div><span className="font-medium">{showGenerateResult.summary?.risksGenerated || 0}</span> Risks</div>
                     <div><span className="font-medium">{showGenerateResult.summary?.tocProcedures}</span> TOC</div>
@@ -405,7 +405,7 @@ function FSHeadsContent({ engagementId, saveRef }: { engagementId: string; saveR
         </div>
       )}
 
-      <div className="col-span-3 space-y-4">
+      <div className="col-span-3 space-y-2.5">
         <Card data-testid="fs-heads-list">
           <CardHeader className="py-3">
             <div className="flex items-center justify-between">
@@ -541,7 +541,7 @@ function FSHeadsContent({ engagementId, saveRef }: { engagementId: string; saveR
         ) : (
           <Card data-testid="select-prompt">
             <CardContent className="py-12 text-center">
-              <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-30" />
+              <ClipboardList className="h-12 w-12 mx-auto mb-2.5 opacity-30" />
               <p className="text-muted-foreground">Select an FS Head to begin the execution wizard</p>
               <p className="text-xs text-muted-foreground mt-2">Work through each step sequentially: Context, Assertions, Procedures, Evidence, Conclusions, Review</p>
             </CardContent>
@@ -559,7 +559,7 @@ function WizardStepIndicator({ currentStep, stepCompletion, onStepClick, gateChe
   gateCheck: (step: number) => { allowed: boolean; reason?: string };
 }) {
   return (
-    <div className="flex items-center gap-1 mb-4" data-testid="wizard-step-indicator">
+    <div className="flex items-center gap-1 mb-2.5" data-testid="wizard-step-indicator">
       {WIZARD_STEPS.map((step, idx) => {
         const completion = stepCompletion[step.id] || { complete: false, percent: 0 };
         const isCurrent = currentStep === step.id;
@@ -638,7 +638,7 @@ function ReviewPointsInline({ reviewPoints, stepLabel }: { reviewPoints: FSHeadR
   const relevant = reviewPoints.filter(rp => rp.status !== "RESOLVED");
   if (relevant.length === 0) return null;
   return (
-    <div className="border-l-4 border-amber-400 bg-amber-50 dark:bg-amber-950/30 p-3 rounded-r-md mb-4" data-testid="review-points-inline">
+    <div className="border-l-4 border-amber-400 bg-amber-50 dark:bg-amber-950/30 p-3 rounded-r-md mb-2.5" data-testid="review-points-inline">
       <div className="flex items-center gap-2 mb-2">
         <StickyNote className="h-4 w-4 text-amber-600" />
         <span className="text-xs font-medium text-amber-800 dark:text-amber-200">{relevant.length} Review Point{relevant.length > 1 ? 's' : ''}</span>
@@ -1197,7 +1197,7 @@ function FSHeadWizard({
         </div>
       </CardHeader>
 
-      <CardContent className="p-4">
+      <CardContent className="p-2.5">
         <WizardStepIndicator
           currentStep={currentStep}
           stepCompletion={stepCompletion}
@@ -1328,7 +1328,7 @@ function FSHeadWizard({
           )}
         </div>
 
-        <div className="flex items-center justify-between pt-4 border-t mt-4" data-testid="wizard-nav">
+        <div className="flex items-center justify-between pt-4 border-t mt-2.5" data-testid="wizard-nav">
           <Button variant="outline" onClick={handlePrev} disabled={currentStep === 1} className="gap-1" data-testid="btn-wizard-prev">
             <ArrowLeft className="h-4 w-4" />
             {currentStep > 1 ? WIZARD_STEPS[currentStep - 2].label : "Back"}
@@ -1359,8 +1359,8 @@ function Step1Context({ workingPaper, fsHeadName, fsHeadType, fsHeadAccounts, cl
   const subItems = ctx.subLineItems || [];
 
   return (
-    <div className="space-y-4" data-testid="step-1-context">
-      <div className="border rounded-lg p-4 bg-muted/30">
+    <div className="space-y-2.5" data-testid="step-1-context">
+      <div className="border rounded-lg p-2.5 bg-muted/30">
         <div className="flex items-center gap-2 mb-3">
           <FileText className="h-5 w-5 text-primary" />
           <h3 className="text-sm font-semibold tracking-tight">FS Head Working Paper</h3>
@@ -1370,7 +1370,7 @@ function Step1Context({ workingPaper, fsHeadName, fsHeadType, fsHeadAccounts, cl
             </Badge>
           )}
         </div>
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-2 gap-2.5 text-sm">
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Client:</span>
@@ -1422,7 +1422,7 @@ function Step1Context({ workingPaper, fsHeadName, fsHeadType, fsHeadAccounts, cl
         </div>
       )}
 
-      <div className="border rounded-lg p-4">
+      <div className="border rounded-lg p-2.5">
         <div className="flex items-center gap-2 mb-3">
           <TrendingUp className="h-4 w-4 text-primary" />
           <h4 className="text-sm font-semibold">Lead Schedule</h4>
@@ -1518,15 +1518,15 @@ function Step1Context({ workingPaper, fsHeadName, fsHeadType, fsHeadAccounts, cl
                   </TableRow>
                 </>
               ) : (
-                <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">No sub-line items found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-3 text-muted-foreground">No sub-line items found.</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="border rounded-lg p-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+        <div className="border rounded-lg p-2.5">
           <div className="flex items-center gap-2 mb-3">
             <Calculator className="h-4 w-4 text-primary" />
             <h4 className="text-sm font-semibold">Materiality Comparison (ISA 320)</h4>
@@ -1559,7 +1559,7 @@ function Step1Context({ workingPaper, fsHeadName, fsHeadType, fsHeadAccounts, cl
           </div>
         </div>
 
-        <div className="border rounded-lg p-4">
+        <div className="border rounded-lg p-2.5">
           <div className="flex items-center gap-2 mb-3">
             <Shield className="h-4 w-4 text-primary" />
             <h4 className="text-sm font-semibold">Completion Status</h4>
@@ -1588,7 +1588,7 @@ function Step1Context({ workingPaper, fsHeadName, fsHeadType, fsHeadAccounts, cl
       </div>
 
       {(riskAreas.length > 0 || (ctx.linkedRisks || []).length > 0) && (
-        <div className="border rounded-lg p-4">
+        <div className="border rounded-lg p-2.5">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="h-4 w-4 text-primary" />
             <h4 className="text-sm font-semibold">Linked Risks (ISA 315)</h4>
@@ -1652,7 +1652,7 @@ function Step2Assertions({ riskAreas, executionContext, procedureTemplate, editi
   };
 
   return (
-    <div className="space-y-4" data-testid="step-2-assertions">
+    <div className="space-y-2.5" data-testid="step-2-assertions">
       <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
         <Target className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-700 dark:text-blue-300 text-xs">
@@ -1660,7 +1660,7 @@ function Step2Assertions({ riskAreas, executionContext, procedureTemplate, editi
         </AlertDescription>
       </Alert>
 
-      <div className="border rounded-lg p-4">
+      <div className="border rounded-lg p-2.5">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-semibold flex items-center gap-2">
             <Shield className="h-4 w-4" />
@@ -1675,7 +1675,7 @@ function Step2Assertions({ riskAreas, executionContext, procedureTemplate, editi
           )}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2.5">
           {ASSERTIONS.map(a => {
             const cov = getAssertionCoverage(a.id, a.alt);
             return (
@@ -1739,7 +1739,7 @@ function Step2Assertions({ riskAreas, executionContext, procedureTemplate, editi
                 );
               }) : (
                 <TableRow>
-                  <TableCell colSpan={ASSERTIONS.length + 3} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={ASSERTIONS.length + 3} className="text-center py-3 text-muted-foreground">
                     No risks identified. Generate risks or add manually.
                   </TableCell>
                 </TableRow>
@@ -1750,7 +1750,7 @@ function Step2Assertions({ riskAreas, executionContext, procedureTemplate, editi
       </div>
 
       {auditProgram.length > 0 && (
-        <div className="border rounded-lg p-4">
+        <div className="border rounded-lg p-2.5">
           <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
             <ClipboardList className="h-4 w-4" />
             Linked Audit Program ({auditProgram.length} procedures from Planning)
@@ -1776,7 +1776,7 @@ function Step2Assertions({ riskAreas, executionContext, procedureTemplate, editi
       )}
 
       {procedureTemplate && (
-        <div className="border rounded-lg p-4">
+        <div className="border rounded-lg p-2.5">
           <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
             <Info className="h-4 w-4" />
             Template Key Risks ({procedureTemplate.displayName || fsHeadName})
@@ -1859,7 +1859,7 @@ function Step3Procedures({
   const totalProcedures = tocItems.length + todItems.length + analyticsItems.length;
 
   return (
-    <div className="space-y-4" data-testid="step-3-procedures">
+    <div className="space-y-2.5" data-testid="step-3-procedures">
       <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
         <ClipboardList className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-700 dark:text-blue-300 text-xs">
@@ -1896,7 +1896,7 @@ function Step3Procedures({
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-3 gap-3 mb-2.5">
         <button
           onClick={() => setActiveSection('toc')}
           className={`p-3 rounded-lg border text-left transition-all ${activeSection === 'toc' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'hover:bg-muted/50'}`}
@@ -1906,7 +1906,7 @@ function Step3Procedures({
             <Shield className="h-4 w-4" />
             <span className="font-medium text-sm">Test of Controls</span>
           </div>
-          <div className="text-2xl font-bold">{tocItems.length}</div>
+          <div className="text-lg font-bold">{tocItems.length}</div>
           <div className="text-xs text-muted-foreground">
             {tocItems.filter((t: TOCItem) => t.result === "EFFECTIVE").length} effective
             {tocItems.filter((t: TOCItem) => t.result === "NOT_EFFECTIVE").length > 0 && (
@@ -1923,7 +1923,7 @@ function Step3Procedures({
             <TestTube2 className="h-4 w-4" />
             <span className="font-medium text-sm">Test of Details</span>
           </div>
-          <div className="text-2xl font-bold">{todItems.length}</div>
+          <div className="text-lg font-bold">{todItems.length}</div>
           <div className="text-xs text-muted-foreground">
             {todItems.filter((t: TODItem) => t.result === "SATISFACTORY").length} satisfactory
             {todItems.filter((t: TODItem) => (t.exceptionsFound || 0) > 0).length > 0 && (
@@ -1940,7 +1940,7 @@ function Step3Procedures({
             <BarChart3 className="h-4 w-4" />
             <span className="font-medium text-sm">Analytics</span>
           </div>
-          <div className="text-2xl font-bold">{analyticsItems.length}</div>
+          <div className="text-lg font-bold">{analyticsItems.length}</div>
           <div className="text-xs text-muted-foreground">{analyticsItems.filter((a: AnalyticalItem) => a.conclusion).length} concluded</div>
         </button>
       </div>
@@ -2022,9 +2022,9 @@ function Step3Procedures({
             </div>
           )}
           {isLoading ? (
-            <div className="text-center py-4"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div></div>
+            <div className="text-center py-2"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div></div>
           ) : tocItems.length === 0 && editingTOC?.id !== 'new' ? (
-            <div className="text-center py-6 text-muted-foreground border rounded-lg" data-testid="toc-empty">
+            <div className="text-center py-3 text-muted-foreground border rounded-lg" data-testid="toc-empty">
               <Shield className="h-10 w-10 mx-auto mb-2 opacity-30" />
               <p className="text-sm">No Test of Controls documented</p>
               <p className="text-xs mt-1">Click AI Generate or Add manually</p>
@@ -2200,7 +2200,7 @@ function Step3Procedures({
             </div>
           )}
           {todItems.length === 0 && editingTOD?.id !== 'new' ? (
-            <div className="text-center py-6 text-muted-foreground border rounded-lg" data-testid="tod-empty">
+            <div className="text-center py-3 text-muted-foreground border rounded-lg" data-testid="tod-empty">
               <TestTube2 className="h-10 w-10 mx-auto mb-2 opacity-30" />
               <p className="text-sm">No Test of Details documented</p>
             </div>
@@ -2292,7 +2292,7 @@ function Step3Procedures({
                         </div>
                       </div>
                       {((tod.exceptionsFound || 0) > 0 || tod.conclusion) && (
-                        <div className="mt-2 pt-2 border-t flex items-start gap-4 text-xs">
+                        <div className="mt-2 pt-2 border-t flex items-start gap-2.5 text-xs">
                           {(tod.exceptionsFound || 0) > 0 && (
                             <span className="text-amber-600 flex items-center gap-1">
                               <AlertTriangle className="h-3 w-3" />
@@ -2379,7 +2379,7 @@ function Step3Procedures({
             </div>
           )}
           {analyticsItems.length === 0 && editingAnalytics?.id !== 'new' ? (
-            <div className="text-center py-6 text-muted-foreground border rounded-lg" data-testid="analytics-empty">
+            <div className="text-center py-3 text-muted-foreground border rounded-lg" data-testid="analytics-empty">
               <BarChart3 className="h-10 w-10 mx-auto mb-2 opacity-30" />
               <p className="text-sm">No analytical procedures documented</p>
             </div>
@@ -2578,7 +2578,7 @@ Format your response with clear sections for each area above.`
   const completedTod = todItems.filter((t: TODItem) => t.conclusion && t.conclusion.trim().length > 0).length;
 
   return (
-    <div className="space-y-4" data-testid="step-4-evidence">
+    <div className="space-y-2.5" data-testid="step-4-evidence">
       <input
         ref={fileInputRef}
         type="file"
@@ -2632,7 +2632,7 @@ Format your response with clear sections for each area above.`
       </div>
 
       <div
-        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${isDragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/20 hover:border-primary/50'}`}
+        className={`border-2 border-dashed rounded-lg p-3 text-center transition-colors cursor-pointer ${isDragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/20 hover:border-primary/50'}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -2664,7 +2664,7 @@ Format your response with clear sections for each area above.`
       </div>
 
       {(workingPaper.attachments?.length || 0) === 0 ? (
-        <div className="text-center py-4 text-muted-foreground" data-testid="evidence-empty">
+        <div className="text-center py-2 text-muted-foreground" data-testid="evidence-empty">
           <p className="text-sm">No evidence attached yet. Upload supporting documents above.</p>
         </div>
       ) : (
@@ -2730,7 +2730,7 @@ Format your response with clear sections for each area above.`
 
       {aiEvidenceMutation.isPending && (
         <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20" data-testid="ai-evidence-loading">
-          <CardContent className="py-6 text-center">
+          <CardContent className="py-3 text-center">
             <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-blue-600" />
             <p className="text-xs text-muted-foreground">Analyzing evidence sufficiency against ISA 500 requirements...</p>
           </CardContent>
@@ -2838,7 +2838,7 @@ Format clearly with sections. This is advisory only.`
   });
 
   return (
-    <div className="space-y-4" data-testid="step-5-conclusions">
+    <div className="space-y-2.5" data-testid="step-5-conclusions">
       <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
         <FileCheck className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-700 dark:text-blue-300 text-xs">
@@ -2984,7 +2984,7 @@ Format clearly with sections. This is advisory only.`
 
       {aiConclusionAnalysisMutation.isPending && (
         <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20" data-testid="ai-conclusion-loading">
-          <CardContent className="py-6 text-center">
+          <CardContent className="py-3 text-center">
             <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-blue-600" />
             <p className="text-xs text-muted-foreground">Analyzing work performed and drafting conclusion guidance...</p>
           </CardContent>
@@ -3085,7 +3085,7 @@ function Step6Review({
   const gatesPassed = gates.filter(g => g.done).length;
 
   return (
-    <div className="space-y-4" data-testid="step-6-review">
+    <div className="space-y-2.5" data-testid="step-6-review">
       <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
         <UserCheck className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-700 dark:text-blue-300 text-xs">
@@ -3102,7 +3102,7 @@ function Step6Review({
         </div>
       )}
 
-      <div className="border rounded-lg p-4 bg-muted/20">
+      <div className="border rounded-lg p-2.5 bg-muted/20">
         <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 text-primary" />
           Completion Gates (Weighted)
@@ -3140,7 +3140,7 @@ function Step6Review({
         </div>
       </div>
 
-      <div className="border rounded-lg p-4">
+      <div className="border rounded-lg p-2.5">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-semibold flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
@@ -3179,7 +3179,7 @@ function Step6Review({
         </div>
 
         {(workingPaper.reviewPoints?.length || 0) === 0 ? (
-          <div className="text-center py-4 text-muted-foreground border rounded-lg border-dashed">
+          <div className="text-center py-2 text-muted-foreground border rounded-lg border-dashed">
             <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-30" />
             <p className="text-sm">No review points raised</p>
           </div>
@@ -3220,12 +3220,12 @@ function Step6Review({
         )}
       </div>
 
-      <div className="border rounded-lg p-4">
+      <div className="border rounded-lg p-2.5">
         <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
           <Lock className="h-4 w-4" />
           Sign-Off Workflow
         </h4>
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-2.5 mb-2.5">
           {["DRAFT", "PREPARED", "REVIEWED", "APPROVED"].map((status, idx) => {
             const isCurrent = workingPaper.status === status;
             const isPast = ["DRAFT", "PREPARED", "REVIEWED", "APPROVED"].indexOf(workingPaper.status) > idx;
@@ -3243,7 +3243,7 @@ function Step6Review({
           })}
         </div>
 
-        <div className="grid grid-cols-3 gap-3 text-xs mb-4">
+        <div className="grid grid-cols-3 gap-3 text-xs mb-2.5">
           <div className="p-2 bg-muted/50 rounded">
             <div className="font-medium">Prepared By</div>
             <div className="text-muted-foreground">{workingPaper.preparedByName || "—"}</div>
@@ -3384,7 +3384,7 @@ function MappingOverviewPanel({ engagementId }: { engagementId: string }) {
   if (coaLoading) {
     return (
       <Card>
-        <CardContent className="p-4">
+        <CardContent className="p-2.5">
           <div className="animate-pulse space-y-2">
             <div className="h-6 bg-muted rounded w-48" />
             <div className="h-20 bg-muted rounded" />
@@ -3398,7 +3398,7 @@ function MappingOverviewPanel({ engagementId }: { engagementId: string }) {
   const scoreBg = stats.mappingScore >= 95 ? "bg-green-100 border-green-300 dark:bg-green-950/20 dark:border-green-800" : stats.mappingScore >= 70 ? "bg-amber-100 border-amber-300 dark:bg-amber-950/20 dark:border-amber-800" : "bg-red-100 border-red-300 dark:bg-red-950/20 dark:border-red-800";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -3411,28 +3411,28 @@ function MappingOverviewPanel({ engagementId }: { engagementId: string }) {
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2.5">
           <Progress value={stats.mappingScore} className="h-3" />
 
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div className="text-center p-2 bg-muted/30 rounded-md">
-              <p className="text-2xl font-bold">{stats.totalAccounts}</p>
+              <p className="text-lg font-bold">{stats.totalAccounts}</p>
               <p className="text-xs text-muted-foreground">Total Accounts</p>
             </div>
             <div className="text-center p-2 bg-muted/30 rounded-md">
-              <p className="text-2xl font-bold text-green-600">{stats.mappedAccounts}</p>
+              <p className="text-lg font-bold text-green-600">{stats.mappedAccounts}</p>
               <p className="text-xs text-muted-foreground">Mapped</p>
             </div>
             <div className="text-center p-2 bg-muted/30 rounded-md">
-              <p className="text-2xl font-bold text-red-600">{stats.unmappedAccounts}</p>
+              <p className="text-lg font-bold text-red-600">{stats.unmappedAccounts}</p>
               <p className="text-xs text-muted-foreground">Unmapped</p>
             </div>
             <div className="text-center p-2 bg-muted/30 rounded-md">
-              <p className="text-2xl font-bold text-amber-600">{stats.flaggedAccounts}</p>
+              <p className="text-lg font-bold text-amber-600">{stats.flaggedAccounts}</p>
               <p className="text-xs text-muted-foreground">Flagged/Parked</p>
             </div>
             <div className="text-center p-2 bg-muted/30 rounded-md">
-              <p className="text-2xl font-bold text-blue-600">{stats.fsHeadCount}</p>
+              <p className="text-lg font-bold text-blue-600">{stats.fsHeadCount}</p>
               <p className="text-xs text-muted-foreground">FS Heads</p>
             </div>
           </div>
@@ -3475,7 +3475,7 @@ function MappingOverviewPanel({ engagementId }: { engagementId: string }) {
                     </TableRow>
                   )) : (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
+                      <TableCell colSpan={3} className="text-center text-muted-foreground py-3">
                         No accounts mapped yet. Use the FS Head Mapping section below to assign accounts.
                       </TableCell>
                     </TableRow>
@@ -3503,7 +3503,7 @@ function MappingOverviewPanel({ engagementId }: { engagementId: string }) {
                     )}
                   </div>
                 )) : (
-                  <div className="text-center py-6 text-muted-foreground">
+                  <div className="text-center py-3 text-muted-foreground">
                     <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-500" />
                     <p className="text-sm">All accounts are mapped or flagged</p>
                   </div>
@@ -3524,7 +3524,7 @@ function MappingOverviewPanel({ engagementId }: { engagementId: string }) {
                     </CardContent>
                   </Card>
                 )) : (
-                  <div className="text-center py-6 text-muted-foreground">
+                  <div className="text-center py-3 text-muted-foreground">
                     <FolderOpen className="h-8 w-8 mx-auto mb-2 opacity-40" />
                     <p className="text-sm">Lead schedules populate from mapped accounts</p>
                   </div>
@@ -3637,7 +3637,7 @@ export default function FSHeadsPage() {
       signoffSection="FS_HEADS"
       readOnly={fsHeadsReadOnly}
     >
-      <div className="flex-1 overflow-auto p-4 space-y-4">
+      <div className="flex-1 overflow-auto p-2.5 space-y-2.5">
         <MappingOverviewPanel engagementId={engagementId} />
         <FSHeadsContent engagementId={engagementId} saveRef={contentSaveRef} />
       </div>

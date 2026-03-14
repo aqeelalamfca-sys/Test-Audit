@@ -167,7 +167,7 @@ export function AccordionFormSection({ title, description, items, onItemsChange,
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                <div className="space-y-4 pt-2">
+                <div className="space-y-2.5 pt-2">
                   <input
                     type="file"
                     ref={(el) => { fileInputRefs.current[item.id] = el; }}
@@ -202,7 +202,7 @@ export function AccordionFormSection({ title, description, items, onItemsChange,
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-muted/30 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5 p-2.5 bg-muted/30 rounded-lg">
                     <div className="space-y-2">
                       <Label className="text-xs font-medium">Attachment</Label>
                       <div className="flex items-center gap-2">
@@ -286,7 +286,7 @@ export function AccordionFormSection({ title, description, items, onItemsChange,
                             <DialogHeader>
                               <DialogTitle>{item.refNo} - {item.title}</DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-4">
+                            <div className="space-y-2.5">
                               <div>
                                 <Label className="text-muted-foreground text-xs">Content</Label>
                                 <p className="whitespace-pre-wrap text-sm">{item.content || "No content"}</p>
@@ -306,7 +306,7 @@ export function AccordionFormSection({ title, description, items, onItemsChange,
                                   <p className="text-muted-foreground text-sm">No attachment</p>
                                 )}
                               </div>
-                              <div className="grid grid-cols-2 gap-4">
+                              <div className="grid grid-cols-2 gap-2.5">
                                 <div>
                                   <Label className="text-muted-foreground text-xs">Verified By</Label>
                                   <p className="text-sm" data-testid={`view-verified-by-${item.id}`}>{item.verifiedBy || "-"}</p>
@@ -339,7 +339,7 @@ export function AccordionFormSection({ title, description, items, onItemsChange,
 
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline" className="mt-4 w-full" data-testid="btn-add-section" onClick={() => {
+            <Button variant="outline" className="mt-2.5 w-full" data-testid="btn-add-section" onClick={() => {
               setNewItem({
                 refNo: generateRefNo(),
                 title: "",
@@ -359,8 +359,8 @@ export function AccordionFormSection({ title, description, items, onItemsChange,
             <DialogHeader>
               <DialogTitle>Add New Section</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2.5">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-2">
                   <Label>Ref No. <span className="text-destructive">*</span></Label>
                   <Input 

@@ -383,18 +383,18 @@ function ProvidersTab({ settings, refetch }: { settings: any; refetch: () => voi
   const currentRemoveProvider = PROVIDERS.find(p => p.id === removeDialog);
 
   return (
-    <div className="space-y-4" data-testid="tab-providers">
+    <div className="space-y-2.5" data-testid="tab-providers">
       <div className="grid grid-cols-3 gap-3">
         <Card className="p-3 text-center">
-          <div className="text-2xl font-bold text-primary">{configuredCount}</div>
+          <div className="text-lg font-bold text-primary">{configuredCount}</div>
           <div className="text-[10px] text-muted-foreground">Providers Configured</div>
         </Card>
         <Card className="p-3 text-center">
-          <div className="text-2xl font-bold text-green-600">{activeCount}</div>
+          <div className="text-lg font-bold text-green-600">{activeCount}</div>
           <div className="text-[10px] text-muted-foreground">Active Providers</div>
         </Card>
         <Card className="p-3 text-center">
-          <div className="text-2xl font-bold">{settings?.aiEnabled ? "On" : "Off"}</div>
+          <div className="text-lg font-bold">{settings?.aiEnabled ? "On" : "Off"}</div>
           <div className="text-[10px] text-muted-foreground">AI Status</div>
         </Card>
       </div>
@@ -410,7 +410,7 @@ function ProvidersTab({ settings, refetch }: { settings: any; refetch: () => voi
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         {PROVIDERS.map(provider => (
           <ProviderCard
             key={provider.id}
@@ -440,7 +440,7 @@ function ProvidersTab({ settings, refetch }: { settings: any; refetch: () => voi
               Enter your account details and API key. The key is encrypted at rest using AES-256-GCM.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             {currentKeyProvider?.extraFields.map((field) => (
               <div key={field.key}>
                 <Label className="text-sm">{field.label}</Label>
@@ -552,7 +552,7 @@ function ConfigurationTab({ settings }: { settings: any }) {
   const configuredProviders = PROVIDERS.filter(p => settings?.[`${p.id}Configured`] || (p.id === "openai" && settings?.platformKeyAvailable));
 
   return (
-    <div className="space-y-4" data-testid="tab-config">
+    <div className="space-y-2.5" data-testid="tab-config">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
@@ -561,7 +561,7 @@ function ConfigurationTab({ settings }: { settings: any }) {
           </CardTitle>
           <CardDescription>Configure how AI assists your audit workflow</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent className="space-y-3">
           <div className="flex items-center justify-between p-3 border rounded-lg">
             <div>
               <Label className="text-sm font-medium">Enable AI Features</Label>
@@ -602,7 +602,7 @@ function ConfigurationTab({ settings }: { settings: any }) {
 
           <Separator />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div>
                 <Label className="text-sm font-medium">Auto-Suggestions</Label>
@@ -628,7 +628,7 @@ function ConfigurationTab({ settings }: { settings: any }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
               <Label className="text-sm font-medium">Max Tokens Per Response</Label>
               <p className="text-xs text-muted-foreground mb-2">Maximum output length for AI-generated content</p>
@@ -749,26 +749,26 @@ function UsageTab() {
   }, [records]);
 
   return (
-    <div className="space-y-4" data-testid="tab-usage">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="space-y-2.5" data-testid="tab-usage">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
         <Card>
-          <CardContent className="p-4 text-center">
+          <CardContent className="p-2.5 text-center">
             <Zap className="h-6 w-6 mx-auto mb-2 text-amber-600" />
-            <div className="text-2xl font-bold" data-testid="text-total-requests">{data?.total || 0}</div>
+            <div className="text-lg font-bold" data-testid="text-total-requests">{data?.total || 0}</div>
             <div className="text-sm text-muted-foreground">Total AI Requests</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4 text-center">
+          <CardContent className="p-2.5 text-center">
             <ArrowUp className="h-6 w-6 mx-auto mb-2 text-primary" />
-            <div className="text-2xl font-bold" data-testid="text-tokens-in">{(summary.totalTokensIn || 0).toLocaleString()}</div>
+            <div className="text-lg font-bold" data-testid="text-tokens-in">{(summary.totalTokensIn || 0).toLocaleString()}</div>
             <div className="text-sm text-muted-foreground">Tokens In (Prompts)</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4 text-center">
+          <CardContent className="p-2.5 text-center">
             <ArrowDown className="h-6 w-6 mx-auto mb-2 text-green-600" />
-            <div className="text-2xl font-bold" data-testid="text-tokens-out">{(summary.totalTokensOut || 0).toLocaleString()}</div>
+            <div className="text-lg font-bold" data-testid="text-tokens-out">{(summary.totalTokensOut || 0).toLocaleString()}</div>
             <div className="text-sm text-muted-foreground">Tokens Out (Completions)</div>
           </CardContent>
         </Card>
@@ -820,7 +820,7 @@ function UsageTab() {
           </CardHeader>
           <CardContent>
             {records.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-2 text-muted-foreground">
                 <Bot className="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">No AI usage recorded yet</p>
                 <p className="text-xs mt-1">AI requests will appear here once you start using AI features</p>
@@ -880,7 +880,7 @@ export default function FirmAIUsage() {
       icon={<Bot className="w-5 h-5" />}
       testId="page-ai-integration"
     >
-      <div className="space-y-4">
+      <div className="space-y-2.5">
         <SimpleTabNavigation
           tabs={VIEW_TABS}
           activeTab={activeTab}

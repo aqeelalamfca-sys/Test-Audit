@@ -145,7 +145,7 @@ export default function Reports() {
           </div>
           <Skeleton className="h-10 w-32" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5">
           {[...Array(4)].map((_, i) => (
             <Skeleton key={i} className="h-24" />
           ))}
@@ -174,7 +174,7 @@ export default function Reports() {
         </div>
       </div>
 
-      <Tabs defaultValue="status" className="space-y-4">
+      <Tabs defaultValue="status" className="space-y-2.5">
         <TabsList>
           <TabsTrigger value="status">Engagement Status</TabsTrigger>
           <TabsTrigger value="utilization">Utilization</TabsTrigger>
@@ -182,8 +182,8 @@ export default function Reports() {
           <TabsTrigger value="portfolio">Portfolio Analysis</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="status" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <TabsContent value="status" className="space-y-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5">
             <div 
               className="cursor-pointer hover:shadow-md transition-shadow"
               onClick={() => openReport("engagement-health", "Engagement Health Intelligence Report")}
@@ -266,7 +266,7 @@ export default function Reports() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
             <Card>
               <CardHeader>
                 <CardTitle>Engagement Status Distribution</CardTitle>
@@ -308,7 +308,7 @@ export default function Reports() {
                 <CardDescription>Budget vs. actual hours</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   <div className="text-center">
                     <p className="text-5xl font-semibold text-primary">{metrics?.hours.utilizationRate || 0}%</p>
                     <p className="text-sm text-muted-foreground mt-1">Overall Utilization Rate</p>
@@ -331,7 +331,7 @@ export default function Reports() {
           </div>
         </TabsContent>
 
-        <TabsContent value="utilization" className="space-y-4">
+        <TabsContent value="utilization" className="space-y-2.5">
           <div 
             className="cursor-pointer"
             onClick={() => openReport("resource-intelligence", "Resource Intelligence Report")}
@@ -375,12 +375,12 @@ export default function Reports() {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center">
                   <Users className="h-8 w-8 mx-auto text-primary mb-2" />
-                  <p className="text-3xl font-semibold">{metrics?.summary.activeUsers || 0}</p>
+                  <p className="text-xl font-semibold">{metrics?.summary.activeUsers || 0}</p>
                   <p className="text-sm text-muted-foreground">Active Team Members</p>
                 </div>
               </CardContent>
@@ -389,7 +389,7 @@ export default function Reports() {
               <CardContent className="pt-6">
                 <div className="text-center">
                   <Activity className="h-8 w-8 mx-auto text-green-500 mb-2" />
-                  <p className="text-3xl font-semibold">{metrics?.hours.utilizationRate || 0}%</p>
+                  <p className="text-xl font-semibold">{metrics?.hours.utilizationRate || 0}%</p>
                   <p className="text-sm text-muted-foreground">Average Utilization</p>
                 </div>
               </CardContent>
@@ -398,7 +398,7 @@ export default function Reports() {
               <CardContent className="pt-6">
                 <div className="text-center">
                   <Briefcase className="h-8 w-8 mx-auto text-blue-500 mb-2" />
-                  <p className="text-3xl font-semibold">{metrics?.summary.totalEngagements || 0}</p>
+                  <p className="text-xl font-semibold">{metrics?.summary.totalEngagements || 0}</p>
                   <p className="text-sm text-muted-foreground">Active Engagements</p>
                 </div>
               </CardContent>
@@ -426,7 +426,7 @@ export default function Reports() {
                     </div>
                   ))}
                   {(!metrics?.teamUtilization || metrics.teamUtilization.length === 0) && (
-                    <p className="text-center text-muted-foreground py-4">No team data available</p>
+                    <p className="text-center text-muted-foreground py-2">No team data available</p>
                   )}
                 </div>
               </ScrollArea>
@@ -434,7 +434,7 @@ export default function Reports() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="timeline" className="space-y-4">
+        <TabsContent value="timeline" className="space-y-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -444,7 +444,7 @@ export default function Reports() {
               <CardDescription>Track engagement completion against deadlines</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 mb-3">
                 <Card className="bg-green-50 dark:bg-green-950/20 border-green-200">
                   <CardContent className="pt-4">
                     <div className="flex items-center gap-3">
@@ -500,7 +500,7 @@ export default function Reports() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="portfolio" className="space-y-4">
+        <TabsContent value="portfolio" className="space-y-2.5">
           <div 
             className="cursor-pointer"
             onClick={() => openReport("portfolio-intelligence", "Portfolio Intelligence Report")}
@@ -514,9 +514,9 @@ export default function Reports() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                   <div>
-                    <h4 className="font-medium mb-4">By Industry</h4>
+                    <h4 className="font-medium mb-2.5">By Industry</h4>
                     {industryChartData.length > 0 ? (
                       <div className="h-48">
                         <ResponsiveContainer width="100%" height="100%">
@@ -546,7 +546,7 @@ export default function Reports() {
                     )}
                   </div>
                   <div>
-                    <h4 className="font-medium mb-4">By Engagement Type</h4>
+                    <h4 className="font-medium mb-2.5">By Engagement Type</h4>
                     {typeChartData.length > 0 ? (
                       <div className="space-y-2">
                         {typeChartData.map((item, idx) => (
@@ -575,12 +575,12 @@ export default function Reports() {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center">
                   <Building className="h-8 w-8 mx-auto text-primary mb-2" />
-                  <p className="text-3xl font-semibold">{metrics?.summary.totalClients || 0}</p>
+                  <p className="text-xl font-semibold">{metrics?.summary.totalClients || 0}</p>
                   <p className="text-sm text-muted-foreground">Total Clients</p>
                 </div>
               </CardContent>
@@ -589,7 +589,7 @@ export default function Reports() {
               <CardContent className="pt-6">
                 <div className="text-center">
                   <Briefcase className="h-8 w-8 mx-auto text-blue-500 mb-2" />
-                  <p className="text-3xl font-semibold">{metrics?.summary.totalEngagements || 0}</p>
+                  <p className="text-xl font-semibold">{metrics?.summary.totalEngagements || 0}</p>
                   <p className="text-sm text-muted-foreground">Total Engagements</p>
                 </div>
               </CardContent>
@@ -598,7 +598,7 @@ export default function Reports() {
               <CardContent className="pt-6">
                 <div className="text-center">
                   <PieChart className="h-8 w-8 mx-auto text-green-500 mb-2" />
-                  <p className="text-3xl font-semibold">{industryChartData.length}</p>
+                  <p className="text-xl font-semibold">{industryChartData.length}</p>
                   <p className="text-sm text-muted-foreground">Industry Sectors</p>
                 </div>
               </CardContent>

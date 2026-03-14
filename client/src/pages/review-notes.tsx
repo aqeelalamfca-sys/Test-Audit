@@ -173,7 +173,7 @@ function NoteCard({ note, onStatusChange, onReply, userId }: {
 
   return (
     <Card className={cn("transition-all hover:shadow-md", sev.bg)} data-testid={`review-note-card-${note.id}`}>
-      <CardContent className="p-4">
+      <CardContent className="p-2.5">
         <div className="flex items-start gap-3">
           <Avatar className="h-9 w-9 flex-shrink-0 mt-0.5">
             <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
@@ -691,11 +691,11 @@ export default function ReviewNotesPage() {
   const canSubmitCreate = createForm.title.trim() && createForm.content.trim() && createForm.engagementId;
 
   return (
-    <div className="min-h-screen bg-background" data-testid="review-notes-page">
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="min-h-0 bg-background" data-testid="review-notes-page">
+      <div className="max-w-6xl mx-auto p-3 space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">Review Notes</h1>
+            <h1 className="text-lg font-bold tracking-tight" data-testid="text-page-title">Review Notes</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Track and manage review observations across all engagements
             </p>
@@ -727,44 +727,44 @@ export default function ReviewNotesPage() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card className="bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-950/20 dark:to-red-900/10 border-red-200 dark:border-red-800/50">
-            <CardContent className="p-4">
+            <CardContent className="p-2.5">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Assigned Open</p>
-                  <p className="text-2xl font-bold text-red-700 dark:text-red-400" data-testid="stat-my-open">{stats?.myOpen ?? "—"}</p>
+                  <p className="text-lg font-bold text-red-700 dark:text-red-400" data-testid="stat-my-open">{stats?.myOpen ?? "—"}</p>
                 </div>
                 <AlertCircle className="h-8 w-8 text-red-400/60" />
               </div>
             </CardContent>
           </Card>
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10 border-blue-200 dark:border-blue-800/50">
-            <CardContent className="p-4">
+            <CardContent className="p-2.5">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Assigned Total</p>
-                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-400" data-testid="stat-my-total">{stats?.myTotal ?? "—"}</p>
+                  <p className="text-lg font-bold text-blue-700 dark:text-blue-400" data-testid="stat-my-total">{stats?.myTotal ?? "—"}</p>
                 </div>
                 <ClipboardList className="h-8 w-8 text-blue-400/60" />
               </div>
             </CardContent>
           </Card>
           <Card className="bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/20 dark:to-amber-900/10 border-amber-200 dark:border-amber-800/50">
-            <CardContent className="p-4">
+            <CardContent className="p-2.5">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Created Open</p>
-                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-400" data-testid="stat-created-open">{stats?.createdOpen ?? "—"}</p>
+                  <p className="text-lg font-bold text-amber-700 dark:text-amber-400" data-testid="stat-created-open">{stats?.createdOpen ?? "—"}</p>
                 </div>
                 <Clock className="h-8 w-8 text-amber-400/60" />
               </div>
             </CardContent>
           </Card>
           <Card className="bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10 border-green-200 dark:border-green-800/50">
-            <CardContent className="p-4">
+            <CardContent className="p-2.5">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Created Total</p>
-                  <p className="text-2xl font-bold text-green-700 dark:text-green-400" data-testid="stat-created-total">{stats?.createdTotal ?? "—"}</p>
+                  <p className="text-lg font-bold text-green-700 dark:text-green-400" data-testid="stat-created-total">{stats?.createdTotal ?? "—"}</p>
                 </div>
                 <CheckCircle2 className="h-8 w-8 text-green-400/60" />
               </div>
@@ -835,7 +835,7 @@ export default function ReviewNotesPage() {
         ) : currentNotes.length === 0 ? (
           <Card>
             <CardContent className="py-16 text-center">
-              <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
+              <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground/40 mb-2.5" />
               <h3 className="text-lg font-medium text-muted-foreground" data-testid="text-empty-state">No review notes found</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 {activeTab === "assigned"
@@ -846,7 +846,7 @@ export default function ReviewNotesPage() {
               </p>
               <Button
                 variant="outline"
-                className="mt-4 gap-1.5"
+                className="mt-2.5 gap-1.5"
                 onClick={() => setCreateOpen(true)}
                 data-testid="button-create-note-empty"
               >
@@ -882,7 +882,7 @@ export default function ReviewNotesPage() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
+          <div className="space-y-2.5 py-2">
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5">
                 <Label htmlFor="create-subject">Subject</Label>
@@ -1057,7 +1057,7 @@ export default function ReviewNotesPage() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
+          <div className="space-y-2.5 py-2">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Engagement</Label>
@@ -1210,7 +1210,7 @@ export default function ReviewNotesPage() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
+          <div className="space-y-2.5 py-2">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Engagement</Label>

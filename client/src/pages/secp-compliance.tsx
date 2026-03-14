@@ -231,7 +231,7 @@ function OverviewTab({ checklist, engagements, xbrlItems }: {
   });
 
   return (
-    <div className="space-y-4" data-testid="tab-secp-overview">
+    <div className="space-y-2.5" data-testid="tab-secp-overview">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <KPICard title="Compliance Score" value={`${compliancePct}%`} subtitle={`${met}/${applicable} requirements met`} color={compliancePct >= 90 ? "green" : compliancePct >= 70 ? "amber" : "red"} icon={<Shield className="w-4 h-4" />} testId="kpi-compliance-score" />
         <KPICard title="Partial Compliance" value={partial} color={partial > 0 ? "amber" : "green"} icon={<AlertTriangle className="w-4 h-4" />} testId="kpi-partial" />
@@ -266,7 +266,7 @@ function OverviewTab({ checklist, engagements, xbrlItems }: {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
         <Card data-testid="recent-opinions">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -304,7 +304,7 @@ function OverviewTab({ checklist, engagements, xbrlItems }: {
                 ))}
                 {engagements.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={3} className="text-center text-sm text-muted-foreground py-2">
                       No engagement data available
                     </TableCell>
                   </TableRow>
@@ -383,7 +383,7 @@ function RegulatoryChecklistTab({ checklist, onStatusChange, onNotesChange, onSa
   }, [checklist]);
 
   return (
-    <div className="space-y-4" data-testid="tab-regulatory-checklist">
+    <div className="space-y-2.5" data-testid="tab-regulatory-checklist">
       <div className="grid grid-cols-4 gap-2">
         <Card className="p-2 text-center">
           <div className="text-lg font-bold text-green-600">{stats.met}</div>
@@ -512,7 +512,7 @@ function RegulatoryChecklistTab({ checklist, onStatusChange, onNotesChange, onSa
               ))}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-2">
                     No items match your filters
                   </TableCell>
                 </TableRow>
@@ -566,7 +566,7 @@ function OpinionTrackerTab({ engagements, isLoading }: { engagements: OpinionTra
   if (isLoading) return <LoadingState message="Loading opinion data..." />;
 
   return (
-    <div className="space-y-4" data-testid="tab-opinion-tracker">
+    <div className="space-y-2.5" data-testid="tab-opinion-tracker">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {Object.entries(opinionBreakdown).map(([opinion, count]) => (
           <Card
@@ -576,13 +576,13 @@ function OpinionTrackerTab({ engagements, isLoading }: { engagements: OpinionTra
             onClick={() => setFilterOpinion(filterOpinion === opinion ? "all" : opinion)}
           >
             <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{opinion.replace(/_/g, " ")}</div>
-            <div className="text-2xl font-bold mt-1">{count}</div>
+            <div className="text-lg font-bold mt-1">{count}</div>
             <div className={`w-full h-1 rounded-full mt-2 ${opinionColors[opinion] || "bg-gray-300"}`} />
           </Card>
         ))}
         {Object.keys(opinionBreakdown).length === 0 && (
           <Card className="p-3 col-span-full">
-            <div className="text-sm text-muted-foreground text-center py-4">No engagement opinions available</div>
+            <div className="text-sm text-muted-foreground text-center py-2">No engagement opinions available</div>
           </Card>
         )}
       </div>
@@ -674,7 +674,7 @@ function OpinionTrackerTab({ engagements, isLoading }: { engagements: OpinionTra
               ))}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-2">
                     {engagements.length === 0 ? "No engagement data available" : "No engagements match your filters"}
                   </TableCell>
                 </TableRow>
@@ -767,7 +767,7 @@ function XBRLReadinessTab({ xbrlItems, onToggle, onNotesChange, onSave, isSaving
   });
 
   return (
-    <div className="space-y-4" data-testid="tab-xbrl-readiness">
+    <div className="space-y-2.5" data-testid="tab-xbrl-readiness">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {categoryStats.map(cat => (
           <Card key={cat.category} className="p-3">
@@ -784,7 +784,7 @@ function XBRLReadinessTab({ xbrlItems, onToggle, onNotesChange, onSave, isSaving
 
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center justify-between gap-2.5 flex-wrap">
             <div>
               <CardTitle className="text-base flex items-center gap-2">
                 <FileCheck className="w-4 h-4" />
@@ -812,7 +812,7 @@ function XBRLReadinessTab({ xbrlItems, onToggle, onNotesChange, onSave, isSaving
         </CardHeader>
         <CardContent>
           {categories.map(cat => (
-            <div key={cat} className="mb-4">
+            <div key={cat} className="mb-2.5">
               <h3 className="text-sm font-semibold text-muted-foreground mb-2">{cat}</h3>
               <div className="space-y-2">
                 {xbrlItems.filter(x => x.category === cat).map(item => (
@@ -1049,9 +1049,9 @@ function ComplianceExportTab({ checklist, engagements, xbrlItems, selectedEngage
   const compliancePct = applicable > 0 ? Math.round((met / applicable) * 100) : 0;
 
   return (
-    <div className="space-y-4" data-testid="tab-compliance-export">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="p-4">
+    <div className="space-y-2.5" data-testid="tab-compliance-export">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <Card className="p-2.5">
           <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
             <ClipboardList className="w-4 h-4" />
             Regulatory Compliance
@@ -1082,7 +1082,7 @@ function ComplianceExportTab({ checklist, engagements, xbrlItems, selectedEngage
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className="p-2.5">
           <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
             <Gavel className="w-4 h-4" />
             Opinion Summary
@@ -1107,7 +1107,7 @@ function ComplianceExportTab({ checklist, engagements, xbrlItems, selectedEngage
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className="p-2.5">
           <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
             <FileCheck className="w-4 h-4" />
             XBRL Readiness
@@ -1200,7 +1200,7 @@ function ComplianceExportTab({ checklist, engagements, xbrlItems, selectedEngage
             <DialogTitle>Report Preview</DialogTitle>
             <DialogDescription>SECP Compliance Report</DialogDescription>
           </DialogHeader>
-          <div className="overflow-auto max-h-[60vh] bg-muted rounded-md p-4">
+          <div className="overflow-auto max-h-[60vh] bg-muted rounded-md p-2.5">
             <pre className="text-xs font-mono whitespace-pre-wrap">{generateReportLines().join("\n")}</pre>
           </div>
           <DialogFooter>
@@ -1371,7 +1371,7 @@ export default function SECPCompliancePage() {
       icon={<Scale className="w-5 h-5" />}
       testId="page-secp-compliance"
     >
-      <div className="space-y-4">
+      <div className="space-y-2.5">
         <SimpleTabNavigation
           tabs={VIEW_TABS}
           activeTab={activeTab}
@@ -1454,7 +1454,7 @@ export default function SECPCompliancePage() {
         )}
 
         {!selectedEngagementId && !isLoading && (activeTab === "checklist" || activeTab === "xbrl") && (
-          <Card className="p-6">
+          <Card className="p-3">
             <div className="text-center text-sm text-muted-foreground">
               <AlertTriangle className="w-5 h-5 mx-auto mb-2 text-amber-500" />
               No engagements found. Create an engagement first to enable checklist persistence.

@@ -78,10 +78,10 @@ export function EngagementWorkspaceShell({ children, phaseSlug, engagementId }: 
   return (
     <div className="flex flex-col h-full">
       <div className="sticky top-0 z-20 bg-background border-b border-border/60">
-        <div className="px-4 py-3 flex items-center justify-between gap-3">
+        <div className="px-3 py-1.5 flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <h1 className="text-lg font-semibold tracking-tight truncate">{currentCanonical?.label || "Workspace"}</h1>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+            <h1 className="text-sm font-semibold tracking-tight truncate">{currentCanonical?.label || "Workspace"}</h1>
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
               <span className="font-medium text-foreground/80">{clientName}</span>
               {engagementCode && <span>{engagementCode}</span>}
               {periodLabel && <span>{periodLabel}</span>}
@@ -105,16 +105,16 @@ export function EngagementWorkspaceShell({ children, phaseSlug, engagementId }: 
 
       <div className="flex flex-1 min-h-0">
         <div className="flex-1 overflow-auto">
-          <div className="p-4">
+          <div className="p-2.5">
             {currentCanonical && (
-              <div className="mb-4 flex items-center gap-2 text-sm">
+              <div className="mb-2 flex items-center gap-2 text-sm">
                 {(() => {
                   const stateEntry = phaseState?.phases?.find((p) => p.phaseKey === phaseSlug);
                   const blockers = stateEntry?.gateEvaluation?.blockers || [];
                   const warnings = stateEntry?.gateEvaluation?.warnings || [];
                   if (blockers.length === 0 && warnings.length === 0) return null;
                   return (
-                    <div className="w-full space-y-1.5">
+                    <div className="w-full space-y-1">
                       {blockers.map((b, i) => (
                         <div key={`b-${i}`} className="flex items-start gap-2 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md px-3 py-1.5">
                           <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />

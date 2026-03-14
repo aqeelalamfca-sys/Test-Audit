@@ -350,7 +350,7 @@ export function AcceptanceDueDiligenceSection({
   const riskFactors = engagementRiskGrading.riskFactors || getDefaultAcceptanceDueDiligenceData().engagementRiskGrading.riskFactors;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* 1. Client Integrity Evaluation (ISA 210, ISQM 1) */}
       <FormSection
         icon={<Shield className="h-5 w-5" />}
@@ -365,7 +365,7 @@ export function AcceptanceDueDiligenceSection({
                 handleChange("clientIntegrityAssessment", v as AcceptanceDueDiligenceData["clientIntegrityAssessment"])
               }
               disabled={readOnly}
-              className="flex gap-6"
+              className="flex gap-3"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="pass" id="integrity-pass" data-testid="radio-integrity-pass" />
@@ -411,7 +411,7 @@ export function AcceptanceDueDiligenceSection({
               value={independenceCheck.independenceConfirmed}
               onValueChange={(v) => handleIndependenceChange("independenceConfirmed", v)}
               disabled={readOnly}
-              className="flex gap-6"
+              className="flex gap-3"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="yes" id="independence-yes" data-testid="radio-independence-yes" />
@@ -444,7 +444,7 @@ export function AcceptanceDueDiligenceSection({
           </FormField>
         </FormRow>
 
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <div className="flex items-center space-x-3">
             <Checkbox
               id="conflictsIdentified"
@@ -499,7 +499,7 @@ export function AcceptanceDueDiligenceSection({
               value={competenceAssessment.hasCompetence}
               onValueChange={(v) => handleCompetenceChange("hasCompetence", v)}
               disabled={readOnly}
-              className="flex gap-6"
+              className="flex gap-3"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="yes" id="competence-yes" data-testid="radio-competence-yes" />
@@ -537,7 +537,7 @@ export function AcceptanceDueDiligenceSection({
               value={competenceAssessment.resourcesAvailable}
               onValueChange={(v) => handleCompetenceChange("resourcesAvailable", v)}
               disabled={readOnly}
-              className="flex gap-6"
+              className="flex gap-3"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="yes" id="resources-yes" data-testid="radio-resources-yes" />
@@ -569,7 +569,7 @@ export function AcceptanceDueDiligenceSection({
             </div>
           </FormField>
         </FormRow>
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <div className="flex items-center space-x-3">
             <Checkbox
               id="specialistRequired"
@@ -783,7 +783,7 @@ export function AcceptanceDueDiligenceSection({
           </div>
         </FormField>
 
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <div className="flex items-center space-x-3">
             <Checkbox
               id="hasConditions"
@@ -817,7 +817,7 @@ export function AcceptanceDueDiligenceSection({
               handleChange("acceptanceDecision", v as AcceptanceDueDiligenceData["acceptanceDecision"])
             }
             disabled={readOnly}
-            className="flex flex-wrap gap-4"
+            className="flex flex-wrap gap-2.5"
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="accept" id="decision-accept" data-testid="radio-decision-accept" />
@@ -957,7 +957,7 @@ export function AcceptanceDueDiligenceSection({
         </FormRow>
 
         <SectionDivider title="Directors & Beneficial Owners" icon={<Users className="h-4 w-4" />} />
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
               {data.dueDiligence.directorsAndOwners.length} director(s)/owner(s)
@@ -1075,7 +1075,7 @@ export function AcceptanceDueDiligenceSection({
                 ))}
                 {data.dueDiligence.directorsAndOwners.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={readOnly ? 7 : 8} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={readOnly ? 7 : 8} className="text-center text-sm text-muted-foreground py-2">
                       No directors/owners added. Click "Add Director/Owner" to start.
                     </TableCell>
                   </TableRow>
@@ -1086,7 +1086,7 @@ export function AcceptanceDueDiligenceSection({
         </div>
 
         <SectionDivider title="Screening Results" icon={<Search className="h-4 w-4" />} />
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
               {data.dueDiligence.screeningResults.length} screening check(s)
@@ -1192,7 +1192,7 @@ export function AcceptanceDueDiligenceSection({
                 ))}
                 {data.dueDiligence.screeningResults.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={readOnly ? 5 : 6} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={readOnly ? 5 : 6} className="text-center text-sm text-muted-foreground py-2">
                       No screening checks added. Click "Add Screening Check" to start.
                     </TableCell>
                   </TableRow>

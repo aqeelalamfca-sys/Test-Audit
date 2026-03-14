@@ -356,7 +356,7 @@ const IndependenceTab = forwardRef<{ save: () => Promise<void> }>((props, ref) =
   const receivedCount = teamDeclarations.filter(d => d.status === "Received").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -367,7 +367,7 @@ const IndependenceTab = forwardRef<{ save: () => Promise<void> }>((props, ref) =
             Obtain formal written independence confirmations from the engagement team
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="font-semibold">Team Independence Declarations</h4>
             <Button variant="outline" size="sm" onClick={addTeamMember}>
@@ -466,7 +466,7 @@ const IndependenceTab = forwardRef<{ save: () => Promise<void> }>((props, ref) =
           </Table>
 
           <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800">
-            <CardContent className="py-4">
+            <CardContent className="py-2">
               <h4 className="font-semibold text-blue-800 dark:text-blue-400 mb-2 flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Declaration Requirements
@@ -479,22 +479,22 @@ const IndependenceTab = forwardRef<{ save: () => Promise<void> }>((props, ref) =
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-3 gap-4 mt-4">
+          <div className="grid grid-cols-3 gap-2.5 mt-2.5">
             <Card className="bg-muted/30">
               <CardContent className="py-3 text-center">
-                <p className="text-2xl font-bold text-primary">{teamDeclarations.length}</p>
+                <p className="text-lg font-bold text-primary">{teamDeclarations.length}</p>
                 <p className="text-xs text-muted-foreground">Team Members</p>
               </CardContent>
             </Card>
             <Card className="bg-green-50 dark:bg-green-950/20">
               <CardContent className="py-3 text-center">
-                <p className="text-2xl font-bold text-green-600">{receivedCount}</p>
+                <p className="text-lg font-bold text-green-600">{receivedCount}</p>
                 <p className="text-xs text-muted-foreground">Received</p>
               </CardContent>
             </Card>
             <Card className="bg-orange-50 dark:bg-orange-950/20">
               <CardContent className="py-3 text-center">
-                <p className="text-2xl font-bold text-orange-600">{teamDeclarations.length - receivedCount}</p>
+                <p className="text-lg font-bold text-orange-600">{teamDeclarations.length - receivedCount}</p>
                 <p className="text-xs text-muted-foreground">Pending</p>
               </CardContent>
             </Card>
@@ -503,8 +503,8 @@ const IndependenceTab = forwardRef<{ save: () => Promise<void> }>((props, ref) =
       </Card>
 
       <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
+        <CardContent className="py-2">
+          <div className="flex items-center justify-between gap-2.5 flex-wrap">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
                 <ClipboardCheck className="h-5 w-5 text-primary" />
@@ -522,7 +522,7 @@ const IndependenceTab = forwardRef<{ save: () => Promise<void> }>((props, ref) =
         </CardContent>
       </Card>
 
-      <Card className="mt-6">
+      <Card className="mt-3">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Paperclip className="h-4 w-4" />

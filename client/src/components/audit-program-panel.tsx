@@ -446,7 +446,7 @@ function StepHeader({
       <button
         onClick={onToggle}
         className={cn(
-          "flex w-full items-center justify-between p-4 hover-elevate rounded-md transition-colors",
+          "flex w-full items-center justify-between p-2.5 hover-elevate rounded-md transition-colors",
           isImportant && "bg-primary/5"
         )}
         data-testid={`step-${step}-toggle`}
@@ -538,29 +538,29 @@ function Step1LockedInputs({ data }: { data: AuditProgramResult['step1_lockedInp
   const coaMappings = data?.coaMappings;
 
   return (
-    <div className="space-y-4 p-4 pt-0">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+    <div className="space-y-2.5 p-2.5 pt-0">
+      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
         <div className="rounded-lg border p-3" data-testid="count-significant-risks">
           <div className="text-sm text-muted-foreground">Significant Risks</div>
-          <div className="text-2xl font-bold">{riskAssessment?.significantRisks?.length ?? 0}</div>
+          <div className="text-lg font-bold">{riskAssessment?.significantRisks?.length ?? 0}</div>
         </div>
         <div className="rounded-lg border p-3" data-testid="count-fraud-risks">
           <div className="text-sm text-muted-foreground">Fraud Risks</div>
-          <div className="text-2xl font-bold text-destructive">{riskAssessment?.fraudRisks?.length ?? 0}</div>
+          <div className="text-lg font-bold text-destructive">{riskAssessment?.fraudRisks?.length ?? 0}</div>
         </div>
         <div className="rounded-lg border p-3" data-testid="count-samples">
           <div className="text-sm text-muted-foreground">Sample Items</div>
-          <div className="text-2xl font-bold">{samplingData?.sampleList?.length ?? 0}</div>
+          <div className="text-lg font-bold">{samplingData?.sampleList?.length ?? 0}</div>
         </div>
         <div className="rounded-lg border p-3" data-testid="count-coa-mappings">
           <div className="text-sm text-muted-foreground">FS Heads</div>
-          <div className="text-2xl font-bold">{coaMappings?.length ?? 0}</div>
+          <div className="text-lg font-bold">{coaMappings?.length ?? 0}</div>
         </div>
       </div>
 
       <Separator />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-2.5 md:grid-cols-3">
         <Card data-testid="card-overall-materiality">
           <CardHeader className="pb-2">
             <CardDescription>Overall Materiality</CardDescription>
@@ -629,8 +629,8 @@ function Step1LockedInputs({ data }: { data: AuditProgramResult['step1_lockedInp
 function Step2ProcedurePacks({ data }: { data: ProcedurePack[] }) {
   if (data.length === 0) {
     return (
-      <div className="p-4 pt-0">
-        <div className="rounded-lg border border-dashed p-6 text-center">
+      <div className="p-2.5 pt-0">
+        <div className="rounded-lg border border-dashed p-3 text-center">
           <Package className="mx-auto h-8 w-8 text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">No procedure packs generated yet.</p>
         </div>
@@ -639,7 +639,7 @@ function Step2ProcedurePacks({ data }: { data: ProcedurePack[] }) {
   }
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       <Table>
         <TableHeader>
           <TableRow>
@@ -698,8 +698,8 @@ function Step3ProcedureLibrary({
 
   if (libraryProcedures.length === 0) {
     return (
-      <div className="p-4 pt-0">
-        <div className="rounded-lg border border-dashed p-6 text-center">
+      <div className="p-2.5 pt-0">
+        <div className="rounded-lg border border-dashed p-3 text-center">
           <BookOpen className="mx-auto h-8 w-8 text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">No library procedures loaded.</p>
         </div>
@@ -708,7 +708,7 @@ function Step3ProcedureLibrary({
   }
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       <div className="space-y-2">
         {libraryProcedures.slice(0, 10).map((proc) => (
           <div key={proc.procedureId} className="rounded-lg border p-3" data-testid={`library-proc-${proc.procedureId}`}>
@@ -783,8 +783,8 @@ function Step4AIRecommendedProcedures({
 }) {
   if (data.length === 0) {
     return (
-      <div className="p-4 pt-0">
-        <div className="rounded-lg border border-dashed p-6 text-center">
+      <div className="p-2.5 pt-0">
+        <div className="rounded-lg border border-dashed p-3 text-center">
           <Brain className="mx-auto h-8 w-8 text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">No AI-recommended procedures yet.</p>
         </div>
@@ -797,8 +797,8 @@ function Step4AIRecommendedProcedures({
   const rejectedCount = data.filter(p => p.aiApprovalStatus === 'Rejected').length;
 
   return (
-    <div className="space-y-4 p-4 pt-0">
-      <div className="flex items-center gap-4 mb-4">
+    <div className="space-y-2.5 p-2.5 pt-0">
+      <div className="flex items-center gap-2.5 mb-2.5">
         <Badge variant="secondary">Pending: {pendingCount}</Badge>
         <Badge className="bg-green-100 text-green-800">Approved: {approvedCount}</Badge>
         <Badge variant="destructive">Rejected: {rejectedCount}</Badge>
@@ -809,13 +809,13 @@ function Step4AIRecommendedProcedures({
           <div 
             key={proc.procedureId} 
             className={cn(
-              "rounded-lg border p-4",
+              "rounded-lg border p-2.5",
               proc.aiApprovalStatus === 'Approved' && "border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20",
               proc.aiApprovalStatus === 'Rejected' && "border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20"
             )}
             data-testid={`ai-proc-${proc.procedureId}`}
           >
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-2.5">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <Brain className="h-4 w-4 text-primary" />
@@ -889,8 +889,8 @@ function Step5SampleLinkages({ data }: { data: SampleLinkage[] }) {
   const pendingCount = data.filter(l => l.validationStatus === 'Pending').length;
 
   return (
-    <div className="space-y-4 p-4 pt-0">
-      <div className="flex items-center gap-4 mb-4">
+    <div className="space-y-2.5 p-2.5 pt-0">
+      <div className="flex items-center gap-2.5 mb-2.5">
         <Badge className="bg-green-100 text-green-800">Valid: {validCount}</Badge>
         <Badge variant="destructive">Invalid: {invalidCount}</Badge>
         <Badge variant="secondary">Pending: {pendingCount}</Badge>
@@ -955,8 +955,8 @@ function Step5SampleLinkages({ data }: { data: SampleLinkage[] }) {
 function Step6ExecutionParameters({ data }: { data: { procedureId: string; parameters: ExecutionParameter }[] }) {
   if (data.length === 0) {
     return (
-      <div className="p-4 pt-0">
-        <div className="rounded-lg border border-dashed p-6 text-center">
+      <div className="p-2.5 pt-0">
+        <div className="rounded-lg border border-dashed p-3 text-center">
           <Settings className="mx-auto h-8 w-8 text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">No execution parameters configured.</p>
         </div>
@@ -965,7 +965,7 @@ function Step6ExecutionParameters({ data }: { data: { procedureId: string; param
   }
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -1027,8 +1027,8 @@ function Step6ExecutionParameters({ data }: { data: { procedureId: string; param
 function Step7ProcedureRecords({ data, onExport }: { data: AuditProcedure[]; onExport: () => void }) {
   if (data.length === 0) {
     return (
-      <div className="p-4 pt-0">
-        <div className="rounded-lg border border-dashed p-6 text-center">
+      <div className="p-2.5 pt-0">
+        <div className="rounded-lg border border-dashed p-3 text-center">
           <FileText className="mx-auto h-8 w-8 text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">No procedure records yet.</p>
         </div>
@@ -1045,9 +1045,9 @@ function Step7ProcedureRecords({ data, onExport }: { data: AuditProcedure[]; onE
   };
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Total:</span>
             <Badge variant="default">{summary.total}</Badge>
@@ -1131,18 +1131,18 @@ function Step8PushToExecution({
   const highPriorityTasks = executionTasks.filter(t => t.priority === 'High').length;
 
   return (
-    <div className="space-y-4 p-4 pt-0">
-      <div className="grid gap-4 md:grid-cols-3">
+    <div className="space-y-2.5 p-2.5 pt-0">
+      <div className="grid gap-2.5 md:grid-cols-3">
         <div className="rounded-lg border p-3 text-center">
-          <div className="text-2xl font-bold">{executionTasks.length}</div>
+          <div className="text-lg font-bold">{executionTasks.length}</div>
           <div className="text-xs text-muted-foreground">Total Tasks</div>
         </div>
         <div className="rounded-lg border p-3 text-center">
-          <div className="text-2xl font-bold text-amber-600">{pendingTasks}</div>
+          <div className="text-lg font-bold text-amber-600">{pendingTasks}</div>
           <div className="text-xs text-muted-foreground">Pending</div>
         </div>
         <div className="rounded-lg border p-3 text-center">
-          <div className="text-2xl font-bold text-red-600">{highPriorityTasks}</div>
+          <div className="text-lg font-bold text-red-600">{highPriorityTasks}</div>
           <div className="text-xs text-muted-foreground">High Priority</div>
         </div>
       </div>
@@ -1207,7 +1207,7 @@ function Step9Documentation({ data, onCopyAll }: { data: DocumentationOutput; on
   ];
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       <div className="flex justify-end">
         <Button onClick={onCopyAll} variant="outline" data-testid="button-copy-all-documentation">
           <ClipboardCopy className="mr-2 h-4 w-4" />
@@ -1217,7 +1217,7 @@ function Step9Documentation({ data, onCopyAll }: { data: DocumentationOutput; on
 
       <div className="space-y-3">
         {sections.map((section) => (
-          <div key={section.key} className="rounded-lg border p-4" data-testid={`doc-section-${section.key}`}>
+          <div key={section.key} className="rounded-lg border p-2.5" data-testid={`doc-section-${section.key}`}>
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
                 <div className="mb-2 text-sm font-medium">{section.label}</div>
@@ -1258,7 +1258,7 @@ function QualityGatesSection({ data }: { data: QualityGates }) {
   ];
 
   return (
-    <div className="space-y-3 p-4 bg-muted/30 rounded-lg border">
+    <div className="space-y-3 p-2.5 bg-muted/30 rounded-lg border">
       <div className="flex items-center gap-2">
         {data.overallPassed ? (
           <CheckCircle2 className="h-5 w-5 text-green-600" />
@@ -1294,9 +1294,9 @@ function QualityGatesSection({ data }: { data: QualityGates }) {
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       {[1, 2, 3, 4, 5].map((i) => (
-        <div key={i} className="rounded-lg border p-4">
+        <div key={i} className="rounded-lg border p-2.5">
           <div className="flex items-center gap-3">
             <Skeleton className="h-8 w-8 rounded-full" />
             <div className="space-y-2">
@@ -1540,7 +1540,7 @@ export function AuditProgramPanel({ engagementId, onDataChange, onPushToExecutio
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2.5">
         {savedProgram ? (
           <>
             <QualityGatesSection data={savedProgram.qualityGates} />
@@ -1707,14 +1707,14 @@ export function AuditProgramPanel({ engagementId, onDataChange, onPushToExecutio
             </div>
           </>
         ) : (
-          <div className="rounded-lg border border-dashed p-8 text-center">
+          <div className="rounded-lg border border-dashed p-2.5 text-center">
             <Shield className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">No Audit Program Generated</h3>
+            <h3 className="mt-2.5 text-lg font-semibold">No Audit Program Generated</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Click "Generate Program" to create an ISA 330 compliant audit program based on your planning inputs.
             </p>
             <Button 
-              className="mt-4" 
+              className="mt-2.5" 
               onClick={() => analyzeMutation.mutate()}
               disabled={analyzeMutation.isPending}
               data-testid="button-generate-first"

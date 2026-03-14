@@ -215,7 +215,7 @@ export function ChecklistTable({ title, description, items, onItemsChange, icon 
             <TableBody>
               {items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-2">
                     No checklist items. Click "Add More Line" to add items.
                   </TableCell>
                 </TableRow>
@@ -320,8 +320,8 @@ export function ChecklistTable({ title, description, items, onItemsChange, icon 
                             <DialogHeader>
                               <DialogTitle>View Checklist Item</DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2.5">
+                              <div className="grid grid-cols-2 gap-2.5">
                                 <div>
                                   <Label className="text-muted-foreground text-xs">Ref No.</Label>
                                   <p className="font-mono">{item.refNo}</p>
@@ -353,7 +353,7 @@ export function ChecklistTable({ title, description, items, onItemsChange, icon 
                                 <Label className="text-muted-foreground text-xs">Remarks</Label>
                                 <p>{item.remarks || "No remarks"}</p>
                               </div>
-                              <div className="grid grid-cols-2 gap-4">
+                              <div className="grid grid-cols-2 gap-2.5">
                                 <div>
                                   <Label className="text-muted-foreground text-xs">Verified By</Label>
                                   <p data-testid={`view-verified-by-${item.id}`}>{item.verifiedBy || "-"}</p>
@@ -377,8 +377,8 @@ export function ChecklistTable({ title, description, items, onItemsChange, icon 
                               <DialogTitle>Edit Checklist Item</DialogTitle>
                             </DialogHeader>
                             {editingItem && (
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2.5">
+                                <div className="grid grid-cols-2 gap-2.5">
                                   <div className="space-y-2">
                                     <Label>Ref No.</Label>
                                     <Input 
@@ -436,7 +436,7 @@ export function ChecklistTable({ title, description, items, onItemsChange, icon 
                                     rows={2}
                                   />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-2.5">
                                   <div className="space-y-2">
                                     <Label className="flex items-center gap-1">Verified By <Lock className="h-3 w-3 text-muted-foreground" /></Label>
                                     <VerificationStamp value={editingItem.verifiedBy} type="user" testId="edit-verified-by" />
@@ -478,7 +478,7 @@ export function ChecklistTable({ title, description, items, onItemsChange, icon 
         
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline" className="mt-4 w-full" data-testid="btn-add-checklist-item" onClick={() => {
+            <Button variant="outline" className="mt-2.5 w-full" data-testid="btn-add-checklist-item" onClick={() => {
               setNewItem({
                 refNo: generateRefNo(),
                 checkItem: "",
@@ -498,8 +498,8 @@ export function ChecklistTable({ title, description, items, onItemsChange, icon 
             <DialogHeader>
               <DialogTitle>Add Checklist Item</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2.5">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-2">
                   <Label>Ref No. <span className="text-destructive">*</span></Label>
                   <Input 
@@ -541,7 +541,7 @@ export function ChecklistTable({ title, description, items, onItemsChange, icon 
                   rows={2}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4 p-3 bg-muted/30 rounded-lg border border-dashed">
+              <div className="grid grid-cols-2 gap-2.5 p-3 bg-muted/30 rounded-lg border border-dashed">
                 <div className="space-y-1">
                   <Label className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Lock className="h-3 w-3" /> Verified By

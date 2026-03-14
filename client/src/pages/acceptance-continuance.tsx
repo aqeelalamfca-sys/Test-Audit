@@ -336,7 +336,7 @@ export default function AcceptanceContinuance() {
   }
 
   return (
-    <div className="page-container space-y-4">
+    <div className="page-container space-y-2.5">
       <SignOffBar phase="PRE_PLANNING" section="acceptance" className="mb-1" />
       <AIAssistantPanel engagementId={engagementId} phaseKey="acceptance" className="mb-2" />
       <div className="flex items-center justify-between">
@@ -383,7 +383,7 @@ export default function AcceptanceContinuance() {
         </CardContent>
       </Card>
 
-      <div className="flex gap-4">
+      <div className="flex gap-2.5">
         <div className="flex-1 min-w-0">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-4 lg:grid-cols-8 w-full h-auto">
@@ -395,13 +395,13 @@ export default function AcceptanceContinuance() {
               ))}
             </TabsList>
 
-            <TabsContent value="client-type" className="space-y-4 mt-4">
+            <TabsContent value="client-type" className="space-y-2.5 mt-2.5">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Prospective / Recurring Client</CardTitle>
                   <CardDescription>Identify whether this is a new engagement or a continuance assessment</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2.5">
                   <RadioGroup
                     value={form.isNewClient ? "new" : "recurring"}
                     onValueChange={v => handleChange({ isNewClient: v === "new", isReengagement: v === "recurring" })}
@@ -441,13 +441,13 @@ export default function AcceptanceContinuance() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="acceptance-factors" className="space-y-4 mt-4">
+            <TabsContent value="acceptance-factors" className="space-y-2.5 mt-2.5">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Engagement Acceptance Factors (ISA 220)</CardTitle>
                   <CardDescription>Evaluate key factors for accepting the audit engagement</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2.5">
                   <div>
                     <Label>Overall Risk Level</Label>
                     <Select value={form.engagementRiskLevel} onValueChange={v => handleChange({ engagementRiskLevel: v })}>
@@ -458,7 +458,7 @@ export default function AcceptanceContinuance() {
                     </Select>
                   </div>
                   <Separator />
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-2.5">
                     {(["clientType", "geographicRisk", "industryRisk", "transactionRisk"] as const).map(factor => (
                       <div key={factor}>
                         <Label className="capitalize">{factor.replace(/([A-Z])/g, " $1").trim()}</Label>
@@ -482,13 +482,13 @@ export default function AcceptanceContinuance() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="management-integrity" className="space-y-4 mt-4">
+            <TabsContent value="management-integrity" className="space-y-2.5 mt-2.5">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Management Integrity Considerations (ISA 210/ISQM 1)</CardTitle>
                   <CardDescription>Assess integrity of principal owners, key management, and those charged with governance</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2.5">
                   <div>
                     <Label>Client Integrity Assessment</Label>
                     <Select value={form.clientIntegrityRating} onValueChange={v => handleChange({ clientIntegrityRating: v })}>
@@ -536,13 +536,13 @@ export default function AcceptanceContinuance() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="competence-resources" className="space-y-4 mt-4">
+            <TabsContent value="competence-resources" className="space-y-2.5 mt-2.5">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Competence & Resources (ISQM 1.30-32)</CardTitle>
                   <CardDescription>Assess whether the firm has the competence, capabilities, and resources to perform the engagement</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2.5">
                   <div>
                     <Label>Competence Confirmed</Label>
                     <Select value={form.competenceConfirmed ? "yes" : "no"} onValueChange={v => handleChange({ competenceConfirmed: v === "yes" })}>
@@ -576,13 +576,13 @@ export default function AcceptanceContinuance() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="preconditions" className="space-y-4 mt-4">
+            <TabsContent value="preconditions" className="space-y-2.5 mt-2.5">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Preconditions for an Audit (ISA 210.6)</CardTitle>
                   <CardDescription>Verify that preconditions for the audit are present</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2.5">
                   <div>
                     <Label>Preconditions Acceptable</Label>
                     <Select value={form.preconditionsAcceptable ? "yes" : "no"} onValueChange={v => handleChange({ preconditionsAcceptable: v === "yes" })}>
@@ -622,13 +622,13 @@ export default function AcceptanceContinuance() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="engagement-letter" className="space-y-4 mt-4">
+            <TabsContent value="engagement-letter" className="space-y-2.5 mt-2.5">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Engagement Letter Readiness (ISA 210.10)</CardTitle>
                   <CardDescription>Confirm that the engagement letter is ready for issuance or has been issued</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2.5">
                   <div>
                     <Label>Engagement Letter Ready for Issuance</Label>
                     <Select value={form.engagementLetterReady ? "yes" : "no"} onValueChange={v => handleChange({ engagementLetterReady: v === "yes" })}>
@@ -662,15 +662,15 @@ export default function AcceptanceContinuance() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="continuance" className="space-y-4 mt-4">
+            <TabsContent value="continuance" className="space-y-2.5 mt-2.5">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Continuance Assessment (ISQM 1.30)</CardTitle>
                   <CardDescription>For recurring clients, assess whether to continue the engagement relationship</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2.5">
                   {form.isNewClient ? (
-                    <div className="p-4 bg-muted rounded-lg text-center text-muted-foreground">
+                    <div className="p-2.5 bg-muted rounded-lg text-center text-muted-foreground">
                       <p>This is a prospective (new) client. Continuance assessment is not applicable.</p>
                       <p className="text-xs mt-1">Switch to "Recurring Client" on the first tab if this is a continuance.</p>
                     </div>
@@ -702,13 +702,13 @@ export default function AcceptanceContinuance() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="conclusion" className="space-y-4 mt-4">
+            <TabsContent value="conclusion" className="space-y-2.5 mt-2.5">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Acceptance Conclusion (ISA 220.12)</CardTitle>
                   <CardDescription>Final acceptance/continuance decision requiring partner approval</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2.5">
                   <div>
                     <Label>Decision</Label>
                     <Select value={form.decision} onValueChange={v => handleChange({ decision: v })}>
@@ -730,7 +730,7 @@ export default function AcceptanceContinuance() {
                   </div>
 
                   {isApproved && approvalData && (
-                    <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="p-2.5 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
                       <div className="flex items-center gap-2 mb-2">
                         <CheckCircle2 className="h-5 w-5 text-green-600" />
                         <span className="font-semibold text-green-700 dark:text-green-400">Partner Approved</span>
@@ -751,7 +751,7 @@ export default function AcceptanceContinuance() {
                   )}
 
                   {!isApproved && !isPartner && (
-                    <div className="p-4 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <div className="p-2.5 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
                       <div className="flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5 text-amber-600" />
                         <span className="text-sm text-amber-700 dark:text-amber-400">Partner approval required to complete this phase</span>
@@ -783,7 +783,7 @@ export default function AcceptanceContinuance() {
                 <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => requestAI("conclusion-wording")} disabled={aiLoading}>
                   <Scale className="h-3 w-3 mr-2" /> Suggest Conclusion Wording
                 </Button>
-                {aiLoading && <div className="flex items-center justify-center py-4"><Loader2 className="h-5 w-5 animate-spin" /></div>}
+                {aiLoading && <div className="flex items-center justify-center py-2"><Loader2 className="h-5 w-5 animate-spin" /></div>}
                 {aiResult && (
                   <div className="mt-3 p-3 bg-muted rounded-lg text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
                     {aiResult}
@@ -801,7 +801,7 @@ export default function AcceptanceContinuance() {
             <DialogTitle>Partner Approval — Acceptance & Continuance</DialogTitle>
             <DialogDescription>Review the acceptance assessment and provide your decision. This action is logged in the audit trail.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <div>
               <Label>Decision</Label>
               <RadioGroup value={approvalDecision} onValueChange={v => setApprovalDecision(v as "APPROVED" | "REJECTED")}>

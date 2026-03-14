@@ -299,7 +299,7 @@ export default function Settings() {
         <p className="text-sm text-muted-foreground mt-0.5">Manage your preferences and account settings</p>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-4">
+      <Tabs defaultValue="profile" className="space-y-2.5">
         <TabsList className="bg-muted/50">
           <TabsTrigger value="profile" data-testid="tab-profile">
             <User className="h-4 w-4 mr-2" />
@@ -331,14 +331,14 @@ export default function Settings() {
           )}
         </TabsList>
 
-        <TabsContent value="profile" className="space-y-4">
+        <TabsContent value="profile" className="space-y-2.5">
           <Card>
             <CardHeader>
               <CardTitle>Profile Information</CardTitle>
               <CardDescription>Update your personal information</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="space-y-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name</Label>
                   <Input
@@ -371,13 +371,13 @@ export default function Settings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="notifications" className="space-y-4">
+        <TabsContent value="notifications" className="space-y-2.5">
           <Card>
             <CardHeader>
               <CardTitle>Notification Preferences</CardTitle>
               <CardDescription>Choose what notifications you receive</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Email Alerts</Label>
@@ -432,14 +432,14 @@ export default function Settings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="preferences" className="space-y-4">
+        <TabsContent value="preferences" className="space-y-2.5">
           <Card>
             <CardHeader>
               <CardTitle>Display Preferences</CardTitle>
               <CardDescription>Customize your display settings</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="space-y-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 <div className="space-y-2">
                   <Label>Language</Label>
                   <Select value={preferences.language} onValueChange={(v) => setPreferences({ ...preferences, language: v })}>
@@ -491,7 +491,7 @@ export default function Settings() {
         </TabsContent>
 
         {user?.role === 'ADMIN' && (
-          <TabsContent value="ai" className="space-y-4">
+          <TabsContent value="ai" className="space-y-2.5">
             <Alert className="border-blue-200 bg-blue-50">
               <Info className="h-4 w-4 text-blue-600" />
               <AlertDescription className="text-blue-800">
@@ -511,7 +511,7 @@ export default function Settings() {
                   Configure AI features for audit assistance. AI helps draft documentation while maintaining full professional judgment control.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="text-base">Enable AI Features</Label>
@@ -544,8 +544,8 @@ export default function Settings() {
                   Configure and prioritize AI providers. If the primary provider fails, the system will automatically try the next available provider.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
+              <CardContent className="space-y-2.5">
+                <div className="space-y-2.5">
                   <Label className="text-base">Provider Priority Order</Label>
                   <p className="text-sm text-muted-foreground">
                     Drag providers to set fallback order. The first enabled provider with a valid API key will be used.
@@ -630,13 +630,13 @@ export default function Settings() {
                   </div>
                 </div>
 
-                <div className="border-t pt-4 space-y-4">
-                  <div className="space-y-4">
+                <div className="border-t pt-4 space-y-2.5">
+                  <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
                       <Label className="text-base">OpenAI (GPT-4o)</Label>
                       <Switch checked={openaiEnabled} onCheckedChange={setOpenaiEnabled} disabled={!aiEnabled} data-testid="switch-openai" />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5">
                       <div className="md:col-span-3 space-y-2">
                         <Input
                           type="password"
@@ -665,12 +665,12 @@ export default function Settings() {
                     </div>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
                       <Label className="text-base">Google Gemini</Label>
                       <Switch checked={geminiEnabled} onCheckedChange={setGeminiEnabled} disabled={!aiEnabled} data-testid="switch-gemini" />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5">
                       <div className="md:col-span-3 space-y-2">
                         <Input
                           type="password"
@@ -699,12 +699,12 @@ export default function Settings() {
                     </div>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
                       <Label className="text-base">DeepSeek</Label>
                       <Switch checked={deepseekEnabled} onCheckedChange={setDeepseekEnabled} disabled={!aiEnabled} data-testid="switch-deepseek" />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5">
                       <div className="md:col-span-3 space-y-2">
                         <Input
                           type="password"
@@ -741,8 +741,8 @@ export default function Settings() {
                 <CardTitle>Advanced Settings</CardTitle>
                 <CardDescription>Fine-tune AI behavior and performance</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CardContent className="space-y-2.5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                   <div className="space-y-2">
                     <Label htmlFor="maxTokens">Max Tokens Per Response</Label>
                     <Input
@@ -828,7 +828,7 @@ export default function Settings() {
                 <CardDescription>Professional judgment protection measures</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                   <div className="space-y-2">
                     <p className="font-medium text-green-700">AI CAN assist with:</p>
                     <ul className="space-y-1 text-sm text-muted-foreground">
@@ -855,13 +855,13 @@ export default function Settings() {
           </TabsContent>
         )}
 
-        <TabsContent value="security" className="space-y-4">
+        <TabsContent value="security" className="space-y-2.5">
           <Card>
             <CardHeader>
               <CardTitle>Change Password</CardTitle>
               <CardDescription>Update your account password (minimum 8 characters)</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2.5">
               <div className="space-y-2">
                 <Label htmlFor="currentPassword">Current Password</Label>
                 <Input
@@ -910,7 +910,7 @@ export default function Settings() {
         </TabsContent>
 
         {user?.role === 'ADMIN' && (
-          <TabsContent value="backup" className="space-y-4">
+          <TabsContent value="backup" className="space-y-2.5">
             <BackupTab />
           </TabsContent>
         )}
@@ -1027,7 +1027,7 @@ function BackupTab() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <Alert className="border-amber-200 bg-amber-50">
               <AlertTriangle className="h-4 w-4 text-amber-600" />
               <AlertDescription className="text-amber-800">

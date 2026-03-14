@@ -3276,7 +3276,7 @@ export default function InformationRequisition() {
       <div className="page-container">
         <Card>
           <CardContent className="py-12 text-center">
-            <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground mb-2.5" />
             <h3 className="text-lg font-semibold mb-2" data-testid="text-no-engagement">No Engagement Selected</h3>
             <p className="text-muted-foreground">
               Please select an engagement from the workspace ribbon to view information requests.
@@ -3316,7 +3316,7 @@ export default function InformationRequisition() {
       activeTab={dataIntakeSubTab}
       onTabChange={setDataIntakeSubTab}
     >
-      <div className="w-full px-4 py-1 space-y-2">
+      <div className="w-full px-3 py-1 space-y-2">
       <AIAssistantPanel engagementId={effectiveEngagementId} phaseKey="tb-gl-upload" className="mb-2" />
       <div className="space-y-2 mt-1">
         <ReviewCoaSection
@@ -3375,10 +3375,10 @@ export default function InformationRequisition() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between p-2.5 bg-muted rounded-lg">
               <div className="text-sm text-muted-foreground">Total Records</div>
-              <div className="text-2xl font-bold">
+              <div className="text-lg font-bold">
                 {summaryPopup.type === 'tb' && (workbookValidation?.rowCounts.tb || 0).toLocaleString()}
                 {summaryPopup.type === 'gl' && (workbookValidation?.rowCounts.gl || 0).toLocaleString()}
                 {summaryPopup.type === 'parties' && (workbookValidation?.rowCounts.parties || 0).toLocaleString()}
@@ -3475,8 +3475,8 @@ export default function InformationRequisition() {
             if (!details) return null;
             
             return (
-              <div className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
+              <div className="space-y-2.5">
+                <div className="p-2.5 bg-muted rounded-lg">
                   <div className="text-sm font-medium mb-2">Description</div>
                   <p className="text-sm text-muted-foreground">{details.description}</p>
                 </div>
@@ -3552,8 +3552,8 @@ export default function InformationRequisition() {
           </DialogHeader>
           
           {irlAddDialog.item && (
-            <div className="space-y-4">
-              <div className="p-4 border rounded-lg">
+            <div className="space-y-2.5">
+              <div className="p-2.5 border rounded-lg">
                 <div className="font-medium mb-1">{irlAddDialog.item.type}</div>
                 <p className="text-sm text-muted-foreground">{irlAddDialog.item.desc}</p>
               </div>
@@ -3656,14 +3656,14 @@ export default function InformationRequisition() {
                 </TableBody>
               </Table>
             ) : (
-              <div className="p-8 text-center text-muted-foreground">
+              <div className="p-2.5 text-center text-muted-foreground">
                 <FileSpreadsheet className="h-10 w-10 mx-auto mb-2 opacity-50" />
                 <p>No Trial Balance data available</p>
               </div>
             )}
           </div>
-          <DialogFooter className="mt-4">
-            <div className="flex items-center justify-between w-full gap-4 flex-wrap">
+          <DialogFooter className="mt-2.5">
+            <div className="flex items-center justify-between w-full gap-2.5 flex-wrap">
               <div className="text-sm text-muted-foreground">
                 {glTbData?.lineItems?.length > 0 && (
                   <>
@@ -3703,7 +3703,7 @@ export default function InformationRequisition() {
 
           {/* Summary Cards */}
           {drilldownData && (
-            <div className="flex items-center gap-4 py-2 flex-wrap">
+            <div className="flex items-center gap-2.5 py-2 flex-wrap">
               <div className="bg-muted rounded-lg px-3 py-2 border">
                 <div className="text-xs text-muted-foreground">Total Lines</div>
                 <div className="font-semibold">{drilldownData.totals.count.toLocaleString()}</div>
@@ -3819,11 +3819,11 @@ export default function InformationRequisition() {
                 </TableBody>
                 <tfoot className="bg-muted/50 border-t">
                   <tr>
-                    <td colSpan={2} className="px-4 py-2 font-medium text-sm">Totals</td>
-                    <td className="px-4 py-2 text-right font-mono text-sm font-bold">
+                    <td colSpan={2} className="px-3 py-2 font-medium text-sm">Totals</td>
+                    <td className="px-3 py-2 text-right font-mono text-sm font-bold">
                       {drilldownData.totals.totalDr.toLocaleString(undefined, { minimumFractionDigits: 0 })}
                     </td>
-                    <td className="px-4 py-2 text-right font-mono text-sm font-bold">
+                    <td className="px-3 py-2 text-right font-mono text-sm font-bold">
                       {drilldownData.totals.totalCr.toLocaleString(undefined, { minimumFractionDigits: 0 })}
                     </td>
                     <td colSpan={4}></td>

@@ -139,7 +139,7 @@ export function UploadCard({
         {step === 'upload' && (
           <div
             className={cn(
-              "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer",
+              "border-2 border-dashed rounded-lg p-3 text-center transition-colors cursor-pointer",
               isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"
             )}
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -168,7 +168,7 @@ export function UploadCard({
         )}
 
         {step === 'validating' && (
-          <div className="py-4" data-testid="upload-validating">
+          <div className="py-2" data-testid="upload-validating">
             <div className="flex items-center gap-3 mb-3">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
               <div className="flex-1">

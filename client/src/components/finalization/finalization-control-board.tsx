@@ -113,9 +113,9 @@ export function FinalizationControlBoard() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4 animate-pulse" data-testid="finalization-board-loading">
+      <div className="space-y-2.5 animate-pulse" data-testid="finalization-board-loading">
         <div className="h-20 bg-muted rounded-lg" />
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2.5">
           <div className="h-32 bg-muted rounded-lg" />
           <div className="h-32 bg-muted rounded-lg" />
           <div className="h-32 bg-muted rounded-lg" />
@@ -125,7 +125,7 @@ export function FinalizationControlBoard() {
   }
 
   return (
-    <div className="space-y-4" data-testid="finalization-control-board">
+    <div className="space-y-2.5" data-testid="finalization-control-board">
       <Card className="border-2 border-primary/20">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between flex-wrap gap-3">
@@ -186,15 +186,15 @@ export function FinalizationControlBoard() {
         <>
           <Card className={cn("border", riskConfig.border, riskConfig.bg)} data-testid="risk-score-card">
             <CardContent className="pt-4 pb-4">
-              <div className="flex items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
                   <div className={cn("p-3 rounded-xl", riskConfig.bg)}>
                     <RiskIcon className={cn("h-8 w-8", riskConfig.color)} />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Overall Risk Score</p>
                     <div className="flex items-center gap-3 mt-0.5">
-                      <span className={cn("text-3xl font-bold", riskConfig.color)} data-testid="text-risk-score">{board.riskScore}</span>
+                      <span className={cn("text-xl font-bold", riskConfig.color)} data-testid="text-risk-score">{board.riskScore}</span>
                       <span className="text-lg text-muted-foreground">/100</span>
                       <Badge className={cn("text-sm font-semibold", riskConfig.bg, riskConfig.color)} variant="outline" data-testid="badge-risk-level">
                         {board.riskLevel}
@@ -214,7 +214,7 @@ export function FinalizationControlBoard() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
             <StatTile
               title="Pending Execution Items"
               value={board.pendingExecutionItems}
@@ -241,7 +241,7 @@ export function FinalizationControlBoard() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5">
             <StatTile
               title="Open Review Notes"
               value={board.openReviewNotes}
@@ -366,7 +366,7 @@ function StatTile({
           <Icon className={cn(compact ? "h-5 w-5" : "h-6 w-6", cfg.icon)} />
           <div className="min-w-0 flex-1">
             <p className={cn("font-medium truncate", compact ? "text-xs" : "text-sm")}>{title}</p>
-            <p className={cn("font-bold", compact ? "text-xl" : "text-2xl", cfg.text)} data-testid={`${testId}-value`}>{value}</p>
+            <p className={cn("font-bold", compact ? "text-xl" : "text-lg", cfg.text)} data-testid={`${testId}-value`}>{value}</p>
             {description && !compact && (
               <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
             )}

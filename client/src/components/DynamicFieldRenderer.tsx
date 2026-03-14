@@ -280,7 +280,7 @@ export function DynamicFieldRenderer({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center p-2.5">
         <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
         <span className="ml-2 text-muted-foreground">Loading fields...</span>
       </div>
@@ -290,7 +290,7 @@ export function DynamicFieldRenderer({
   const fields = data?.fields || [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold" data-testid="text-field-section-title">
           {module} {tab ? `- ${tab}` : ""}
@@ -307,11 +307,11 @@ export function DynamicFieldRenderer({
         </Button>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-2.5">
         {fields.map((field) => (
           <Card key={field.fieldKey} className="relative" data-testid={`card-field-${field.fieldKey}`}>
             <CardContent className="pt-4">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start justify-between gap-2.5">
                 <div className="flex-1 space-y-2">
                   <div className="flex items-center gap-2">
                     <Label
@@ -453,7 +453,7 @@ export function DynamicFieldRenderer({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-2.5 py-2">
             <div className="space-y-2">
               <Label>Field</Label>
               <p className="text-sm font-medium">{selectedField?.label}</p>

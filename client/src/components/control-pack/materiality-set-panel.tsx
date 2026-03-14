@@ -323,7 +323,7 @@ export function MaterialitySetPanel({ engagementId, className }: MaterialitySetP
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-4 w-64" />
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2.5">
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-10 w-full" />
         </CardContent>
@@ -394,7 +394,7 @@ export function MaterialitySetPanel({ engagementId, className }: MaterialitySetP
                     Define materiality levels per ISA 320. Previous versions will be superseded.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
+                <div className="space-y-2.5 py-2">
                   <div className="space-y-2">
                     <Label>Benchmark Type (Basis)</Label>
                     <Select
@@ -412,7 +412,7 @@ export function MaterialitySetPanel({ engagementId, className }: MaterialitySetP
                     </Select>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-2.5">
                     <div className="space-y-2">
                       <Label>Benchmark Amount (Basis Value)</Label>
                       <Input
@@ -440,7 +440,7 @@ export function MaterialitySetPanel({ engagementId, className }: MaterialitySetP
 
                   <Separator />
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-2.5">
                     <div className="space-y-2">
                       <Label>Overall Materiality</Label>
                       <Input
@@ -514,7 +514,7 @@ export function MaterialitySetPanel({ engagementId, className }: MaterialitySetP
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2.5">
         {displaySet ? (
           <>
             <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -530,7 +530,7 @@ export function MaterialitySetPanel({ engagementId, className }: MaterialitySetP
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-2.5">
               <div className="p-3 rounded-lg bg-muted/50">
                 <div className="text-xs text-muted-foreground mb-1">Overall Materiality</div>
                 <div className="text-lg font-semibold" data-testid="text-overall-materiality">
@@ -623,9 +623,9 @@ export function MaterialitySetPanel({ engagementId, className }: MaterialitySetP
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
+          <div className="flex flex-col items-center justify-center py-2 text-center">
             <Calculator className="h-10 w-10 text-muted-foreground mb-3" />
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-2.5">
               No materiality set defined yet
             </p>
             <Button

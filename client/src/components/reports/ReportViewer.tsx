@@ -145,12 +145,12 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
           <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="summary" className="space-y-4 mt-4">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <TabsContent value="summary" className="space-y-2.5 mt-2.5">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5">
             <Card>
               <CardContent className="pt-4">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-primary">{summary?.totalEngagements || 0}</p>
+                  <p className="text-xl font-bold text-primary">{summary?.totalEngagements || 0}</p>
                   <p className="text-sm text-muted-foreground">Total Engagements</p>
                 </div>
               </CardContent>
@@ -158,7 +158,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
             <Card>
               <CardContent className="pt-4">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-green-500">{summary?.onTrack || 0}</p>
+                  <p className="text-xl font-bold text-green-500">{summary?.onTrack || 0}</p>
                   <p className="text-sm text-muted-foreground">On Track</p>
                 </div>
               </CardContent>
@@ -166,7 +166,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
             <Card>
               <CardContent className="pt-4">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-orange-500">{summary?.atRisk || 0}</p>
+                  <p className="text-xl font-bold text-orange-500">{summary?.atRisk || 0}</p>
                   <p className="text-sm text-muted-foreground">At Risk</p>
                 </div>
               </CardContent>
@@ -174,7 +174,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
             <Card>
               <CardContent className="pt-4">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-red-500">{summary?.overdue || 0}</p>
+                  <p className="text-xl font-bold text-red-500">{summary?.overdue || 0}</p>
                   <p className="text-sm text-muted-foreground">Overdue</p>
                 </div>
               </CardContent>
@@ -182,7 +182,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
             <Card>
               <CardContent className="pt-4">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-blue-500">{summary?.completed || 0}</p>
+                  <p className="text-xl font-bold text-blue-500">{summary?.completed || 0}</p>
                   <p className="text-sm text-muted-foreground">Completed</p>
                 </div>
               </CardContent>
@@ -207,7 +207,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2.5">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Risk Distribution</CardTitle>
@@ -243,7 +243,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
           </div>
         </TabsContent>
 
-        <TabsContent value="engagements" className="mt-4">
+        <TabsContent value="engagements" className="mt-2.5">
           <ScrollArea className="h-[400px]">
             <div className="space-y-2">
               {engagements?.map((eng: any) => (
@@ -267,7 +267,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
                       <p className="text-xs text-muted-foreground mt-1">{eng.phase}</p>
                     </div>
                   </div>
-                  <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="mt-2 flex items-center gap-2.5 text-xs text-muted-foreground">
                     <span>Risk: {eng.riskRating}</span>
                     <span>Progress: {eng.phaseProgress}%</span>
                     <span>Team: {eng.teamSize}</span>
@@ -278,10 +278,10 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="analysis" className="mt-4">
+        <TabsContent value="analysis" className="mt-2.5">
           <Card>
             <CardContent className="pt-4">
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 <div className="flex items-start gap-3">
                   <BarChart3 className="h-5 w-5 text-primary mt-0.5" />
                   <div>
@@ -317,10 +317,10 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
           </Card>
         </TabsContent>
 
-        <TabsContent value="recommendations" className="mt-4">
+        <TabsContent value="recommendations" className="mt-2.5">
           <Card>
             <CardContent className="pt-4">
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 {summary?.atRisk > 0 && (
                   <div className="flex items-start gap-3 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
                     <AlertTriangle className="h-5 w-5 text-orange-500 mt-0.5" />
@@ -373,8 +373,8 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
           <TabsTrigger value="recommendations">Actions</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="summary" className="space-y-4 mt-4">
-          <div className="grid grid-cols-2 gap-4">
+        <TabsContent value="summary" className="space-y-2.5 mt-2.5">
+          <div className="grid grid-cols-2 gap-2.5">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -425,7 +425,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
           </div>
         </TabsContent>
 
-        <TabsContent value="at-risk" className="mt-4">
+        <TabsContent value="at-risk" className="mt-2.5">
           <ScrollArea className="h-[400px]">
             <div className="space-y-2">
               {atRiskEngagements?.map((eng: any) => (
@@ -446,13 +446,13 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
                 </Card>
               ))}
               {(!atRiskEngagements || atRiskEngagements.length === 0) && (
-                <p className="text-center text-muted-foreground py-8">No at-risk engagements</p>
+                <p className="text-center text-muted-foreground py-2">No at-risk engagements</p>
               )}
             </div>
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="overdue" className="mt-4">
+        <TabsContent value="overdue" className="mt-2.5">
           <ScrollArea className="h-[400px]">
             <div className="space-y-2">
               {overdueEngagements?.map((eng: any) => (
@@ -464,20 +464,20 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
                     </div>
                     <Badge variant="destructive">{eng.daysOverdue} days overdue</Badge>
                   </div>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2.5 mt-2 text-xs text-muted-foreground">
                     <span>Phase: {eng.phase}</span>
                     <span>Partner: {eng.partner || "Unassigned"}</span>
                   </div>
                 </Card>
               ))}
               {(!overdueEngagements || overdueEngagements.length === 0) && (
-                <p className="text-center text-muted-foreground py-8">No overdue engagements</p>
+                <p className="text-center text-muted-foreground py-2">No overdue engagements</p>
               )}
             </div>
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="recommendations" className="mt-4">
+        <TabsContent value="recommendations" className="mt-2.5">
           <Card>
             <CardContent className="pt-4">
               <div className="space-y-3">
@@ -508,12 +508,12 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
           <TabsTrigger value="capacity">Capacity</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="summary" className="space-y-4 mt-4">
-          <div className="grid grid-cols-3 gap-4">
+        <TabsContent value="summary" className="space-y-2.5 mt-2.5">
+          <div className="grid grid-cols-3 gap-2.5">
             <Card>
               <CardContent className="pt-4">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-primary">{utilizationMetrics?.overall || 0}%</p>
+                  <p className="text-xl font-bold text-primary">{utilizationMetrics?.overall || 0}%</p>
                   <p className="text-sm text-muted-foreground">Overall Utilization</p>
                 </div>
               </CardContent>
@@ -521,7 +521,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
             <Card>
               <CardContent className="pt-4">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-green-500">{capacityForecast?.availableCapacity || 0}</p>
+                  <p className="text-xl font-bold text-green-500">{capacityForecast?.availableCapacity || 0}</p>
                   <p className="text-sm text-muted-foreground">Available Resources</p>
                 </div>
               </CardContent>
@@ -529,7 +529,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
             <Card>
               <CardContent className="pt-4">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-orange-500">{capacityForecast?.upcomingDeadlines || 0}</p>
+                  <p className="text-xl font-bold text-orange-500">{capacityForecast?.upcomingDeadlines || 0}</p>
                   <p className="text-sm text-muted-foreground">Upcoming Deadlines</p>
                 </div>
               </CardContent>
@@ -556,7 +556,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
           </Card>
         </TabsContent>
 
-        <TabsContent value="team" className="mt-4">
+        <TabsContent value="team" className="mt-2.5">
           <ScrollArea className="h-[400px]">
             <div className="space-y-2">
               {teamMembers?.map((member: any) => (
@@ -576,7 +576,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
                       {member.utilization}% Utilized
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2.5 mt-2 text-xs text-muted-foreground">
                     <span>{member.engagementCount} engagements</span>
                     <span>{member.allocatedHours} hours allocated</span>
                   </div>
@@ -586,7 +586,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="profitability" className="mt-4">
+        <TabsContent value="profitability" className="mt-2.5">
           <ScrollArea className="h-[400px]">
             <div className="space-y-2">
               {engagementProfitability?.map((eng: any) => (
@@ -606,7 +606,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
                       {eng.budgetUsed}% Budget Used
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2.5 mt-2 text-xs text-muted-foreground">
                     <span>Budget: {eng.budgetHours}h</span>
                     <span>Actual: {eng.actualHours}h</span>
                     <span>Team: {eng.teamSize}</span>
@@ -617,10 +617,10 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="capacity" className="mt-4">
+        <TabsContent value="capacity" className="mt-2.5">
           <Card>
             <CardContent className="pt-4">
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 <div className="flex items-start gap-3">
                   <Users className="h-5 w-5 text-primary mt-0.5" />
                   <div>
@@ -669,16 +669,16 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
           <TabsTrigger value="clients">Top Clients</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="summary" className="space-y-4 mt-4">
+        <TabsContent value="summary" className="space-y-2.5 mt-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Growth Trends</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-2.5">
                 {growthTrends?.map((trend: any) => (
-                  <div key={trend.metric} className="text-center p-4 bg-muted/50 rounded-lg">
-                    <p className="text-2xl font-bold">{trend.current}</p>
+                  <div key={trend.metric} className="text-center p-2.5 bg-muted/50 rounded-lg">
+                    <p className="text-lg font-bold">{trend.current}</p>
                     <p className="text-sm text-muted-foreground">{trend.metric}</p>
                     {trend.change !== 0 && (
                       <p className={`text-xs ${trend.change > 0 ? "text-green-500" : "text-red-500"}`}>
@@ -692,7 +692,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
           </Card>
         </TabsContent>
 
-        <TabsContent value="industry" className="mt-4">
+        <TabsContent value="industry" className="mt-2.5">
           <Card>
             <CardContent className="pt-4">
               <div className="space-y-3">
@@ -720,7 +720,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
           </Card>
         </TabsContent>
 
-        <TabsContent value="services" className="mt-4">
+        <TabsContent value="services" className="mt-2.5">
           <Card>
             <CardContent className="pt-4">
               <div className="space-y-3">
@@ -738,7 +738,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
           </Card>
         </TabsContent>
 
-        <TabsContent value="clients" className="mt-4">
+        <TabsContent value="clients" className="mt-2.5">
           <ScrollArea className="h-[400px]">
             <div className="space-y-2">
               {clientConcentration?.map((client: any, idx: number) => (
@@ -800,7 +800,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
             </div>
           </div>
         </DialogHeader>
-        <ScrollArea className="flex-1 mt-4">
+        <ScrollArea className="flex-1 mt-2.5">
           {renderReport()}
         </ScrollArea>
       </DialogContent>

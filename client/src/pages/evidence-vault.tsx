@@ -352,7 +352,7 @@ function TemplateLibraryTab() {
     <>
       <Card className="overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-indigo-50/50 to-transparent dark:from-indigo-950/20 border-b border-border/50 pb-4">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-2.5">
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 flex-shrink-0">
                 <Library className="h-5 w-5" />
@@ -365,7 +365,7 @@ function TemplateLibraryTab() {
               </div>
             </div>
           </div>
-          <div className="flex flex-wrap gap-3 mt-4">
+          <div className="flex flex-wrap gap-3 mt-2.5">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -404,7 +404,7 @@ function TemplateLibraryTab() {
               <p>No templates found matching your criteria</p>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-3">
               {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([subCat, items]) => (
                 <div key={subCat}>
                   <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -494,7 +494,7 @@ function TemplateLibraryTab() {
             <DialogDescription>{previewTemplate?.reference}</DialogDescription>
           </DialogHeader>
           {previewTemplate && (
-            <div className="space-y-4">
+            <div className="space-y-2.5">
               <p className="text-sm text-muted-foreground">{previewTemplate.description}</p>
               <Separator />
               <div className="grid grid-cols-2 gap-3 text-sm">
@@ -866,7 +866,7 @@ export default function EvidenceVault() {
 
   if (error) {
     return (
-      <div className="p-6 text-center text-destructive">
+      <div className="p-3 text-center text-destructive">
         Failed to load attachments. Please try again.
       </div>
     );
@@ -897,7 +897,7 @@ export default function EvidenceVault() {
       showSaveNext={true}
       showSaveClose={true}
     >
-    <div className="w-full px-4 py-3 space-y-3">
+    <div className="w-full px-3 py-3 space-y-3">
       <Card data-testid="card-isa230-compliance">
         <CardContent className="pt-4 pb-4">
           <div className="flex items-start gap-3">
@@ -922,7 +922,7 @@ export default function EvidenceVault() {
               <p className="text-xs text-muted-foreground" data-testid="text-isa230-reference">
                 ISA 230 requires sufficient and appropriate documentation of audit procedures performed
               </p>
-              <div className="flex items-center gap-4 pt-1 flex-wrap">
+              <div className="flex items-center gap-2.5 pt-1 flex-wrap">
                 <span className="text-xs" data-testid="text-isa230-total">
                   <span className="font-medium">{stats.total}</span> Total Documents
                 </span>
@@ -963,7 +963,7 @@ export default function EvidenceVault() {
         <TabsContent value="documents">
       <Card className="overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-muted/50 to-transparent border-b border-border/50 pb-4">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-2.5">
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-xl bg-primary/10 text-primary flex-shrink-0">
                 <ClipboardCheck className="h-5 w-5" />
@@ -987,7 +987,7 @@ export default function EvidenceVault() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-6 space-y-4">
+        <CardContent className="pt-6 space-y-2.5">
           <div className="flex flex-wrap items-center gap-3 pb-2 border-b">
             <div className="relative flex-1 min-w-[200px] max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1234,7 +1234,7 @@ export default function EvidenceVault() {
         <TabsContent value="evidence-index">
       <Card>
         <CardHeader className="bg-gradient-to-r from-muted/50 to-transparent border-b border-border/50 pb-4">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-2.5">
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500 flex-shrink-0">
                 <FileSpreadsheet className="h-5 w-5" />
@@ -1261,7 +1261,7 @@ export default function EvidenceVault() {
                       Upload new evidence files to the vault with ISA reference and FS head linkage
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4 py-4">
+                  <div className="space-y-2.5 py-2">
                     <div className="space-y-2">
                       <Label>Evidence File</Label>
                       <Input type="file" data-testid="input-evidence-file" />
@@ -1388,9 +1388,9 @@ export default function EvidenceVault() {
 
           {filteredAttachments.length === 0 ? (
             <div className="text-center py-12">
-              <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground mb-2.5" />
               <h3 className="font-medium tracking-tight mb-2">No Evidence Files Found</h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-sm text-muted-foreground mb-2.5">
                 Evidence files will appear here as they are uploaded across engagement phases.
               </p>
             </div>
@@ -1548,7 +1548,7 @@ export default function EvidenceVault() {
             </DialogDescription>
           </DialogHeader>
           {selectedAttachment && (
-            <div className="space-y-4 py-4">
+            <div className="space-y-2.5 py-2">
               <div className="p-3 bg-muted rounded-lg">
                 <div className="flex items-center gap-2">
                   {getFileIcon(selectedAttachment.fileType)}
@@ -1638,7 +1638,7 @@ export default function EvidenceVault() {
           </DialogHeader>
           <ScrollArea className="max-h-80">
             {linkedOutputsData.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
+              <div className="text-center py-2 text-muted-foreground">
                 <FileOutput className="h-10 w-10 mx-auto mb-3 opacity-50" />
                 <p className="text-sm">No outputs are currently linked to this evidence file.</p>
                 <p className="text-xs mt-1">Link outputs from the Outputs Registry page.</p>
@@ -1701,7 +1701,7 @@ export default function EvidenceVault() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-4 space-y-4">
+        <CardContent className="pt-4 space-y-2.5">
           {(() => {
             const documented = attachments.filter(a => a.description && a.description.trim().length > 0).length;
             const total = attachments.length;
@@ -1774,14 +1774,14 @@ export default function EvidenceVault() {
 
           {attachments.length === 0 ? (
             <div className="text-center py-12" data-testid="text-audit-trail-empty">
-              <History className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <History className="h-12 w-12 mx-auto text-muted-foreground mb-2.5" />
               <h3 className="font-medium tracking-tight mb-2">No Audit Trail Entries</h3>
               <p className="text-sm text-muted-foreground">
                 Document actions will appear here as evidence is uploaded across engagement phases.
               </p>
             </div>
           ) : (
-            <div className="space-y-4" data-testid="audit-trail-entries">
+            <div className="space-y-2.5" data-testid="audit-trail-entries">
               {(() => {
                 const sorted = [...attachments].sort(
                   (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()

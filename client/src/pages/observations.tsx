@@ -515,8 +515,8 @@ export default function Observations() {
     <div className="flex flex-col h-full">
       <SignOffBar phase="EXECUTION" section="observations" className="mx-6 mt-2" />
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2.5">
             <Link href={`/workspace/${engagementId}`}>
               <Button variant="ghost" size="icon" data-testid="button-back">
                 <ArrowLeft className="h-4 w-4" />
@@ -536,10 +536,10 @@ export default function Observations() {
         </div>
       </div>
 
-      <div className="px-4 pt-3">
+      <div className="px-3 pt-3">
         <AIAssistantPanel engagementId={engagementId || ""} phaseKey="observations" />
       </div>
-      <div className="flex-1 overflow-auto p-4 space-y-4">
+      <div className="flex-1 overflow-auto p-2.5 space-y-2.5">
         <div className="flex items-center gap-2 mb-2">
           <Badge variant="outline" className="text-xs" data-testid="badge-isa-reference">
             <Shield className="h-3 w-3 mr-1" />
@@ -547,13 +547,13 @@ export default function Observations() {
           </Badge>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
           <Card data-testid="card-stat-total">
-            <CardContent className="p-4">
+            <CardContent className="p-2.5">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <p className="text-2xl font-bold">{summaryData?.total || 0}</p>
+                  <p className="text-lg font-bold">{summaryData?.total || 0}</p>
                   <p className="text-xs text-muted-foreground">Total</p>
                 </div>
               </div>
@@ -561,11 +561,11 @@ export default function Observations() {
           </Card>
 
           <Card data-testid="card-stat-open">
-            <CardContent className="p-4">
+            <CardContent className="p-2.5">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-yellow-500" />
                 <div>
-                  <p className="text-2xl font-bold">{summaryData?.openCount || 0}</p>
+                  <p className="text-lg font-bold">{summaryData?.openCount || 0}</p>
                   <p className="text-xs text-muted-foreground">Open</p>
                 </div>
               </div>
@@ -573,11 +573,11 @@ export default function Observations() {
           </Card>
 
           <Card data-testid="card-stat-cleared">
-            <CardContent className="p-4">
+            <CardContent className="p-2.5">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
                 <div>
-                  <p className="text-2xl font-bold">{summaryData?.clearedCount || 0}</p>
+                  <p className="text-lg font-bold">{summaryData?.clearedCount || 0}</p>
                   <p className="text-xs text-muted-foreground">Cleared</p>
                 </div>
               </div>
@@ -585,11 +585,11 @@ export default function Observations() {
           </Card>
 
           <Card data-testid="card-stat-waived">
-            <CardContent className="p-4">
+            <CardContent className="p-2.5">
               <div className="flex items-center gap-2">
                 <XCircle className="h-5 w-5 text-gray-500" />
                 <div>
-                  <p className="text-2xl font-bold">{summaryData?.waivedCount || 0}</p>
+                  <p className="text-lg font-bold">{summaryData?.waivedCount || 0}</p>
                   <p className="text-xs text-muted-foreground">Waived</p>
                 </div>
               </div>
@@ -597,7 +597,7 @@ export default function Observations() {
           </Card>
 
           <Card data-testid="card-stat-effect">
-            <CardContent className="p-4">
+            <CardContent className="p-2.5">
               <div className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5 text-blue-500" />
                 <div>
@@ -609,11 +609,11 @@ export default function Observations() {
           </Card>
 
           <Card data-testid="card-stat-mgmt-letter">
-            <CardContent className="p-4">
+            <CardContent className="p-2.5">
               <div className="flex items-center gap-2">
                 <FileWarning className="h-5 w-5 text-orange-500" />
                 <div>
-                  <p className="text-2xl font-bold">{summaryData?.mgmtLetterCount || 0}</p>
+                  <p className="text-lg font-bold">{summaryData?.mgmtLetterCount || 0}</p>
                   <p className="text-xs text-muted-foreground">Mgmt Letter</p>
                 </div>
               </div>
@@ -628,8 +628,8 @@ export default function Observations() {
               Filters
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <CardContent className="space-y-2.5">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
               <div className="col-span-2">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -700,7 +700,7 @@ export default function Observations() {
               </Select>
             </div>
 
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <Switch
                   id="filter-mgmt-letter"
@@ -759,9 +759,9 @@ export default function Observations() {
               </div>
             ) : filteredObservations.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                <FileText className="h-12 w-12 text-muted-foreground mb-2.5" />
                 <h3 className="text-lg font-medium mb-1">No observations found</h3>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-sm text-muted-foreground mb-2.5">
                   {observationsData?.length === 0
                     ? "Create your first observation to track audit findings."
                     : "No observations match the current filters."}
@@ -894,7 +894,7 @@ export default function Observations() {
                 </div>
 
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                  <div className="flex items-center justify-between mt-2.5 pt-4 border-t">
                     <p className="text-sm text-muted-foreground">
                       Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
                       {Math.min(currentPage * itemsPerPage, filteredObservations.length)} of{" "}
@@ -954,8 +954,8 @@ export default function Observations() {
               <TabsTrigger value="workflow" data-testid="tab-workflow">Workflow</TabsTrigger>
             </TabsList>
 
-            <ScrollArea className="flex-1 mt-4">
-              <TabsContent value="basic" className="mt-0 space-y-4">
+            <ScrollArea className="flex-1 mt-2.5">
+              <TabsContent value="basic" className="mt-0 space-y-2.5">
                 <div className="space-y-2">
                   <Label>Observation Title</Label>
                   <Input
@@ -967,7 +967,7 @@ export default function Observations() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2.5">
                   <div className="space-y-2">
                     <Label>Type</Label>
                     <Select
@@ -1059,7 +1059,7 @@ export default function Observations() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2.5">
                   <div className="space-y-2">
                     <Label>Effect Amount</Label>
                     <Input
@@ -1109,7 +1109,7 @@ export default function Observations() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="linkage" className="mt-0 space-y-4">
+              <TabsContent value="linkage" className="mt-0 space-y-2.5">
                 <div className="space-y-2">
                   <Label>FS Head</Label>
                   <Select
@@ -1201,7 +1201,7 @@ export default function Observations() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="action" className="mt-0 space-y-4">
+              <TabsContent value="action" className="mt-0 space-y-2.5">
                 <div className="space-y-2">
                   <Label>Proposed Action/Recommendation</Label>
                   <Textarea
@@ -1237,8 +1237,8 @@ export default function Observations() {
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-4 p-3 border rounded-md bg-green-50/50 dark:bg-green-950/20">
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="space-y-2.5 p-3 border rounded-md bg-green-50/50 dark:bg-green-950/20">
                     <h5 className="text-sm font-medium text-green-700 dark:text-green-400">Debit</h5>
                     <div className="space-y-2">
                       <Label className="text-xs">Account</Label>
@@ -1263,7 +1263,7 @@ export default function Observations() {
                     </div>
                   </div>
 
-                  <div className="space-y-4 p-3 border rounded-md bg-red-50/50 dark:bg-red-950/20">
+                  <div className="space-y-2.5 p-3 border rounded-md bg-red-50/50 dark:bg-red-950/20">
                     <h5 className="text-sm font-medium text-red-700 dark:text-red-400">Credit</h5>
                     <div className="space-y-2">
                       <Label className="text-xs">Account</Label>
@@ -1290,7 +1290,7 @@ export default function Observations() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="workflow" className="mt-0 space-y-4">
+              <TabsContent value="workflow" className="mt-0 space-y-2.5">
                 {dialogMode === "view" && selectedObservation && (
                   <>
                     <div className="flex items-center gap-2">
@@ -1300,7 +1300,7 @@ export default function Observations() {
 
                     <Separator />
 
-                    <div className="space-y-4">
+                    <div className="space-y-2.5">
                       <div className="p-3 border rounded-md space-y-2">
                         <h4 className="text-sm font-medium flex items-center gap-2">
                           <Users className="h-4 w-4" /> Identified By
@@ -1424,7 +1424,7 @@ export default function Observations() {
                 )}
 
                 {dialogMode !== "view" && (
-                  <div className="text-center py-4 text-muted-foreground">
+                  <div className="text-center py-2 text-muted-foreground">
                     <Clock className="h-12 w-12 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">Workflow actions will be available after saving</p>
                   </div>
@@ -1433,7 +1433,7 @@ export default function Observations() {
             </ScrollArea>
           </Tabs>
 
-          <DialogFooter className="mt-4">
+          <DialogFooter className="mt-2.5">
             {dialogMode === "view" ? (
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-close">
@@ -1485,7 +1485,7 @@ export default function Observations() {
               Record management's response to observation {selectedObservation?.observationRef}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <Textarea
               placeholder="Enter management's response..."
               value={responseText}
@@ -1522,7 +1522,7 @@ export default function Observations() {
               Document your conclusion for observation {selectedObservation?.observationRef}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <Textarea
               placeholder="Enter your audit conclusion..."
               value={conclusionText}
@@ -1559,7 +1559,7 @@ export default function Observations() {
               Document the reason for waiving observation {selectedObservation?.observationRef}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <Textarea
               placeholder="Enter waiver reason (requires partner approval)..."
               value={waiverText}

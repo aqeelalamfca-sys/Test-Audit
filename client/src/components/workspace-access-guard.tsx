@@ -166,7 +166,7 @@ export function WorkspaceAccessGuard({ engagementId, children }: WorkspaceAccess
   if (result.status === "loading") {
     return (
       <div className="flex items-center justify-center h-[60vh]">
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-2.5">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-muted-foreground">{result.message}</p>
         </div>
@@ -180,10 +180,10 @@ export function WorkspaceAccessGuard({ engagementId, children }: WorkspaceAccess
 
   if (result.status === "timeout") {
     return (
-      <div className="flex items-center justify-center h-[60vh] p-4">
+      <div className="flex items-center justify-center h-[60vh] p-2.5">
         <Card className="max-w-md">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-yellow-500/10 flex items-center justify-center">
+            <div className="mx-auto mb-2.5 h-12 w-12 rounded-full bg-yellow-500/10 flex items-center justify-center">
               <WifiOff className="h-6 w-6 text-yellow-600" />
             </div>
             <CardTitle>Connection Timeout</CardTitle>
@@ -205,10 +205,10 @@ export function WorkspaceAccessGuard({ engagementId, children }: WorkspaceAccess
 
   if (result.status === "error") {
     return (
-      <div className="flex items-center justify-center h-[60vh] p-4">
+      <div className="flex items-center justify-center h-[60vh] p-2.5">
         <Card className="max-w-md">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+            <div className="mx-auto mb-2.5 h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
               <AlertCircle className="h-6 w-6 text-destructive" />
             </div>
             <CardTitle>Something went wrong</CardTitle>
@@ -233,10 +233,10 @@ export function WorkspaceAccessGuard({ engagementId, children }: WorkspaceAccess
 
   if (result.status === "denied") {
     return (
-      <div className="flex items-center justify-center h-[60vh] p-4">
+      <div className="flex items-center justify-center h-[60vh] p-2.5">
         <Card className="max-w-md">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+            <div className="mx-auto mb-2.5 h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
               <ShieldX className="h-6 w-6 text-destructive" />
             </div>
             <CardTitle>Access Denied</CardTitle>
@@ -257,7 +257,7 @@ export function WorkspaceAccessGuard({ engagementId, children }: WorkspaceAccess
 
   return (
     <div className="flex items-center justify-center h-[60vh]">
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-2.5">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-muted-foreground">Loading...</p>
       </div>

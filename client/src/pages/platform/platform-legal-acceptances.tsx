@@ -180,7 +180,7 @@ export default function PlatformLegalAcceptances() {
               </div>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4">
+                <div className="flex items-center justify-between mt-2.5">
                   <p className="text-sm text-muted-foreground">
                     Page {page} of {totalPages} ({data.total} records)
                   </p>
@@ -208,8 +208,8 @@ export default function PlatformLegalAcceptances() {
             </DialogTitle>
           </DialogHeader>
           {selectedAcceptance && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2.5">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground flex items-center gap-1"><Building2 className="h-3 w-3" /> Firm Name</p>
                   <p className="text-sm font-medium">{selectedAcceptance.firmNameSnapshot}</p>

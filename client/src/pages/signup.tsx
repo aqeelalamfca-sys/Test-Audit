@@ -232,7 +232,7 @@ export default function SignupPage() {
   const selectedPlan = plans?.find((p) => p.code === form.watch("planKey"));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 flex items-center justify-center p-4">
+    <div className="min-h-0 bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 flex items-center justify-center p-2.5">
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
@@ -395,7 +395,7 @@ export default function SignupPage() {
                         </div>
                       ) : (
                         <label
-                          className="flex items-center gap-2 border border-dashed rounded-lg px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors text-sm text-muted-foreground"
+                          className="flex items-center gap-2 border border-dashed rounded-lg px-3 py-3 cursor-pointer hover:bg-muted/50 transition-colors text-sm text-muted-foreground"
                           data-testid="label-upload-logo"
                         >
                           <Upload className="h-4 w-4" />
@@ -706,7 +706,7 @@ export default function SignupPage() {
               {legalModal.type === "terms" ? "Terms of Service" : "Privacy Policy"}
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto pr-2 text-sm text-muted-foreground leading-relaxed space-y-4">
+          <div className="flex-1 overflow-y-auto pr-2 text-sm text-muted-foreground leading-relaxed space-y-2.5">
             {legalModal.type === "terms" ? (
               <>
                 <p className="text-xs text-muted-foreground">Last Updated: March 2026 | Version 1.0</p>

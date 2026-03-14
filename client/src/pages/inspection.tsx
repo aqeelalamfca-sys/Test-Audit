@@ -328,7 +328,7 @@ export default function Inspection() {
 
   if (loading) {
     return (
-      <div className="w-full px-4 py-3 flex items-center justify-center min-h-[400px]">
+      <div className="w-full px-3 py-3 flex items-center justify-center min-h-[400px]">
         <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -337,7 +337,7 @@ export default function Inspection() {
   const m = stats?.metrics;
 
   return (
-    <div className="w-full px-4 py-3 space-y-4">
+    <div className="w-full px-3 py-3 space-y-2.5">
       <SignOffBar phase="INSPECTION" section="inspection" className="mb-1" />
       <AIAssistantPanel engagementId={engagementId || ""} phaseKey="inspection" className="mb-2" />
       <div className="flex items-center justify-between gap-2">
@@ -401,7 +401,7 @@ export default function Inspection() {
           <TabsTrigger value="exports" className="text-xs"><FolderArchive className="h-3 w-3 mr-1" />Export & Release</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="dashboard" className="space-y-4 mt-4">
+        <TabsContent value="dashboard" className="space-y-2.5 mt-2.5">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <MetricCard icon={<BarChart3 className="h-4 w-4 text-blue-500" />} label="Readiness" value={`${stats?.readinessScore || 0}%`} />
             <MetricCard icon={<FileText className="h-4 w-4 text-indigo-500" />} label="Evidence Files" value={m?.totalWorkpapers || 0} />
@@ -482,7 +482,7 @@ export default function Inspection() {
           </div>
         </TabsContent>
 
-        <TabsContent value="reports" className="space-y-4 mt-4">
+        <TabsContent value="reports" className="space-y-2.5 mt-2.5">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Final Audit Reports</CardTitle>
@@ -567,7 +567,7 @@ export default function Inspection() {
           )}
         </TabsContent>
 
-        <TabsContent value="documents" className="space-y-4 mt-4">
+        <TabsContent value="documents" className="space-y-2.5 mt-2.5">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Key Signed Documents</CardTitle>
@@ -605,7 +605,7 @@ export default function Inspection() {
               <CardTitle className="text-base">Engagement Summary</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Client</p>
                   <p className="text-sm font-medium">{client?.name || "N/A"}</p>
@@ -629,7 +629,7 @@ export default function Inspection() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="trail" className="space-y-4 mt-4">
+        <TabsContent value="trail" className="space-y-2.5 mt-2.5">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -674,7 +674,7 @@ export default function Inspection() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="papers" className="space-y-4 mt-4">
+        <TabsContent value="papers" className="space-y-2.5 mt-2.5">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -748,24 +748,24 @@ export default function Inspection() {
           )}
         </TabsContent>
 
-        <TabsContent value="review" className="space-y-4 mt-4">
+        <TabsContent value="review" className="space-y-2.5 mt-2.5">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Review History Summary</CardTitle>
             </CardHeader>
             <CardContent>
               {reviewHistory ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
                   <div className="text-center p-3 bg-muted/30 rounded-lg">
-                    <p className="text-2xl font-bold">{reviewHistory.summary?.totalReviewNotes || 0}</p>
+                    <p className="text-lg font-bold">{reviewHistory.summary?.totalReviewNotes || 0}</p>
                     <p className="text-xs text-muted-foreground">Review Notes</p>
                   </div>
                   <div className="text-center p-3 bg-muted/30 rounded-lg">
-                    <p className="text-2xl font-bold">{reviewHistory.summary?.openReviewNotes || 0}</p>
+                    <p className="text-lg font-bold">{reviewHistory.summary?.openReviewNotes || 0}</p>
                     <p className="text-xs text-muted-foreground">Open Notes</p>
                   </div>
                   <div className="text-center p-3 bg-muted/30 rounded-lg">
-                    <p className="text-2xl font-bold">{reviewHistory.summary?.totalEqcrComments || 0}</p>
+                    <p className="text-lg font-bold">{reviewHistory.summary?.totalEqcrComments || 0}</p>
                     <p className="text-xs text-muted-foreground">EQCR Comments</p>
                   </div>
                 </div>
@@ -852,7 +852,7 @@ export default function Inspection() {
           )}
         </TabsContent>
 
-        <TabsContent value="index" className="space-y-4 mt-4">
+        <TabsContent value="index" className="space-y-2.5 mt-2.5">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -863,7 +863,7 @@ export default function Inspection() {
             </CardHeader>
             <CardContent>
               {archiveIndex?.sections ? (
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {archiveIndex.sections.map((section: any) => (
                     <div key={section.ref} className="border rounded-lg p-3">
                       <h4 className="font-medium text-sm mb-2">
@@ -898,7 +898,7 @@ export default function Inspection() {
                   )}
                 </div>
               ) : (
-                <div className="text-center py-8">
+                <div className="text-center py-2">
                   <Search className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm text-muted-foreground mb-3">No archive index has been generated yet.</p>
                   {isPartner && (
@@ -921,7 +921,7 @@ export default function Inspection() {
           )}
         </TabsContent>
 
-        <TabsContent value="exports" className="space-y-4 mt-4">
+        <TabsContent value="exports" className="space-y-2.5 mt-2.5">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Archive Actions</CardTitle>
@@ -971,7 +971,7 @@ export default function Inspection() {
               )}
 
               {archive && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-sm">
                   <div>
                     <p className="text-xs text-muted-foreground">Status</p>
                     <Badge variant="outline" className={
@@ -1045,7 +1045,7 @@ export default function Inspection() {
 function MetricCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
   return (
     <Card className="border-0 shadow-sm">
-      <CardContent className="py-3 px-4">
+      <CardContent className="py-3 px-3">
         <div className="flex items-center gap-2">
           {icon}
           <div>

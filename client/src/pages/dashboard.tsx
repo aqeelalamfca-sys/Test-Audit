@@ -280,13 +280,13 @@ export default function Dashboard() {
             className="cursor-pointer hover:shadow-md transition-all border-border/60"
             onClick={() => handleKPIClick(kpi.route)}
           >
-            <CardContent className="p-4">
+            <CardContent className="p-2.5">
               <div className="flex items-center justify-between mb-2">
                 <div className={`${kpi.bg} p-2 rounded-lg`}>
                   <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
                 </div>
               </div>
-              <p className={`text-2xl font-bold tabular-nums ${kpi.color}`}>{kpi.value}</p>
+              <p className={`text-lg font-bold tabular-nums ${kpi.color}`}>{kpi.value}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{kpi.label}</p>
             </CardContent>
           </Card>
@@ -329,7 +329,7 @@ export default function Dashboard() {
 
       {/* My Assignments Table */}
       <Card className="shadow-sm">
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border/50">
+        <div className="flex items-center justify-between px-3 py-3 border-b border-border/50">
           <div className="flex items-center gap-2">
             <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold">My Assignments</h2>
@@ -404,11 +404,11 @@ export default function Dashboard() {
 
       {/* Recent Activity */}
       <Card className="shadow-sm">
-        <div className="flex items-center gap-2 px-5 py-3 border-b border-border/50">
+        <div className="flex items-center gap-2 px-3 py-3 border-b border-border/50">
           <Clock className="h-4 w-4 text-muted-foreground" />
           <h2 className="text-sm font-semibold">Recent Activity</h2>
         </div>
-        <CardContent className="py-8">
+        <CardContent className="py-2">
           <div className="flex flex-col items-center justify-center text-center">
             <Clock className="h-8 w-8 text-muted-foreground/30 mb-2" />
             <p className="text-sm text-muted-foreground">Activity tracking will appear here as you work</p>

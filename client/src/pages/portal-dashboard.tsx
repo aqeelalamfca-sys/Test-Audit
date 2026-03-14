@@ -122,7 +122,7 @@ export default function PortalDashboard() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <header className="bg-white dark:bg-slate-800 border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-3 py-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
               <Shield className="h-5 w-5 text-primary-foreground" />
@@ -132,7 +132,7 @@ export default function PortalDashboard() {
               <p className="text-xs text-muted-foreground">{user?.firm.name}</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2.5">
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-4 w-4" />
               {(dashboard?.stats.pendingRequests || 0) > 0 && (
@@ -152,15 +152,15 @@ export default function PortalDashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-4">
-        <div className="mb-4">
-          <h2 className="text-2xl font-bold tracking-tight">Welcome, {user?.firstName}</h2>
+      <main className="container mx-auto px-3 py-2">
+        <div className="mb-2.5">
+          <h2 className="text-lg font-bold tracking-tight">Welcome, {user?.firstName}</h2>
           <p className="text-muted-foreground">
             View your audit engagements and respond to information requests
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-4">
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4 mb-2.5">
           <Card className="transition-all hover:shadow-md">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -169,7 +169,7 @@ export default function PortalDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{dashboard?.stats.totalEngagements || 0}</div>
+              <div className="text-xl font-bold">{dashboard?.stats.totalEngagements || 0}</div>
             </CardContent>
           </Card>
           <Card className="transition-all hover:shadow-md">
@@ -180,7 +180,7 @@ export default function PortalDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-yellow-600">{dashboard?.stats.pendingRequests || 0}</div>
+              <div className="text-xl font-bold text-yellow-600">{dashboard?.stats.pendingRequests || 0}</div>
             </CardContent>
           </Card>
           <Card className="transition-all hover:shadow-md">
@@ -191,7 +191,7 @@ export default function PortalDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-600">{dashboard?.stats.inProgressRequests || 0}</div>
+              <div className="text-xl font-bold text-blue-600">{dashboard?.stats.inProgressRequests || 0}</div>
             </CardContent>
           </Card>
           <Card className="transition-all hover:shadow-md">
@@ -202,14 +202,14 @@ export default function PortalDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-600">{dashboard?.stats.completedRequests || 0}</div>
+              <div className="text-xl font-bold text-green-600">{dashboard?.stats.completedRequests || 0}</div>
             </CardContent>
           </Card>
         </div>
 
         <Card>
           <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Building2 className="h-5 w-5" />
@@ -241,18 +241,18 @@ export default function PortalDashboard() {
           <CardContent>
             {filteredEngagements.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <FileText className="h-12 w-12 mx-auto mb-2.5 opacity-50" />
                 <h3 className="font-semibold mb-1">No engagements found</h3>
                 <p className="text-sm">
                   {filter !== "all" ? "Try adjusting your filter" : "No active audit engagements at this time"}
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 {filteredEngagements.map((engagement) => (
                   <Link key={engagement.id} href={`/portal/engagement/${engagement.id}`}>
-                    <div className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border hover:bg-muted/50 hover:border-primary/30 transition-all cursor-pointer">
-                      <div className="flex items-center gap-4 mb-3 sm:mb-0">
+                    <div className="group flex flex-col sm:flex-row sm:items-center justify-between p-2.5 rounded-lg border hover:bg-muted/50 hover:border-primary/30 transition-all cursor-pointer">
+                      <div className="flex items-center gap-2.5 mb-3 sm:mb-0">
                         <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                           <FileText className="h-6 w-6 text-primary" />
                         </div>
@@ -266,8 +266,8 @@ export default function PortalDashboard() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 sm:gap-3">
-                        <div className="flex gap-4 text-sm">
+                      <div className="flex items-center gap-2.5 sm:gap-3">
+                        <div className="flex gap-2.5 text-sm">
                           {(engagement.pendingRequests || 0) > 0 && (
                             <div className="flex items-center gap-1 text-yellow-600">
                               <Clock className="h-4 w-4" />
@@ -297,7 +297,7 @@ export default function PortalDashboard() {
           </CardContent>
         </Card>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950 dark:to-blue-900/50 border-blue-200 dark:border-blue-800">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2 text-blue-700 dark:text-blue-300">

@@ -144,9 +144,9 @@ export function PageShell({
     <div className={cn("flex flex-col h-full", className)}>
       {/* Sticky Header Section */}
       {effectiveShowTopBar !== false && (effectiveShowTopBar || title || metadata) && (
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/40 pb-3 pt-1 mb-4">
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/40 pb-3 pt-1 mb-2.5">
           {/* Title Row */}
-          <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center justify-between gap-2.5 flex-wrap">
             <div className="flex items-center gap-3 min-w-0">
               {icon && (
                 <div className="p-2 rounded-xl bg-primary/10 flex-shrink-0">
@@ -189,7 +189,7 @@ export function PageShell({
 
           {/* Metadata Row */}
           {metadata && metadata.length > 0 && (
-            <div className="flex items-center gap-4 flex-wrap text-sm mt-2" data-testid="page-metadata">
+            <div className="flex items-center gap-2.5 flex-wrap text-sm mt-2" data-testid="page-metadata">
               {metadata.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-1.5">
                   <span className="text-muted-foreground">{item.label}:</span>
@@ -210,7 +210,7 @@ export function PageShell({
       {/* Content Section */}
       <div className={cn(
         "flex-1",
-        !noPadding && "space-y-5",
+        !noPadding && "space-y-3",
         contentClassName
       )}>
         {children}
@@ -218,7 +218,7 @@ export function PageShell({
 
       {/* Bottom Action Bar */}
       {effectiveShowBottomBar && (
-        <div className="sticky bottom-0 z-10 bg-background/95 backdrop-blur-sm border-t border-border/40 mt-4">
+        <div className="sticky bottom-0 z-10 bg-background/95 backdrop-blur-sm border-t border-border/40 mt-2.5">
           <PageActionBar {...actionBarProps} position="bottom" />
         </div>
       )}
@@ -249,7 +249,7 @@ export function PageSection({
   return (
     <Card className={cn("overflow-hidden shadow-sm", className)}>
       {(title || actions) && (
-        <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-border/50 flex-wrap">
+        <div className="flex items-center justify-between gap-2.5 px-3 py-3 border-b border-border/50 flex-wrap">
           <div>
             {title && <h3 className="text-sm font-semibold tracking-tight uppercase text-muted-foreground">{title}</h3>}
             {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
@@ -257,7 +257,7 @@ export function PageSection({
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </div>
       )}
-      <div className={cn(!noPadding && "p-5")}>
+      <div className={cn(!noPadding && "p-3")}>
         {children}
       </div>
     </Card>
@@ -284,17 +284,17 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className={cn(
-      "flex flex-col items-center justify-center py-12 px-4 text-center",
+      "flex flex-col items-center justify-center py-12 px-3 text-center",
       className
     )} data-testid="empty-state">
       {icon && (
-        <div className="p-4 rounded-2xl bg-muted/50 mb-4">
+        <div className="p-2.5 rounded-2xl bg-muted/50 mb-2.5">
           {icon}
         </div>
       )}
       <h3 className="font-medium text-lg mb-1">{title}</h3>
       {description && (
-        <p className="text-sm text-muted-foreground max-w-md mb-4">{description}</p>
+        <p className="text-sm text-muted-foreground max-w-md mb-2.5">{description}</p>
       )}
       {action}
     </div>

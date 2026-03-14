@@ -115,7 +115,7 @@ export default function ComplianceSimulation() {
 
   if (!engagementId) {
     return (
-      <div className="flex items-center justify-center h-full p-8" data-testid="no-engagement">
+      <div className="flex items-center justify-center h-full p-2.5" data-testid="no-engagement">
         <div className="text-center space-y-3">
           <Shield className="h-12 w-12 mx-auto text-muted-foreground" />
           <h2 className="text-xl font-semibold">No Engagement Selected</h2>
@@ -126,7 +126,7 @@ export default function ComplianceSimulation() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 max-w-5xl mx-auto" data-testid="compliance-simulation-page">
+    <div className="flex flex-col gap-2.5 p-2.5 max-w-5xl mx-auto" data-testid="compliance-simulation-page">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <Shield className="h-6 w-6" />
@@ -157,7 +157,7 @@ export default function ComplianceSimulation() {
 
       {isLoadingCached && !result && (
         <Card>
-          <CardContent className="p-6 text-center text-muted-foreground">
+          <CardContent className="p-3 text-center text-muted-foreground">
             Loading cached results...
           </CardContent>
         </Card>
@@ -165,7 +165,7 @@ export default function ComplianceSimulation() {
 
       {!result && !isLoadingCached && (
         <Card>
-          <CardContent className="p-6 text-center text-muted-foreground" data-testid="text-no-results">
+          <CardContent className="p-3 text-center text-muted-foreground" data-testid="text-no-results">
             No simulation results available. Click &quot;Run Simulation&quot; to start.
           </CardContent>
         </Card>
@@ -185,7 +185,7 @@ export default function ComplianceSimulation() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center gap-3">
-                <span className={`text-3xl font-bold ${getOverallStatusColor(result.overallStatus)}`} data-testid="text-overall-score">
+                <span className={`text-xl font-bold ${getOverallStatusColor(result.overallStatus)}`} data-testid="text-overall-score">
                   {result.overallScore}/{result.overallMaxScore}
                 </span>
                 <span className="text-sm text-muted-foreground">({pct}%)</span>

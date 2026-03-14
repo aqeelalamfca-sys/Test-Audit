@@ -236,7 +236,7 @@ function StepHeader({
     <CollapsibleTrigger asChild>
       <button
         onClick={onToggle}
-        className="flex w-full items-center justify-between p-4 hover-elevate rounded-md transition-colors"
+        className="flex w-full items-center justify-between p-2.5 hover-elevate rounded-md transition-colors"
         data-testid={`step-${step}-toggle`}
       >
         <div className="flex items-center gap-3">
@@ -267,8 +267,8 @@ function DataIngestionStep({ data }: { data: ISA320MaterialityResult["step1_data
   ];
 
   return (
-    <div className="space-y-4 p-4 pt-0">
-      <div className="grid grid-cols-2 gap-4">
+    <div className="space-y-2.5 p-2.5 pt-0">
+      <div className="grid grid-cols-2 gap-2.5">
         {sourceItems.map((item) => (
           <div
             key={item.label}
@@ -289,7 +289,7 @@ function DataIngestionStep({ data }: { data: ISA320MaterialityResult["step1_data
 
       <Separator />
 
-      <div className="grid grid-cols-2 gap-4 text-sm">
+      <div className="grid grid-cols-2 gap-2.5 text-sm">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Entity Type:</span>
@@ -350,15 +350,15 @@ function BenchmarkSelectionStep({ data }: { data: ISA320MaterialityResult["step2
   const [showAlternatives, setShowAlternatives] = useState(false);
 
   return (
-    <div className="space-y-4 p-4 pt-0">
-      <div className="rounded-lg border-2 border-primary bg-primary/5 p-4">
-        <div className="flex items-start justify-between gap-4">
+    <div className="space-y-2.5 p-2.5 pt-0">
+      <div className="rounded-lg border-2 border-primary bg-primary/5 p-2.5">
+        <div className="flex items-start justify-between gap-2.5">
           <div>
             <Badge className="mb-2 bg-primary" data-testid="badge-selected-benchmark">
               Selected Benchmark
             </Badge>
             <div className="text-xl font-bold">{data.selectedBenchmark}</div>
-            <div className="text-2xl font-bold text-primary">{formatCurrency(data.benchmarkValue)}</div>
+            <div className="text-lg font-bold text-primary">{formatCurrency(data.benchmarkValue)}</div>
             <div className="mt-1 text-sm text-muted-foreground">
               Acceptable Range: {data.percentageRange.min}% - {data.percentageRange.max}%
             </div>
@@ -410,16 +410,16 @@ function BenchmarkSelectionStep({ data }: { data: ISA320MaterialityResult["step2
 
 function RiskAdjustedPercentageStep({ data }: { data: ISA320MaterialityResult["step3_riskAdjustedPercentage"] }) {
   return (
-    <div className="space-y-4 p-4 pt-0">
-      <div className="flex items-center justify-between rounded-lg border p-4">
+    <div className="space-y-2.5 p-2.5 pt-0">
+      <div className="flex items-center justify-between rounded-lg border p-2.5">
         <div>
           <div className="text-sm text-muted-foreground">Base Percentage</div>
-          <div className="text-2xl font-bold">{formatPercentage(data.basePercentage)}</div>
+          <div className="text-lg font-bold">{formatPercentage(data.basePercentage)}</div>
         </div>
         <ArrowRight className="h-6 w-6 text-muted-foreground" />
         <div>
           <div className="text-sm text-muted-foreground">Final Percentage</div>
-          <div className="text-2xl font-bold text-primary" data-testid="final-percentage">
+          <div className="text-lg font-bold text-primary" data-testid="final-percentage">
             {formatPercentage(data.finalPercentage)}
           </div>
         </div>
@@ -465,12 +465,12 @@ function RiskAdjustedPercentageStep({ data }: { data: ISA320MaterialityResult["s
 
 function MaterialityLevelsStep({ data }: { data: ISA320MaterialityResult["step4_materialityLevels"] }) {
   return (
-    <div className="space-y-4 p-4 pt-0">
-      <div className="grid gap-4 md:grid-cols-3">
+    <div className="space-y-2.5 p-2.5 pt-0">
+      <div className="grid gap-2.5 md:grid-cols-3">
         <Card className="border-2 border-primary" data-testid="card-overall-materiality">
           <CardHeader className="pb-2">
             <CardDescription>Overall Materiality</CardDescription>
-            <CardTitle className="text-3xl text-primary">{formatCurrency(data.overallMateriality)}</CardTitle>
+            <CardTitle className="text-xl text-primary">{formatCurrency(data.overallMateriality)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="rounded bg-muted/50 p-2 text-xs font-mono">{data.calculationFormulas.overall}</div>
@@ -480,7 +480,7 @@ function MaterialityLevelsStep({ data }: { data: ISA320MaterialityResult["step4_
         <Card data-testid="card-performance-materiality">
           <CardHeader className="pb-2">
             <CardDescription>Performance Materiality</CardDescription>
-            <CardTitle className="text-2xl">{formatCurrency(data.performanceMateriality)}</CardTitle>
+            <CardTitle className="text-lg">{formatCurrency(data.performanceMateriality)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="mb-2">
@@ -493,7 +493,7 @@ function MaterialityLevelsStep({ data }: { data: ISA320MaterialityResult["step4_
         <Card data-testid="card-trivial-threshold">
           <CardHeader className="pb-2">
             <CardDescription>Trivial Threshold</CardDescription>
-            <CardTitle className="text-2xl">{formatCurrency(data.trivialThreshold)}</CardTitle>
+            <CardTitle className="text-lg">{formatCurrency(data.trivialThreshold)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="mb-2">
@@ -522,7 +522,7 @@ function QualitativeFactorsStep({ data }: { data: ISA320MaterialityResult["step5
   };
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       <div className="grid gap-2">
         {data.factors.map((factor, idx) => (
           <div
@@ -586,7 +586,7 @@ function RiskAssessmentLinkageStep({ data }: { data: ISA320MaterialityResult["st
   };
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       {data.significantFSHeads.length > 0 && (
         <div>
           <div className="mb-2 text-sm font-medium">
@@ -617,7 +617,7 @@ function RiskAssessmentLinkageStep({ data }: { data: ISA320MaterialityResult["st
 
       <Separator />
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-2.5 md:grid-cols-2">
         <div className="rounded-lg border p-3">
           <div className="mb-2 text-sm font-medium">Analytical Procedure Thresholds</div>
           <div className="space-y-2 text-sm">
@@ -663,8 +663,8 @@ function RiskAssessmentLinkageStep({ data }: { data: ISA320MaterialityResult["st
 
 function PartnerOverrideStep({ data }: { data: ISA320MaterialityResult["step7_partnerOverride"] }) {
   return (
-    <div className="space-y-4 p-4 pt-0">
-      <div className="flex items-center justify-between rounded-lg border p-4">
+    <div className="space-y-2.5 p-2.5 pt-0">
+      <div className="flex items-center justify-between rounded-lg border p-2.5">
         <div className="flex items-center gap-3">
           {data.overrideEnabled ? (
             <Lock className="h-5 w-5 text-amber-600" />
@@ -684,7 +684,7 @@ function PartnerOverrideStep({ data }: { data: ISA320MaterialityResult["step7_pa
       </div>
 
       {data.overrideEnabled && data.currentOverride && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 dark:border-amber-800 dark:bg-amber-950/30">
           <div className="mb-3 font-medium text-amber-800 dark:text-amber-200">Current Override Details</div>
           <div className="space-y-2 text-sm">
             {data.currentOverride.reason && (
@@ -715,7 +715,7 @@ function PartnerOverrideStep({ data }: { data: ISA320MaterialityResult["step7_pa
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-2.5 md:grid-cols-2">
         <div className="rounded-lg border p-3">
           <div className="mb-2 text-sm font-medium">Override Fields Available</div>
           <div className="flex flex-wrap gap-1">
@@ -765,7 +765,7 @@ function DocumentationOutputStep({ data }: { data: ISA320MaterialityResult["step
   ];
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       {docSections.map((section) => (
         <div key={section.key} className="rounded-lg border p-3" data-testid={`doc-${section.key}`}>
           <div className="mb-2 flex items-center justify-between">
@@ -849,9 +849,9 @@ function DocumentationOutputStep({ data }: { data: ISA320MaterialityResult["step
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="rounded-lg border p-4">
+        <div key={i} className="rounded-lg border p-2.5">
           <div className="flex items-center gap-3">
             <Skeleton className="h-8 w-8 rounded-full" />
             <div className="space-y-2">
@@ -932,7 +932,7 @@ export function ISA320MaterialityPanel({
 
   return (
     <Card className={cn("", className)} data-testid="isa320-materiality-panel">
-      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
+      <CardHeader className="flex flex-row items-center justify-between gap-2.5 space-y-0 pb-4">
         <div>
           <CardTitle className="flex items-center gap-2 text-xl">
             <Brain className="h-5 w-5 text-primary" />
@@ -976,7 +976,7 @@ export function ISA320MaterialityPanel({
 
         {result && (
           <div className="space-y-2">
-            <div className="mb-4 flex items-center justify-between rounded-lg bg-muted/30 p-3">
+            <div className="mb-2.5 flex items-center justify-between rounded-lg bg-muted/30 p-3">
               <div className="text-sm text-muted-foreground">
                 Last analyzed: {formatDate(result.analysisTimestamp)}
               </div>

@@ -94,7 +94,7 @@ export function RiskAssessmentForm({ onSave, onCancel, initialData, fsHeadName }
           Risk Assessment (ISA 315) - {fsHeadName}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2.5">
         <div className="space-y-2">
           <Label htmlFor="risk-description">Risk Description</Label>
           <Textarea
@@ -107,7 +107,7 @@ export function RiskAssessmentForm({ onSave, onCancel, initialData, fsHeadName }
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-2.5">
           <div className="space-y-2">
             <Label>Inherent Risk</Label>
             <div className="flex gap-2">
@@ -254,8 +254,8 @@ export function TOCForm({ onSave, onCancel, initialData }: TOCFormProps) {
           Test of Controls (ISA 330)
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 pt-4">
-        <div className="grid grid-cols-2 gap-4">
+      <CardContent className="space-y-2.5 pt-4">
+        <div className="grid grid-cols-2 gap-2.5">
           <div className="space-y-2">
             <Label htmlFor="toc-ref">Control Reference</Label>
             <Input
@@ -290,7 +290,7 @@ export function TOCForm({ onSave, onCancel, initialData }: TOCFormProps) {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-2.5">
           <div className="space-y-2">
             <Label>Control Type</Label>
             <Select
@@ -353,7 +353,7 @@ export function TOCForm({ onSave, onCancel, initialData }: TOCFormProps) {
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2.5">
           <div className="space-y-2">
             <Label htmlFor="sample-size">Sample Size</Label>
             <Input
@@ -477,8 +477,8 @@ export function TODForm({ onSave, onCancel, initialData }: TODFormProps) {
           Test of Details (ISA 330/500)
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 pt-4">
-        <div className="grid grid-cols-2 gap-4">
+      <CardContent className="space-y-2.5 pt-4">
+        <div className="grid grid-cols-2 gap-2.5">
           <div className="space-y-2">
             <Label htmlFor="tod-ref">Procedure Reference</Label>
             <Input
@@ -546,7 +546,7 @@ export function TODForm({ onSave, onCancel, initialData }: TODFormProps) {
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2.5">
           <div className="space-y-2">
             <Label htmlFor="pop-count">Population Count</Label>
             <Input
@@ -591,7 +591,7 @@ export function TODForm({ onSave, onCancel, initialData }: TODFormProps) {
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2.5">
           <div className="space-y-2">
             <Label htmlFor="exceptions">Exceptions Found</Label>
             <Input
@@ -715,8 +715,8 @@ export function AnalyticalForm({ onSave, onCancel, initialData, currentYearBalan
           Analytical Procedure (ISA 520)
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 pt-4">
-        <div className="grid grid-cols-2 gap-4">
+      <CardContent className="space-y-2.5 pt-4">
+        <div className="grid grid-cols-2 gap-2.5">
           <div className="space-y-2">
             <Label htmlFor="ana-ref">Procedure Reference</Label>
             <Input
@@ -757,7 +757,7 @@ export function AnalyticalForm({ onSave, onCancel, initialData, currentYearBalan
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-2.5">
           <div className="space-y-2">
             <Label htmlFor="expectation">Expectation</Label>
             <Textarea
@@ -882,7 +882,7 @@ export function AdjustmentForm({ onSave, onCancel, initialData, materialityThres
           Adjusting Entry (ISA 450)
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 pt-4">
+      <CardContent className="space-y-2.5 pt-4">
         <div className="space-y-2">
           <Label htmlFor="adj-ref">Reference</Label>
           <Input
@@ -906,7 +906,7 @@ export function AdjustmentForm({ onSave, onCancel, initialData, materialityThres
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2.5">
           <div className="space-y-2">
             <Label htmlFor="debit-acc">Debit Account</Label>
             <Input
@@ -1056,7 +1056,7 @@ The balance of ${fsName} is fairly stated, in all material respects, in accordan
           Overall Conclusion (ISA 330.25-27) - {fsHeadName}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2.5">
         <div className="grid grid-cols-5 gap-3 p-3 bg-muted/50 rounded-lg">
           <div className="text-center">
             <div className="text-xl font-bold text-primary">{tocCount}</div>

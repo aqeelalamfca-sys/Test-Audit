@@ -164,7 +164,7 @@ export function MaterialitySection({
   }, [data.componentMateriality, handleChange]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <FormSection
         icon={<BarChart3 className="h-5 w-5" />}
         title="Benchmark Selection"
@@ -444,7 +444,7 @@ export function MaterialitySection({
         </div>
 
         {data.componentMateriality.isGroupAudit && (
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <div className="border rounded-md overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -512,7 +512,7 @@ export function MaterialitySection({
                   ))}
                   {data.componentMateriality.components.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="p-6 text-center text-muted-foreground text-sm">
+                      <td colSpan={5} className="p-3 text-center text-muted-foreground text-sm">
                         No components added. Click "Add Component" to begin.
                       </td>
                     </tr>

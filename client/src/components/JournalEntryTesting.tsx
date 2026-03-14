@@ -253,7 +253,7 @@ export function JournalEntryTesting({ engagementId }: JournalEntryTestingProps) 
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center p-2.5">
         <RefreshCw className="h-6 w-6 animate-spin mr-2" />
         <span>Loading journal entry tests...</span>
       </div>
@@ -261,7 +261,7 @@ export function JournalEntryTesting({ engagementId }: JournalEntryTestingProps) 
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -283,7 +283,7 @@ export function JournalEntryTesting({ engagementId }: JournalEntryTestingProps) 
             <DialogHeader>
               <DialogTitle>Create Journal Entry Test</DialogTitle>
             </DialogHeader>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2.5">
               <div className="space-y-2">
                 <Label>Testing Period</Label>
                 <Input 
@@ -393,7 +393,7 @@ export function JournalEntryTesting({ engagementId }: JournalEntryTestingProps) 
           </AlertDescription>
         </Alert>
       ) : (
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-4 gap-3">
           <div className="col-span-1 space-y-2">
             <Label>Select Test</Label>
             {tests.map(test => (
@@ -423,10 +423,10 @@ export function JournalEntryTesting({ engagementId }: JournalEntryTestingProps) 
             ))}
           </div>
 
-          <div className="col-span-3 space-y-4">
+          <div className="col-span-3 space-y-2.5">
             {selectedTest && (
               <>
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-4 gap-2.5">
                   <Card>
                     <CardContent className="pt-4">
                       <div className="flex items-center gap-2">
@@ -510,7 +510,7 @@ export function JournalEntryTesting({ engagementId }: JournalEntryTestingProps) 
                             <DialogHeader>
                               <DialogTitle>Add Journal Entry Test Item</DialogTitle>
                             </DialogHeader>
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-3 gap-2.5">
                               <div className="space-y-2">
                                 <Label>JE Number</Label>
                                 <Input 
@@ -646,7 +646,7 @@ export function JournalEntryTesting({ engagementId }: JournalEntryTestingProps) 
                   </CardHeader>
                   <CardContent>
                     {filteredItems.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
+                      <div className="text-center py-2 text-muted-foreground">
                         <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
                         <p>No journal entries tested yet</p>
                         <p className="text-sm">Click "Add Entry" to start testing</p>
@@ -711,7 +711,7 @@ export function JournalEntryTesting({ engagementId }: JournalEntryTestingProps) 
                   </CardContent>
                 </Card>
 
-                <div className="grid grid-cols-4 gap-4 text-sm">
+                <div className="grid grid-cols-4 gap-2.5 text-sm">
                   <Card>
                     <CardContent className="pt-4">
                       <p className="text-muted-foreground">Standard</p>

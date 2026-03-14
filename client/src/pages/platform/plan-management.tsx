@@ -127,7 +127,7 @@ export default function PlanManagement() {
             <DialogHeader>
               <DialogTitle>{editingPlan ? `Edit Plan: ${editingPlan.name}` : "Create Plan"}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-2.5">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Plan Code *</Label>
@@ -228,7 +228,7 @@ export default function PlanManagement() {
 
               <Separator />
               <p className="text-sm font-medium text-muted-foreground">AI & Visibility</p>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="flex items-center gap-2">
                   <Switch checked={form.platformAiIncluded} onCheckedChange={(v) => setForm({ ...form, platformAiIncluded: v })} data-testid="switch-platform-ai" />
                   <Label>Platform AI Included</Label>
@@ -267,7 +267,7 @@ export default function PlanManagement() {
         <div className="text-center py-10 text-muted-foreground">Loading plans...</div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
             {activePlans.map((plan: any) => {
               const borderColor = tierColors[plan.code] || "border-border";
               const badgeColor = tierBadgeColors[plan.code] || "bg-gray-100 text-gray-800";
@@ -293,9 +293,9 @@ export default function PlanManagement() {
                       <Badge className={`${badgeColor} text-[10px] font-semibold`}>{plan.code}</Badge>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-2.5">
                     <div>
-                      <span className="text-3xl font-bold">PKR {formatPkr(plan.monthlyPrice)}</span>
+                      <span className="text-xl font-bold">PKR {formatPkr(plan.monthlyPrice)}</span>
                       <span className="text-sm text-muted-foreground">/mo</span>
                       <p className="text-xs text-muted-foreground mt-0.5">≈ USD {formatUsd(plan.monthlyPrice)}/mo</p>
                       {(plan.monthlyDiscount > 0 || plan.yearlyDiscount > 0) && (
@@ -393,7 +393,7 @@ export default function PlanManagement() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {inactivePlans.map((plan: any) => (
                   <Card key={plan.id} className="opacity-60 border-dashed" data-testid={`card-plan-inactive-${plan.code}`}>
-                    <CardContent className="p-4 flex items-center justify-between">
+                    <CardContent className="p-2.5 flex items-center justify-between">
                       <div>
                         <div className="font-medium">{plan.name} <Badge variant="outline" className="ml-1 text-[10px]">{plan.code}</Badge></div>
                         <div className="text-sm text-muted-foreground">PKR {formatPkr(plan.monthlyPrice)}/mo · {plan._count?.subscriptions || 0} subscriptions</div>

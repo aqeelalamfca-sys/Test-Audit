@@ -51,7 +51,7 @@ export function KeyboardShortcutsDialog({ open, onOpenChange }: KeyboardShortcut
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+        <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
           {categories.map((cat) => (
             <div key={cat}>
               <div className="flex items-center gap-2 mb-2">

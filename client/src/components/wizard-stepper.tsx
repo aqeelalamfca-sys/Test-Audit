@@ -57,9 +57,9 @@ export function WizardStepper({
 
   if (orientation === "horizontal") {
     return (
-      <div className="space-y-4">
+      <div className="space-y-2.5">
         {showProgress && (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2.5">
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-medium">Overall Progress</span>
@@ -136,7 +136,7 @@ export function WizardStepper({
   }
 
   return (
-    <Card className="p-4 space-y-4 sticky top-4">
+    <Card className="p-2.5 space-y-2.5 sticky top-4">
       {showProgress && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -262,7 +262,7 @@ export function WizardActionBar({
   nextLabel = "Save & Next",
 }: WizardActionBarProps) {
   return (
-    <div className="flex items-center justify-between p-4 bg-background border-t sticky bottom-0">
+    <div className="flex items-center justify-between p-2.5 bg-background border-t sticky bottom-0">
       <div className="flex items-center gap-2">
         {onBack && (
           <Button variant="outline" onClick={onBack} disabled={!canGoBack || isSaving}>

@@ -169,7 +169,7 @@ export function PhaseApprovalControl({ phase, className, inline }: PhaseApproval
             <DialogTitle>Submit {PHASE_LABELS[phase]} for Review</DialogTitle>
             <DialogDescription>This will submit the phase for manager/partner review. You won't be able to make changes until the review is complete.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-2.5 py-2">
             <div className="space-y-2">
               <Label htmlFor="submit-comments">Comments (Optional)</Label>
               <Textarea id="submit-comments" placeholder="Add any notes for the reviewer..." value={comments} onChange={(e) => setComments(e.target.value)} rows={3} />
@@ -188,7 +188,7 @@ export function PhaseApprovalControl({ phase, className, inline }: PhaseApproval
             <DialogTitle>{phaseStatus.isLocked ? "Unlock" : "Lock"} {PHASE_LABELS[phase]}</DialogTitle>
             <DialogDescription>{phaseStatus.isLocked ? "Unlocking this phase will allow further modifications. This action is logged for audit purposes." : "Locking this phase will prevent any further modifications. Partner approval may be required to unlock."}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-2.5 py-2">
             <div className="space-y-2">
               <Label htmlFor="lock-comments">Reason for {phaseStatus.isLocked ? "Unlocking" : "Locking"}</Label>
               <Textarea id="lock-comments" placeholder="Provide a reason..." value={comments} onChange={(e) => setComments(e.target.value)} rows={3} />
@@ -207,7 +207,7 @@ export function PhaseApprovalControl({ phase, className, inline }: PhaseApproval
             <DialogTitle>Review {PHASE_LABELS[phase]}</DialogTitle>
             <DialogDescription>Approve or reject this phase submission.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-2.5 py-2">
             <div className="space-y-2">
               <Label htmlFor="approve-comments">Review Comments</Label>
               <Textarea id="approve-comments" placeholder="Add review comments..." value={comments} onChange={(e) => setComments(e.target.value)} rows={3} />

@@ -394,7 +394,7 @@ export function AnalyticalProceduresPanel({ engagementId, readOnly }: Analytical
 
       {!analyticsResult ? (
         <Card>
-          <CardContent className="py-8 text-center">
+          <CardContent className="py-2 text-center">
             <Activity className="h-10 w-10 mx-auto mb-2 text-muted-foreground/40" />
             <p className="text-sm font-medium mb-1">No Analytics Available</p>
             <p className="text-xs text-muted-foreground mb-3">
@@ -452,7 +452,7 @@ export function AnalyticalProceduresPanel({ engagementId, readOnly }: Analytical
 
             <TabsContent value="horizontal" className="mt-3">
               <Card>
-                <CardHeader className="py-2 px-4">
+                <CardHeader className="py-2 px-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm">Horizontal Analysis — Current vs Prior Year</CardTitle>
                     <Select value={trendFilter} onValueChange={setTrendFilter}>
@@ -510,7 +510,7 @@ export function AnalyticalProceduresPanel({ engagementId, readOnly }: Analytical
 
             <TabsContent value="vertical" className="mt-3">
               <Card>
-                <CardHeader className="py-2 px-4">
+                <CardHeader className="py-2 px-3">
                   <CardTitle className="text-sm">Vertical Analysis — Composition & Structure</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -554,7 +554,7 @@ export function AnalyticalProceduresPanel({ engagementId, readOnly }: Analytical
                       <ScrollBar orientation="horizontal" />
                     </ScrollArea>
                   ) : (
-                    <div className="py-6 text-center text-sm text-muted-foreground">Vertical analysis data not available. Run analytics to generate.</div>
+                    <div className="py-3 text-center text-sm text-muted-foreground">Vertical analysis data not available. Run analytics to generate.</div>
                   )}
                 </CardContent>
               </Card>
@@ -566,7 +566,7 @@ export function AnalyticalProceduresPanel({ engagementId, readOnly }: Analytical
                 if (categoryRatios.length === 0) return null;
                 return (
                   <Card key={category}>
-                    <CardHeader className="py-2 px-4">
+                    <CardHeader className="py-2 px-3">
                       <CardTitle className="text-sm flex items-center gap-2">
                         <Badge variant="secondary" className="text-xs">{category}</Badge>
                         {categoryRatios.some(r => r.status !== 'Expected') && (
@@ -614,7 +614,7 @@ export function AnalyticalProceduresPanel({ engagementId, readOnly }: Analytical
 
             <TabsContent value="reasonableness" className="mt-3">
               <Card>
-                <CardHeader className="py-2 px-4">
+                <CardHeader className="py-2 px-3">
                   <CardTitle className="text-sm">Reasonableness Tests</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -651,7 +651,7 @@ export function AnalyticalProceduresPanel({ engagementId, readOnly }: Analytical
                       </TableBody>
                     </Table>
                   ) : (
-                    <div className="py-6 text-center text-sm text-muted-foreground">No reasonableness tests available. Run analytics to generate.</div>
+                    <div className="py-3 text-center text-sm text-muted-foreground">No reasonableness tests available. Run analytics to generate.</div>
                   )}
                 </CardContent>
               </Card>
@@ -698,7 +698,7 @@ export function AnalyticalProceduresPanel({ engagementId, readOnly }: Analytical
 
                   {analyticsResult.auditStrategyImpact && analyticsResult.auditStrategyImpact.length > 0 && (
                     <Card>
-                      <CardHeader className="py-2 px-4">
+                      <CardHeader className="py-2 px-3">
                         <CardTitle className="text-sm">Audit Strategy Impact</CardTitle>
                       </CardHeader>
                       <CardContent className="p-0">
@@ -735,7 +735,7 @@ export function AnalyticalProceduresPanel({ engagementId, readOnly }: Analytical
                 </>
               ) : (
                 <Card>
-                  <CardContent className="py-6 text-center">
+                  <CardContent className="py-3 text-center">
                     <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-500/50" />
                     <p className="text-sm font-medium">No Significant Fluctuations</p>
                     <p className="text-xs text-muted-foreground">All items are within expected thresholds.</p>
@@ -746,7 +746,7 @@ export function AnalyticalProceduresPanel({ engagementId, readOnly }: Analytical
 
             <TabsContent value="risk-linkage" className="mt-3">
               <Card>
-                <CardHeader className="py-2 px-4">
+                <CardHeader className="py-2 px-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm">Risk Matrix Updates from Analytics</CardTitle>
                     {analyticsResult.riskMatrixUpdates && analyticsResult.riskMatrixUpdates.length > 0 && !readOnly && (
@@ -796,7 +796,7 @@ export function AnalyticalProceduresPanel({ engagementId, readOnly }: Analytical
                       </TableBody>
                     </Table>
                   ) : (
-                    <div className="py-6 text-center text-sm text-muted-foreground">No risk matrix updates proposed.</div>
+                    <div className="py-3 text-center text-sm text-muted-foreground">No risk matrix updates proposed.</div>
                   )}
                 </CardContent>
               </Card>
@@ -804,7 +804,7 @@ export function AnalyticalProceduresPanel({ engagementId, readOnly }: Analytical
 
             <TabsContent value="narration" className="mt-3">
               <Card>
-                <CardHeader className="py-2 px-4">
+                <CardHeader className="py-2 px-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm">Planning Analytical Review Conclusion</CardTitle>
                     {narration && !readOnly && (
@@ -832,7 +832,7 @@ export function AnalyticalProceduresPanel({ engagementId, readOnly }: Analytical
                       )}
                     </>
                   ) : (
-                    <div className="py-6 text-center text-sm text-muted-foreground">
+                    <div className="py-3 text-center text-sm text-muted-foreground">
                       Run analytics to generate planning narration.
                     </div>
                   )}

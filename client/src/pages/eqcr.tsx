@@ -619,7 +619,7 @@ export default function EQCR() {
 
   if (loading) {
     return (
-      <div className="p-4 flex items-center justify-center min-h-[400px]">
+      <div className="p-2.5 flex items-center justify-center min-h-[400px]">
         <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -653,7 +653,7 @@ export default function EQCR() {
       showSaveNext={true}
       showSaveClose={true}
     >
-    <div className="w-full px-4 py-3 space-y-3">
+    <div className="w-full px-3 py-3 space-y-3">
       <AIAssistantPanel engagementId={engagementId || ""} phaseKey="eqcr" className="mb-2" />
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -670,17 +670,17 @@ export default function EQCR() {
               <span className="text-xs text-muted-foreground">EQCR Reviewer:</span>
               <span className="font-medium text-sm">{assignment?.assignedReviewer?.fullName || "Not Assigned"}</span>
             </div>
-            <div className="flex items-center gap-2 px-4">
+            <div className="flex items-center gap-2 px-3">
               <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
               <span className="text-xs text-muted-foreground">Progress:</span>
               <span className="font-bold text-sm">{completedItems.length} / {assignment?.checklistItems.length || 0}</span>
             </div>
-            <div className="flex items-center gap-2 px-4">
+            <div className="flex items-center gap-2 px-3">
               <AlertTriangle className="h-3.5 w-3.5 text-orange-500 flex-shrink-0" />
               <span className="text-xs text-muted-foreground">Open Matters:</span>
               <span className="font-bold text-sm">{openComments.length + openChecklistIssues.length}</span>
             </div>
-            <div className="flex items-center gap-2 px-4">
+            <div className="flex items-center gap-2 px-3">
               <FileText className="h-3.5 w-3.5 text-purple-500 flex-shrink-0" />
               <span className="text-xs text-muted-foreground">Signed Report:</span>
               <span className="font-medium text-sm">{assignment?.signedReports.length ? `v${assignment.signedReports[0].version}` : "Not Uploaded"}</span>
@@ -699,9 +699,9 @@ export default function EQCR() {
       {!assignment?.status || assignment.status === "NOT_REQUIRED" || assignment.status === "PENDING_ASSIGNMENT" ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-2.5" />
             <h3 className="text-lg font-semibold mb-2">EQCR Review Not Started</h3>
-            <p className="text-muted-foreground mb-4">Click below to begin the Engagement Quality Control Review.</p>
+            <p className="text-muted-foreground mb-2.5">Click below to begin the Engagement Quality Control Review.</p>
             <Button onClick={startReview} disabled={saving} data-testid="btn-start-eqcr-review"
               title={saving ? "Save in progress" : "Start Engagement Quality Control Review"}
             >
@@ -750,7 +750,7 @@ export default function EQCR() {
           <TabsContent value="dashboard" className="space-y-3 mt-3">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
               <Card className="border-blue-200 bg-blue-50/30 dark:bg-blue-950/20">
-                <CardContent className="py-3 px-4">
+                <CardContent className="py-3 px-3">
                   <div className="flex items-center gap-2 mb-2">
                     <Building className="h-4 w-4 text-blue-500" />
                     <span className="text-sm font-medium">Engagement Summary</span>
@@ -766,13 +766,13 @@ export default function EQCR() {
               </Card>
 
               <Card className="border-orange-200 bg-orange-50/30 dark:bg-orange-950/20">
-                <CardContent className="py-3 px-4">
+                <CardContent className="py-3 px-3">
                   <div className="flex items-center gap-2 mb-2">
                     <AlertTriangle className="h-4 w-4 text-orange-500" />
                     <span className="text-sm font-medium">Open Matters</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-orange-600">{openComments.length + openChecklistIssues.length}</span>
+                    <span className="text-lg font-bold text-orange-600">{openComments.length + openChecklistIssues.length}</span>
                     <span className="text-xs text-muted-foreground">items requiring attention</span>
                   </div>
                   <div className="text-[11px] text-muted-foreground mt-1 space-y-0.5">
@@ -783,13 +783,13 @@ export default function EQCR() {
               </Card>
 
               <Card className="border-green-200 bg-green-50/30 dark:bg-green-950/20">
-                <CardContent className="py-3 px-4">
+                <CardContent className="py-3 px-3">
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
                     <span className="text-sm font-medium">Completion Progress</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-green-600">
+                    <span className="text-lg font-bold text-green-600">
                       {assignment?.checklistItems.length ? Math.round((completedItems.length / assignment.checklistItems.length) * 100) : 0}%
                     </span>
                     <span className="text-xs text-muted-foreground">({completedItems.length}/{assignment?.checklistItems.length || 0} items)</span>
@@ -859,7 +859,7 @@ export default function EQCR() {
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2.5">
                 {!isFinalized && (
                   <div className="border rounded-lg p-3 bg-muted/30 space-y-2">
                     <p className="text-xs font-medium">Add New Comment</p>
@@ -884,7 +884,7 @@ export default function EQCR() {
                 )}
 
                 {(assignment?.comments || []).length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-2 text-muted-foreground">
                     <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-40" />
                     <p className="text-sm">No comments raised yet</p>
                   </div>
@@ -982,7 +982,7 @@ export default function EQCR() {
                     </div>
                   </div>
                 </div>
-                <div className="border rounded-lg p-4">
+                <div className="border rounded-lg p-2.5">
                   <p className="text-xs font-medium mb-2">EQCR Report — Print, Sign & Upload</p>
                   <div className="flex gap-2 mb-3">
                     <Button variant="outline" size="sm" onClick={printEQCRReport} disabled={printingReport}>
@@ -1036,7 +1036,7 @@ export default function EQCR() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="border rounded-lg p-4 bg-purple-50/30">
+                <div className="border rounded-lg p-2.5 bg-purple-50/30">
                   <p className="text-xs font-medium mb-2">Areas Requiring Judgment Review</p>
                   <div className="space-y-2 text-sm">
                     {[
@@ -1081,7 +1081,7 @@ export default function EQCR() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="border rounded-lg p-4 bg-indigo-50/30">
+                <div className="border rounded-lg p-2.5 bg-indigo-50/30">
                   <p className="text-xs font-medium mb-2">Independence Verification Areas</p>
                   <div className="space-y-2 text-sm">
                     {[
@@ -1256,7 +1256,7 @@ export default function EQCR() {
                 </CardTitle>
                 <CardDescription className="text-xs">Document the overall conclusion, clearance conditions, and final determination</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2.5">
                 <div>
                   <Label className="text-xs">Overall Conclusion</Label>
                   <Textarea
@@ -1330,7 +1330,7 @@ export default function EQCR() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-2.5">
                     <div className="text-sm space-y-1">
                       <p className={completedItems.length === assignment?.checklistItems.length ? "text-green-600" : "text-red-500"}>
                         {completedItems.length === assignment?.checklistItems.length ? "✓" : "✗"} All checklist items must have a response
@@ -1410,7 +1410,7 @@ export default function EQCR() {
             <DialogTitle>Add Checklist Item</DialogTitle>
             <DialogDescription>Add a custom checklist item to the EQCR review.</DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-2">
             <Label>Checklist Area</Label>
             <Input value={newItemArea} onChange={(e) => setNewItemArea(e.target.value)} placeholder="Enter the review area..." />
           </div>
@@ -1436,11 +1436,11 @@ export default function EQCR() {
             </DialogDescription>
           </DialogHeader>
           <div className="border border-muted rounded-lg overflow-hidden">
-            <div className="bg-muted/50 px-4 py-2 text-xs text-muted-foreground flex items-center gap-2">
+            <div className="bg-muted/50 px-3 py-2 text-xs text-muted-foreground flex items-center gap-2">
               <Info className="h-3 w-3" />
               This report is read-only. Professional judgment of EQCR reviewer shall always prevail.
             </div>
-            <pre className="whitespace-pre-wrap text-sm p-4 overflow-auto max-h-[50vh] bg-white">
+            <pre className="whitespace-pre-wrap text-sm p-2.5 overflow-auto max-h-[50vh] bg-white">
               {assignment?.aiGeneratedSummary || "No summary generated yet."}
             </pre>
           </div>
@@ -1465,11 +1465,11 @@ export default function EQCR() {
             </DialogDescription>
           </DialogHeader>
           <div className="border border-muted rounded-lg overflow-hidden">
-            <div className="bg-muted/50 px-4 py-2 text-xs text-muted-foreground flex items-center gap-2">
+            <div className="bg-muted/50 px-3 py-2 text-xs text-muted-foreground flex items-center gap-2">
               <Info className="h-3 w-3" />
               Review all unresolved matters below and address them through the Open Matters and Checklist tabs.
             </div>
-            <pre className="whitespace-pre-wrap text-sm p-4 overflow-auto max-h-[50vh] bg-white">
+            <pre className="whitespace-pre-wrap text-sm p-2.5 overflow-auto max-h-[50vh] bg-white">
               {unresolvedSummary || "No unresolved issues summary generated yet."}
             </pre>
           </div>
@@ -1485,7 +1485,7 @@ export default function EQCR() {
             <DialogTitle>Reopen EQCR</DialogTitle>
             <DialogDescription>Provide a reason for reopening the finalized EQCR review.</DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-2">
             <Label>Reason for Reopening</Label>
             <Textarea value={reopenReason} onChange={(e) => setReopenReason(e.target.value)} placeholder="Enter the reason..." className="min-h-[100px]" />
           </div>

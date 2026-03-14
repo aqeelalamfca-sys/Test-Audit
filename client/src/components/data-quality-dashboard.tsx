@@ -107,7 +107,7 @@ export function DataQualityDashboard({ engagementId, compact = false }: DataQual
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-2.5">
         <Skeleton className="h-24" />
         <Skeleton className="h-48" />
       </div>
@@ -202,7 +202,7 @@ export function DataQualityDashboard({ engagementId, compact = false }: DataQual
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Data Quality Dashboard</h2>
@@ -220,13 +220,13 @@ export function DataQualityDashboard({ engagementId, compact = false }: DataQual
       </div>
 
       <Card className={getHealthBgColor(data.overallHealth.rating)}>
-        <CardContent className="p-4">
+        <CardContent className="p-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Activity className={`h-8 w-8 ${getHealthColor(data.overallHealth.rating)}`} />
               <div>
                 <p className="text-sm text-muted-foreground">Overall Health Score</p>
-                <p className={`text-2xl font-bold ${getHealthColor(data.overallHealth.rating)}`}>
+                <p className={`text-lg font-bold ${getHealthColor(data.overallHealth.rating)}`}>
                   {data.overallHealth.score}%
                 </p>
               </div>
@@ -251,7 +251,7 @@ export function DataQualityDashboard({ engagementId, compact = false }: DataQual
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">

@@ -43,7 +43,7 @@ export function FraudRiskPanel({ engagementId, readOnly, onFieldChange, planning
   const revenueRiskRebuttal = planningData?.revenueRiskRebuttal || "";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -118,7 +118,7 @@ export function FraudRiskPanel({ engagementId, readOnly, onFieldChange, planning
               <FileText className="h-4 w-4 text-amber-600" />
               <span className="text-xs font-semibold">Manual Journal Entries</span>
             </div>
-            <p className="text-2xl font-bold tabular-nums">{fraudData.suspiciousJournals || 0}</p>
+            <p className="text-lg font-bold tabular-nums">{fraudData.suspiciousJournals || 0}</p>
             <p className="text-[10px] text-muted-foreground">Manual entries detected in GL</p>
           </CardContent>
         </Card>
@@ -128,7 +128,7 @@ export function FraudRiskPanel({ engagementId, readOnly, onFieldChange, planning
               <AlertCircle className="h-4 w-4 text-amber-600" />
               <span className="text-xs font-semibold">Period-End Entries</span>
             </div>
-            <p className="text-2xl font-bold tabular-nums">{fraudData.periodEndEntries || 0}</p>
+            <p className="text-lg font-bold tabular-nums">{fraudData.periodEndEntries || 0}</p>
             <p className="text-[10px] text-muted-foreground">Entries within 30 days of year-end</p>
           </CardContent>
         </Card>
@@ -138,7 +138,7 @@ export function FraudRiskPanel({ engagementId, readOnly, onFieldChange, planning
               <Users className="h-4 w-4 text-amber-600" />
               <span className="text-xs font-semibold">Related Party</span>
             </div>
-            <p className="text-2xl font-bold tabular-nums">{fraudData.relatedPartyTransactions || 0}</p>
+            <p className="text-lg font-bold tabular-nums">{fraudData.relatedPartyTransactions || 0}</p>
             <p className="text-[10px] text-muted-foreground">Related party records found</p>
           </CardContent>
         </Card>

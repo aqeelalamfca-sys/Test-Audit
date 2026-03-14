@@ -145,7 +145,7 @@ export function SyncPlanningToExecution({ engagementId }: SyncPlanningToExecutio
             Link identified risks to substantive tests in execution
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2.5">
           {loadingStatus ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -154,7 +154,7 @@ export function SyncPlanningToExecution({ engagementId }: SyncPlanningToExecutio
           ) : status ? (
             <>
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-3">
                   <div data-testid="text-risks-count">
                     <p className="text-xl font-bold">{status.risksCount}</p>
                     <p className="text-[11px] text-muted-foreground">Risks</p>
@@ -195,7 +195,7 @@ export function SyncPlanningToExecution({ engagementId }: SyncPlanningToExecutio
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-0">
-          <DialogHeader className="px-6 pt-6 pb-4">
+          <DialogHeader className="px-3 pt-6 pb-4">
             <DialogTitle className="flex items-center gap-2 text-lg">
               <ArrowRightFromLine className="h-5 w-5 text-primary" />
               Sync Risks to Execution
@@ -211,7 +211,7 @@ export function SyncPlanningToExecution({ engagementId }: SyncPlanningToExecutio
             </div>
           ) : preview ? (
             <>
-              <div className="px-6 pb-3 flex items-center justify-between">
+              <div className="px-3 pb-3 flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
                   {pendingItems.length > 0
                     ? `${pendingItems.length} risk${pendingItems.length !== 1 ? 's' : ''} ready to sync`
@@ -254,14 +254,14 @@ export function SyncPlanningToExecution({ engagementId }: SyncPlanningToExecutio
               </ScrollArea>
             </>
           ) : (
-            <div className="text-center py-12 text-muted-foreground px-6">
+            <div className="text-center py-12 text-muted-foreground px-3">
               <ShieldAlert className="h-10 w-10 mx-auto mb-3 opacity-30" />
               <p className="font-medium">No risks found</p>
               <p className="text-sm mt-1">Add risks in the Risk Assessment section first.</p>
             </div>
           )}
 
-          <DialogFooter className="px-6 py-4 border-t bg-muted/30">
+          <DialogFooter className="px-3 py-2 border-t bg-muted/30">
             <Button variant="outline" onClick={() => setDialogOpen(false)} data-testid="btn-cancel-sync">
               Cancel
             </Button>
@@ -299,7 +299,7 @@ function RiskRow({ item, selected, onToggle, disabled }: {
   return (
     <label
       className={cn(
-        "flex items-center gap-4 px-6 py-3 transition-colors",
+        "flex items-center gap-2.5 px-3 py-3 transition-colors",
         disabled
           ? "opacity-50 cursor-default"
           : "cursor-pointer hover:bg-muted/50",

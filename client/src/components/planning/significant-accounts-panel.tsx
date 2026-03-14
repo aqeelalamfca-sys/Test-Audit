@@ -45,7 +45,7 @@ export function SignificantAccountsPanel({ engagementId, readOnly }: Significant
   const { significantAccounts, totalAccounts, significantCount, materialityThreshold, performanceMateriality } = data;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -60,13 +60,13 @@ export function SignificantAccountsPanel({ engagementId, readOnly }: Significant
           </p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-4 gap-3 mb-2.5">
             <div className="text-center p-2 rounded-md bg-muted/50">
-              <p className="text-2xl font-bold tabular-nums">{totalAccounts}</p>
+              <p className="text-lg font-bold tabular-nums">{totalAccounts}</p>
               <p className="text-[10px] text-muted-foreground uppercase">Total Accounts</p>
             </div>
             <div className="text-center p-2 rounded-md bg-amber-50 dark:bg-amber-950/20">
-              <p className="text-2xl font-bold tabular-nums text-amber-700 dark:text-amber-400">{significantCount}</p>
+              <p className="text-lg font-bold tabular-nums text-amber-700 dark:text-amber-400">{significantCount}</p>
               <p className="text-[10px] text-muted-foreground uppercase">Significant</p>
             </div>
             <div className="text-center p-2 rounded-md bg-muted/50">
@@ -100,7 +100,7 @@ export function SignificantAccountsPanel({ engagementId, readOnly }: Significant
               <TableBody>
                 {significantAccounts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-2">
                       <div className="flex flex-col items-center gap-2">
                         <CheckCircle2 className="h-8 w-8 text-muted-foreground/40" />
                         <p className="text-sm">No significant accounts identified</p>

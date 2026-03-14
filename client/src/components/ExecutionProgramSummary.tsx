@@ -176,7 +176,7 @@ ${program.procedures.slice(0, 5).map(p => `- ${p.description} (${p.type})`).join
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -216,14 +216,14 @@ ${program.procedures.slice(0, 5).map(p => `- ${p.description} (${p.type})`).join
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-4 gap-2.5 mb-3">
             <Card className="bg-slate-50">
               <CardContent className="pt-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                   <FileText className="h-4 w-4" />
                   Account Heads
                 </div>
-                <div className="text-2xl font-bold">{executionPrograms.length}</div>
+                <div className="text-lg font-bold">{executionPrograms.length}</div>
               </CardContent>
             </Card>
             <Card className="bg-slate-50">
@@ -232,7 +232,7 @@ ${program.procedures.slice(0, 5).map(p => `- ${p.description} (${p.type})`).join
                   <Target className="h-4 w-4" />
                   Total Procedures
                 </div>
-                <div className="text-2xl font-bold">{totalProcedures}</div>
+                <div className="text-lg font-bold">{totalProcedures}</div>
               </CardContent>
             </Card>
             <Card className="bg-slate-50">
@@ -241,7 +241,7 @@ ${program.procedures.slice(0, 5).map(p => `- ${p.description} (${p.type})`).join
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
                   Completed
                 </div>
-                <div className="text-2xl font-bold text-green-600">{completedProcedures}</div>
+                <div className="text-lg font-bold text-green-600">{completedProcedures}</div>
               </CardContent>
             </Card>
             <Card className="bg-slate-50">
@@ -250,12 +250,12 @@ ${program.procedures.slice(0, 5).map(p => `- ${p.description} (${p.type})`).join
                   <BarChart3 className="h-4 w-4" />
                   Progress
                 </div>
-                <div className="text-2xl font-bold">{overallProgress.toFixed(0)}%</div>
+                <div className="text-lg font-bold">{overallProgress.toFixed(0)}%</div>
               </CardContent>
             </Card>
           </div>
 
-          <div className="mb-4">
+          <div className="mb-2.5">
             <Progress value={overallProgress} className="h-2" />
           </div>
 
@@ -343,7 +343,7 @@ ${program.procedures.slice(0, 5).map(p => `- ${p.description} (${p.type})`).join
                                 AI Summary: {summary.accountHead}
                               </DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-4">
+                            <div className="space-y-2.5">
                               <div className="grid grid-cols-2 gap-2 text-sm mb-2">
                                 <div className="p-2 bg-slate-50 rounded">
                                   <div className="text-muted-foreground text-xs">Amount</div>
@@ -397,7 +397,7 @@ ${program.procedures.slice(0, 5).map(p => `- ${p.description} (${p.type})`).join
             </TableBody>
           </Table>
 
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="mt-2.5 p-3 bg-blue-50 rounded-lg border border-blue-200">
             <div className="flex items-start gap-2">
               <Info className="h-4 w-4 text-blue-600 mt-0.5" />
               <div className="text-sm text-blue-800">

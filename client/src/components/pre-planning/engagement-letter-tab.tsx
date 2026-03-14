@@ -861,8 +861,8 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-4">
+      <CardContent className="space-y-2.5">
+        <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <Label className="text-sm font-medium whitespace-nowrap">Document Date</Label>
@@ -1019,8 +1019,8 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
   );
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
         <DocumentCard
           title="Engagement Letter"
           icon={<FileSignature className="h-5 w-5 text-purple-600" />}
@@ -1069,7 +1069,7 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
             const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(record.attachedFile.name);
             const isPdf = /\.pdf$/i.test(record.attachedFile.name);
             return (
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
                   <File className="h-5 w-5 text-muted-foreground" />
                   <div className="flex-1">
@@ -1137,7 +1137,7 @@ const EngagementLetterTab = forwardRef<{ save: () => Promise<void> }>((props, re
                 key={question.id}
                 className={`border ${isComplete ? "border-green-200 bg-green-50/30" : resp.response ? "border-blue-200" : "border-muted"}`}
               >
-                <CardContent className="p-4">
+                <CardContent className="p-2.5">
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0 w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-medium">

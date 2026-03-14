@@ -173,7 +173,7 @@ export function ModuleReadinessCard({
   className,
 }: ModuleReadinessCardProps) {
   return (
-    <div className={cn("rounded-lg border bg-card p-4 space-y-4", className)} data-testid="module-readiness-card">
+    <div className={cn("rounded-lg border bg-card p-2.5 space-y-2.5", className)} data-testid="module-readiness-card">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold" data-testid="text-title">Field Readiness Status</h3>
         <div className="flex items-center gap-2">

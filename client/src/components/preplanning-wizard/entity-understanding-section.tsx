@@ -188,7 +188,7 @@ export function EntityUnderstandingSection({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <FormSection
         icon={<Building2 className="h-5 w-5" />}
         title="Entity Background"
@@ -518,7 +518,7 @@ export function EntityUnderstandingSection({
 
         <SectionDivider title="Audit Committee" />
 
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <div className="flex items-center space-x-3">
             <Checkbox
               id="auditCommitteeExists"
@@ -790,7 +790,7 @@ export function EntityUnderstandingSection({
         title="Related Parties"
         description="ISA 550 — Related party identification, relationships, and nature of transactions"
       >
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <Table>
             <TableHeader>
               <TableRow>
@@ -805,7 +805,7 @@ export function EntityUnderstandingSection({
             <TableBody>
               {data.relatedParties.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-3">
                     No related parties added yet. Click the button below to add one.
                   </TableCell>
                 </TableRow>

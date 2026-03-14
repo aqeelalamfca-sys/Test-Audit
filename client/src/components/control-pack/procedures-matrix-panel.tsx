@@ -470,7 +470,7 @@ export function ProceduresMatrixPanel({ engagementId, className }: ProceduresMat
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-4 w-64" />
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2.5">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-40 w-full" />
         </CardContent>
@@ -498,8 +498,8 @@ export function ProceduresMatrixPanel({ engagementId, className }: ProceduresMat
   }
 
   const FormContent = ({ isEdit = false }: { isEdit?: boolean }) => (
-    <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
-      <div className="grid grid-cols-2 gap-4">
+    <div className="space-y-2.5 py-2 max-h-[70vh] overflow-y-auto">
+      <div className="grid grid-cols-2 gap-2.5">
         <div className="space-y-2">
           <Label>Link to Audit Plan</Label>
           <Select
@@ -530,7 +530,7 @@ export function ProceduresMatrixPanel({ engagementId, className }: ProceduresMat
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-2.5">
         <div className="space-y-2">
           <Label>Risk Assessment Link</Label>
           <Select
@@ -582,7 +582,7 @@ export function ProceduresMatrixPanel({ engagementId, className }: ProceduresMat
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-2.5">
         <div className="space-y-2">
           <Label>Procedure Type</Label>
           <Select
@@ -694,7 +694,7 @@ export function ProceduresMatrixPanel({ engagementId, className }: ProceduresMat
                   </DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="max-h-[400px] pr-4">
-                  <div className="space-y-2 py-4">
+                  <div className="space-y-2 py-2">
                     {riskAssessments && riskAssessments.length > 0 ? (
                       riskAssessments.map(risk => (
                         <div key={risk.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50">
@@ -719,7 +719,7 @@ export function ProceduresMatrixPanel({ engagementId, className }: ProceduresMat
                         </div>
                       ))
                     ) : (
-                      <div className="text-center text-muted-foreground py-4">
+                      <div className="text-center text-muted-foreground py-2">
                         No risk assessments available
                       </div>
                     )}
@@ -775,8 +775,8 @@ export function ProceduresMatrixPanel({ engagementId, className }: ProceduresMat
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-4">
+      <CardContent className="space-y-2.5">
+        <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={filterFsHeadKey} onValueChange={setFilterFsHeadKey}>
@@ -815,8 +815,8 @@ export function ProceduresMatrixPanel({ engagementId, className }: ProceduresMat
         </div>
 
         {filteredProcedures.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <div className="text-center py-2 text-muted-foreground">
+            <ClipboardList className="h-12 w-12 mx-auto mb-2.5 opacity-50" />
             <p className="text-sm">No procedures found</p>
             <p className="text-xs mt-1">Add procedures or adjust your filters</p>
           </div>
@@ -945,7 +945,7 @@ export function ProceduresMatrixPanel({ engagementId, className }: ProceduresMat
         {procedures && procedures.length > 0 && (
           <>
             <Separator />
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-sm">
               <div className="p-3 rounded-lg bg-muted/50">
                 <div className="text-xs text-muted-foreground mb-1">Total Procedures</div>
                 <div className="text-lg font-semibold" data-testid="stat-total">
@@ -984,7 +984,7 @@ export function ProceduresMatrixPanel({ engagementId, className }: ProceduresMat
             </DialogHeader>
             {editingProcedure && (
               <>
-                <div className="mb-4">
+                <div className="mb-2.5">
                   <StatusWorkflowIndicator currentStatus={editingProcedure.status} />
                 </div>
                 <FormContent isEdit />
@@ -992,7 +992,7 @@ export function ProceduresMatrixPanel({ engagementId, className }: ProceduresMat
                   <div className="text-xs text-muted-foreground">
                     <span className="font-medium">Reviewer/Approver Tracking</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div className="grid grid-cols-2 gap-2.5 text-xs">
                     <div className="flex items-center gap-2">
                       <UserCheck className="h-3 w-3" />
                       <span>Reviewed by:</span>

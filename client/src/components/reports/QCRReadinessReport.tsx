@@ -116,7 +116,7 @@ export function QCRReadinessReport({ engagementId }: QCRReadinessReportProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center p-2.5">
         <RefreshCw className="h-6 w-6 animate-spin mr-2" />
         <span>Loading QCR readiness report...</span>
       </div>
@@ -124,7 +124,7 @@ export function QCRReadinessReport({ engagementId }: QCRReadinessReportProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -150,7 +150,7 @@ export function QCRReadinessReport({ engagementId }: QCRReadinessReportProps) {
       </div>
 
       {overall && (
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-5 gap-2.5">
           <Card className="col-span-1">
             <CardContent className="pt-4">
               <div className="text-center">
@@ -179,7 +179,7 @@ export function QCRReadinessReport({ engagementId }: QCRReadinessReportProps) {
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-6 w-6 text-green-500" />
                 <div>
-                  <p className="text-2xl font-bold text-green-600">{overall.compliantItems}</p>
+                  <p className="text-lg font-bold text-green-600">{overall.compliantItems}</p>
                   <p className="text-xs text-muted-foreground">Compliant Items</p>
                 </div>
               </div>
@@ -190,7 +190,7 @@ export function QCRReadinessReport({ engagementId }: QCRReadinessReportProps) {
               <div className="flex items-center gap-2">
                 <XCircle className="h-6 w-6 text-red-500" />
                 <div>
-                  <p className="text-2xl font-bold text-red-600">{overall.nonCompliantItems}</p>
+                  <p className="text-lg font-bold text-red-600">{overall.nonCompliantItems}</p>
                   <p className="text-xs text-muted-foreground">Non-Compliant</p>
                 </div>
               </div>
@@ -201,7 +201,7 @@ export function QCRReadinessReport({ engagementId }: QCRReadinessReportProps) {
               <div className="flex items-center gap-2">
                 <Clock className="h-6 w-6 text-gray-400" />
                 <div>
-                  <p className="text-2xl font-bold">{overall.notCheckedItems}</p>
+                  <p className="text-lg font-bold">{overall.notCheckedItems}</p>
                   <p className="text-xs text-muted-foreground">Not Checked</p>
                 </div>
               </div>
@@ -212,7 +212,7 @@ export function QCRReadinessReport({ engagementId }: QCRReadinessReportProps) {
               <div className="flex items-center gap-2">
                 <Shield className="h-6 w-6 text-primary" />
                 <div>
-                  <p className="text-2xl font-bold">{overall.totalItems}</p>
+                  <p className="text-lg font-bold">{overall.totalItems}</p>
                   <p className="text-xs text-muted-foreground">Total Items</p>
                 </div>
               </div>
@@ -227,7 +227,7 @@ export function QCRReadinessReport({ engagementId }: QCRReadinessReportProps) {
             <CardTitle>Category Summary</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-2.5">
               {summary.map((cat) => (
                 <div key={cat.category} className="p-3 border rounded-lg">
                   <div className="flex items-center justify-between mb-2">

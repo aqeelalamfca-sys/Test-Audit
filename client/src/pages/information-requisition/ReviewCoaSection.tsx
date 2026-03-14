@@ -2019,7 +2019,7 @@ export function ReviewCoaSection({
                     <TableBody>
                       {confirmationItems.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
+                          <TableCell colSpan={7} className="text-center py-2 text-muted-foreground">
                             No balances marked for confirmation yet. Go to AR, AP, or Bank tabs to select balances, or click "Add Line" to add manually.
                           </TableCell>
                         </TableRow>
@@ -2120,7 +2120,7 @@ export function ReviewCoaSection({
 
       {/* Add Manual Confirmation Dialog */}
       {isAddConfirmationOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setIsAddConfirmationOpen(false)}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2.5" onClick={() => setIsAddConfirmationOpen(false)}>
           <Card className="w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
@@ -2133,7 +2133,7 @@ export function ReviewCoaSection({
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-5 pt-0">
+            <CardContent className="space-y-3 pt-0">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">Type</label>
@@ -2224,7 +2224,7 @@ export function ReviewCoaSection({
                 </div>
               </div>
             </CardContent>
-            <div className="flex justify-end gap-2 p-4 pt-0">
+            <div className="flex justify-end gap-2 p-2.5 pt-0">
               <Button variant="outline" onClick={() => setIsAddConfirmationOpen(false)} data-testid="button-cancel-confirmation">
                 Cancel
               </Button>
@@ -2339,7 +2339,7 @@ export function ReviewCoaSection({
 
         return (
           <SubTabShell tabKey="checks">
-            <div className="space-y-4 p-2" data-testid="checks-dashboard">
+            <div className="space-y-2.5 p-2" data-testid="checks-dashboard">
               <Card data-testid="card-overall-readiness">
                 <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 flex-wrap">
                   <div className="flex items-center gap-2">
@@ -2381,7 +2381,7 @@ export function ReviewCoaSection({
                 </CardContent>
               </Card>
 
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
                 <Card data-testid="card-upload-checks">
                   <CardHeader className="flex flex-row items-center gap-2 pb-2 flex-wrap">
                     <Database className="h-4 w-4 text-muted-foreground" />
@@ -2432,7 +2432,7 @@ export function ReviewCoaSection({
 
       {reviewCoaSubTab === 'batches' && (
         <SubTabShell tabKey="batches">
-          <div className="space-y-4 p-2">
+          <div className="space-y-2.5 p-2">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -2474,7 +2474,7 @@ function BatchTrackingTable({ engagementId }: { engagementId: string }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-2">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         <span className="ml-2 text-sm text-muted-foreground">Loading import logs...</span>
       </div>
@@ -2483,7 +2483,7 @@ function BatchTrackingTable({ engagementId }: { engagementId: string }) {
 
   if (batches.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
+      <div className="text-center py-2 text-muted-foreground">
         <FileSpreadsheet className="h-10 w-10 mx-auto mb-2 opacity-40" />
         <p className="text-sm">No upload batches found</p>
         <p className="text-xs mt-1">Upload a workbook to create the first batch</p>

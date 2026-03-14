@@ -358,7 +358,7 @@ const BudgetTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center p-2.5">
         <Loader2 className="h-6 w-6 animate-spin mr-2" />
         <span>Loading budget data...</span>
       </div>
@@ -366,7 +366,7 @@ const BudgetTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -377,8 +377,8 @@ const BudgetTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
             Plan resources, timeline, and budget for the audit engagement
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-2 gap-2.5">
             <div className="space-y-2">
               <Label>Total Budget Hours <span className="text-destructive">*</span></Label>
               <Input type="number" value={formData.totalBudgetHours} onChange={(e) => setFormData({ ...formData, totalBudgetHours: e.target.value })} data-testid="input-total-budget-hours" />
@@ -391,7 +391,7 @@ const BudgetTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
 
           <Separator />
           <h4 className="font-semibold">Planned Hours by Phase</h4>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-2.5">
             <div className="space-y-2">
               <Label>Planning Phase</Label>
               <Input type="number" value={formData.planningHours} onChange={(e) => setFormData({ ...formData, planningHours: e.target.value })} />
@@ -412,7 +412,7 @@ const BudgetTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
 
           <Separator />
           <h4 className="font-semibold">Hours by Team Grade</h4>
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-2.5">
             <div className="space-y-2">
               <Label>Partner</Label>
               <Input type="number" value={formData.partnerHours} onChange={(e) => setFormData({ ...formData, partnerHours: e.target.value })} />
@@ -441,7 +441,7 @@ const BudgetTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
 
           <Separator />
           <h4 className="font-semibold">Fees & Billing</h4>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2.5">
             <div className="space-y-2">
               <Label>Fee Structure (Fixed/Variable)</Label>
               <Select value={formData.feeStructure} onValueChange={(v) => setFormData({ ...formData, feeStructure: v })}>
@@ -461,7 +461,7 @@ const BudgetTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
 
           <Separator />
           <h4 className="font-semibold">Key Dates</h4>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-2.5">
             <div className="space-y-2">
               <Label>Planning Start</Label>
               <Input type="date" value={formData.planningDate} onChange={(e) => setFormData({ ...formData, planningDate: e.target.value })} />
@@ -486,7 +486,7 @@ const BudgetTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
             <Label>Specialist Requirements (Tax, Valuation, IT, Forensic)</Label>
             <Textarea value={formData.specialistRequirements} onChange={(e) => setFormData({ ...formData, specialistRequirements: e.target.value })} rows={2} />
           </div>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-2.5">
             <div className="space-y-2">
               <Label>Travel Costs</Label>
               <Input type="number" value={formData.travelCosts} onChange={(e) => setFormData({ ...formData, travelCosts: e.target.value })} />
@@ -551,7 +551,7 @@ const BudgetTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2.5">
           {allQuestions.map((question, idx) => {
             const resp = checklistResponses[question.id] || { response: "", remarks: "" };
             const isComplete = isQuestionComplete(question.id);
@@ -569,7 +569,7 @@ const BudgetTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
                         {isComplete ? <Check className="h-4 w-4" /> : idx + 1}
                       </div>
                       <div className="flex-1 space-y-2">
-                        <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start justify-between gap-2.5">
                           <div className="flex-1">
                             {question.isCustom ? (
                               <div className="flex items-center gap-2">
@@ -700,7 +700,7 @@ const BudgetTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
         </Card>
       )}
 
-      <Card className="mt-6">
+      <Card className="mt-3">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Paperclip className="h-4 w-4" />

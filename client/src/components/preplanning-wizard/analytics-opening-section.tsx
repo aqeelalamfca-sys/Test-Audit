@@ -83,7 +83,7 @@ const FormSection = ({
         </div>
       </div>
     </CardHeader>
-    <CardContent className="pt-6 space-y-6">
+    <CardContent className="pt-6 space-y-3">
       {children}
     </CardContent>
   </Card>
@@ -135,7 +135,7 @@ const FormField = ({
 );
 
 const FormRow = ({ children, cols = 3 }: { children: React.ReactNode; cols?: 2 | 3 | 4 }) => (
-  <div className={`grid gap-4 ${cols === 2 ? 'sm:grid-cols-2' : cols === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
+  <div className={`grid gap-2.5 ${cols === 2 ? 'sm:grid-cols-2' : cols === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
     {children}
   </div>
 );
@@ -547,7 +547,7 @@ export function AnalyticsOpeningSection({
   const openFluctuations = unusualFluctuations.items.filter((f) => f.investigationStatus !== "resolved").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Opening Balances Review (ISA 510) */}
       <FormSection
         icon={<BookOpen className="h-5 w-5" />}
@@ -740,7 +740,7 @@ export function AnalyticsOpeningSection({
         {/* Sub-section 3: First-Year Engagement Procedures */}
         <SectionDivider title="First-Year Engagement Procedures" icon={<AlertTriangle className="h-4 w-4" />} />
 
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border/50 mb-4">
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border/50 mb-2.5">
           <Checkbox
             checked={firstYearProcedures.isFirstYearEngagement}
             onCheckedChange={(checked) => updateFirstYearProcedures("isFirstYearEngagement", !!checked)}
@@ -753,7 +753,7 @@ export function AnalyticsOpeningSection({
         </div>
 
         {firstYearProcedures.isFirstYearEngagement && (
-          <div className="space-y-4 pl-4 border-l-2 border-primary/20">
+          <div className="space-y-2.5 pl-4 border-l-2 border-primary/20">
             <FormRow cols={2}>
               <FormField label="Predecessor Auditor Access" required>
                 <Select
@@ -956,7 +956,7 @@ export function AnalyticsOpeningSection({
             <TableBody>
               {trendAnalysis.items.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={readOnly ? 7 : 8} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={readOnly ? 7 : 8} className="text-center text-sm text-muted-foreground py-2">
                     No trend items added. Click "Add Line Item" to begin year-over-year analysis.
                   </TableCell>
                 </TableRow>
@@ -1174,7 +1174,7 @@ export function AnalyticsOpeningSection({
             <TableBody>
               {budgetVsActual.items.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={readOnly ? 7 : 8} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={readOnly ? 7 : 8} className="text-center text-sm text-muted-foreground py-2">
                     No budget items added. Click "Add Line Item" to begin budget vs actual comparison.
                   </TableCell>
                 </TableRow>
@@ -1290,7 +1290,7 @@ export function AnalyticsOpeningSection({
             <TableBody>
               {unusualFluctuations.items.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={readOnly ? 6 : 7} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={readOnly ? 6 : 7} className="text-center text-sm text-muted-foreground py-2">
                     No unusual fluctuations identified. Click "Add Fluctuation" or use AI to detect anomalies.
                   </TableCell>
                 </TableRow>

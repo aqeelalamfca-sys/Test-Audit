@@ -56,7 +56,7 @@ export function ChecklistItem({
       )}
       data-testid={`checklist-item-${id}`}
     >
-      <div className="flex items-start gap-3 p-4">
+      <div className="flex items-start gap-3 p-2.5">
         <div className="flex items-center gap-2 pt-0.5">
           {hasChildren && (
             <Button
@@ -103,7 +103,7 @@ export function ChecklistItem({
             <p className="text-xs text-muted-foreground mt-1">{description}</p>
           )}
 
-          <div className="flex items-center gap-4 mt-3">
+          <div className="flex items-center gap-2.5 mt-3">
             {assignedTo && (
               <span className="text-xs text-muted-foreground">
                 Assigned to: <span className="font-medium text-foreground">{assignedTo}</span>
@@ -146,7 +146,7 @@ export function ChecklistItem({
       </div>
 
       {hasChildren && expanded && (
-        <div className="ml-12 border-t border-border p-4 pt-0 space-y-2">
+        <div className="ml-12 border-t border-border p-2.5 pt-0 space-y-2">
           {children}
         </div>
       )}
@@ -178,7 +178,7 @@ export function ChecklistSection({
     <div className="border border-border rounded-lg overflow-hidden" data-testid={`checklist-section-${title.toLowerCase().replace(/\s+/g, "-")}`}>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-4 bg-muted/50 hover-elevate transition-all text-left"
+        className="w-full flex items-center justify-between p-2.5 bg-muted/50 hover-elevate transition-all text-left"
         data-testid="button-toggle-section"
       >
         <div className="flex items-center gap-3">
@@ -214,7 +214,7 @@ export function ChecklistSection({
       </button>
 
       {expanded && (
-        <div className="p-4 space-y-3 bg-background">
+        <div className="p-2.5 space-y-3 bg-background">
           {children}
         </div>
       )}

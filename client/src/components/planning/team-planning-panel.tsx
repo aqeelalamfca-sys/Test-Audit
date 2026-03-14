@@ -32,7 +32,7 @@ export function TeamPlanningPanel({ engagementId, readOnly, onFieldChange, plann
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -70,7 +70,7 @@ export function TeamPlanningPanel({ engagementId, readOnly, onFieldChange, plann
             <TableBody>
               {team.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground text-xs py-6">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground text-xs py-3">
                     No team members assigned. Configure team in Pre-Planning.
                   </TableCell>
                 </TableRow>

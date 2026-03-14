@@ -40,7 +40,7 @@ export function TabNavButtons({
   };
 
   return (
-    <div className="flex items-center justify-between pt-6 mt-6 border-t">
+    <div className="flex items-center justify-between pt-6 mt-3 border-t">
       {isFirstTab && firstTabHref ? (
         <Button variant="outline" asChild data-testid="btn-back-previous-phase">
           <Link href={firstTabHref}>

@@ -144,7 +144,7 @@ function RiskAssessmentPhaseHeader({ engagementId }: { engagementId: string }) {
   const stats = riskStats || { total: 0, withFsArea: 0, withAssertions: 0, significant: 0, fraud: 0, withResponse: 0, coveragePercent: 0, unmappedAreas: 0, pendingHighRisk: 0 };
 
   return (
-    <Card className="border-amber-200 dark:border-amber-800 mb-4">
+    <Card className="border-amber-200 dark:border-amber-800 mb-2.5">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <AlertTriangle className="h-4 w-4" />
@@ -233,7 +233,7 @@ function PlanningStrategyPhaseHeader({ engagementId }: { engagementId: string })
   const stats = strategyStats || { hasStrategy: false, hasScope: false, teamCount: 0, hasMemo: false, riskAssessmentExists: false };
 
   return (
-    <Card className="border-blue-200 dark:border-blue-800 mb-4">
+    <Card className="border-blue-200 dark:border-blue-800 mb-2.5">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Briefcase className="h-4 w-4" />
@@ -3132,10 +3132,10 @@ export default function Planning() {
 
   if (!engagementId) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 p-6">
-        <AlertCircle className="h-12 w-12 text-amber-500 mb-4" />
+      <div className="flex flex-col items-center justify-center h-96 p-3">
+        <AlertCircle className="h-12 w-12 text-amber-500 mb-2.5" />
         <h2 className="text-xl font-semibold mb-2">No Engagement Selected</h2>
-        <p className="text-muted-foreground text-center mb-4">
+        <p className="text-muted-foreground text-center mb-2.5">
           Please select an engagement from the dashboard or navigate to a specific engagement workspace.
         </p>
         <Link href="/engagements">
@@ -3185,7 +3185,7 @@ export default function Planning() {
       onTabChange={handleTabSwitch}
       headerActions={null}
     >
-      <div className="px-4 py-2 space-y-2">
+      <div className="px-3 py-2 space-y-2">
 
       <AIAssistantPanel
         engagementId={engagementId || ""}
@@ -3210,7 +3210,7 @@ export default function Planning() {
         />
 
         {/* Tab A: Planning Dashboard / Readiness Summary */}
-        <TabsContent value="planning-dashboard" className="space-y-4 mt-3" data-testid="tab-content-planning-dashboard">
+        <TabsContent value="planning-dashboard" className="space-y-2.5 mt-3" data-testid="tab-content-planning-dashboard">
           {engagementId && (
             <PlanningDashboard
               engagementId={engagementId}
@@ -3223,7 +3223,7 @@ export default function Planning() {
         </TabsContent>
 
         {/* Tab B: Financial Statements (FS) */}
-        <TabsContent value="financial-statements" className="space-y-4 mt-3" data-testid="tab-content-financial-statements">
+        <TabsContent value="financial-statements" className="space-y-2.5 mt-3" data-testid="tab-content-financial-statements">
           {engagementId && (
             <FinancialStatementsPanel
               engagementId={engagementId}
@@ -3243,7 +3243,7 @@ export default function Planning() {
         </TabsContent>
 
         {/* Tab 2: Understanding Entity & Internal Controls (ISA 315) */}
-        <TabsContent value="entity-controls" className="space-y-4 mt-3" data-testid="tab-content-entity-controls">
+        <TabsContent value="entity-controls" className="space-y-2.5 mt-3" data-testid="tab-content-entity-controls">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -3258,7 +3258,7 @@ export default function Planning() {
             </CardHeader>
             <CardContent>
               <Tabs value={entitySubTab} onValueChange={setEntitySubTab}>
-                <div className="flex flex-wrap gap-1 mb-4 border-b pb-2">
+                <div className="flex flex-wrap gap-1 mb-2.5 border-b pb-2">
                   {[
                     { id: "entity-understanding", label: "Entity Understanding (ISA 315)" },
                     { id: "walkthroughs", label: "System Walkthroughs (ISA 315/330)" },
@@ -3270,7 +3270,7 @@ export default function Planning() {
                   ))}
                 </div>
 
-                <TabsContent value="entity-understanding" className="space-y-4 mt-0">
+                <TabsContent value="entity-understanding" className="space-y-2.5 mt-0">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
                     <Info className="h-3.5 w-3.5" />
                     <span>ISA 315 (Revised 2019) — Understanding the entity and its environment, the applicable financial reporting framework, and the entity's system of internal control</span>
@@ -3284,7 +3284,7 @@ export default function Planning() {
                   />
                 </TabsContent>
 
-                <TabsContent value="walkthroughs" className="space-y-4 mt-0">
+                <TabsContent value="walkthroughs" className="space-y-2.5 mt-0">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
                     <Info className="h-3.5 w-3.5" />
                     <span>ISA 315 & ISA 330 — Understanding transaction flows, identifying controls, and assessing design effectiveness</span>
@@ -3305,12 +3305,12 @@ export default function Planning() {
                     <Button onClick={addNewWalkthrough} variant="outline"><Plus className="h-4 w-4 mr-2" /> Add Walkthrough</Button>
                   </div>
                   {walkthroughs.filter(w => w.id === activeWalkthroughId).map(walkthrough => (
-                    <div key={walkthrough.id} className="space-y-4">
-                      <Accordion type="multiple" defaultValue={["header", "narrative", "controls", "evidence", "conclusion"]} className="space-y-4">
-                        <AccordionItem value="header" className="border rounded-lg px-4">
+                    <div key={walkthrough.id} className="space-y-2.5">
+                      <Accordion type="multiple" defaultValue={["header", "narrative", "controls", "evidence", "conclusion"]} className="space-y-2.5">
+                        <AccordionItem value="header" className="border rounded-lg px-3">
                           <AccordionTrigger className="hover:no-underline"><div className="flex items-center gap-2"><FileText className="h-4 w-4" /><span className="font-medium">A. Walkthrough Header (Mandatory Metadata)</span></div></AccordionTrigger>
-                          <AccordionContent className="pt-4 space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <AccordionContent className="pt-4 space-y-2.5">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
                               <div className="space-y-2">
                                 <Label>Process Name <span className="text-destructive">*</span></Label>
                                 <Select value={walkthrough.processName} onValueChange={(v) => updateWalkthrough(walkthrough.id, { processName: v })} disabled={walkthrough.isLocked}>
@@ -3330,7 +3330,7 @@ export default function Planning() {
                                 <Input value={walkthrough.systemUsed} onChange={(e) => updateWalkthrough(walkthrough.id, { systemUsed: e.target.value })} placeholder="e.g., SAP, Oracle, Excel, Manual" disabled={walkthrough.isLocked} />
                               </div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
                               <div className="space-y-2">
                                 <Label>Walkthrough Performed By <span className="text-destructive">*</span></Label>
                                 <Select value={walkthrough.performedBy} onValueChange={(v) => updateWalkthrough(walkthrough.id, { performedBy: v })} disabled={walkthrough.isLocked}>
@@ -3347,7 +3347,7 @@ export default function Planning() {
                                 <Input value={walkthrough.periodCovered} onChange={(e) => updateWalkthrough(walkthrough.id, { periodCovered: e.target.value })} placeholder="e.g., FY 2024" disabled={walkthrough.isLocked} />
                               </div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                               <div className="space-y-2">
                                 <Label>Related Account Heads (from TB)</Label>
                                 <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-[40px]">
@@ -3370,9 +3370,9 @@ export default function Planning() {
                           </AccordionContent>
                         </AccordionItem>
 
-                        <AccordionItem value="narrative" className="border rounded-lg px-4">
+                        <AccordionItem value="narrative" className="border rounded-lg px-3">
                           <AccordionTrigger className="hover:no-underline"><div className="flex items-center gap-2"><Brain className="h-4 w-4" /><span className="font-medium">B. AI-Assisted Process Flow Narrative</span><Badge variant="outline" className="text-xs">AI-Generated Draft – Subject to Professional Judgment</Badge></div></AccordionTrigger>
-                          <AccordionContent className="pt-4 space-y-4">
+                          <AccordionContent className="pt-4 space-y-2.5">
                             <div className="flex justify-end">
                               <Button onClick={() => generateAINarrative(walkthrough.id)} disabled={isGeneratingNarrative || walkthrough.isLocked} variant="outline">
                                 {isGeneratingNarrative ? (<><RefreshCw className="h-4 w-4 mr-2 animate-spin" />Generating...</>) : (<><Brain className="h-4 w-4 mr-2" />AI Generate Narrative</>)}
@@ -3390,14 +3390,14 @@ export default function Planning() {
                           </AccordionContent>
                         </AccordionItem>
 
-                        <AccordionItem value="controls" className="border rounded-lg px-4">
+                        <AccordionItem value="controls" className="border rounded-lg px-3">
                           <AccordionTrigger className="hover:no-underline"><div className="flex items-center gap-2"><Shield className="h-4 w-4" /><span className="font-medium">C. Control Identification & Mapping Table</span></div></AccordionTrigger>
-                          <AccordionContent className="pt-4 space-y-4">
+                          <AccordionContent className="pt-4 space-y-2.5">
                             <Table>
                               <TableHeader><TableRow><TableHead className="w-16">Step No.</TableHead><TableHead>Control Description</TableHead><TableHead className="w-28">Control Type</TableHead><TableHead className="w-24">Key Control</TableHead><TableHead className="w-28">Frequency</TableHead><TableHead className="w-32">Control Owner</TableHead>{!walkthrough.isLocked && <TableHead className="w-12"></TableHead>}</TableRow></TableHeader>
                               <TableBody>
                                 {walkthrough.controls.length === 0 ? (
-                                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-4">No controls identified yet. Click "Add Control" to begin.</TableCell></TableRow>
+                                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-2">No controls identified yet. Click "Add Control" to begin.</TableCell></TableRow>
                                 ) : (walkthrough.controls.map((control) => (
                                   <TableRow key={control.id}>
                                     <TableCell className="font-mono">{control.stepNo}</TableCell>
@@ -3415,14 +3415,14 @@ export default function Planning() {
                           </AccordionContent>
                         </AccordionItem>
 
-                        <AccordionItem value="evidence" className="border rounded-lg px-4">
+                        <AccordionItem value="evidence" className="border rounded-lg px-3">
                           <AccordionTrigger className="hover:no-underline"><div className="flex items-center gap-2"><FileCheck className="h-4 w-4" /><span className="font-medium">D. Walkthrough Evidence & Attachments</span></div></AccordionTrigger>
-                          <AccordionContent className="pt-4 space-y-4">
+                          <AccordionContent className="pt-4 space-y-2.5">
                             <Table>
                               <TableHeader><TableRow><TableHead>Evidence Description</TableHead><TableHead className="w-40">Attachment</TableHead><TableHead>Remarks</TableHead>{!walkthrough.isLocked && <TableHead className="w-12"></TableHead>}</TableRow></TableHeader>
                               <TableBody>
                                 {walkthrough.evidence.length === 0 ? (
-                                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-4">No evidence attached yet. Click "Add Evidence" to begin.</TableCell></TableRow>
+                                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-2">No evidence attached yet. Click "Add Evidence" to begin.</TableCell></TableRow>
                                 ) : (walkthrough.evidence.map((ev) => (
                                   <TableRow key={ev.id}>
                                     <TableCell><Input value={ev.description} onChange={(e) => updateEvidence(walkthrough.id, ev.id, { description: e.target.value })} placeholder="e.g., Invoice / Voucher, System Screenshot" disabled={walkthrough.isLocked} /></TableCell>
@@ -3446,9 +3446,9 @@ export default function Planning() {
                           </AccordionContent>
                         </AccordionItem>
 
-                        <AccordionItem value="conclusion" className="border rounded-lg px-4">
+                        <AccordionItem value="conclusion" className="border rounded-lg px-3">
                           <AccordionTrigger className="hover:no-underline"><div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /><span className="font-medium">E. Overall Walkthrough Conclusion</span></div></AccordionTrigger>
-                          <AccordionContent className="pt-4 space-y-4">
+                          <AccordionContent className="pt-4 space-y-2.5">
                             <div className="space-y-2">
                               <Label>Overall Assessment of Internal Controls <span className="text-destructive">*</span></Label>
                               <Select value={walkthrough.overallAssessment} onValueChange={(v) => updateWalkthrough(walkthrough.id, { overallAssessment: v as any })} disabled={walkthrough.isLocked}>
@@ -3473,12 +3473,12 @@ export default function Planning() {
                   ))}
                 </TabsContent>
 
-                <TabsContent value="planning-initiation" className="space-y-4 mt-0">
+                <TabsContent value="planning-initiation" className="space-y-2.5 mt-0">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
                     <Info className="h-3.5 w-3.5" />
                     <span>ISA 300.8 — Planning activities, team briefing, and task allocation</span>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
                     <div className="space-y-2"><Label>Planning Start Date <span className="text-destructive">*</span></Label><Input type="date" value={planningInitiation.planningStartDate} onChange={(e) => setPlanningInitiation(p => ({...p, planningStartDate: e.target.value}))} /><p className="text-xs text-muted-foreground">ISA 300.8</p></div>
                     <div className="space-y-2"><Label>Planning Completion Target <span className="text-destructive">*</span></Label><Input type="date" value={planningInitiation.planningCompletionTarget} onChange={(e) => setPlanningInitiation(p => ({...p, planningCompletionTarget: e.target.value}))} /><p className="text-xs text-muted-foreground">ISA 300.10</p></div>
                     <div className="space-y-2"><Label>Planning Kick-off Meeting Date <span className="text-destructive">*</span></Label><Input type="date" value={planningInitiation.kickoffMeetingDate} onChange={(e) => setPlanningInitiation(p => ({...p, kickoffMeetingDate: e.target.value}))} /><p className="text-xs text-muted-foreground">ISA 300.A6</p></div>
@@ -3513,7 +3513,7 @@ export default function Planning() {
         </TabsContent>
 
         {/* Tab 2: Risk Assessment */}
-        <TabsContent value="risk-assessment" className="space-y-4 mt-3" data-testid="tab-content-risk-assessment">
+        <TabsContent value="risk-assessment" className="space-y-2.5 mt-3" data-testid="tab-content-risk-assessment">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -3562,7 +3562,7 @@ export default function Planning() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2.5">
               <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
@@ -3576,7 +3576,7 @@ export default function Planning() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-sm">
                     <div>
                       <p className="text-muted-foreground">Overall Materiality</p>
                       <p className="font-semibold text-primary">{materialityCalc.overallMateriality ? formatAccounting(materialityCalc.overallMateriality) : 'Not calculated'}</p>
@@ -3603,7 +3603,7 @@ export default function Planning() {
               {/* AI Risk Assessment Engine (ISA 315) */}
               <Accordion type="single" collapsible defaultValue="ai-risk-engine" className="w-full">
                 <AccordionItem value="ai-risk-engine" className="border rounded-lg">
-                  <AccordionTrigger className="px-4 hover:no-underline">
+                  <AccordionTrigger className="px-3 hover:no-underline">
                     <div className="flex items-center gap-3">
                       <Brain className="h-5 w-5 text-primary" />
                       <div className="text-left">
@@ -3619,10 +3619,10 @@ export default function Planning() {
                       )}
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="space-y-4">
+                  <AccordionContent className="px-3 pb-4">
+                    <div className="space-y-2.5">
                       {/* Run Analysis Button */}
-                      <div className="flex items-center justify-between gap-4 p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center justify-between gap-2.5 p-2.5 bg-muted/50 rounded-lg">
                         <div>
                           <p className="text-sm font-medium">Run AI Risk Analysis</p>
                           <p className="text-xs text-muted-foreground">
@@ -3663,13 +3663,13 @@ export default function Planning() {
                       {/* Loading State */}
                       {isRunningAiRiskAnalysis && (
                         <Card className="border-primary/20">
-                          <CardContent className="py-4 flex flex-col items-center justify-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                          <CardContent className="py-2 flex flex-col items-center justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary mb-2.5" />
                             <p className="text-sm font-medium">Analyzing Risk Factors...</p>
                             <p className="text-xs text-muted-foreground mt-1">
                               Processing financial data, entity context, and industry benchmarks
                             </p>
-                            <Progress value={45} className="w-48 mt-4" />
+                            <Progress value={45} className="w-48 mt-2.5" />
                           </CardContent>
                         </Card>
                       )}
@@ -3677,7 +3677,7 @@ export default function Planning() {
                       {/* Error State */}
                       {aiRiskAnalysisError && !isRunningAiRiskAnalysis && (
                         <Card className="border-destructive/50 bg-destructive/5">
-                          <CardContent className="py-4">
+                          <CardContent className="py-2">
                             <div className="flex items-center gap-2 text-destructive">
                               <AlertCircle className="h-4 w-4" />
                               <p className="text-sm font-medium">Analysis Failed</p>
@@ -3689,18 +3689,18 @@ export default function Planning() {
 
                       {/* AI Analysis Results */}
                       {aiRiskAssessment && !isRunningAiRiskAnalysis && (
-                        <div className="space-y-4">
+                        <div className="space-y-2.5">
                           {/* Section E: Analysis Summary */}
                           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                             <Card className="bg-primary/5 border-primary/20">
                               <CardContent className="py-3 text-center">
-                                <p className="text-2xl font-bold text-primary">{aiRiskAssessment.totalRisksIdentified}</p>
+                                <p className="text-lg font-bold text-primary">{aiRiskAssessment.totalRisksIdentified}</p>
                                 <p className="text-xs text-muted-foreground">Total Risks</p>
                               </CardContent>
                             </Card>
                             <Card className="bg-destructive/5 border-destructive/20">
                               <CardContent className="py-3 text-center">
-                                <p className="text-2xl font-bold text-destructive">{aiRiskAssessment.significantRisksCount}</p>
+                                <p className="text-lg font-bold text-destructive">{aiRiskAssessment.significantRisksCount}</p>
                                 <p className="text-xs text-muted-foreground">Significant</p>
                               </CardContent>
                             </Card>
@@ -3708,7 +3708,7 @@ export default function Planning() {
                               <CardContent className="py-3 text-center">
                                 <div className="flex items-center justify-center gap-1">
                                   <AlertTriangle className="h-4 w-4 text-amber-500" />
-                                  <p className="text-2xl font-bold text-amber-600">{aiRiskAssessment.fraudRisksCount}</p>
+                                  <p className="text-lg font-bold text-amber-600">{aiRiskAssessment.fraudRisksCount}</p>
                                 </div>
                                 <p className="text-xs text-muted-foreground">Fraud Risks</p>
                               </CardContent>
@@ -3957,7 +3957,7 @@ export default function Planning() {
                               </CollapsibleTrigger>
                               <CollapsibleContent>
                                 <div className="space-y-3 p-2 bg-muted/20 rounded-md">
-                                  <div className="grid grid-cols-2 gap-4">
+                                  <div className="grid grid-cols-2 gap-2.5">
                                     <div>
                                       <h6 className="text-xs font-medium text-muted-foreground mb-1">Complexity Indicators</h6>
                                       <div className="flex flex-wrap gap-1">
@@ -4011,7 +4011,7 @@ export default function Planning() {
                                 </Badge>
                               </CollapsibleTrigger>
                               <CollapsibleContent>
-                                <div className="space-y-4 p-2">
+                                <div className="space-y-2.5 p-2">
                                   {/* Fraud Triangle */}
                                   <div className="grid grid-cols-3 gap-3">
                                     <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
@@ -4115,7 +4115,7 @@ export default function Planning() {
                                 </div>
                                 <ChevronDown className="h-4 w-4 transition-transform" />
                               </CollapsibleTrigger>
-                              <CollapsibleContent className="p-3 pt-0 space-y-4">
+                              <CollapsibleContent className="p-3 pt-0 space-y-2.5">
                                 {/* Controls Reliance Decision */}
                                 <Card className="bg-muted/30">
                                   <CardHeader className="py-2 px-3">
@@ -4223,7 +4223,7 @@ export default function Planning() {
                                 )}
 
                                 {/* Focus Areas and Key Audit Matters */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                                   {/* Focus Areas for Substantive Testing */}
                                   {aiRiskAssessment.auditStrategyInputs.focusAreasForSubstantive.length > 0 && (
                                     <Card className="bg-muted/20">
@@ -4277,10 +4277,10 @@ export default function Planning() {
                       {/* Empty State */}
                       {!aiRiskAssessment && !isRunningAiRiskAnalysis && !aiRiskAnalysisError && (
                         <Card className="border-dashed">
-                          <CardContent className="py-4 flex flex-col items-center justify-center text-center">
+                          <CardContent className="py-2 flex flex-col items-center justify-center text-center">
                             <Brain className="h-10 w-10 text-muted-foreground mb-3" />
                             <p className="text-sm font-medium">No AI Analysis Performed</p>
-                            <p className="text-xs text-muted-foreground mb-4 max-w-md">
+                            <p className="text-xs text-muted-foreground mb-2.5 max-w-md">
                               Run AI Risk Analysis to automatically identify significant accounts, 
                               assertion-level risks, fraud indicators, and analytical anomalies based on your financial data.
                             </p>
@@ -4296,7 +4296,7 @@ export default function Planning() {
                 </AccordionItem>
               </Accordion>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 <div className="space-y-2">
                   <Label>Overall Risk of Material Misstatement <span className="text-destructive">*</span></Label>
                   <Select value={riskAssessment.overallRiskRating} onValueChange={(v) => setRiskAssessment(p => ({...p, overallRiskRating: v}))}>
@@ -4311,7 +4311,7 @@ export default function Planning() {
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium">Financial Statement Level Risk Matrix (ISA 315.25)</h4>
                   <Button variant="outline" size="sm" onClick={addFsLevelRisk} data-testid="btn-add-fs-risk">
@@ -4444,7 +4444,7 @@ export default function Planning() {
                 </Table>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div>
                     <h4 className="font-medium">FS Head → Assertion Level Risk Matrix (ISA 315.26)</h4>
@@ -4509,10 +4509,10 @@ export default function Planning() {
 
                 {assertionLevelRisks.length === 0 ? (
                   <Card className="border-dashed">
-                    <CardContent className="flex flex-col items-center justify-center py-4 text-center">
+                    <CardContent className="flex flex-col items-center justify-center py-2 text-center">
                       <Database className="h-10 w-10 text-muted-foreground mb-3" />
                       <p className="text-sm font-medium">No FS Heads Added</p>
-                      <p className="text-xs text-muted-foreground mb-4">
+                      <p className="text-xs text-muted-foreground mb-2.5">
                         Load FS Heads from Draft FS or push from Chart of Accounts to begin risk assessment.
                       </p>
                       <div className="flex gap-2">
@@ -4663,7 +4663,7 @@ export default function Planning() {
                 )}
 
                 {assertionLevelRisks.length > 0 && (
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t">
+                  <div className="flex items-center gap-2.5 text-xs text-muted-foreground pt-2 border-t">
                     <span><strong>IR</strong> = Inherent Risk</span>
                     <span><strong>CR</strong> = Control Risk</span>
                     <span><strong>ROMM</strong> = Risk of Material Misstatement (IR × CR)</span>
@@ -4674,7 +4674,7 @@ export default function Planning() {
 
               <Separator className="my-6" />
 
-              <Collapsible defaultOpen className="space-y-4">
+              <Collapsible defaultOpen className="space-y-2.5">
                 <CollapsibleTrigger asChild>
                   <div className="flex items-center justify-between cursor-pointer hover-elevate p-2 rounded-md -mx-2">
                     <div className="flex items-center gap-2">
@@ -4687,7 +4687,7 @@ export default function Planning() {
                     </div>
                   </div>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-4">
+                <CollapsibleContent className="space-y-2.5">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <p className="text-sm text-muted-foreground">
                       Link identified risks to specific audit procedures. Auto-generate based on risk assessment or add manually.
@@ -4747,10 +4747,10 @@ export default function Planning() {
 
                   {procedureMatrix.length === 0 ? (
                     <Card className="border-dashed">
-                      <CardContent className="flex flex-col items-center justify-center py-4 text-center">
+                      <CardContent className="flex flex-col items-center justify-center py-2 text-center">
                         <ClipboardList className="h-10 w-10 text-muted-foreground mb-3" />
                         <p className="text-sm font-medium">No Audit Procedures Defined</p>
-                        <p className="text-xs text-muted-foreground mb-4">
+                        <p className="text-xs text-muted-foreground mb-2.5">
                           Generate procedures from risks or add them manually.
                         </p>
                         <div className="flex gap-2">
@@ -5005,7 +5005,7 @@ export default function Planning() {
                   )}
 
                   {procedureMatrix.length > 0 && (
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t">
+                    <div className="flex items-center gap-2.5 text-xs text-muted-foreground pt-2 border-t">
                       <span><strong>N</strong> = Nature</span>
                       <span><strong>T</strong> = Timing</span>
                       <span><strong>E</strong> = Extent</span>
@@ -5034,9 +5034,9 @@ export default function Planning() {
                   </DialogHeader>
 
                   {selectedProcedureForPopulation && (
-                    <div className="space-y-4">
+                    <div className="space-y-2.5">
                       {/* Procedure Info */}
-                      <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-md">
+                      <div className="grid grid-cols-2 gap-2.5 p-3 bg-muted/50 rounded-md">
                         <div>
                           <Label className="text-xs text-muted-foreground">FS Head</Label>
                           <p className="font-medium">{selectedProcedureForPopulation.fsHeadLabel || selectedProcedureForPopulation.fsHeadKey || '-'}</p>
@@ -5203,14 +5203,14 @@ export default function Planning() {
                       </div>
 
                       {/* Population Stats */}
-                      <div className="p-4 bg-primary/5 border border-primary/20 rounded-md">
+                      <div className="p-2.5 bg-primary/5 border border-primary/20 rounded-md">
                         <div className="flex items-center justify-between">
                           <div>
                             <Label className="text-sm font-medium">Population Summary</Label>
                             <p className="text-xs text-muted-foreground mt-1">Based on selected accounts and filters</p>
                           </div>
                           <div className="text-right">
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2.5">
                               <div>
                                 <p className="text-xs text-muted-foreground">Accounts</p>
                                 <p className="text-lg font-bold text-primary">{populationStats.count}</p>
@@ -5260,9 +5260,9 @@ export default function Planning() {
                   </DialogHeader>
 
                   {selectedProcedureForSampling && (
-                    <div className="space-y-4">
+                    <div className="space-y-2.5">
                       {/* Population Summary */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-md">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 p-2.5 bg-muted/50 rounded-md">
                         <div>
                           <Label className="text-xs text-muted-foreground">FS Head</Label>
                           <p className="font-medium text-sm">{selectedProcedureForSampling.fsHeadLabel || '-'}</p>
@@ -5312,7 +5312,7 @@ export default function Planning() {
                       </div>
 
                       {/* Sampling Parameters */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
                         <div className="space-y-2">
                           <Label className="text-xs">Sample Size</Label>
                           <Input
@@ -5449,7 +5449,7 @@ export default function Planning() {
                       </div>
 
                       {/* Selection Summary */}
-                      <div className="p-4 bg-primary/5 border border-primary/20 rounded-md">
+                      <div className="p-2.5 bg-primary/5 border border-primary/20 rounded-md">
                         <div className="flex items-center justify-between">
                           <div>
                             <Label className="text-sm font-medium">Selection Summary</Label>
@@ -5458,7 +5458,7 @@ export default function Planning() {
                             </p>
                           </div>
                           <div className="text-right">
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2.5">
                               <div>
                                 <p className="text-xs text-muted-foreground">Selected Items</p>
                                 <p className="text-lg font-bold text-primary">{samplingForm.selectedItems.length}</p>
@@ -5503,7 +5503,7 @@ export default function Planning() {
               {/* Audit Trail Summary Section */}
               <Accordion type="single" collapsible className="w-full" data-testid="audit-trail-summary-accordion">
                 <AccordionItem value="audit-trail-summary" className="border rounded-lg bg-gradient-to-r from-slate-50/50 to-slate-100/50 dark:from-slate-950/50 dark:to-slate-900/50">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                  <AccordionTrigger className="px-3 py-3 hover:no-underline">
                     <div className="flex items-center justify-between w-full pr-4">
                       <div className="flex items-center gap-2">
                         <Layers className="h-5 w-5 text-primary" />
@@ -5526,9 +5526,9 @@ export default function Planning() {
                       </div>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
+                  <AccordionContent className="px-3 pb-4">
                     {/* Summary Stats Row */}
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4 p-3 bg-muted/30 rounded-md">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-2.5 p-3 bg-muted/30 rounded-md">
                       <div className="text-center">
                         <p className="text-xs text-muted-foreground">FS Heads with Risks</p>
                         <p className="text-lg font-bold text-primary">{assertionLevelRisks.length}</p>
@@ -5568,7 +5568,7 @@ export default function Planning() {
 
                     {/* Audit Trail Tree */}
                     {assertionLevelRisks.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-4 text-center border border-dashed rounded-md">
+                      <div className="flex flex-col items-center justify-center py-2 text-center border border-dashed rounded-md">
                         <CircleDashed className="h-10 w-10 text-muted-foreground mb-3" />
                         <p className="text-sm font-medium">No Assertion Risks Defined</p>
                         <p className="text-xs text-muted-foreground">
@@ -5755,7 +5755,7 @@ export default function Planning() {
         </TabsContent>
 
         {/* Tab 4: Materiality */}
-        <TabsContent value="materiality" className="space-y-4 mt-3" data-testid="tab-content-materiality">
+        <TabsContent value="materiality" className="space-y-2.5 mt-3" data-testid="tab-content-materiality">
           {engagementId && (
             <>
               <Card className="border-blue-200 dark:border-blue-800">
@@ -5828,7 +5828,7 @@ export default function Planning() {
         </TabsContent>
 
         {/* Tab D: Analytical Procedures (ISA 520) */}
-        <TabsContent value="analytical-procedures" className="space-y-4 mt-3" data-testid="tab-content-analytical-procedures">
+        <TabsContent value="analytical-procedures" className="space-y-2.5 mt-3" data-testid="tab-content-analytical-procedures">
           {engagementId && (
             <AnalyticalProceduresPanel
               engagementId={engagementId}
@@ -5840,7 +5840,7 @@ export default function Planning() {
 
 
         {/* Tab 5: Strategy & Approach */}
-        <TabsContent value="strategy-approach" className="space-y-4 mt-3" data-testid="tab-content-strategy-approach">
+        <TabsContent value="strategy-approach" className="space-y-2.5 mt-3" data-testid="tab-content-strategy-approach">
           {/* AI-Driven ISA 300/330 Strategy Panel */}
           {engagementId && (
             <ISA300StrategyPanel 
@@ -5885,8 +5885,8 @@ export default function Planning() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="space-y-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 <div className="space-y-2">
                   <Label>Overall Audit Approach <span className="text-destructive">*</span></Label>
                   <Select value={auditStrategy.auditApproach} onValueChange={(v) => setAuditStrategy(p => ({...p, auditApproach: v}))}>
@@ -5912,7 +5912,7 @@ export default function Planning() {
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between"><Label>Overall Audit Strategy <span className="text-destructive">*</span></Label><AIAssistButton fieldName="overallStrategy" fieldLabel="Overall Audit Strategy" promptType={getPromptType("overallStrategy")} context={`Overall audit strategy per ISA 300 for ${engagement?.engagementCode || "engagement"}`} engagementId={engagementId} page="planning" section="strategy-approach" onInsert={(c) => setAuditStrategy(p => ({...p, overallStrategy: c}))} currentValue={auditStrategy.overallStrategy} /></div>
                   <Textarea 
@@ -5948,8 +5948,8 @@ export default function Planning() {
 
 
         {/* Tab 7: Audit Program */}
-        <TabsContent value="audit-program" className="space-y-4 mt-3" data-testid="tab-content-audit-program">
-          <Card className="mb-4">
+        <TabsContent value="audit-program" className="space-y-2.5 mt-3" data-testid="tab-content-audit-program">
+          <Card className="mb-2.5">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -6032,14 +6032,14 @@ export default function Planning() {
         </TabsContent>
 
         {/* Tab F: Significant Accounts, Classes of Transactions & Disclosures */}
-        <TabsContent value="significant-accounts" className="space-y-4 mt-3" data-testid="tab-content-significant-accounts">
+        <TabsContent value="significant-accounts" className="space-y-2.5 mt-3" data-testid="tab-content-significant-accounts">
           {engagementId && (
             <SignificantAccountsPanel engagementId={engagementId} readOnly={planningReadOnly} />
           )}
         </TabsContent>
 
         {/* Tab H: Fraud Risk Assessment (ISA 240) */}
-        <TabsContent value="fraud-risk" className="space-y-4 mt-3" data-testid="tab-content-fraud-risk">
+        <TabsContent value="fraud-risk" className="space-y-2.5 mt-3" data-testid="tab-content-fraud-risk">
           {engagementId && (
             <FraudRiskPanel
               engagementId={engagementId}
@@ -6051,7 +6051,7 @@ export default function Planning() {
         </TabsContent>
 
         {/* Tab I: Internal Control / Process Understanding / Walkthroughs */}
-        <TabsContent value="internal-controls" className="space-y-4 mt-3" data-testid="tab-content-internal-controls">
+        <TabsContent value="internal-controls" className="space-y-2.5 mt-3" data-testid="tab-content-internal-controls">
           {engagementId && (
             <InternalControlsPanel
               engagementId={engagementId}
@@ -6063,7 +6063,7 @@ export default function Planning() {
         </TabsContent>
 
         {/* Tab J: Related Parties (ISA 550) */}
-        <TabsContent value="related-parties" className="space-y-4 mt-3" data-testid="tab-content-related-parties">
+        <TabsContent value="related-parties" className="space-y-2.5 mt-3" data-testid="tab-content-related-parties">
           {engagementId && (
             <RelatedPartiesPanel
               engagementId={engagementId}
@@ -6075,7 +6075,7 @@ export default function Planning() {
         </TabsContent>
 
         {/* Tab K: Laws & Regulations (ISA 250) */}
-        <TabsContent value="laws-regulations" className="space-y-4 mt-3" data-testid="tab-content-laws-regulations">
+        <TabsContent value="laws-regulations" className="space-y-2.5 mt-3" data-testid="tab-content-laws-regulations">
           {engagementId && (
             <LawsRegulationsPanel
               engagementId={engagementId}
@@ -6087,7 +6087,7 @@ export default function Planning() {
         </TabsContent>
 
         {/* Tab L: Going Concern & Subsequent Events (ISA 570) */}
-        <TabsContent value="going-concern" className="space-y-4 mt-3" data-testid="tab-content-going-concern">
+        <TabsContent value="going-concern" className="space-y-2.5 mt-3" data-testid="tab-content-going-concern">
           {engagementId && (
             <GoingConcernPanel
               engagementId={engagementId}
@@ -6099,7 +6099,7 @@ export default function Planning() {
         </TabsContent>
 
         {/* Tab M: Team Planning / Budget / Timelines */}
-        <TabsContent value="team-planning" className="space-y-4 mt-3" data-testid="tab-content-team-planning">
+        <TabsContent value="team-planning" className="space-y-2.5 mt-3" data-testid="tab-content-team-planning">
           {engagementId && (
             <TeamPlanningPanel
               engagementId={engagementId}
@@ -6111,7 +6111,7 @@ export default function Planning() {
         </TabsContent>
 
         {/* Tab P: Planning Memo / Final Approval */}
-        <TabsContent value="planning-memo" className="space-y-4 mt-3" data-testid="tab-content-planning-memo">
+        <TabsContent value="planning-memo" className="space-y-2.5 mt-3" data-testid="tab-content-planning-memo">
           {engagementId && (
             <PlanningMemoPanel
               engagementId={engagementId}

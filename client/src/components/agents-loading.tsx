@@ -107,8 +107,8 @@ export function AgentsLoading({ showDelay = 1000 }: { showDelay?: number }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background" data-testid="agents-loading">
-      <div className="flex flex-col items-center gap-6">
-        <div className="flex items-end gap-4">
+      <div className="flex flex-col items-center gap-3">
+        <div className="flex items-end gap-2.5">
           {[0, 1, 2].map((i) => (
             <div
               key={i}
@@ -169,7 +169,7 @@ export function AgentsLoadingInline({ showDelay = 1000 }: { showDelay?: number }
 
   return (
     <div className="flex items-center justify-center py-12" data-testid="agents-loading-inline">
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-2.5">
         <div className="flex items-end gap-3">
           {[0, 1].map((i) => (
             <div

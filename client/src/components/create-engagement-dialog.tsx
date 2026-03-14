@@ -373,13 +373,13 @@ export function EngagementDialog({
         </DialogHeader>
 
         {fetchingData ? (
-          <div className="flex items-center justify-center py-8">
+          <div className="flex items-center justify-center py-2">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             <span className="ml-2 text-muted-foreground">Loading engagement data...</span>
           </div>
         ) : (
           <>
-            <div className="grid gap-3 py-4">
+            <div className="grid gap-3 py-2">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label htmlFor="engagementCode" className="text-xs">Engagement Code</Label>

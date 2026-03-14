@@ -61,7 +61,7 @@ export function TrialBanner() {
 
     return (
       <div
-        className="bg-amber-600 text-white px-4 py-3 flex items-center justify-center gap-3 text-sm"
+        className="bg-amber-600 text-white px-3 py-3 flex items-center justify-center gap-3 text-sm"
         data-testid="banner-dormant"
       >
         <ShieldAlert className="h-5 w-5 shrink-0" />
@@ -96,7 +96,7 @@ export function TrialBanner() {
   if (sub.status === "EXPIRED" && !sub.isActivated) {
     return (
       <div
-        className="bg-destructive text-destructive-foreground px-4 py-2.5 flex items-center justify-center gap-3 text-sm"
+        className="bg-destructive text-destructive-foreground px-3 py-2.5 flex items-center justify-center gap-3 text-sm"
         data-testid="banner-trial-expired"
       >
         <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -123,7 +123,7 @@ export function TrialBanner() {
 
   return (
     <div
-      className={`px-4 py-2 flex items-center justify-center gap-3 text-sm ${
+      className={`px-3 py-2 flex items-center justify-center gap-3 text-sm ${
         isUrgent
           ? "bg-amber-500 text-white"
           : "bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200 border-b border-blue-100 dark:border-blue-900"

@@ -118,7 +118,7 @@ export function GlobalProgressPanel({ engagementId }: GlobalProgressPanelProps) 
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center py-8">
+        <CardContent className="flex items-center justify-center py-2">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </CardContent>
       </Card>
@@ -128,7 +128,7 @@ export function GlobalProgressPanel({ engagementId }: GlobalProgressPanelProps) 
   if (error || !data) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center py-8 text-muted-foreground">
+        <CardContent className="flex items-center justify-center py-2 text-muted-foreground">
           Unable to load progress data
         </CardContent>
       </Card>
@@ -166,7 +166,7 @@ export function GlobalProgressPanel({ engagementId }: GlobalProgressPanelProps) 
   const highPriorityCount = data.missingItems.filter(i => i.priority === 'HIGH').length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2">
@@ -177,7 +177,7 @@ export function GlobalProgressPanel({ engagementId }: GlobalProgressPanelProps) 
             {data.engagement?.engagementCode} - Overall completion status
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2.5">
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium">Overall Completion</span>
@@ -192,19 +192,19 @@ export function GlobalProgressPanel({ engagementId }: GlobalProgressPanelProps) 
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
             <div className="text-center p-2 bg-muted/50 rounded-lg">
-              <p className="text-2xl font-semibold">{data.metrics.risks.total}</p>
+              <p className="text-lg font-semibold">{data.metrics.risks.total}</p>
               <p className="text-xs text-muted-foreground">Risks</p>
             </div>
             <div className="text-center p-2 bg-muted/50 rounded-lg">
-              <p className="text-2xl font-semibold">{data.metrics.tests.completed}/{data.metrics.tests.total}</p>
+              <p className="text-lg font-semibold">{data.metrics.tests.completed}/{data.metrics.tests.total}</p>
               <p className="text-xs text-muted-foreground">Tests Done</p>
             </div>
             <div className="text-center p-2 bg-muted/50 rounded-lg">
-              <p className="text-2xl font-semibold">{data.metrics.evidence.total}</p>
+              <p className="text-lg font-semibold">{data.metrics.evidence.total}</p>
               <p className="text-xs text-muted-foreground">Evidence</p>
             </div>
             <div className="text-center p-2 bg-muted/50 rounded-lg">
-              <p className="text-2xl font-semibold">{data.metrics.checklists.completed}/{data.metrics.checklists.total}</p>
+              <p className="text-lg font-semibold">{data.metrics.checklists.completed}/{data.metrics.checklists.total}</p>
               <p className="text-xs text-muted-foreground">Checklists</p>
             </div>
           </div>
@@ -314,7 +314,7 @@ export function GlobalProgressPanel({ engagementId }: GlobalProgressPanelProps) 
           <CollapsibleContent>
             <CardContent>
               {data.missingItems.length === 0 ? (
-                <div className="flex items-center gap-2 text-sm text-green-600 py-4 justify-center">
+                <div className="flex items-center gap-2 text-sm text-green-600 py-2 justify-center">
                   <CheckCircle2 className="h-5 w-5" />
                   All items complete! No missing requirements.
                 </div>

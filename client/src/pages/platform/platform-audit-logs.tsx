@@ -404,7 +404,7 @@ export default function PlatformAuditLogs() {
   const showFirm = activeTab === "global" || !selectedFirm || selectedFirm === "__all__";
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-6xl mx-auto" data-testid="platform-audit-logs-page">
+    <div className="p-2.5 md:p-3 space-y-2.5 max-w-6xl mx-auto" data-testid="platform-audit-logs-page">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -442,8 +442,8 @@ export default function PlatformAuditLogs() {
           </TabsTrigger>
         </TabsList>
 
-        <Card className="mt-4">
-          <CardContent className="p-4">
+        <Card className="mt-2.5">
+          <CardContent className="p-2.5">
             <div className="flex items-center gap-2 mb-3">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Filters</span>
@@ -551,7 +551,7 @@ export default function PlatformAuditLogs() {
           </div>
         )}
 
-        <TabsContent value="global" className="mt-4">
+        <TabsContent value="global" className="mt-2.5">
           {isLoading ? (
             <div className="text-center py-10 text-muted-foreground">Loading logs...</div>
           ) : logs.length === 0 ? (
@@ -571,7 +571,7 @@ export default function PlatformAuditLogs() {
           )}
         </TabsContent>
 
-        <TabsContent value="firm" className="mt-4">
+        <TabsContent value="firm" className="mt-2.5">
           {!selectedFirm || selectedFirm === "__all__" ? (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">Select a firm to view its logs, or browse all firms below:</p>
@@ -583,7 +583,7 @@ export default function PlatformAuditLogs() {
                     onClick={() => setSelectedFirm(firm.id)}
                     data-testid={`card-firm-${firm.id}`}
                   >
-                    <CardContent className="p-4 flex items-center justify-between">
+                    <CardContent className="p-2.5 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-muted-foreground" />
                         <span className="font-medium text-sm">{firm.name}</span>

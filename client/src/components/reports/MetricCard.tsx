@@ -57,7 +57,7 @@ export function MetricCard({
           <div className="min-w-0 flex-1">
             <p className="text-sm text-muted-foreground truncate">{title}</p>
             <div className="flex items-baseline gap-2">
-              <p className="text-2xl font-bold">{value}</p>
+              <p className="text-lg font-bold">{value}</p>
               {trend && (
                 <span
                   className={cn(

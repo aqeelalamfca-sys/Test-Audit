@@ -240,7 +240,7 @@ export function RiskAssessmentSection({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <FormSection
         icon={<Target className="h-5 w-5" />}
         title="Preliminary Risk Identification"
@@ -393,7 +393,7 @@ export function RiskAssessmentSection({
             </Table>
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground border rounded-md" data-testid="text-no-risks">
+          <div className="text-center py-2 text-muted-foreground border rounded-md" data-testid="text-no-risks">
             <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">No risks identified yet. Click "Add Risk" or use AI to identify risks.</p>
           </div>
@@ -409,7 +409,7 @@ export function RiskAssessmentSection({
           Assess each inherent risk factor on a spectrum from low to high. These factors determine the assessed level of inherent risk for significant classes of transactions, account balances, and disclosures.
         </p>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-2.5 sm:grid-cols-3">
           {[
             { key: "complexity", label: "Complexity", helper: "ISA 315.A5 — Complexity of transactions, measurement, or presentation" },
             { key: "subjectivity", label: "Subjectivity", helper: "ISA 315.A6 — Degree of subjectivity in measurements or disclosures" },
@@ -549,8 +549,8 @@ export function RiskAssessmentSection({
         title="Presumed Risks"
         description="ISA 240.26 (revenue recognition fraud risk) & ISA 240.31 (management override of controls) — Presumed significant risks that require specific audit responses unless rebutted"
       >
-        <div className="space-y-6">
-          <div className="p-4 border rounded-md space-y-4">
+        <div className="space-y-3">
+          <div className="p-2.5 border rounded-md space-y-2.5">
             <div className="flex items-start gap-3">
               <div className="flex items-center space-x-2 pt-1">
                 <Checkbox
@@ -605,7 +605,7 @@ export function RiskAssessmentSection({
             </div>
           </div>
 
-          <div className="p-4 border rounded-md space-y-4">
+          <div className="p-2.5 border rounded-md space-y-2.5">
             <div className="flex items-start gap-3">
               <div className="flex items-center space-x-2 pt-1">
                 <Checkbox
@@ -758,7 +758,7 @@ export function RiskAssessmentSection({
             </Table>
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground border rounded-md" data-testid="text-no-significant-risks">
+          <div className="text-center py-2 text-muted-foreground border rounded-md" data-testid="text-no-significant-risks">
             <Star className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">No significant risks identified yet. Revenue recognition fraud (ISA 240.26) and management override (ISA 240.31) are presumed significant risks documented in the section above.</p>
           </div>
@@ -996,7 +996,7 @@ export function RiskAssessmentSection({
             </Table>
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground border rounded-md" data-testid="text-no-significant-accounts">
+          <div className="text-center py-2 text-muted-foreground border rounded-md" data-testid="text-no-significant-accounts">
             <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">No significant accounts identified. Use AI to auto-identify from TB data or add manually.</p>
           </div>

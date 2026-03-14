@@ -330,9 +330,9 @@ export default function OutputsPage() {
 
   if (!engagementId) {
     return (
-      <div className="p-4">
+      <div className="p-2.5">
         <Card>
-          <CardContent className="p-4 text-center text-muted-foreground">
+          <CardContent className="p-2.5 text-center text-muted-foreground">
             Please select an engagement to view outputs.
           </CardContent>
         </Card>
@@ -367,9 +367,9 @@ export default function OutputsPage() {
           </Button>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="summary-cards">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5" data-testid="summary-cards">
         <Card data-testid="card-total-outputs">
-          <CardContent className="p-4">
+          <CardContent className="p-2.5">
             <div className="flex items-center gap-3">
               <FileText className="h-5 w-5 text-muted-foreground" />
               <div>
@@ -380,7 +380,7 @@ export default function OutputsPage() {
           </CardContent>
         </Card>
         <Card data-testid="card-signoff-pipeline">
-          <CardContent className="p-4">
+          <CardContent className="p-2.5">
             <div className="flex items-center gap-3 mb-3">
               <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">Sign-off Pipeline</p>
@@ -420,7 +420,7 @@ export default function OutputsPage() {
           </CardContent>
         </Card>
         <Card data-testid="card-isa-compliance">
-          <CardContent className="p-4">
+          <CardContent className="p-2.5">
             <div className="flex items-center gap-3 mb-2">
               <Shield className="h-5 w-5 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">ISA Compliance</p>
@@ -463,7 +463,7 @@ export default function OutputsPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="outputs" className="space-y-4">
+        <TabsContent value="outputs" className="space-y-2.5">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -514,7 +514,7 @@ export default function OutputsPage() {
                 </div>
               ) : outputs.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
-                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <FileText className="h-12 w-12 mx-auto mb-2.5 opacity-50" />
                   <p>No outputs found matching the current filters.</p>
                 </div>
               ) : (
@@ -670,7 +670,7 @@ export default function OutputsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="deliverables" className="space-y-4">
+        <TabsContent value="deliverables" className="space-y-2.5">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -712,7 +712,7 @@ export default function OutputsPage() {
                 </div>
               ) : deliverables.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
-                  <FileCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <FileCheck className="h-12 w-12 mx-auto mb-2.5 opacity-50" />
                   <p>No deliverables found. Mark outputs as deliverables to track them here.</p>
                 </div>
               ) : (
@@ -839,11 +839,11 @@ export default function OutputsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="data-quality" className="space-y-4">
+        <TabsContent value="data-quality" className="space-y-2.5">
           {engagementId && <DataQualityDashboard engagementId={engagementId} />}
         </TabsContent>
 
-        <TabsContent value="audit-trail" className="space-y-4">
+        <TabsContent value="audit-trail" className="space-y-2.5">
           <Card data-testid="card-audit-trail">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -856,9 +856,9 @@ export default function OutputsPage() {
             </CardHeader>
             <CardContent>
               {outputs.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" data-testid="audit-trail-dates">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 mb-3" data-testid="audit-trail-dates">
                   <Card>
-                    <CardContent className="p-4">
+                    <CardContent className="p-2.5">
                       <div className="flex items-center gap-2 mb-1">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">Last Prepared</p>
@@ -872,7 +872,7 @@ export default function OutputsPage() {
                     </CardContent>
                   </Card>
                   <Card>
-                    <CardContent className="p-4">
+                    <CardContent className="p-2.5">
                       <div className="flex items-center gap-2 mb-1">
                         <Eye className="h-4 w-4 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">Last Reviewed</p>
@@ -886,7 +886,7 @@ export default function OutputsPage() {
                     </CardContent>
                   </Card>
                   <Card>
-                    <CardContent className="p-4">
+                    <CardContent className="p-2.5">
                       <div className="flex items-center gap-2 mb-1">
                         <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">Last Approved</p>
@@ -909,7 +909,7 @@ export default function OutputsPage() {
                 </div>
               ) : auditTrailData.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
-                  <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <History className="h-12 w-12 mx-auto mb-2.5 opacity-50" />
                   <p>No audit trail entries found.</p>
                 </div>
               ) : (
@@ -967,7 +967,7 @@ export default function OutputsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             {linkedEvidence.length > 0 && (
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Currently Linked Evidence</Label>
@@ -1006,7 +1006,7 @@ export default function OutputsPage() {
               />
               <ScrollArea className="h-64 border rounded-md">
                 {filteredEvidenceFiles.length === 0 ? (
-                  <div className="p-4 text-center text-muted-foreground text-sm">
+                  <div className="p-2.5 text-center text-muted-foreground text-sm">
                     No available evidence files to link.
                   </div>
                 ) : (

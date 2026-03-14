@@ -682,7 +682,7 @@ export function AIHelpIcon({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent className="w-96 max-h-96 overflow-y-auto" align="start">
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           {/* Header */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1">

@@ -174,7 +174,7 @@ const FormSection = ({
         </div>
       </div>
     </CardHeader>
-    <CardContent className="pt-6 space-y-6">
+    <CardContent className="pt-6 space-y-3">
       {children}
     </CardContent>
   </Card>
@@ -223,7 +223,7 @@ const FormField = ({
 );
 
 const FormRow = ({ children, cols = 3 }: { children: React.ReactNode; cols?: 2 | 3 | 4 }) => (
-  <div className={`grid gap-4 ${cols === 2 ? 'md:grid-cols-2' : cols === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+  <div className={`grid gap-2.5 ${cols === 2 ? 'md:grid-cols-2' : cols === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
     {children}
   </div>
 );
@@ -354,7 +354,7 @@ export function EthicsIndependenceSection({
   const hasUnacceptableThreats = data.threatsIdentified.some(t => t.residualRisk === "unacceptable");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <FormSection
         icon={<Shield className="h-5 w-5" />}
         title="Independence Register (IESBA + ISA 220)"
@@ -372,7 +372,7 @@ export function EthicsIndependenceSection({
         title="Team Member Independence Declarations"
         description="Independence confirmations from each engagement team member"
       >
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
@@ -505,7 +505,7 @@ export function EthicsIndependenceSection({
                 ))}
                 {data.teamDeclarations.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-2">
                       No team members added. Click "Add Team Member" to start.
                     </TableCell>
                   </TableRow>
@@ -521,7 +521,7 @@ export function EthicsIndependenceSection({
         title="Conflicts & Threats Identified"
         description="Document independence threats and safeguards applied (IESBA)"
       >
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
@@ -543,8 +543,8 @@ export function EthicsIndependenceSection({
           </div>
 
           {data.threatsIdentified.map((threat) => (
-            <Card key={threat.id} className="p-4">
-              <div className="space-y-4">
+            <Card key={threat.id} className="p-2.5">
+              <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <Badge variant="outline" className="text-xs">
                     Threat #{data.threatsIdentified.indexOf(threat) + 1}
@@ -637,7 +637,7 @@ export function EthicsIndependenceSection({
           ))}
 
           {data.threatsIdentified.length === 0 && (
-            <div className="text-center py-8 text-sm text-muted-foreground border rounded-lg bg-muted/30">
+            <div className="text-center py-2 text-sm text-muted-foreground border rounded-lg bg-muted/30">
               No threats documented. Click "Add Threat" if any independence threats exist.
             </div>
           )}
@@ -646,7 +646,7 @@ export function EthicsIndependenceSection({
         <SectionDivider title="Non-Audit Services & Long Association" icon={<Clock className="h-4 w-4" />} />
 
         <FormRow cols={2}>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <div className="flex items-center space-x-3">
               <Checkbox
                 id="nonAuditServices"
@@ -672,7 +672,7 @@ export function EthicsIndependenceSection({
               </FormField>
             )}
           </div>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <FormField label="Years of Long Association">
               <Input
                 type="number"
@@ -722,7 +722,7 @@ export function EthicsIndependenceSection({
               value={data.overallConclusion}
               onValueChange={(v) => handleChange("overallConclusion", v as EthicsIndependenceData["overallConclusion"])}
               disabled={readOnly}
-              className="flex gap-6"
+              className="flex gap-3"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="independent" id="conclusion-independent" data-testid="radio-independent" />
@@ -870,7 +870,7 @@ export function KYCAMLSection({
   const hasSanctionsHit = data.screeningResults.some(r => r.result === "hit");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <FormSection
         icon={<Building2 className="h-5 w-5" />}
         title="Entity Identity"
@@ -970,7 +970,7 @@ export function KYCAMLSection({
         title="Directors & Beneficial Owners"
         description="Identify and verify all directors and beneficial owners (UBOs)"
       >
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
@@ -1099,7 +1099,7 @@ export function KYCAMLSection({
                 ))}
                 {data.directorsAndOwners.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-2">
                       No directors/owners added. Click "Add Person" to start.
                     </TableCell>
                   </TableRow>
@@ -1115,7 +1115,7 @@ export function KYCAMLSection({
         title="Sanctions & PEP Screening"
         description="Document screening checks and results"
       >
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           {hasSanctionsHit && (
             <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg">
               <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
@@ -1297,7 +1297,7 @@ export function KYCAMLSection({
           </FormField>
         </FormRow>
 
-        <div className="p-4 bg-muted/30 border rounded-lg">
+        <div className="p-2.5 bg-muted/30 border rounded-lg">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <Label className="text-sm font-semibold">Overall AML Risk Score</Label>

@@ -121,7 +121,7 @@ export function DataIntakeProgressRibbon({ engagementId }: { engagementId: strin
 
   if (isLoading || !data) {
     return (
-      <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 border-b text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
         Loading data intake status...
       </div>
@@ -145,8 +145,8 @@ export function DataIntakeProgressRibbon({ engagementId }: { engagementId: strin
   return (
     <TooltipProvider>
       <div className="border-b bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
-        <div className="px-4 py-2">
-          <div className="flex items-center justify-between gap-4">
+        <div className="px-3 py-2">
+          <div className="flex items-center justify-between gap-2.5">
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium text-muted-foreground">Data Intake</span>

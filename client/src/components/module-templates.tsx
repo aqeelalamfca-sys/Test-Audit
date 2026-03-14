@@ -123,7 +123,7 @@ export function ModuleTemplates({
 
   return (
     <Card className="border-dashed">
-      <CardHeader className="py-3 px-4">
+      <CardHeader className="py-3 px-3">
         <div
           className={`flex items-center justify-between ${collapsible ? "cursor-pointer" : ""}`}
           onClick={collapsible ? () => setExpanded(!expanded) : undefined}
@@ -139,7 +139,7 @@ export function ModuleTemplates({
         </div>
       </CardHeader>
       {isExpanded && (
-        <CardContent className="pt-0 px-4 pb-3">
+        <CardContent className="pt-0 px-3 pb-3">
           <div className="space-y-1.5">
             {templates.map(t => (
               <div key={t.id} className="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-muted/50 transition-colors group">

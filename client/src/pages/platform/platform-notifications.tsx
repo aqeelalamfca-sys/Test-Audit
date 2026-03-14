@@ -217,8 +217,8 @@ export default function PlatformNotifications() {
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Create Notification</DialogTitle></DialogHeader>
 
-            <div className="space-y-5">
-              <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
+            <div className="space-y-3">
+              <div className="border rounded-lg p-2.5 bg-muted/30 space-y-3">
                 <div className="flex items-center gap-2 text-sm font-medium text-primary">
                   <Sparkles className="h-4 w-4" />
                   AI Content Generator
@@ -277,7 +277,7 @@ export default function PlatformNotifications() {
                 <span className="text-xs text-muted-foreground">{form.message.length}/1000 characters</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <Label className="flex items-center gap-1.5 mb-1.5">
                     <Image className="h-3.5 w-3.5" /> Image (optional)
@@ -425,7 +425,7 @@ export default function PlatformNotifications() {
                         </label>
                       ))}
                       {filteredFirms.length === 0 && (
-                        <p className="text-xs text-muted-foreground text-center py-4">No firms found</p>
+                        <p className="text-xs text-muted-foreground text-center py-2">No firms found</p>
                       )}
                     </div>
                   </ScrollArea>
@@ -468,7 +468,7 @@ export default function PlatformNotifications() {
             const nYtId = n.youtubeUrl ? extractYoutubeId(n.youtubeUrl) : null;
             return (
               <Card key={n.id} data-testid={`card-notification-${n.id}`}>
-                <CardContent className="p-4">
+                <CardContent className="p-2.5">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -528,7 +528,7 @@ export default function PlatformNotifications() {
             <DialogTitle>{previewNotification?.title}</DialogTitle>
           </DialogHeader>
           {previewNotification && (
-            <div className="space-y-4">
+            <div className="space-y-2.5">
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">{previewNotification.message}</p>
 
               {previewNotification.imageUrl && (

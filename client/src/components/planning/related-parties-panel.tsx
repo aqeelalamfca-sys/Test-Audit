@@ -73,7 +73,7 @@ export function RelatedPartiesPanel({ engagementId, readOnly, onFieldChange, pla
   const completedCount = Object.values(procedureStatuses).filter(Boolean).length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -139,7 +139,7 @@ export function RelatedPartiesPanel({ engagementId, readOnly, onFieldChange, pla
         </CardHeader>
         <CardContent>
           {parties.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="flex flex-col items-center justify-center py-2 text-center">
               <Users className="h-8 w-8 text-muted-foreground/40 mb-2" />
               <p className="text-sm text-muted-foreground">No related parties identified yet</p>
               <p className="text-xs text-muted-foreground mt-1">Add related parties as they are identified during planning</p>
@@ -198,7 +198,7 @@ export function RelatedPartiesPanel({ engagementId, readOnly, onFieldChange, pla
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 mt-4 text-muted-foreground hover:text-destructive"
+                            className="h-7 w-7 mt-2.5 text-muted-foreground hover:text-destructive"
                             onClick={() => removeParty(party.id)}
                           >
                             <Trash2 className="h-3.5 w-3.5" />

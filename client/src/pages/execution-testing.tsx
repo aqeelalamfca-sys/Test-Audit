@@ -106,7 +106,7 @@ function StatCard({ label, value, total, icon: Icon, color = "text-primary", ale
         <Icon className="h-4 w-4" />
       </div>
       <div>
-        <p className="text-2xl font-bold leading-none">
+        <p className="text-lg font-bold leading-none">
           {value}{total !== undefined && <span className="text-sm text-muted-foreground font-normal">/{total}</span>}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
@@ -209,8 +209,8 @@ export default function ExecutionTesting() {
       signoffSection="execution-testing"
       readOnly={isReadOnly}
     >
-      <AIAssistantPanel engagementId={engagementId || ""} phaseKey="execution-testing" className="mb-4" />
-      <div className="space-y-6">
+      <AIAssistantPanel engagementId={engagementId || ""} phaseKey="execution-testing" className="mb-2.5" />
+      <div className="space-y-3">
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -239,10 +239,10 @@ export default function ExecutionTesting() {
           </CardHeader>
           <CardContent>
             {statsLoading ? (
-              <div className="flex items-center justify-center py-8 text-muted-foreground">Loading execution statistics...</div>
+              <div className="flex items-center justify-center py-2 text-muted-foreground">Loading execution statistics...</div>
             ) : stats ? (
               <>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-2.5">
                   <StatCard label="Total Procedures" value={stats.totalProcedures} icon={ClipboardList} color="text-blue-600" />
                   <StatCard label="Completed" value={stats.completed} total={stats.totalProcedures} icon={CheckCircle2} color="text-green-600" />
                   <StatCard label="In Progress" value={stats.inProgress} icon={PlayCircle} color="text-amber-600" />
@@ -253,7 +253,7 @@ export default function ExecutionTesting() {
 
                 <Progress value={stats.executionPercent} className="h-2 mb-3" />
 
-                <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap mb-3">
+                <div className="flex items-center gap-2.5 text-xs text-muted-foreground flex-wrap mb-3">
                   <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-green-500" />{stats.completed} Completed</span>
                   <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-blue-500" />{stats.inProgress} In Progress</span>
                   <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-gray-400" />{stats.notStarted} Not Started</span>
@@ -280,7 +280,7 @@ export default function ExecutionTesting() {
               </>
             ) : null}
 
-            <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t">
+            <div className="flex flex-wrap gap-2 mt-2.5 pt-3 border-t">
               <p className="text-xs font-medium text-muted-foreground w-full mb-1">AI CAPABILITIES</p>
               <Badge variant="outline" className="text-xs"><Brain className="h-3 w-3 mr-1" /> Workpaper Narration</Badge>
               <Badge variant="outline" className="text-xs"><Sparkles className="h-3 w-3 mr-1" /> Test Result Summary</Badge>
@@ -309,11 +309,11 @@ export default function ExecutionTesting() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dashboard" className="space-y-4 mt-3">
+          <TabsContent value="dashboard" className="space-y-2.5 mt-3">
             <ExecutionDashboard stats={stats} fsAreasList={fsAreasList} engagementId={engagementId} />
           </TabsContent>
 
-          <TabsContent value="procedures" className="space-y-4 mt-3">
+          <TabsContent value="procedures" className="space-y-2.5 mt-3">
             <ProcedureExecutionTab
               procedures={filteredProcedures}
               allProcedures={stats?.procedures || []}
@@ -329,21 +329,21 @@ export default function ExecutionTesting() {
             />
           </TabsContent>
 
-          <TabsContent value="testing" className="space-y-4 mt-3">
+          <TabsContent value="testing" className="space-y-2.5 mt-3">
             <TestingTab stats={stats} engagementId={engagementId} />
           </TabsContent>
 
-          <TabsContent value="workpapers" className="space-y-4 mt-3">
+          <TabsContent value="workpapers" className="space-y-2.5 mt-3">
             <WorkpapersTab stats={stats} engagementId={engagementId} />
           </TabsContent>
 
-          <TabsContent value="review" className="space-y-4 mt-3">
+          <TabsContent value="review" className="space-y-2.5 mt-3">
             <ReviewerPanel stats={stats} engagementId={engagementId} />
           </TabsContent>
         </Tabs>
 
         <Card className="border-dashed">
-          <CardContent className="py-4">
+          <CardContent className="py-2">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">DOWNSTREAM LINKAGE</p>
@@ -392,7 +392,7 @@ function ExecutionDashboard({ stats, fsAreasList, engagementId }: {
         </CardHeader>
         <CardContent>
           {fsAreasList.length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground">
+            <div className="text-center py-3 text-muted-foreground">
               <Info className="h-8 w-8 mx-auto mb-2 opacity-40" />
               <p>No procedures linked to FS areas yet.</p>
               <Button variant="outline" size="sm" className="mt-3" onClick={() => setLocation(`/workspace/${engagementId}/procedures-sampling`)}>
@@ -444,7 +444,7 @@ function ExecutionDashboard({ stats, fsAreasList, engagementId }: {
       </Card>
 
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -604,7 +604,7 @@ function ProcedureExecutionTab({ procedures, allProcedures, searchQuery, onSearc
         </CardHeader>
         <CardContent>
           {procedures.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-2 text-muted-foreground">
               <Info className="h-8 w-8 mx-auto mb-2 opacity-40" />
               <p>{allProcedures.length === 0 ? "No procedures assigned yet. Design procedures in Procedures & Sampling." : "No procedures match the current filters."}</p>
             </div>
@@ -636,7 +636,7 @@ function ProcedureExecutionTab({ procedures, allProcedures, searchQuery, onSearc
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <div className="space-y-4 pl-7 pt-2">
+                      <div className="space-y-2.5 pl-7 pt-2">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                           <div>
                             <p className="text-xs text-muted-foreground">Workpaper Ref</p>
@@ -718,7 +718,7 @@ function ProcedureExecutionTab({ procedures, allProcedures, searchQuery, onSearc
 function TestingTab({ stats, engagementId }: { stats?: ExecutionStats | null; engagementId: string }) {
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -836,7 +836,7 @@ function WorkpapersTab({ stats, engagementId }: { stats?: ExecutionStats | null;
           <CardDescription>Documentation of procedures performed, evidence obtained, and conclusions reached</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-2.5">
             <div className="p-3 rounded-lg border">
               <p className="text-xs text-muted-foreground">Procedures with Workpapers</p>
               <p className="text-xl font-bold">{stats?.withWorkpaper ?? 0}<span className="text-sm text-muted-foreground font-normal">/{stats?.totalProcedures ?? 0}</span></p>
@@ -858,7 +858,7 @@ function WorkpapersTab({ stats, engagementId }: { stats?: ExecutionStats | null;
           {proceduresWithoutWp.length > 0 && (
             <>
               <Separator />
-              <div className="mt-4">
+              <div className="mt-2.5">
                 <h4 className="text-sm font-medium text-destructive mb-2 flex items-center gap-1">
                   <AlertTriangle className="h-3.5 w-3.5" /> Procedures Missing Workpapers ({proceduresWithoutWp.length})
                 </h4>
@@ -967,7 +967,7 @@ function ReviewerPanel({ stats, engagementId }: { stats?: ExecutionStats | null;
           <CardDescription>Review notes, clearance status, and procedure sign-off tracking</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-2.5">
             <div className="p-3 rounded-lg border">
               <p className="text-xs text-muted-foreground">Reviewed</p>
               <p className="text-xl font-bold">{stats?.reviewed ?? 0}<span className="text-sm text-muted-foreground font-normal">/{stats?.totalProcedures ?? 0}</span></p>
@@ -987,7 +987,7 @@ function ReviewerPanel({ stats, engagementId }: { stats?: ExecutionStats | null;
           </div>
 
           {unreviewedProcs.length > 0 && (
-            <div className="mb-4">
+            <div className="mb-2.5">
               <h4 className="text-sm font-medium text-amber-700 dark:text-amber-400 mb-2 flex items-center gap-1">
                 <Eye className="h-3.5 w-3.5" /> Procedures Awaiting Review ({unreviewedProcs.length})
               </h4>
@@ -1011,7 +1011,7 @@ function ReviewerPanel({ stats, engagementId }: { stats?: ExecutionStats | null;
           )}
 
           {procsWithoutConclusion.length > 0 && (
-            <div className="mb-4">
+            <div className="mb-2.5">
               <h4 className="text-sm font-medium text-orange-700 dark:text-orange-400 mb-2 flex items-center gap-1">
                 <AlertCircle className="h-3.5 w-3.5" /> Completed Without Conclusion ({procsWithoutConclusion.length})
               </h4>

@@ -200,10 +200,10 @@ export default function PDFDocumentation() {
 
   if (!isAuthorized) {
     return (
-      <div className="px-4 py-3">
+      <div className="px-3 py-3">
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+            <AlertTriangle className="h-12 w-12 text-destructive mb-2.5" />
             <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
             <p className="text-muted-foreground text-center max-w-md">
               This module is restricted to Firm Administrators and Engagement Partners only.
@@ -216,7 +216,7 @@ export default function PDFDocumentation() {
 
   return (
     <div className="page-container">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2.5">
         <div className="p-2 rounded-lg bg-primary/10">
           <FileDown className="h-6 w-6 text-primary" />
         </div>
@@ -239,8 +239,8 @@ export default function PDFDocumentation() {
               Select the client and audit period to generate a comprehensive PDF documentation package
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CardContent className="space-y-2.5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
               <div className="space-y-2">
                 <Label htmlFor="client">Client Name</Label>
                 <Select value={selectedClientId} onValueChange={(value) => {
@@ -282,7 +282,7 @@ export default function PDFDocumentation() {
             </div>
 
             {selectedEngagement && (
-              <div className="p-4 bg-muted rounded-lg">
+              <div className="p-2.5 bg-muted rounded-lg">
                 <h4 className="font-medium mb-2">Selected Engagement Details</h4>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div><span className="text-muted-foreground">Client:</span> {selectedEngagement.client?.name}</div>
@@ -292,7 +292,7 @@ export default function PDFDocumentation() {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t">
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-4 border-t">
               <Button 
                 size="lg" 
                 onClick={() => handleGeneratePDF(false)}
@@ -322,7 +322,7 @@ export default function PDFDocumentation() {
               </Button>
             </div>
 
-            <div className="p-4 border rounded-lg bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+            <div className="p-2.5 border rounded-lg bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
               <div className="flex items-start gap-2">
                 <Lock className="h-4 w-4 text-amber-600 mt-0.5" />
                 <div className="text-sm">
@@ -348,11 +348,11 @@ export default function PDFDocumentation() {
           </CardHeader>
           <CardContent>
             {!selectedEngagementId ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
+              <p className="text-sm text-muted-foreground text-center py-2">
                 Select an engagement to view generation history
               </p>
             ) : generationHistory.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
+              <p className="text-sm text-muted-foreground text-center py-2">
                 No PDFs have been generated for this engagement yet
               </p>
             ) : (
@@ -458,7 +458,7 @@ export default function PDFDocumentation() {
             </TableBody>
           </Table>
 
-          <div className="mt-4 p-4 bg-muted rounded-lg">
+          <div className="mt-2.5 p-2.5 bg-muted rounded-lg">
             <p className="text-sm">
               <strong>Watermark:</strong> All generated PDFs are watermarked with 
               <span className="italic"> "Confidential - For Audit & Regulatory Review Only"</span>
@@ -478,7 +478,7 @@ export default function PDFDocumentation() {
               Enter your Partner PIN to authorize PDF generation. This action will be logged for audit trail purposes.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <div className="space-y-2">
               <Label htmlFor="pin">Partner PIN</Label>
               <Input

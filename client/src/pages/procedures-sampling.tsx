@@ -110,7 +110,7 @@ function StatCard({ label, value, total, icon: Icon, color = "text-primary" }: {
         <Icon className="h-4 w-4" />
       </div>
       <div>
-        <p className="text-2xl font-bold leading-none">
+        <p className="text-lg font-bold leading-none">
           {value}{total !== undefined && <span className="text-sm text-muted-foreground font-normal">/{total}</span>}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
@@ -224,8 +224,8 @@ export default function ProceduresSampling() {
       signoffSection="procedures-sampling"
       readOnly={isReadOnly}
     >
-      <AIAssistantPanel engagementId={engagementId || ""} phaseKey="procedures-sampling" className="mb-4" />
-      <div className="space-y-6">
+      <AIAssistantPanel engagementId={engagementId || ""} phaseKey="procedures-sampling" className="mb-2.5" />
+      <div className="space-y-3">
         {!allPrereqsMet && prerequisites.length > 0 && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
@@ -270,10 +270,10 @@ export default function ProceduresSampling() {
           </CardHeader>
           <CardContent>
             {statsLoading ? (
-              <div className="flex items-center justify-center py-8 text-muted-foreground">Loading statistics...</div>
+              <div className="flex items-center justify-center py-2 text-muted-foreground">Loading statistics...</div>
             ) : stats ? (
               <>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-2.5">
                   <StatCard label="Total Procedures" value={stats.totalProcedures} icon={ClipboardList} color="text-blue-600" />
                   <StatCard label="Linked to Risks" value={stats.linkedToRisks} total={stats.totalProcedures} icon={Target} color="text-orange-600" />
                   <StatCard label="With Assertions" value={stats.withAssertions} total={stats.totalProcedures} icon={Shield} color="text-purple-600" />
@@ -300,7 +300,7 @@ export default function ProceduresSampling() {
               </>
             ) : null}
 
-            <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t">
+            <div className="flex flex-wrap gap-2 mt-2.5 pt-3 border-t">
               <p className="text-xs font-medium text-muted-foreground w-full mb-1">AI CAPABILITIES</p>
               <Badge variant="outline" className="text-xs"><Brain className="h-3 w-3 mr-1" /> Procedure Suggestions</Badge>
               <Badge variant="outline" className="text-xs"><Sparkles className="h-3 w-3 mr-1" /> Sampling Rationale</Badge>
@@ -325,7 +325,7 @@ export default function ProceduresSampling() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-4 mt-3">
+          <TabsContent value="overview" className="space-y-2.5 mt-3">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -335,7 +335,7 @@ export default function ProceduresSampling() {
               </CardHeader>
               <CardContent>
                 {fsAreasList.length === 0 ? (
-                  <div className="text-center py-6 text-muted-foreground">
+                  <div className="text-center py-3 text-muted-foreground">
                     <Info className="h-8 w-8 mx-auto mb-2 opacity-40" />
                     <p>No risks assessed yet. Complete the Risk Assessment phase first.</p>
                     <Button
@@ -385,7 +385,7 @@ export default function ProceduresSampling() {
             </Card>
 
             {stats && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
@@ -445,7 +445,7 @@ export default function ProceduresSampling() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex gap-6 text-sm">
+                  <div className="flex gap-3 text-sm">
                     <div>
                       <p className="text-muted-foreground text-xs">Overall Materiality</p>
                       <p className="font-semibold">{stats.overallMateriality.toLocaleString()}</p>
@@ -466,21 +466,21 @@ export default function ProceduresSampling() {
             )}
           </TabsContent>
 
-          <TabsContent value="audit-program" className="space-y-4 mt-3">
+          <TabsContent value="audit-program" className="space-y-2.5 mt-3">
             <AuditProgramTab engagementId={engagementId} readOnly={isReadOnly} />
           </TabsContent>
 
-          <TabsContent value="sampling" className="space-y-4 mt-3">
+          <TabsContent value="sampling" className="space-y-2.5 mt-3">
             <SamplingTab engagementId={engagementId} stats={stats} />
           </TabsContent>
 
-          <TabsContent value="assertions" className="space-y-4 mt-3">
+          <TabsContent value="assertions" className="space-y-2.5 mt-3">
             <AssertionCoverageTab stats={stats} engagementId={engagementId} />
           </TabsContent>
         </Tabs>
 
         <Card className="border-dashed">
-          <CardContent className="py-4">
+          <CardContent className="py-2">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">DOWNSTREAM LINKAGE</p>
@@ -564,7 +564,7 @@ function SamplingTab({ engagementId, stats }: { engagementId: string; stats?: Pr
           <CardDescription>Define populations, sampling methods, sample sizes, and selection logic</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="p-3 rounded-lg border">
                 <p className="text-xs text-muted-foreground">Procedures with Sampling</p>
@@ -695,7 +695,7 @@ function AssertionCoverageTab({ stats, engagementId }: { stats?: ProceduresStats
         </div>
 
         {Object.keys(coverageMap).length === 0 && (
-          <Alert className="mt-4">
+          <Alert className="mt-2.5">
             <Info className="h-4 w-4" />
             <AlertDescription>
               No assertion coverage data yet. Design audit procedures in the Audit Program tab and link them to assertions.

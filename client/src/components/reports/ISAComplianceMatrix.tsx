@@ -106,7 +106,7 @@ export function ISAComplianceMatrix({ engagementId }: ISAComplianceMatrixProps) 
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center p-2.5">
         <RefreshCw className="h-6 w-6 animate-spin mr-2" />
         <span>Loading ISA compliance matrix...</span>
       </div>
@@ -114,7 +114,7 @@ export function ISAComplianceMatrix({ engagementId }: ISAComplianceMatrixProps) 
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -138,11 +138,11 @@ export function ISAComplianceMatrix({ engagementId }: ISAComplianceMatrixProps) 
       </div>
 
       {summary && (
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-5 gap-2.5">
           <Card>
             <CardContent className="pt-4">
               <div className="text-center">
-                <p className="text-3xl font-bold text-primary">{summary.complianceScore}%</p>
+                <p className="text-xl font-bold text-primary">{summary.complianceScore}%</p>
                 <p className="text-xs text-muted-foreground">Compliance Score</p>
               </div>
               <Progress value={summary.complianceScore} className="mt-2" />

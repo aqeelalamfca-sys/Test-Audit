@@ -231,12 +231,12 @@ export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonit
 
       <CardContent>
         {scanLoading ? (
-          <div className="flex items-center justify-center py-8">
+          <div className="flex items-center justify-center py-2">
             <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : !report ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Link2Off className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <div className="text-center py-2 text-muted-foreground">
+            <Link2Off className="h-12 w-12 mx-auto mb-2.5 opacity-50" />
             <p>No scan data available. Run a Full Scan to analyze chain integrity.</p>
           </div>
         ) : (
@@ -261,10 +261,10 @@ export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonit
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="health" className="mt-4">
+            <TabsContent value="health" className="mt-2.5">
               {chainHealth && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2.5">
+                  <div className="grid grid-cols-3 gap-2.5">
                     <Card>
                       <CardContent className="pt-4">
                         <div className="text-center">
@@ -279,7 +279,7 @@ export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonit
                     <Card>
                       <CardContent className="pt-4">
                         <div className="text-center">
-                          <div className="text-2xl font-bold" data-testid="text-total-nodes">
+                          <div className="text-lg font-bold" data-testid="text-total-nodes">
                             {chainHealth.chainIntegrity.totalNodes}
                           </div>
                           <div className="text-sm text-muted-foreground">Total Nodes</div>
@@ -294,7 +294,7 @@ export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonit
                     <Card>
                       <CardContent className="pt-4">
                         <div className="text-center">
-                          <div className="text-2xl font-bold" data-testid="text-locked-nodes">
+                          <div className="text-lg font-bold" data-testid="text-locked-nodes">
                             {chainHealth.chainIntegrity.lockedNodes}
                           </div>
                           <div className="text-sm text-muted-foreground">Locked Nodes</div>
@@ -314,7 +314,7 @@ export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonit
                       </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                      <div className="grid grid-cols-3 gap-2.5 p-2.5 bg-muted/50 rounded-lg">
                         <div className="flex items-center gap-2">
                           {chainHealth.fsLevelTrack.entityUnderstanding === 'OK' 
                             ? <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -342,8 +342,8 @@ export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonit
                       </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <div className="p-4 bg-muted/50 rounded-lg space-y-2">
-                        <div className="grid grid-cols-4 gap-4 text-sm">
+                      <div className="p-2.5 bg-muted/50 rounded-lg space-y-2">
+                        <div className="grid grid-cols-4 gap-2.5 text-sm">
                           <div className="flex flex-col items-center p-2 bg-background rounded">
                             <span className="font-mono text-lg">{chainHealth.assertionTrack.fsHeads.withAssertions}/{chainHealth.assertionTrack.fsHeads.total}</span>
                             <span className="text-xs text-muted-foreground">FS Heads</span>
@@ -362,7 +362,7 @@ export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonit
                           </div>
                         </div>
                         <Separator />
-                        <div className="grid grid-cols-4 gap-4 text-sm">
+                        <div className="grid grid-cols-4 gap-2.5 text-sm">
                           <div className="flex flex-col items-center p-2 bg-background rounded">
                             <span className="font-mono text-lg">{chainHealth.assertionTrack.procedures.executed}/{chainHealth.assertionTrack.procedures.total}</span>
                             <span className="text-xs text-muted-foreground">Procedures Executed</span>
@@ -391,10 +391,10 @@ export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonit
               )}
             </TabsContent>
 
-            <TabsContent value="breaks" className="mt-4">
+            <TabsContent value="breaks" className="mt-2.5">
               {breakRegister && (
                 <ScrollArea className="h-[400px]">
-                  <div className="space-y-4">
+                  <div className="space-y-2.5">
                     {breakRegister.highSeverity.length > 0 && (
                       <div>
                         <h4 className="font-semibold flex items-center gap-2 mb-2">
@@ -466,8 +466,8 @@ export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonit
                     )}
 
                     {breakRegister.totalBreaks === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-green-600" />
+                      <div className="text-center py-2 text-muted-foreground">
+                        <CheckCircle2 className="h-12 w-12 mx-auto mb-2.5 text-green-600" />
                         <p>No broken links detected. Chain integrity verified.</p>
                       </div>
                     )}
@@ -476,7 +476,7 @@ export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonit
               )}
             </TabsContent>
 
-            <TabsContent value="repairs" className="mt-4">
+            <TabsContent value="repairs" className="mt-2.5">
               <ScrollArea className="h-[400px]">
                 <div className="space-y-2">
                   {repairLog?.repairLog?.length > 0 ? (
@@ -540,15 +540,15 @@ export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonit
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <FileCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <div className="text-center py-2 text-muted-foreground">
+                      <FileCheck className="h-12 w-12 mx-auto mb-2.5 opacity-50" />
                       <p>No repair actions logged yet.</p>
                     </div>
                   )}
                 </div>
               </ScrollArea>
               {repairLog && (
-                <div className="mt-4 flex gap-4 text-sm">
+                <div className="mt-2.5 flex gap-2.5 text-sm">
                   <span>Total: {repairLog.totalRepairs}</span>
                   <span className="text-yellow-600">Pending: {repairLog.pendingApprovals}</span>
                   <span className="text-green-600">Approved: {repairLog.approvedRepairs}</span>
@@ -557,10 +557,10 @@ export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonit
               )}
             </TabsContent>
 
-            <TabsContent value="artifacts" className="mt-4">
+            <TabsContent value="artifacts" className="mt-2.5">
               {regeneratedArtifacts ? (
                 <ScrollArea className="h-[400px]">
-                  <div className="space-y-4">
+                  <div className="space-y-2.5">
                     {Object.entries(regeneratedArtifacts).map(([category, artifacts]: [string, any]) => (
                       artifacts.length > 0 && (
                         <div key={category}>
@@ -590,33 +590,33 @@ export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonit
                       )
                     ))}
                     {Object.values(regeneratedArtifacts).every((arr: any) => arr.length === 0) && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <div className="text-center py-2 text-muted-foreground">
+                        <Shield className="h-12 w-12 mx-auto mb-2.5 opacity-50" />
                         <p>No artifacts regenerated in this scan.</p>
                       </div>
                     )}
                   </div>
                 </ScrollArea>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-2 text-muted-foreground">
                   <p>Run a full scan to see regenerated artifacts.</p>
                 </div>
               )}
             </TabsContent>
 
-            <TabsContent value="gates" className="mt-4">
+            <TabsContent value="gates" className="mt-2.5">
               {gateResults && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center p-4 rounded-lg bg-muted/50">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-center p-2.5 rounded-lg bg-muted/50">
                     {gateResults.overall === 'PASS' ? (
                       <div className="flex items-center gap-2 text-green-600">
                         <CheckCircle2 className="h-8 w-8" />
-                        <span className="text-2xl font-bold">ALL GATES PASS</span>
+                        <span className="text-lg font-bold">ALL GATES PASS</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 text-red-600">
                         <XCircle className="h-8 w-8" />
-                        <span className="text-2xl font-bold">GATES FAILED</span>
+                        <span className="text-lg font-bold">GATES FAILED</span>
                       </div>
                     )}
                   </div>
@@ -643,7 +643,7 @@ export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonit
                   </div>
 
                   {gateResults.needsReviewList.length > 0 && (
-                    <div className="mt-4">
+                    <div className="mt-2.5">
                       <h4 className="font-semibold flex items-center gap-2 mb-2">
                         <Eye className="h-4 w-4" />
                         Needs Review ({gateResults.needsReviewList.length})

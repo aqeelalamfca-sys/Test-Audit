@@ -293,7 +293,7 @@ export default function UserManagement() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-2.5 py-2">
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name *</Label>
                 <Input
@@ -375,7 +375,7 @@ export default function UserManagement() {
         </Dialog>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2.5">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -402,7 +402,7 @@ export default function UserManagement() {
           <TableBody>
             {filteredUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-2 text-muted-foreground">
                   No users found.
                 </TableCell>
               </TableRow>
@@ -469,7 +469,7 @@ export default function UserManagement() {
             </div>
           ) : userPermissions ? (
             <ScrollArea className="h-[55vh] pr-4">
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 {Object.entries(groupPermissionsByCategory(userPermissions.permissions)).map(([category, perms]) => (
                   <div key={category} className="space-y-3">
                     <h3 className="font-semibold text-lg border-b pb-2">{CATEGORY_LABELS[category] || category}</h3>
@@ -556,7 +556,7 @@ export default function UserManagement() {
               </div>
             </ScrollArea>
           ) : (
-            <div className="text-center py-4 text-muted-foreground">
+            <div className="text-center py-2 text-muted-foreground">
               Unable to load permissions
             </div>
           )}

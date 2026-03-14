@@ -109,7 +109,7 @@ export function AICopilotEnhanced({ engagementId, collapsed = false, onToggleCol
 
   return (
     <div className="w-[380px] border-l bg-background flex flex-col shrink-0 h-full overflow-hidden">
-      <div className="px-4 py-3 border-b bg-gradient-to-r from-violet-600/10 to-indigo-600/10 flex items-center justify-between">
+      <div className="px-3 py-3 border-b bg-gradient-to-r from-violet-600/10 to-indigo-600/10 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center">
             <Sparkles className="h-4 w-4 text-white" />
@@ -154,7 +154,7 @@ export function AICopilotEnhanced({ engagementId, collapsed = false, onToggleCol
               <Loader2 className="h-6 w-6 animate-spin text-violet-500" />
             </div>
           ) : !hasProfile ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-2 text-muted-foreground">
               <Compass className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm font-medium">No AI Profile Available</p>
               <p className="text-xs mt-1">Navigate to an audit workspace page to see page-specific AI guidance.</p>
@@ -257,10 +257,10 @@ function OverviewTab({ profile, engagementSnapshot }: { profile: NonNullable<Ret
                   <p className="font-medium">{(engagementSnapshot as any).client.name}</p>
                 </div>
               )}
-              {(engagementSnapshot as any).phase && (
+              {(engagementSnapshot as any).currentPhase && (
                 <div>
                   <span className="text-muted-foreground">Phase:</span>
-                  <p className="font-medium">{(engagementSnapshot as any).phase}</p>
+                  <p className="font-medium">{(engagementSnapshot as any).currentPhase}</p>
                 </div>
               )}
               {(engagementSnapshot as any).materiality?.overallMateriality && (
@@ -311,7 +311,7 @@ function StandardsTab({ standards, onCopy, copiedId }: {
 
   if (standards.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
+      <div className="text-center py-2 text-muted-foreground">
         <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-50" />
         <p className="text-sm">No standards mapped for this page.</p>
       </div>
@@ -400,7 +400,7 @@ function SuggestionsTab({
 }) {
   if (!profile.suggestionTemplates || profile.suggestionTemplates.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
+      <div className="text-center py-2 text-muted-foreground">
         <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
         <p className="text-sm">No AI actions available for this page.</p>
         <p className="text-xs mt-1">AI actions are available on pages with narrative fields and drafting requirements.</p>
@@ -467,7 +467,7 @@ function SuggestionsTab({
 function ReviewTab({ profile }: { profile: NonNullable<ReturnType<typeof usePageAIContext>["profile"]> }) {
   if (!profile.reviewRules || profile.reviewRules.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
+      <div className="text-center py-2 text-muted-foreground">
         <Shield className="h-8 w-8 mx-auto mb-2 opacity-50" />
         <p className="text-sm">No review rules configured for this page.</p>
       </div>
@@ -511,7 +511,7 @@ function ReviewTab({ profile }: { profile: NonNullable<ReturnType<typeof usePage
 function NextStepsTab({ profile }: { profile: NonNullable<ReturnType<typeof usePageAIContext>["profile"]> }) {
   if (!profile.nextStepGuidance || profile.nextStepGuidance.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
+      <div className="text-center py-2 text-muted-foreground">
         <ArrowRight className="h-8 w-8 mx-auto mb-2 opacity-50" />
         <p className="text-sm">No next step guidance available.</p>
       </div>

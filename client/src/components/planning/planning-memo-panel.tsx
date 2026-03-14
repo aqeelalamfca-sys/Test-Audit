@@ -114,7 +114,7 @@ export function PlanningMemoPanel({ engagementId, readOnly, onFieldChange, plann
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -201,7 +201,7 @@ export function PlanningMemoPanel({ engagementId, readOnly, onFieldChange, plann
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Materiality Summary</CardTitle>
@@ -233,7 +233,7 @@ export function PlanningMemoPanel({ engagementId, readOnly, onFieldChange, plann
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Key Risks Summary</CardTitle>
@@ -323,7 +323,7 @@ export function PlanningMemoPanel({ engagementId, readOnly, onFieldChange, plann
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2.5">
             <div className="p-3 rounded-md border text-center">
               <p className="text-[10px] text-muted-foreground uppercase mb-1">Prepared By</p>
               <p className="text-xs font-medium">{memo.preparedBy?.fullName || memo.preparedBy?.name || "—"}</p>

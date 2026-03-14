@@ -209,7 +209,7 @@ function PhaseCard({ phase, engagementId }: { phase: PhaseStatus; engagementId: 
 
   return (
     <Card className={`border ${getGateBg(phase.gateStatus)} transition-colors`} data-testid={`card-phase-${phase.phase.toLowerCase()}`}>
-      <CardContent className="p-4">
+      <CardContent className="p-2.5">
         <div className="flex items-start gap-3">
           <div className={`p-2 rounded-md ${isComplete ? "bg-green-100 dark:bg-green-900/40" : isActive ? "bg-blue-100 dark:bg-blue-900/40" : "bg-muted"}`}>
             <Icon className={`h-5 w-5 ${getGateColor(phase.gateStatus)}`} />
@@ -357,7 +357,7 @@ function ExceptionsList({ exceptions, engagementId }: { exceptions: WorkflowExce
 
   if (exceptions.length === 0) {
     return (
-      <div className="text-center py-4 text-muted-foreground" data-testid="text-no-exceptions">
+      <div className="text-center py-2 text-muted-foreground" data-testid="text-no-exceptions">
         <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-500" />
         <p className="text-sm">No open exceptions</p>
       </div>
@@ -418,17 +418,17 @@ function OverallProgressHeader({ dashboard }: { dashboard: WorkflowDashboard }) 
     : "No blockers";
 
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" data-testid="section-progress-header">
+    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between" data-testid="section-progress-header">
       <div>
         <h1 className="text-xl font-semibold" data-testid="text-page-title">Validation & Parsing</h1>
         <p className="text-sm text-muted-foreground mt-0.5" data-testid="text-engagement-code">
           {dashboard.engagementCode} &middot; {dashboard.phasesCompleted}/{dashboard.totalPhases} phases complete
         </p>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2.5">
         <div className="flex flex-col items-end gap-1">
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold" data-testid="text-overall-progress">{dashboard.overallProgress}%</span>
+            <span className="text-lg font-bold" data-testid="text-overall-progress">{dashboard.overallProgress}%</span>
             {dashboard.currentBlockers > 0 ? (
               <Badge className="bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 no-default-hover-elevate no-default-active-elevate" data-testid="badge-blockers">
                 <Lock className="h-3 w-3 mr-1" />{blockerLabel}
@@ -581,7 +581,7 @@ function ValidationResultsPanel({ engagementId }: { engagementId: string }) {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-4">
+        <CardContent className="p-2.5">
           <Skeleton className="h-6 w-48 mb-2" />
           <Skeleton className="h-20 w-full" />
         </CardContent>
@@ -592,7 +592,7 @@ function ValidationResultsPanel({ engagementId }: { engagementId: string }) {
   if (!results) {
     return (
       <Card>
-        <CardContent className="p-4 text-center">
+        <CardContent className="p-2.5 text-center">
           <AlertTriangle className="h-6 w-6 mx-auto mb-2 text-amber-500" />
           <p className="text-sm text-muted-foreground mb-2">Could not load validation results.</p>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
@@ -609,7 +609,7 @@ function ValidationResultsPanel({ engagementId }: { engagementId: string }) {
   const hasBlockers = blockers.length > 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card className={hasBlockers ? "border-red-300 dark:border-red-800" : "border-green-300 dark:border-green-800"}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -628,22 +628,22 @@ function ValidationResultsPanel({ engagementId }: { engagementId: string }) {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2.5">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="text-center p-2 bg-muted/30 rounded-md">
-              <p className="text-2xl font-bold">{parserSummary.tbRowCount.toLocaleString()}</p>
+              <p className="text-lg font-bold">{parserSummary.tbRowCount.toLocaleString()}</p>
               <p className="text-xs text-muted-foreground">TB Rows</p>
             </div>
             <div className="text-center p-2 bg-muted/30 rounded-md">
-              <p className="text-2xl font-bold">{parserSummary.glEntryCount.toLocaleString()}</p>
+              <p className="text-lg font-bold">{parserSummary.glEntryCount.toLocaleString()}</p>
               <p className="text-xs text-muted-foreground">GL Entries</p>
             </div>
             <div className="text-center p-2 bg-muted/30 rounded-md">
-              <p className="text-2xl font-bold text-green-600">{passedChecks.length}</p>
+              <p className="text-lg font-bold text-green-600">{passedChecks.length}</p>
               <p className="text-xs text-muted-foreground">Checks Passed</p>
             </div>
             <div className="text-center p-2 bg-muted/30 rounded-md">
-              <p className="text-2xl font-bold">{passPercent}%</p>
+              <p className="text-lg font-bold">{passPercent}%</p>
               <p className="text-xs text-muted-foreground">Pass Rate</p>
             </div>
           </div>
@@ -699,7 +699,7 @@ function ValidationResultsPanel({ engagementId }: { engagementId: string }) {
             ))}
 
             {totalChecks === 0 && (
-              <div className="text-center py-6 text-muted-foreground">
+              <div className="text-center py-3 text-muted-foreground">
                 <Info className="h-8 w-8 mx-auto mb-2 opacity-40" />
                 <p className="text-sm">No validation data yet</p>
                 <p className="text-xs mt-1">Upload data in the TB/GL Upload phase first</p>
@@ -784,7 +784,7 @@ export default function PostUploadWorkflow() {
 
   if (!engagementId) {
     return (
-      <div className="p-6 text-center text-muted-foreground" data-testid="text-no-engagement">
+      <div className="p-3 text-center text-muted-foreground" data-testid="text-no-engagement">
         <p>Select an engagement to view the workflow dashboard.</p>
       </div>
     );
@@ -807,7 +807,7 @@ export default function PostUploadWorkflow() {
 
   if (isError || !dashboard) {
     return (
-      <div className="p-6 text-center" data-testid="text-error">
+      <div className="p-3 text-center" data-testid="text-error">
         <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-amber-500" />
         <p className="text-sm text-muted-foreground mb-3">Failed to load workflow dashboard.</p>
         <Button variant="outline" onClick={() => refetch()} data-testid="button-retry">
@@ -843,7 +843,7 @@ export default function PostUploadWorkflow() {
 
       <SummaryCards dashboard={dashboard} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="lg:col-span-2 space-y-3">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Phase Details</h2>
           {dashboard.phases.map((phase) => (
@@ -870,7 +870,7 @@ export default function PostUploadWorkflow() {
             </CardContent>
           </Card>
 
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mt-4">AI Insights</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mt-2.5">AI Insights</h2>
           <Card>
             <CardContent className="p-3 space-y-3">
               {dashboard.phases.filter(p => p.aiSummary && p.gateStatus !== "NOT_STARTED").map(p => (
@@ -883,7 +883,7 @@ export default function PostUploadWorkflow() {
                 </div>
               ))}
               {dashboard.phases.filter(p => p.aiSummary && p.gateStatus !== "NOT_STARTED").length === 0 && (
-                <p className="text-xs text-muted-foreground text-center py-4" data-testid="text-no-insights">
+                <p className="text-xs text-muted-foreground text-center py-2" data-testid="text-no-insights">
                   Start processing data to generate AI insights.
                 </p>
               )}

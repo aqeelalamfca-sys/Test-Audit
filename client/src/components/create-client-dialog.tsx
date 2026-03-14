@@ -140,7 +140,7 @@ export function CreateClientDialog({ onSuccess, trigger }: CreateClientDialogPro
           <DialogDescription className="text-xs">Client Master Data | Quick Add</DialogDescription>
         </DialogHeader>
 
-        <fieldset className="border rounded-lg p-4 space-y-3">
+        <fieldset className="border rounded-lg p-2.5 space-y-3">
           <legend className="text-xs font-medium text-muted-foreground px-1">Client Identification</legend>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="space-y-1 col-span-2">
@@ -212,7 +212,7 @@ export function CreateClientDialog({ onSuccess, trigger }: CreateClientDialogPro
           </div>
         </fieldset>
 
-        <fieldset className="border rounded-lg p-4 space-y-3">
+        <fieldset className="border rounded-lg p-2.5 space-y-3">
           <legend className="text-xs font-medium text-muted-foreground px-1">Focal Person</legend>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="space-y-1">
@@ -252,7 +252,7 @@ export function CreateClientDialog({ onSuccess, trigger }: CreateClientDialogPro
           </div>
         </fieldset>
 
-        <fieldset className="border rounded-lg p-4 space-y-3">
+        <fieldset className="border rounded-lg p-2.5 space-y-3">
           <legend className="text-xs font-medium text-muted-foreground px-1">Location & Contact</legend>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="space-y-1">

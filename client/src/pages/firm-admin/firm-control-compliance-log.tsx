@@ -87,39 +87,39 @@ function SummaryTab() {
   if (!data) return <div className="text-center py-10 text-muted-foreground">No data available</div>;
 
   return (
-    <div className="space-y-4" data-testid="summary-tab">
+    <div className="space-y-2.5" data-testid="summary-tab">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="p-3" data-testid="card-total-logs">
           <div className="flex items-center gap-2 mb-1">
             <Activity className="w-4 h-4 text-primary" />
             <span className="text-xs text-muted-foreground">Total Activities</span>
           </div>
-          <p className="text-2xl font-bold">{data.totalLogs}</p>
+          <p className="text-lg font-bold">{data.totalLogs}</p>
         </Card>
         <Card className="p-3" data-testid="card-last-30-days">
           <div className="flex items-center gap-2 mb-1">
             <Clock className="w-4 h-4 text-blue-500" />
             <span className="text-xs text-muted-foreground">Last 30 Days</span>
           </div>
-          <p className="text-2xl font-bold">{data.last30Days}</p>
+          <p className="text-lg font-bold">{data.last30Days}</p>
         </Card>
         <Card className="p-3" data-testid="card-pending">
           <div className="flex items-center gap-2 mb-1">
             <AlertCircle className="w-4 h-4 text-amber-500" />
             <span className="text-xs text-muted-foreground">Pending</span>
           </div>
-          <p className="text-2xl font-bold text-amber-600">{data.pendingCount}</p>
+          <p className="text-lg font-bold text-amber-600">{data.pendingCount}</p>
         </Card>
         <Card className="p-3" data-testid="card-approved">
           <div className="flex items-center gap-2 mb-1">
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             <span className="text-xs text-muted-foreground">Approved</span>
           </div>
-          <p className="text-2xl font-bold text-emerald-600">{data.approvedCount}</p>
+          <p className="text-lg font-bold text-emerald-600">{data.approvedCount}</p>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card data-testid="card-domain-breakdown">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Activity by Control Domain</CardTitle>
@@ -140,7 +140,7 @@ function SummaryTab() {
               </div>
             ))}
             {(!data.byDomain || data.byDomain.length === 0) && (
-              <p className="text-sm text-muted-foreground text-center py-4">No domain activity recorded yet</p>
+              <p className="text-sm text-muted-foreground text-center py-2">No domain activity recorded yet</p>
             )}
           </CardContent>
         </Card>
@@ -162,7 +162,7 @@ function SummaryTab() {
               </div>
             ))}
             {(!data.recentActivity || data.recentActivity.length === 0) && (
-              <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
+              <p className="text-sm text-muted-foreground text-center py-2">No recent activity</p>
             )}
           </CardContent>
         </Card>
@@ -215,7 +215,7 @@ function UsersTab() {
               ))}
               {users.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No users found</TableCell>
+                  <TableCell colSpan={5} className="text-center py-2 text-muted-foreground">No users found</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -360,7 +360,7 @@ function LogsTab() {
                   ))}
                   {logs.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-2 text-muted-foreground">
                         No compliance log entries found
                       </TableCell>
                     </TableRow>

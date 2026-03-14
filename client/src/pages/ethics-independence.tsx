@@ -305,7 +305,7 @@ export default function EthicsIndependence() {
   const unresolvedThreats = threats.filter(t => t.status === "IDENTIFIED" || t.status === "UNRESOLVED");
 
   return (
-    <div className="page-container space-y-4">
+    <div className="page-container space-y-2.5">
       <SignOffBar phase="PRE_PLANNING" section="independence" className="mb-1" />
       <AIAssistantPanel engagementId={engagementId} phaseKey="independence" className="mb-2" />
       <div className="flex items-center justify-between">
@@ -391,7 +391,7 @@ export default function EthicsIndependence() {
         </CardContent>
       </Card>
 
-      <div className="flex gap-4">
+      <div className="flex gap-2.5">
         <div className="flex-1 min-w-0">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-4 lg:grid-cols-8 w-full h-auto">
@@ -403,7 +403,7 @@ export default function EthicsIndependence() {
               ))}
             </TabsList>
 
-            <TabsContent value="declarations" className="space-y-4 mt-4">
+            <TabsContent value="declarations" className="space-y-2.5 mt-2.5">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Independence Confirmations (ISA 200/220)</CardTitle>
@@ -415,7 +415,7 @@ export default function EthicsIndependence() {
                 </CardHeader>
                 <CardContent>
                   {declarations.length === 0 ? (
-                    <div className="p-4 bg-muted rounded-lg text-center text-muted-foreground">
+                    <div className="p-2.5 bg-muted rounded-lg text-center text-muted-foreground">
                       <p>No independence declarations submitted yet.</p>
                       <p className="text-xs mt-1">Team members can submit their declarations from their individual dashboard.</p>
                     </div>
@@ -458,7 +458,7 @@ export default function EthicsIndependence() {
                     </Table>
                   )}
                   {ethicsStatus?.pendingMembers?.length > 0 && (
-                    <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <div className="mt-2.5 p-3 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
                       <p className="text-sm font-medium text-amber-700 dark:text-amber-400 mb-1">Pending Declarations:</p>
                       <ul className="text-sm text-muted-foreground list-disc list-inside">
                         {ethicsStatus.pendingMembers.map((m: any) => (
@@ -471,7 +471,7 @@ export default function EthicsIndependence() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="conflicts" className="space-y-4 mt-4">
+            <TabsContent value="conflicts" className="space-y-2.5 mt-2.5">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Conflicts of Interest (IESBA Code 310)</CardTitle>
@@ -479,7 +479,7 @@ export default function EthicsIndependence() {
                 </CardHeader>
                 <CardContent>
                   {conflicts.length === 0 ? (
-                    <div className="p-4 bg-muted rounded-lg text-center text-muted-foreground">
+                    <div className="p-2.5 bg-muted rounded-lg text-center text-muted-foreground">
                       <p>No conflicts of interest have been identified.</p>
                       <p className="text-xs mt-1">Conflicts can be recorded via the Ethics routes or the acceptance phase.</p>
                     </div>
@@ -513,7 +513,7 @@ export default function EthicsIndependence() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="non-audit" className="space-y-4 mt-4">
+            <TabsContent value="non-audit" className="space-y-2.5 mt-2.5">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Related Non-Audit Services (IESBA Code R600)</CardTitle>
@@ -521,7 +521,7 @@ export default function EthicsIndependence() {
                 </CardHeader>
                 <CardContent>
                   {nonAuditServices.length === 0 ? (
-                    <div className="p-4 bg-muted rounded-lg text-center text-muted-foreground">
+                    <div className="p-2.5 bg-muted rounded-lg text-center text-muted-foreground">
                       <p>No non-audit services have been recorded for this client.</p>
                       <p className="text-xs mt-1">Non-audit services can be recorded via the client's profile.</p>
                     </div>
@@ -557,7 +557,7 @@ export default function EthicsIndependence() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="safeguards" className="space-y-4 mt-4">
+            <TabsContent value="safeguards" className="space-y-2.5 mt-2.5">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Safeguards (IESBA Code 300)</CardTitle>
@@ -565,13 +565,13 @@ export default function EthicsIndependence() {
                 </CardHeader>
                 <CardContent>
                   {threats.length === 0 ? (
-                    <div className="p-4 bg-muted rounded-lg text-center text-muted-foreground">
+                    <div className="p-2.5 bg-muted rounded-lg text-center text-muted-foreground">
                       <p>No threats have been identified. Safeguards are documented when threats are recorded.</p>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-2.5">
                       {threats.map(t => (
-                        <div key={t.id} className="border rounded-lg p-4">
+                        <div key={t.id} className="border rounded-lg p-2.5">
                           <div className="flex items-center justify-between mb-2">
                             <div>
                               <span className="font-medium">{t.category.replace(/_/g, " ")}</span>
@@ -602,13 +602,13 @@ export default function EthicsIndependence() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="ethics-compliance" className="space-y-4 mt-4">
+            <TabsContent value="ethics-compliance" className="space-y-2.5 mt-2.5">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Ethics Compliance (ICAP/IESBA Code)</CardTitle>
                   <CardDescription>Confirm compliance with applicable ethics requirements</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2.5">
                   <div>
                     <Label>Ethics Compliance Confirmed</Label>
                     <Select
@@ -645,13 +645,13 @@ export default function EthicsIndependence() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="restricted" className="space-y-4 mt-4">
+            <TabsContent value="restricted" className="space-y-2.5 mt-2.5">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Restricted Relationships (IESBA Code 510-524)</CardTitle>
                   <CardDescription>Check for any restricted relationships that may impair independence</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2.5">
                   <div>
                     <Label>Restricted Relationships Checked</Label>
                     <Select
@@ -690,7 +690,7 @@ export default function EthicsIndependence() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="staff-declarations" className="space-y-4 mt-4">
+            <TabsContent value="staff-declarations" className="space-y-2.5 mt-2.5">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Partner / Staff Declarations (ISA 220)</CardTitle>
@@ -698,7 +698,7 @@ export default function EthicsIndependence() {
                 </CardHeader>
                 <CardContent>
                   {declarations.length === 0 ? (
-                    <div className="p-4 bg-muted rounded-lg text-center text-muted-foreground">
+                    <div className="p-2.5 bg-muted rounded-lg text-center text-muted-foreground">
                       <p>No declarations have been submitted yet.</p>
                     </div>
                   ) : (
@@ -727,13 +727,13 @@ export default function EthicsIndependence() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="conclusion" className="space-y-4 mt-4">
+            <TabsContent value="conclusion" className="space-y-2.5 mt-2.5">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Ethics Conclusion (ISA 220.11)</CardTitle>
                   <CardDescription>Final ethics and independence conclusion requiring partner approval</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2.5">
                   <div>
                     <Label>Overall Assessment</Label>
                     <Select value={form.overallAssessment} onValueChange={v => setForm(prev => ({ ...prev, overallAssessment: v }))}>
@@ -756,7 +756,7 @@ export default function EthicsIndependence() {
                   </div>
 
                   {isApproved && approvalData && (
-                    <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="p-2.5 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
                       <div className="flex items-center gap-2 mb-2">
                         <CheckCircle2 className="h-5 w-5 text-green-600" />
                         <span className="font-semibold text-green-700 dark:text-green-400">Partner Approved & Locked</span>
@@ -776,7 +776,7 @@ export default function EthicsIndependence() {
                   )}
 
                   {!isApproved && !isPartner && (
-                    <div className="p-4 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <div className="p-2.5 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
                       <div className="flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5 text-amber-600" />
                         <span className="text-sm text-amber-700 dark:text-amber-400">Partner approval required to complete this phase</span>
@@ -808,7 +808,7 @@ export default function EthicsIndependence() {
                 <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => requestAI("conclusion-wording")} disabled={aiLoading}>
                   <FileText className="h-3 w-3 mr-2" /> Suggest Conclusion Wording
                 </Button>
-                {aiLoading && <div className="flex items-center justify-center py-4"><Loader2 className="h-5 w-5 animate-spin" /></div>}
+                {aiLoading && <div className="flex items-center justify-center py-2"><Loader2 className="h-5 w-5 animate-spin" /></div>}
                 {aiResult && (
                   <div className="mt-3 p-3 bg-muted rounded-lg text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
                     {aiResult}
@@ -828,7 +828,7 @@ export default function EthicsIndependence() {
               Approving will lock this phase. All team members must have submitted declarations and all threats must be resolved.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <div className="p-3 bg-muted rounded-lg text-sm space-y-1">
               <p>Declarations: {declarations.length} / {totalTeam} submitted</p>
               <p>Pending: {pendingDeclarations}</p>

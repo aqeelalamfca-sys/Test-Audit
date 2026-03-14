@@ -26,13 +26,13 @@ export function StatCard({ label, value, icon, trend, className }: StatCardProps
 
   return (
     <Card className={cn("", className)}>
-      <CardContent className="p-4">
+      <CardContent className="p-2.5">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1" data-testid="stat-label">
               {label}
             </p>
-            <p className="text-3xl font-bold text-foreground font-mono tabular-nums" data-testid="stat-value">
+            <p className="text-xl font-bold text-foreground font-mono tabular-nums" data-testid="stat-value">
               {value}
             </p>
             {trend && (

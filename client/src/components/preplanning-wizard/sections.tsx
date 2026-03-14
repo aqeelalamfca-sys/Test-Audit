@@ -101,7 +101,7 @@ const FormSection = ({
         </div>
       </div>
     </CardHeader>
-    <CardContent className="pt-6 space-y-6">
+    <CardContent className="pt-6 space-y-3">
       {children}
     </CardContent>
   </Card>
@@ -155,7 +155,7 @@ const FormField = ({
 );
 
 const FormRow = ({ children, cols = 3 }: { children: React.ReactNode; cols?: 2 | 3 | 4 }) => (
-  <div className={`grid gap-4 ${cols === 2 ? 'sm:grid-cols-2' : cols === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
+  <div className={`grid gap-2.5 ${cols === 2 ? 'sm:grid-cols-2' : cols === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
     {children}
   </div>
 );
@@ -182,7 +182,7 @@ export function EngagementSetupSection({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <FormSection
         icon={<Building2 className="h-5 w-5" />}
         title="Engagement Identification"
@@ -293,7 +293,7 @@ export function EngagementSetupSection({
         <SectionDivider title="Group Audit Settings" icon={<Users className="h-4 w-4" />} />
 
         <FormRow cols={2}>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <div className="flex items-center space-x-3">
               <Checkbox
                 id="isGroupAudit"
@@ -414,7 +414,7 @@ export function AcceptanceContinuanceSection({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <FormSection
         icon={<Shield className="h-5 w-5" />}
         title="Client Integrity Assessment"
@@ -426,7 +426,7 @@ export function AcceptanceContinuanceSection({
               value={data.clientIntegrityAssessment}
               onValueChange={(v) => handleChange("clientIntegrityAssessment", v as AcceptanceContinuanceData["clientIntegrityAssessment"])}
               disabled={readOnly}
-              className="flex gap-4"
+              className="flex gap-2.5"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="pass" id="integrity-pass" data-testid="radio-integrity-pass" />
@@ -504,7 +504,7 @@ export function AcceptanceContinuanceSection({
           />
         </FormField>
 
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <div className="flex items-center space-x-3">
             <Checkbox
               id="hasConditions"
@@ -554,7 +554,7 @@ export function AcceptanceContinuanceSection({
             value={data.acceptanceDecision}
             onValueChange={(v) => handleChange("acceptanceDecision", v as AcceptanceContinuanceData["acceptanceDecision"])}
             disabled={readOnly}
-            className="flex flex-wrap gap-4"
+            className="flex flex-wrap gap-2.5"
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="accept" id="decision-accept" data-testid="radio-decision-accept" />

@@ -290,7 +290,7 @@ export default function EvidenceLinking() {
   });
 
   if (isLoading) return <AgentsLoadingInline showDelay={1000} />;
-  if (error) return <div className="p-6 text-center text-destructive">Failed to load evidence linking data.</div>;
+  if (error) return <div className="p-3 text-center text-destructive">Failed to load evidence linking data.</div>;
 
   const s = stats || {
     totalFiles: 0, activeFiles: 0, supersededFiles: 0, voidedFiles: 0, totalSize: 0,
@@ -355,7 +355,7 @@ export default function EvidenceLinking() {
       showSaveNext={true}
       showSaveClose={true}
     >
-    <div className="w-full px-4 py-3 space-y-3">
+    <div className="w-full px-3 py-3 space-y-3">
       <AIAssistantPanel engagementId={engagementId || ""} phaseKey="evidence-linking" className="mb-2" />
       <Card>
         <CardContent className="pt-4 pb-4">
@@ -465,8 +465,8 @@ export default function EvidenceLinking() {
         </TabsList>
 
         <TabsContent value="dashboard">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2.5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -479,7 +479,7 @@ export default function EvidenceLinking() {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {Object.entries(s.bySourceType).length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">No evidence files yet</p>
+                    <p className="text-sm text-muted-foreground text-center py-2">No evidence files yet</p>
                   ) : (
                     Object.entries(s.bySourceType).map(([type, count]) => (
                       <div key={type} className="flex items-center justify-between">
@@ -505,7 +505,7 @@ export default function EvidenceLinking() {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {Object.entries(s.bySufficiency).length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">No evidence files yet</p>
+                    <p className="text-sm text-muted-foreground text-center py-2">No evidence files yet</p>
                   ) : (
                     Object.entries(s.bySufficiency).map(([rating, count]) => (
                       <div key={rating} className="flex items-center justify-between">
@@ -529,7 +529,7 @@ export default function EvidenceLinking() {
               </CardHeader>
               <CardContent>
                 {Object.keys(s.byPhase).length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">No evidence files yet</p>
+                  <p className="text-sm text-muted-foreground text-center py-2">No evidence files yet</p>
                 ) : (
                   <Table>
                     <TableHeader>
@@ -612,9 +612,9 @@ export default function EvidenceLinking() {
         </TabsContent>
 
         <TabsContent value="vault">
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <div
-              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+              className={`border-2 border-dashed rounded-lg p-3 text-center transition-colors ${
                 dragOver
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary/50"
@@ -735,7 +735,7 @@ export default function EvidenceLinking() {
 
                 {filteredEvidence.length === 0 ? (
                   <div className="text-center py-12">
-                    <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground mb-2.5" />
                     <h3 className="font-medium tracking-tight mb-2">No Evidence Files Found</h3>
                     <p className="text-sm text-muted-foreground">
                       Upload evidence files or adjust your filters.
@@ -821,7 +821,7 @@ export default function EvidenceLinking() {
         </TabsContent>
 
         <TabsContent value="linkage">
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -847,7 +847,7 @@ export default function EvidenceLinking() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="w-full bg-muted rounded-full h-2 mb-4">
+                <div className="w-full bg-muted rounded-full h-2 mb-2.5">
                   <div
                     className={`h-2 rounded-full transition-all ${
                       s.linkagePercent >= 80 ? "bg-emerald-500" : s.linkagePercent >= 50 ? "bg-amber-500" : "bg-red-500"
@@ -857,7 +857,7 @@ export default function EvidenceLinking() {
                 </div>
 
                 {evidenceList.length === 0 ? (
-                  <div className="text-center py-8">
+                  <div className="text-center py-2">
                     <Link2 className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                     <p className="text-sm text-muted-foreground">No evidence files to link yet</p>
                   </div>
@@ -965,7 +965,7 @@ export default function EvidenceLinking() {
         </TabsContent>
 
         <TabsContent value="categorization">
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -993,7 +993,7 @@ export default function EvidenceLinking() {
               </CardHeader>
               <CardContent>
                 {evidenceList.length === 0 ? (
-                  <div className="text-center py-8">
+                  <div className="text-center py-2">
                     <Tags className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                     <p className="text-sm text-muted-foreground">No evidence files to categorize</p>
                   </div>
@@ -1088,7 +1088,7 @@ export default function EvidenceLinking() {
             </CardHeader>
             <CardContent>
               {(s.allFilesList || []).length === 0 ? (
-                <div className="text-center py-8">
+                <div className="text-center py-2">
                   <History className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                   <p className="text-sm text-muted-foreground">No evidence files yet</p>
                 </div>
@@ -1167,11 +1167,11 @@ export default function EvidenceLinking() {
         </TabsContent>
 
         <TabsContent value="review">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2.5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
               <Card>
                 <CardContent className="pt-4 text-center">
-                  <p className="text-2xl font-bold">{s.reviewedCount}</p>
+                  <p className="text-lg font-bold">{s.reviewedCount}</p>
                   <p className="text-xs text-muted-foreground mt-1">Reviewed Files</p>
                   <div className="w-full bg-muted rounded-full h-1.5 mt-2">
                     <div
@@ -1183,13 +1183,13 @@ export default function EvidenceLinking() {
               </Card>
               <Card>
                 <CardContent className="pt-4 text-center">
-                  <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{s.unreviewedWithNotes}</p>
+                  <p className="text-lg font-bold text-amber-600 dark:text-amber-400">{s.unreviewedWithNotes}</p>
                   <p className="text-xs text-muted-foreground mt-1">Unaddressed Comments</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-4 text-center">
-                  <p className="text-2xl font-bold">{s.sufficientCount}</p>
+                  <p className="text-lg font-bold">{s.sufficientCount}</p>
                   <p className="text-xs text-muted-foreground mt-1">Sufficient Rating</p>
                 </CardContent>
               </Card>
@@ -1207,7 +1207,7 @@ export default function EvidenceLinking() {
               </CardHeader>
               <CardContent>
                 {evidenceList.length === 0 ? (
-                  <div className="text-center py-8">
+                  <div className="text-center py-2">
                     <User className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                     <p className="text-sm text-muted-foreground">No evidence to review</p>
                   </div>

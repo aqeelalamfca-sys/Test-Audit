@@ -368,7 +368,7 @@ function StepHeader({
       <button
         onClick={onToggle}
         className={cn(
-          "flex w-full items-center justify-between p-4 hover-elevate rounded-md transition-colors",
+          "flex w-full items-center justify-between p-2.5 hover-elevate rounded-md transition-colors",
           isImportant && "bg-primary/5"
         )}
         data-testid={`step-${step}-toggle`}
@@ -427,29 +427,29 @@ function CopyButton({ text, label }: { text: string; label: string }) {
 
 function Step1RequiredInputs({ data }: { data: ISA530SamplingResult['step1_requiredInputs'] }) {
   return (
-    <div className="space-y-4 p-4 pt-0">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+    <div className="space-y-2.5 p-2.5 pt-0">
+      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
         <div className="rounded-lg border p-3" data-testid="count-significant-risks">
           <div className="text-sm text-muted-foreground">Significant Risks</div>
-          <div className="text-2xl font-bold">{data.riskAssessment.significantRisks.length}</div>
+          <div className="text-lg font-bold">{data.riskAssessment.significantRisks.length}</div>
         </div>
         <div className="rounded-lg border p-3" data-testid="count-fraud-risks">
           <div className="text-sm text-muted-foreground">Fraud Risks</div>
-          <div className="text-2xl font-bold text-destructive">{data.riskAssessment.fraudRisks.length}</div>
+          <div className="text-lg font-bold text-destructive">{data.riskAssessment.fraudRisks.length}</div>
         </div>
         <div className="rounded-lg border p-3" data-testid="count-fs-level-risks">
           <div className="text-sm text-muted-foreground">FS-Level Risks</div>
-          <div className="text-2xl font-bold">{data.riskAssessment.fsLevelRisks.length}</div>
+          <div className="text-lg font-bold">{data.riskAssessment.fsLevelRisks.length}</div>
         </div>
         <div className="rounded-lg border p-3" data-testid="count-assertion-risks">
           <div className="text-sm text-muted-foreground">Assertion-Level Risks</div>
-          <div className="text-2xl font-bold">{data.riskAssessment.assertionLevelRisks.length}</div>
+          <div className="text-lg font-bold">{data.riskAssessment.assertionLevelRisks.length}</div>
         </div>
       </div>
 
       <Separator />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-2.5 md:grid-cols-3">
         <Card data-testid="card-overall-materiality">
           <CardHeader className="pb-2">
             <CardDescription>Overall Materiality</CardDescription>
@@ -518,8 +518,8 @@ function Step1RequiredInputs({ data }: { data: ISA530SamplingResult['step1_requi
 function Step2Populations({ data }: { data: PopulationDefinition[] }) {
   if (data.length === 0) {
     return (
-      <div className="p-4 pt-0">
-        <div className="rounded-lg border border-dashed p-6 text-center">
+      <div className="p-2.5 pt-0">
+        <div className="rounded-lg border border-dashed p-3 text-center">
           <Target className="mx-auto h-8 w-8 text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">No populations defined yet.</p>
         </div>
@@ -528,7 +528,7 @@ function Step2Populations({ data }: { data: PopulationDefinition[] }) {
   }
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       <Table>
         <TableHeader>
           <TableRow>
@@ -599,12 +599,12 @@ function Step3SamplingApproaches({
   };
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       {data.map((item) => {
         const pop = populations.find(p => p.id === item.populationId);
         return (
-          <div key={item.populationId} className="rounded-lg border p-4" data-testid={`approach-${item.populationId}`}>
-            <div className="flex items-start justify-between gap-4">
+          <div key={item.populationId} className="rounded-lg border p-2.5" data-testid={`approach-${item.populationId}`}>
+            <div className="flex items-start justify-between gap-2.5">
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="font-medium">{pop?.fsHeadLabel || item.populationId}</span>
@@ -639,20 +639,20 @@ function Step4SampleSizeCalculations({
   populations: PopulationDefinition[];
 }) {
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       {data.map((calc) => {
         const pop = populations.find(p => p.id === calc.populationId);
         const appliedAdjustments = calc.adjustments.filter(a => a.applied);
         
         return (
-          <div key={calc.populationId} className="rounded-lg border p-4" data-testid={`calculation-${calc.populationId}`}>
+          <div key={calc.populationId} className="rounded-lg border p-2.5" data-testid={`calculation-${calc.populationId}`}>
             <div className="flex items-start justify-between mb-3">
               <div>
                 <span className="font-medium">{pop?.fsHeadLabel || calc.populationId}</span>
                 <Badge variant="outline" className="ml-2">{pop?.assertion}</Badge>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-primary">{calc.finalSampleSize}</div>
+                <div className="text-lg font-bold text-primary">{calc.finalSampleSize}</div>
                 <div className="text-xs text-muted-foreground">Final Sample Size</div>
               </div>
             </div>
@@ -723,12 +723,12 @@ function Step5StratificationPlans({
   };
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       {data.map((plan) => {
         const pop = populations.find(p => p.id === plan.populationId);
         
         return (
-          <div key={plan.populationId} className="rounded-lg border p-4" data-testid={`stratification-${plan.populationId}`}>
+          <div key={plan.populationId} className="rounded-lg border p-2.5" data-testid={`stratification-${plan.populationId}`}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="font-medium">{pop?.fsHeadLabel || plan.populationId}</span>
@@ -815,14 +815,14 @@ function Step6SelectionMethods({
   };
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       {data.map((item) => {
         const pop = populations.find(p => p.id === item.populationId);
         const automatedMethods = item.methods.filter(m => m.isAutomated);
         const manualMethods = item.methods.filter(m => !m.isAutomated);
         
         return (
-          <div key={item.populationId} className="rounded-lg border p-4" data-testid={`selection-${item.populationId}`}>
+          <div key={item.populationId} className="rounded-lg border p-2.5" data-testid={`selection-${item.populationId}`}>
             <div className="flex items-center gap-2 mb-3">
               <span className="font-medium">{pop?.fsHeadLabel || item.populationId}</span>
               <Badge variant="outline">{pop?.assertion}</Badge>
@@ -886,8 +886,8 @@ function Step7SampleList({ data, onExport }: { data: SampleItem[]; onExport: () 
 
   if (data.length === 0) {
     return (
-      <div className="p-4 pt-0">
-        <div className="rounded-lg border border-dashed p-6 text-center">
+      <div className="p-2.5 pt-0">
+        <div className="rounded-lg border border-dashed p-3 text-center">
           <List className="mx-auto h-8 w-8 text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">No samples generated yet.</p>
         </div>
@@ -905,9 +905,9 @@ function Step7SampleList({ data, onExport }: { data: SampleItem[]; onExport: () 
   };
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Total:</span>
             <Badge variant="default">{summary.total}</Badge>
@@ -998,7 +998,7 @@ function Step8AuditProgramLinks({
   );
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       {orphanSamples.length > 0 && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
@@ -1009,17 +1009,17 @@ function Step8AuditProgramLinks({
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2.5">
         <div className="rounded-lg border p-3 text-center">
-          <div className="text-2xl font-bold">{data.length}</div>
+          <div className="text-lg font-bold">{data.length}</div>
           <div className="text-xs text-muted-foreground">Total Linkages</div>
         </div>
         <div className="rounded-lg border p-3 text-center">
-          <div className="text-2xl font-bold text-green-600">{data.filter(l => l.evidenceStatus === 'Approved').length}</div>
+          <div className="text-lg font-bold text-green-600">{data.filter(l => l.evidenceStatus === 'Approved').length}</div>
           <div className="text-xs text-muted-foreground">Evidence Approved</div>
         </div>
         <div className="rounded-lg border p-3 text-center">
-          <div className="text-2xl font-bold text-amber-600">{data.filter(l => l.evidenceStatus === 'Pending').length}</div>
+          <div className="text-lg font-bold text-amber-600">{data.filter(l => l.evidenceStatus === 'Pending').length}</div>
           <div className="text-xs text-muted-foreground">Pending Evidence</div>
         </div>
       </div>
@@ -1077,7 +1077,7 @@ function Step9Documentation({ data, onCopyAll }: { data: DocumentationOutput; on
   ];
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       <div className="flex justify-end">
         <Button onClick={onCopyAll} variant="outline" data-testid="button-copy-all-documentation">
           <ClipboardCopy className="mr-2 h-4 w-4" />
@@ -1087,7 +1087,7 @@ function Step9Documentation({ data, onCopyAll }: { data: DocumentationOutput; on
 
       <div className="space-y-3">
         {sections.map((section) => (
-          <div key={section.key} className="rounded-lg border p-4" data-testid={`doc-section-${section.key}`}>
+          <div key={section.key} className="rounded-lg border p-2.5" data-testid={`doc-section-${section.key}`}>
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
                 <div className="mb-2 text-sm font-medium">{section.label}</div>
@@ -1127,7 +1127,7 @@ function QualityGatesSection({ data }: { data: QualityGates }) {
   ];
 
   return (
-    <div className="space-y-3 p-4 bg-muted/30 rounded-lg border">
+    <div className="space-y-3 p-2.5 bg-muted/30 rounded-lg border">
       <div className="flex items-center gap-2">
         {data.overallPassed ? (
           <CheckCircle2 className="h-5 w-5 text-green-600" />
@@ -1163,9 +1163,9 @@ function QualityGatesSection({ data }: { data: QualityGates }) {
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       {[1, 2, 3, 4, 5].map((i) => (
-        <div key={i} className="rounded-lg border p-4">
+        <div key={i} className="rounded-lg border p-2.5">
           <div className="flex items-center gap-3">
             <Skeleton className="h-8 w-8 rounded-full" />
             <div className="space-y-2">
@@ -1312,7 +1312,7 @@ export function ISA530SamplingPanel({ engagementId, onSamplingGenerated, classNa
   return (
     <Card className={cn("w-full", className)}>
       <CardHeader>
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center justify-between gap-2.5 flex-wrap">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Brain className="h-5 w-5 text-primary" />
@@ -1368,9 +1368,9 @@ export function ISA530SamplingPanel({ engagementId, onSamplingGenerated, classNa
         {isLoadingSampling ? (
           <LoadingSkeleton />
         ) : !savedSampling ? (
-          <div className="rounded-lg border border-dashed p-8 text-center">
+          <div className="rounded-lg border border-dashed p-2.5 text-center">
             <Brain className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-            <p className="mt-4 text-muted-foreground">
+            <p className="mt-2.5 text-muted-foreground">
               No sampling analysis generated yet. Click "Analyze Sampling" to run ISA 530 analysis.
             </p>
           </div>

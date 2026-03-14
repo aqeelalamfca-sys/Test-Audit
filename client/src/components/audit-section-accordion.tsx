@@ -73,7 +73,7 @@ function SectionHeader({ section, isExpanded, isLocked, onClick }: {
       )}
       data-testid={`section-header-${section.id}`}
     >
-      <div className="px-4 py-3">
+      <div className="px-3 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <ChevronDown className={cn(
@@ -196,7 +196,7 @@ export function AuditSectionAccordion({
             />
             {isExpanded && !isLocked && (
               <Card className="mt-1 border-l-4 border-l-primary/30 rounded-t-none" data-testid={`section-content-${section.id}`}>
-                <div className="p-4">
+                <div className="p-2.5">
                   {children(section)}
                 </div>
               </Card>
@@ -234,7 +234,7 @@ export function SectionActionBar({
   isLastSection = false,
 }: SectionActionBarProps) {
   return (
-    <div className="flex items-center justify-between mt-4 pt-3 border-t" data-testid="section-action-bar">
+    <div className="flex items-center justify-between mt-2.5 pt-3 border-t" data-testid="section-action-bar">
       <div>
         {!isFirstSection && onBack && (
           <Button variant="outline" size="sm" onClick={onBack} disabled={isSaving} data-testid="btn-section-back">
@@ -296,7 +296,7 @@ export function SectionTemplate({
   checklistPanel,
 }: SectionTemplateProps) {
   return (
-    <div className="space-y-4" data-testid="section-template">
+    <div className="space-y-2.5" data-testid="section-template">
       {objective && (
         <div className="p-3 bg-muted/40 rounded-lg border border-muted" data-testid="section-objective">
           <div className="flex items-center gap-2 mb-1">

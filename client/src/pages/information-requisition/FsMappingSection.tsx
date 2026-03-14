@@ -320,7 +320,7 @@ function AccountCard({
       }`}
       data-testid={`card-account-${entry.accountCode}`}
     >
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="p-2.5 space-y-3">
         <div className="flex items-start gap-3 flex-wrap">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -1411,8 +1411,8 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
               </Alert>
             )}
             {/* Reconciliation Ribbon */}
-            <div className="border-b px-4 py-2 sticky top-0 z-30 bg-background" data-testid="recon-ribbon">
-              <div className="flex items-center gap-4 flex-wrap">
+            <div className="border-b px-3 py-2 sticky top-0 z-30 bg-background" data-testid="recon-ribbon">
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">TB Total:</span>
                   <span className="text-sm font-mono font-medium" data-testid="text-tb-total">{formatNumber(reconRibbon?.tbTotal ?? summary?.totalDebit ?? 0)}</span>
@@ -1435,7 +1435,7 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
                       )}
                     </div>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="absolute left-0 right-0 z-40 bg-background border-b shadow-sm px-4 py-2">
+                  <CollapsibleContent className="absolute left-0 right-0 z-40 bg-background border-b shadow-sm px-3 py-2">
                     <div className="text-xs font-medium mb-1">Unmapped Accounts</div>
                     <div className="max-h-40 overflow-y-auto space-y-1">
                       {(reconRibbon?.unmappedAccounts || []).length === 0 ? (
@@ -1474,7 +1474,7 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
             </div>
 
             {/* Action Bar */}
-            <div className="border-b px-4 py-2" data-testid="action-bar">
+            <div className="border-b px-3 py-2" data-testid="action-bar">
               <div className="flex items-center gap-2 flex-wrap">
                 <Button
                   size="sm"
@@ -1631,7 +1631,7 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
                       </>
                     )}
                     {filteredFsHeads.length === 0 && fsHeads.length === 0 && (
-                      <div className="text-center text-muted-foreground text-sm py-4 px-2">
+                      <div className="text-center text-muted-foreground text-sm py-2 px-2">
                         No FS taxonomy defined.
                         <Button variant="outline" size="sm" className="mt-2 w-full" onClick={initializeTaxonomy} disabled={isInitializing} data-testid="button-init-taxonomy-empty">
                           {isInitializing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
@@ -1721,7 +1721,7 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
                         {filteredEntries.map(entry => (
                           <div key={entry.id} className="flex items-start gap-2">
                             <Checkbox
-                              className="mt-5 shrink-0"
+                              className="mt-2.5 shrink-0"
                               checked={selectedRows.has(entry.id)}
                               onCheckedChange={() => toggleRowSelection(entry.id)}
                               disabled={entry.isLocked}
@@ -1771,7 +1771,7 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
             )}
             <ScrollArea className="flex-1 max-h-[60vh]">
               {exceptions.length === 0 ? (
-                <div className="flex flex-col items-center py-8 text-center">
+                <div className="flex flex-col items-center py-2 text-center">
                   <CheckCircle2 className="h-8 w-8 text-green-500 dark:text-green-400 mb-2" />
                   <div className="text-sm font-medium">No Exceptions</div>
                   <div className="text-xs text-muted-foreground">All mappings look good</div>
@@ -1846,7 +1846,7 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
             )}
             <ScrollArea className="flex-1 max-h-[50vh]">
               {(versionTrail?.changeLog || []).length === 0 ? (
-                <div className="text-xs text-muted-foreground text-center py-8">No version history yet</div>
+                <div className="text-xs text-muted-foreground text-center py-2">No version history yet</div>
               ) : (
                 <div className="space-y-3 pr-4">
                   {(versionTrail?.changeLog || []).map((entry, idx) => (
@@ -1878,7 +1878,7 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
               <DialogTitle>Add FS Line</DialogTitle>
               <DialogDescription>Create a new FS Line under an existing FS Head</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-2.5 py-2">
               <div className="space-y-2">
                 <Label>FS Head</Label>
                 <Select value={newLineFsHeadId} onValueChange={setNewLineFsHeadId}>
@@ -1911,7 +1911,7 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
               <DialogTitle>Rename FS Line</DialogTitle>
               <DialogDescription>Update the name of this FS Line.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-2.5 py-2">
               <div className="space-y-2">
                 <Label>New Name</Label>
                 <Input value={renameLineName} onChange={(e) => setRenameLineName(e.target.value)} placeholder="Enter new name" data-testid="input-rename-line-name" />
@@ -1933,7 +1933,7 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
               <DialogTitle>Merge FS Lines</DialogTitle>
               <DialogDescription>Select source lines to merge into a target line. All mappings will be transferred.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-2.5 py-2">
               <div className="space-y-2">
                 <Label>Source Lines (to be merged)</Label>
                 <div className="border rounded-md p-2 max-h-40 overflow-y-auto space-y-1" data-testid="merge-source-list">
@@ -1986,7 +1986,7 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
               <DialogTitle>Bulk Assign Mapping</DialogTitle>
               <DialogDescription>Assign {selectedRows.size} selected accounts to an FS Head/Line</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-2.5 py-2">
               <div className="space-y-2">
                 <Label>FS Head</Label>
                 <Select value={bulkFsHeadId} onValueChange={(v) => { setBulkFsHeadId(v); setBulkFsLineId(""); }}>
@@ -2028,7 +2028,7 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
                 <span className="ml-1">{autoMapSuggestions.filter(s => s.checked).length} selected.</span>
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="flex-1 -mx-6 px-6">
+            <ScrollArea className="flex-1 -mx-6 px-3">
               <div className="space-y-2 py-2">
                 {autoMapSuggestions.map((suggestion, idx) => (
                   <div
@@ -2103,7 +2103,7 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
               <DialogTitle>Approve & Lock Mappings</DialogTitle>
               <DialogDescription>This will lock all mapped items and create a mapping version.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-3 py-4">
+            <div className="space-y-3 py-2">
               <div className="rounded-md border p-3 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Total Accounts</span>
@@ -2166,7 +2166,7 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
                 {exceptionBeingResolved?.exception.accountCode} - {exceptionBeingResolved?.exception.accountName}
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-2.5 py-2">
               <div className="rounded-md border p-3 bg-muted/50">
                 <div className="text-xs text-muted-foreground mb-1">Type</div>
                 <div className="text-sm font-medium">{exceptionBeingResolved?.exception.type}</div>

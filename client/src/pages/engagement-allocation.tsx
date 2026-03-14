@@ -311,7 +311,7 @@ function InlineAllocationRow({
       {historyOpen && (
         <TableRow>
           <TableCell colSpan={8} className="bg-muted/30 p-0">
-            <div className="px-4 py-3">
+            <div className="px-3 py-3">
               <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
                 <History className="h-3.5 w-3.5" />
                 Allocation Change History — {eng.engagementCode}
@@ -420,7 +420,7 @@ export default function EngagementAllocation() {
             <UserCheck className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Engagement Allocation</h1>
+            <h1 className="text-lg font-bold">Engagement Allocation</h1>
             <p className="text-muted-foreground">Assign teams to engagements</p>
           </div>
         </div>
@@ -433,7 +433,7 @@ export default function EngagementAllocation() {
               <Users className="h-5 w-5 text-blue-500" />
               <div>
                 <p className="text-xs text-muted-foreground">Total Engagements</p>
-                <p className="text-2xl font-bold">{(engagements || []).length}</p>
+                <p className="text-lg font-bold">{(engagements || []).length}</p>
               </div>
             </div>
           </CardContent>
@@ -444,7 +444,7 @@ export default function EngagementAllocation() {
               <Clock className="h-5 w-5 text-amber-500" />
               <div>
                 <p className="text-xs text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold">{activeCount}</p>
+                <p className="text-lg font-bold">{activeCount}</p>
               </div>
             </div>
           </CardContent>
@@ -455,7 +455,7 @@ export default function EngagementAllocation() {
               <CheckCircle2 className="h-5 w-5 text-green-500" />
               <div>
                 <p className="text-xs text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold">{completedCount}</p>
+                <p className="text-lg font-bold">{completedCount}</p>
               </div>
             </div>
           </CardContent>
@@ -466,7 +466,7 @@ export default function EngagementAllocation() {
               <AlertCircle className="h-5 w-5 text-orange-500" />
               <div>
                 <p className="text-xs text-muted-foreground">Pending Allocation</p>
-                <p className="text-2xl font-bold">{pendingAllocations}</p>
+                <p className="text-lg font-bold">{pendingAllocations}</p>
               </div>
             </div>
           </CardContent>
@@ -516,13 +516,13 @@ export default function EngagementAllocation() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={8} className="text-center py-2">
                       <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
                     </TableCell>
                   </TableRow>
                 ) : filteredEngagements.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-2 text-muted-foreground">
                       No engagements found.
                     </TableCell>
                   </TableRow>

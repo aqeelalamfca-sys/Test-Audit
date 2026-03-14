@@ -17,7 +17,7 @@ export function SystemStatusOverlay() {
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/80 backdrop-blur-sm"
       data-testid="system-status-overlay"
     >
-      <div className="max-w-md w-full mx-4 bg-card border rounded-lg shadow-lg p-6 space-y-4">
+      <div className="max-w-md w-full mx-4 bg-card border rounded-lg shadow-lg p-3 space-y-2.5">
         <div className="flex items-center gap-3">
           {isError ? (
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10 shrink-0">

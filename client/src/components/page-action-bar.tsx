@@ -252,7 +252,7 @@ export function PageActionBar({
   }, []);
 
   const containerClass = position === "bottom" 
-    ? "sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border/50 py-3 mt-4 z-10"
+    ? "sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border/50 py-3 mt-2.5 z-10"
     : "flex items-center gap-2";
 
   return (

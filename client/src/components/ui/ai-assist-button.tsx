@@ -202,7 +202,7 @@ export function AIAssistButton({
           </TooltipTrigger>
           <TooltipContent>AI Assist</TooltipContent>
         </Tooltip>
-        <PopoverContent className="w-[400px] p-4" align="end">
+        <PopoverContent className="w-[400px] p-2.5" align="end">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="font-medium text-sm">AI Assistant</h4>

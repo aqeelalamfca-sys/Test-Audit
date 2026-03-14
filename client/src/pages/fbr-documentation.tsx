@@ -203,12 +203,12 @@ function TaxComputationTab({ lines, setLines, taxRate, setTaxRate }: {
   }, [lines, taxRate]);
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="space-y-2.5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
         <Card>
           <CardContent className="pt-4">
             <div className="text-sm text-muted-foreground">Taxable Income</div>
-            <div className="text-2xl font-bold" data-testid="text-taxable-income">{formatCurrency(totals.taxableIncome)}</div>
+            <div className="text-lg font-bold" data-testid="text-taxable-income">{formatCurrency(totals.taxableIncome)}</div>
           </CardContent>
         </Card>
         <Card>
@@ -229,7 +229,7 @@ function TaxComputationTab({ lines, setLines, taxRate, setTaxRate }: {
         <Card>
           <CardContent className="pt-4">
             <div className="text-sm text-muted-foreground">Tax Liability</div>
-            <div className="text-2xl font-bold text-destructive" data-testid="text-tax-liability">{formatCurrency(totals.taxLiability)}</div>
+            <div className="text-lg font-bold text-destructive" data-testid="text-tax-liability">{formatCurrency(totals.taxLiability)}</div>
           </CardContent>
         </Card>
       </div>
@@ -295,7 +295,7 @@ function TaxComputationTab({ lines, setLines, taxRate, setTaxRate }: {
             </Table>
           </ScrollArea>
 
-          <div className="mt-4 border-t pt-4 space-y-2">
+          <div className="mt-2.5 border-t pt-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span>Total Add-Backs</span>
               <span className="font-mono" data-testid="text-total-add-backs">{formatCurrency(totals.addBacks)}</span>
@@ -346,8 +346,8 @@ function WHTReconciliationTab({ entries, setEntries }: {
   const reconciledCount = entries.filter(e => e.status === "reconciled").length;
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="space-y-2.5">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5">
         <Card>
           <CardContent className="pt-4">
             <div className="text-sm text-muted-foreground">Total WHT Deducted</div>
@@ -474,8 +474,8 @@ function AdvanceTaxTab({ entries, setEntries }: {
   const totalDue = entries.reduce((s, e) => s + e.amount, 0);
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="space-y-2.5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
         <Card>
           <CardContent className="pt-4">
             <div className="text-sm text-muted-foreground">Total Advance Tax Due</div>
@@ -587,8 +587,8 @@ function TaxAdjustmentsTab({ adjustments, setAdjustments }: {
   const totalTemporary = adjustments.filter(a => a.nature === "temporary").reduce((s, a) => s + a.currentYear, 0);
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-2.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card>
           <CardContent className="pt-4">
             <div className="text-sm text-muted-foreground">Permanent Differences</div>
@@ -674,8 +674,8 @@ function NTNValidationTab({ validation, setValidation }: {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-2.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -683,7 +683,7 @@ function NTNValidationTab({ validation, setValidation }: {
               NTN Validation
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-2.5">
             <div className="space-y-2">
               <Label htmlFor="ntn">National Tax Number (NTN)</Label>
               <div className="flex gap-2">
@@ -755,7 +755,7 @@ function NTNValidationTab({ validation, setValidation }: {
               STRN Validation
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-2.5">
             <div className="space-y-2">
               <Label htmlFor="strn">Sales Tax Registration Number (STRN)</Label>
               <div className="flex gap-2">
@@ -769,7 +769,7 @@ function NTNValidationTab({ validation, setValidation }: {
                 {getStatusBadge(validation.strnStatus)}
               </div>
             </div>
-            <div className="p-4 rounded-md bg-muted/50 space-y-2">
+            <div className="p-2.5 rounded-md bg-muted/50 space-y-2">
               <div className="text-sm font-medium">Validation Summary</div>
               <div className="text-xs text-muted-foreground space-y-1">
                 <div className="flex justify-between">
@@ -836,7 +836,7 @@ function ExportTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -845,10 +845,10 @@ function ExportTab() {
           </CardTitle>
           <CardDescription>Generate and download FBR documentation package</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             <Card className="hover-elevate cursor-pointer" onClick={() => handleExport("excel")} data-testid="card-export-excel">
-              <CardContent className="pt-4 flex items-center gap-4">
+              <CardContent className="pt-4 flex items-center gap-2.5">
                 <div className="p-3 rounded-md bg-muted">
                   <FileSpreadsheet className="h-8 w-8" />
                 </div>
@@ -860,7 +860,7 @@ function ExportTab() {
             </Card>
 
             <Card className="hover-elevate cursor-pointer" onClick={() => handleExport("pdf")} data-testid="card-export-pdf">
-              <CardContent className="pt-4 flex items-center gap-4">
+              <CardContent className="pt-4 flex items-center gap-2.5">
                 <div className="p-3 rounded-md bg-muted">
                   <FileText className="h-8 w-8" />
                 </div>
@@ -1030,7 +1030,7 @@ export default function FBRDocumentation() {
 
   return (
     <div className="page-container">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
         <div>
           <h1 className="text-xl font-semibold tracking-tight" data-testid="text-page-title">FBR Documentation</h1>
           <p className="text-sm text-muted-foreground">

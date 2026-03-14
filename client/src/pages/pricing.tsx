@@ -103,13 +103,13 @@ export default function PricingPage() {
   const maxYearlyDiscount = plans?.reduce((max, p) => Math.max(max, p.yearlyDiscount || 0), 0) || 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950">
+    <div className="min-h-0 bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950">
       <div className="absolute top-3 right-4">
         <ThemeToggle />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 pt-4 pb-8">
-        <div className="flex items-center gap-2 mb-4">
+      <div className="max-w-7xl mx-auto px-3 pt-4 pb-8">
+        <div className="flex items-center gap-2 mb-2.5">
           <Button
             variant="ghost"
             size="sm"
@@ -122,20 +122,20 @@ export default function PricingPage() {
           </Button>
         </div>
 
-        <div className="text-center mb-6">
+        <div className="text-center mb-3">
           <div className="flex items-center justify-center gap-3 mb-2">
             <Shield className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground" data-testid="text-page-title">
+            <h1 className="text-xl font-bold text-foreground" data-testid="text-page-title">
               AuditWise
             </h1>
           </div>
-          <p className="text-lg text-muted-foreground mb-4">
+          <p className="text-lg text-muted-foreground mb-2.5">
             Choose the plan that fits your firm
           </p>
 
           <div className="inline-flex items-center bg-muted/60 dark:bg-muted/30 rounded-full p-1.5 mb-2 shadow-sm border border-border/40">
             <button
-              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer ${
+              className={`px-3 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer ${
                 billingCycle === "monthly"
                   ? "bg-primary text-primary-foreground shadow-md scale-105"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -146,7 +146,7 @@ export default function PricingPage() {
               Monthly
             </button>
             <button
-              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer ${
+              className={`px-3 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer ${
                 billingCycle === "yearly"
                   ? "bg-primary text-primary-foreground shadow-md scale-105"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -172,15 +172,15 @@ export default function PricingPage() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
             {[1, 2, 3, 4].map((i) => (
               <Card key={i} className="animate-pulse">
-                <CardContent className="p-5 h-[350px]" />
+                <CardContent className="p-3 h-[350px]" />
               </Card>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
             {plans?.map((plan) => {
               const config = tierConfig[plan.code] || tierConfig.STARTER;
               const Icon = config.icon;
@@ -204,7 +204,7 @@ export default function PricingPage() {
                     </Badge>
                   )}
 
-                  <CardHeader className="pb-2 pt-4 px-4">
+                  <CardHeader className="pb-2 pt-4 px-3">
                     <div className="flex items-center gap-2 mb-0.5">
                       <Icon className={`h-4 w-4 ${config.color}`} />
                       <CardTitle className="text-base">{plan.name}</CardTitle>
@@ -223,7 +223,7 @@ export default function PricingPage() {
                         </div>
                       )}
                       <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-bold" data-testid={`text-price-${plan.code.toLowerCase()}`}>
+                        <span className="text-lg font-bold" data-testid={`text-price-${plan.code.toLowerCase()}`}>
                           PKR {formatPrice(discounted)}
                         </span>
                         <span className="text-muted-foreground text-xs">/mo</span>
@@ -242,7 +242,7 @@ export default function PricingPage() {
                     </div>
                   </CardHeader>
 
-                  <CardContent className="flex-1 flex flex-col pt-0 px-4 pb-4">
+                  <CardContent className="flex-1 flex flex-col pt-0 px-3 pb-4">
                     <Button
                       className="w-full h-10 text-sm font-semibold mb-3 cursor-pointer shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90"
                       onClick={() => navigate(`/signup?plan=${plan.code.toLowerCase()}&billing=${billingCycle}`)}
@@ -304,8 +304,8 @@ export default function PricingPage() {
         )}
 
         <div className="mt-10 max-w-4xl mx-auto">
-          <div className="rounded-lg border border-emerald-200/70 dark:border-emerald-800/40 bg-emerald-50/30 dark:bg-emerald-950/15 p-6">
-            <div className="flex items-center gap-2.5 mb-4">
+          <div className="rounded-lg border border-emerald-200/70 dark:border-emerald-800/40 bg-emerald-50/30 dark:bg-emerald-950/15 p-3">
+            <div className="flex items-center gap-2.5 mb-2.5">
               <div className="h-7 w-7 rounded-md bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
                 <Shield className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               </div>
@@ -336,9 +336,9 @@ export default function PricingPage() {
           </div>
         </div>
 
-        <div className="mt-6 max-w-4xl mx-auto">
+        <div className="mt-3 max-w-4xl mx-auto">
           <Card className="border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30">
-            <CardContent className="p-5">
+            <CardContent className="p-3">
               <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                 <Banknote className="h-4 w-4 text-primary" />
                 Payment & Billing Information
@@ -369,7 +369,7 @@ export default function PricingPage() {
           </Card>
         </div>
 
-        <div className="text-center mt-6 space-y-1">
+        <div className="text-center mt-3 space-y-1">
           <p className="text-xs text-muted-foreground">
             All plans include a 30-day free trial. No credit card required to start.
           </p>

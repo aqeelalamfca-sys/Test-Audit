@@ -94,7 +94,7 @@ export function DataTabSection({
     <>
       {hasSummary && (
         <div className="mt-2 border rounded-lg bg-gradient-to-r from-muted/30 to-muted/10 overflow-hidden" data-testid={`card-${uploaderType}-summary`}>
-          <div className="px-4 py-2.5 flex items-center flex-wrap gap-x-6 gap-y-1.5">
+          <div className="px-3 py-2.5 flex items-center flex-wrap gap-x-6 gap-y-1.5">
             {summaryMetrics?.map((metric, i) => (
               <div key={i} className="flex flex-col">
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{metric.label}</span>
@@ -116,12 +116,12 @@ export function DataTabSection({
       )}
 
       {!hasData && emptyInfo && (
-        <div className="mt-2 border-2 border-dashed rounded-lg py-10 px-6 text-center bg-muted/5" data-testid={`empty-state-${uploaderType}`}>
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-muted/40 mb-4">
+        <div className="mt-2 border-2 border-dashed rounded-lg py-10 px-3 text-center bg-muted/5" data-testid={`empty-state-${uploaderType}`}>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-muted/40 mb-2.5">
             <FileSpreadsheet className="h-7 w-7 text-muted-foreground" />
           </div>
           <h3 className="text-base font-semibold mb-1">{emptyInfo.heading}</h3>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">{emptyInfo.detail}</p>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto mb-2.5">{emptyInfo.detail}</p>
           <div className="flex items-center justify-center gap-3">
             {onNavigateToUpload && (
               <Button variant="default" size="sm" onClick={onNavigateToUpload}>

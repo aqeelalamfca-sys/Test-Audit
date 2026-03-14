@@ -307,7 +307,7 @@ export default function NewEngagement() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="border-b px-4 py-2 flex items-center justify-between">
+      <div className="border-b px-3 py-2 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => setLocation("/engagements")}>
             <ArrowLeft className="h-4 w-4 mr-1" />
@@ -328,8 +328,8 @@ export default function NewEngagement() {
       </div>
 
       <div className="flex flex-1 min-h-0">
-        <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto">
-          <div className="flex items-center gap-3 mb-4">
+        <div className="flex-1 overflow-auto p-2.5 max-w-3xl mx-auto">
+          <div className="flex items-center gap-3 mb-2.5">
             <div className="p-2 rounded-xl bg-primary/10">
               <FileText className="h-5 w-5 text-primary" />
             </div>
@@ -347,14 +347,14 @@ export default function NewEngagement() {
           </div>
 
           {completeness.missing.length > 0 && (
-            <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md px-3 py-2 mb-4">
+            <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md px-3 py-2 mb-2.5">
               <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
               <span>Missing required: {completeness.missing.join(", ")}</span>
             </div>
           )}
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2.5">
               <Card>
                 <CardContent className="pt-4 space-y-3">
                   <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
@@ -483,7 +483,7 @@ export default function NewEngagement() {
                     />
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2.5">
                     <FormField
                       control={form.control}
                       name="isGroupAudit"
@@ -677,7 +677,7 @@ export default function NewEngagement() {
                 </CardContent>
               </Card>
 
-              <div className="flex items-center justify-between gap-4 pt-2 pb-4">
+              <div className="flex items-center justify-between gap-2.5 pt-2 pb-4">
                 <Button type="button" variant="outline" size="sm" onClick={() => setLocation("/engagements")}>
                   <ArrowLeft className="h-4 w-4 mr-1.5" />
                   Cancel

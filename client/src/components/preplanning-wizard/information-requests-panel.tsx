@@ -467,7 +467,7 @@ export function InformationRequestsPanel({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-2">
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mr-2" />
         <span className="text-sm text-muted-foreground">
           Loading information requests...
@@ -477,7 +477,7 @@ export function InformationRequestsPanel({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline" data-testid="badge-ir-total">
@@ -698,7 +698,7 @@ export function InformationRequestsPanel({
               <TableRow>
                 <TableCell
                   colSpan={readOnly ? 7 : 8}
-                  className="text-center text-sm text-muted-foreground py-8"
+                  className="text-center text-sm text-muted-foreground py-2"
                 >
                   No information requests yet. Click "Add Row" to create one or
                   apply a template.

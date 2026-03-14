@@ -334,7 +334,7 @@ export function AuditStrategyTCWGSection({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <FormSection
         icon={<Compass className="h-5 w-5" />}
         title="Overall Audit Strategy (ISA 300)"
@@ -386,7 +386,7 @@ export function AuditStrategyTCWGSection({
               value={data.overallStrategy.auditApproach}
               onValueChange={(v) => handleStrategyChange("auditApproach", v)}
               disabled={readOnly}
-              className="flex gap-4"
+              className="flex gap-2.5"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="substantive" id="approach-substantive" data-testid="radio-approach-substantive" />
@@ -422,14 +422,14 @@ export function AuditStrategyTCWGSection({
       >
         <div className="space-y-3">
           {data.keyAreasOfFocus.length === 0 && (
-            <p className="text-sm text-muted-foreground italic py-4 text-center">
+            <p className="text-sm text-muted-foreground italic py-2 text-center">
               No key areas of focus added. Add areas manually or auto-populate from risk assessment.
             </p>
           )}
           {data.keyAreasOfFocus.map((area, index) => (
             <div
               key={area.id}
-              className="border rounded-md p-4 space-y-3"
+              className="border rounded-md p-2.5 space-y-3"
               data-testid={`focus-area-${area.id}`}
             >
               <div className="flex items-center justify-between gap-2">
@@ -706,7 +706,7 @@ export function AuditStrategyTCWGSection({
 
         <div className="space-y-3">
           {data.tcwgIdentification.length === 0 && (
-            <p className="text-sm text-muted-foreground italic py-4 text-center">
+            <p className="text-sm text-muted-foreground italic py-2 text-center">
               No TCWG members added. Add members to document governance structure.
             </p>
           )}
@@ -807,7 +807,7 @@ export function AuditStrategyTCWGSection({
         {/* Sub-section 3: Independence Confirmation */}
         <SectionDivider title="Independence Confirmation (ISA 260.17)" icon={<Shield className="h-4 w-4" />} />
 
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border/50 mb-4">
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border/50 mb-2.5">
           <Checkbox
             checked={independenceConf.confirmed}
             onCheckedChange={(checked) => updateIndependenceConf("confirmed", !!checked)}

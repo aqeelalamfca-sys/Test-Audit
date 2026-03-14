@@ -60,7 +60,7 @@ export function ReviewNote({
   return (
     <div className="space-y-3" data-testid={`review-note-${id}`}>
       <div className={cn(
-        "border border-border rounded-lg p-4",
+        "border border-border rounded-lg p-2.5",
         status === "cleared" && "opacity-60"
       )}>
         <div className="flex items-start gap-3">

@@ -209,7 +209,7 @@ function SummaryCard({ icon: Icon, label, value, accent, subtitle }: {
 
   return (
     <div
-      className={`relative overflow-hidden rounded-xl border bg-gradient-to-br p-4 transition-all hover:shadow-md ${accentStyles[accent] || accentStyles.blue}`}
+      className={`relative overflow-hidden rounded-xl border bg-gradient-to-br p-2.5 transition-all hover:shadow-md ${accentStyles[accent] || accentStyles.blue}`}
       data-testid={`summary-card-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
       <div className="flex items-start justify-between">
@@ -250,7 +250,7 @@ function StatementSection({
   if (section.isSubtotal) {
     return (
       <div
-        className="flex items-center justify-between px-4 py-2.5 bg-muted/40 border-t-2 border-b border-foreground/10"
+        className="flex items-center justify-between px-3 py-2.5 bg-muted/40 border-t-2 border-b border-foreground/10"
         data-testid={`subtotal-${statementType}-${section.sectionName.toLowerCase().replace(/\s+/g, "-")}`}
       >
         <span className="font-bold text-sm tracking-tight">{section.sectionName}</span>
@@ -264,7 +264,7 @@ function StatementSection({
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
       <CollapsibleTrigger
-        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-muted/30 transition-colors group"
+        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-muted/30 transition-colors group"
         data-testid={`section-trigger-${statementType}-${section.sectionName.toLowerCase().replace(/\s+/g, "-")}`}
       >
         <div className="flex items-center gap-2">
@@ -286,7 +286,7 @@ function StatementSection({
       <CollapsibleContent>
         <div className="border-l-2 border-primary/10 ml-6">
           {section.lineItems.length === 0 ? (
-            <div className="px-6 py-3 text-muted-foreground text-xs italic">No accounts mapped to this section</div>
+            <div className="px-3 py-3 text-muted-foreground text-xs italic">No accounts mapped to this section</div>
           ) : (
             section.lineItems.map((lineItem) => {
               const displayLineTotal = viewType === "ADJUSTED" ? lineItem.adjustedTotal : lineItem.originalTotal;
@@ -460,7 +460,7 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
     return (
       <Card className="border-dashed">
         <CardContent className="py-12 text-center">
-          <FileSpreadsheet className="h-14 w-14 mx-auto text-muted-foreground/40 mb-4" />
+          <FileSpreadsheet className="h-14 w-14 mx-auto text-muted-foreground/40 mb-2.5" />
           <p className="text-lg font-medium text-muted-foreground mb-1">No Financial Data Available</p>
           <p className="text-sm text-muted-foreground/70">Please ensure Trial Balance mappings are complete before generating draft statements.</p>
         </CardContent>
@@ -481,8 +481,8 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
   const totalExpenses = totalIncome - fsData.profitLoss.netProfit;
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2.5 flex-wrap">
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2.5" data-testid="heading-draft-fs">
             <div className="p-2 rounded-lg bg-primary/10">
@@ -557,7 +557,7 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
         />
       </div>
 
-      <div className="flex items-center gap-4 px-1" data-testid="status-bar">
+      <div className="flex items-center gap-2.5 px-1" data-testid="status-bar">
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs text-muted-foreground font-medium">Mapping Completeness</span>
@@ -584,7 +584,7 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
       <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-1 w-fit" data-testid="statement-tabs">
         <button
           onClick={() => setActiveStatement("bs")}
-          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+          className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-all ${
             activeStatement === "bs"
               ? "bg-background shadow-sm text-foreground"
               : "text-muted-foreground hover:text-foreground"
@@ -596,7 +596,7 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
         </button>
         <button
           onClick={() => setActiveStatement("pl")}
-          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+          className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-all ${
             activeStatement === "pl"
               ? "bg-background shadow-sm text-foreground"
               : "text-muted-foreground hover:text-foreground"
@@ -610,7 +610,7 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
 
       {activeStatement === "bs" && (
         <Card className="overflow-hidden border shadow-sm" data-testid="card-balance-sheet">
-          <div className="bg-gradient-to-r from-blue-500/5 via-transparent to-emerald-500/5 px-5 py-4 border-b">
+          <div className="bg-gradient-to-r from-blue-500/5 via-transparent to-emerald-500/5 px-3 py-2 border-b">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold flex items-center gap-2">
@@ -619,7 +619,7 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Balance Sheet — {viewType === "ADJUSTED" ? "Adjusted" : "Original"} Balances</p>
               </div>
-              <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-2.5 text-xs">
                 <div className="text-right">
                   <div className="text-muted-foreground">Total Assets</div>
                   <div className="font-mono font-bold text-blue-700 dark:text-blue-300">{formatCurrency(fsData.balanceSheet.totalAssets)}</div>
@@ -654,7 +654,7 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
 
       {activeStatement === "pl" && (
         <Card className="overflow-hidden border shadow-sm" data-testid="card-profit-loss">
-          <div className="bg-gradient-to-r from-green-500/5 via-transparent to-red-500/5 px-5 py-4 border-b">
+          <div className="bg-gradient-to-r from-green-500/5 via-transparent to-red-500/5 px-3 py-2 border-b">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold flex items-center gap-2">
@@ -663,7 +663,7 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Income Statement — {viewType === "ADJUSTED" ? "Adjusted" : "Original"} Balances</p>
               </div>
-              <div className="flex items-center gap-6 text-xs">
+              <div className="flex items-center gap-3 text-xs">
                 <div className="text-right">
                   <div className="text-muted-foreground">Revenue</div>
                   <div className="font-mono font-bold text-green-700 dark:text-green-300">{formatCurrency(fsData.profitLoss.revenue)}</div>
@@ -806,7 +806,7 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
             </SheetDescription>
           </SheetHeader>
 
-          <div className="flex-1 overflow-hidden mt-4">
+          <div className="flex-1 overflow-hidden mt-2.5">
             <Tabs value={drilldownTab} onValueChange={(v) => setDrilldownTab(v as any)} className="h-full flex flex-col">
               <TabsList className="grid grid-cols-3 flex-shrink-0" data-testid="drilldown-tabs">
                 <TabsTrigger value="accounts" data-testid="tab-accounts">Accounts & Balances</TabsTrigger>
@@ -814,7 +814,7 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
                 <TabsTrigger value="mapping" data-testid="tab-mapping">Mapping</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="accounts" className="flex-1 overflow-hidden mt-4">
+              <TabsContent value="accounts" className="flex-1 overflow-hidden mt-2.5">
                 {drilldownLoading ? (
                   <div className="flex items-center justify-center h-40">
                     <Loader2 className="h-6 w-6 animate-spin" />
@@ -845,7 +845,7 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
                         ))}
                         {(!drilldownData?.accounts || drilldownData.accounts.length === 0) && (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No accounts found</TableCell>
+                            <TableCell colSpan={6} className="text-center text-muted-foreground py-2">No accounts found</TableCell>
                           </TableRow>
                         )}
                       </TableBody>
@@ -854,7 +854,7 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
                 )}
               </TabsContent>
 
-              <TabsContent value="population" className="flex-1 overflow-hidden mt-4 flex flex-col">
+              <TabsContent value="population" className="flex-1 overflow-hidden mt-2.5 flex flex-col">
                 <div className="flex items-center gap-2 mb-3 flex-shrink-0 flex-wrap">
                   <div className="flex items-center gap-3 text-xs">
                     <span className="flex items-center gap-1">
@@ -979,7 +979,7 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
                         ))}
                         {(!drilldownData?.population || drilldownData.population.length === 0) && (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No transactions found</TableCell>
+                            <TableCell colSpan={6} className="text-center text-muted-foreground py-2">No transactions found</TableCell>
                           </TableRow>
                         )}
                       </TableBody>
@@ -1016,22 +1016,22 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
                 )}
               </TabsContent>
 
-              <TabsContent value="mapping" className="flex-1 mt-4">
-                <div className="space-y-4">
+              <TabsContent value="mapping" className="flex-1 mt-2.5">
+                <div className="space-y-2.5">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-4 border rounded-xl bg-muted/20">
+                    <div className="p-2.5 border rounded-xl bg-muted/20">
                       <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">FS Head</Label>
                       <p className="font-semibold text-sm mt-1">{drilldownData?.mapping.fsHead || selectedLineItem}</p>
                     </div>
-                    <div className="p-4 border rounded-xl bg-muted/20">
+                    <div className="p-2.5 border rounded-xl bg-muted/20">
                       <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Mapped GL Accounts</Label>
                       <p className="font-semibold text-sm mt-1">{drilldownData?.mapping.mappedGlCount || 0}</p>
                     </div>
-                    <div className="p-4 border rounded-xl bg-muted/20">
+                    <div className="p-2.5 border rounded-xl bg-muted/20">
                       <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Class</Label>
                       <p className="font-semibold text-sm mt-1">{drilldownData?.mapping.class || "Not specified"}</p>
                     </div>
-                    <div className="p-4 border rounded-xl bg-muted/20">
+                    <div className="p-2.5 border rounded-xl bg-muted/20">
                       <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Sub-Class</Label>
                       <p className="font-semibold text-sm mt-1">{drilldownData?.mapping.subClass || "Not specified"}</p>
                     </div>
@@ -1067,7 +1067,7 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
               Create a point-in-time snapshot of the current financial statement draft
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-2.5 py-2">
             <div className="space-y-2">
               <Label htmlFor="snapshot-name">Snapshot Name</Label>
               <Input

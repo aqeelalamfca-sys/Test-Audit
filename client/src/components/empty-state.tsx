@@ -37,19 +37,19 @@ export function EmptyState({
   return (
     <div 
       className={cn(
-        "flex flex-col items-center justify-center py-12 px-6 text-center",
+        "flex flex-col items-center justify-center py-12 px-3 text-center",
         className
       )}
       data-testid="empty-state"
     >
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/80 mb-4">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/80 mb-2.5">
         {icon || <FileQuestion className="h-8 w-8 text-muted-foreground" />}
       </div>
       <h3 className="text-lg font-semibold mb-1" data-testid="text-empty-title">
         {title}
       </h3>
       {description && (
-        <p className="text-sm text-muted-foreground max-w-md mb-4" data-testid="text-empty-description">
+        <p className="text-sm text-muted-foreground max-w-md mb-2.5" data-testid="text-empty-description">
           {description}
         </p>
       )}
@@ -159,7 +159,7 @@ interface SkeletonLoaderProps {
 
 export function TableSkeletonLoader({ rows = 5, className }: SkeletonLoaderProps) {
   return (
-    <div className={cn("space-y-3 p-4", className)} data-testid="skeleton-loader">
+    <div className={cn("space-y-3 p-2.5", className)} data-testid="skeleton-loader">
       <div className="h-10 bg-muted rounded-md animate-pulse" />
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="h-12 bg-muted/50 rounded-md animate-pulse" />
@@ -170,7 +170,7 @@ export function TableSkeletonLoader({ rows = 5, className }: SkeletonLoaderProps
 
 export function CardSkeletonLoader({ className }: { className?: string }) {
   return (
-    <div className={cn("p-4 border rounded-lg space-y-3", className)} data-testid="card-skeleton">
+    <div className={cn("p-2.5 border rounded-lg space-y-3", className)} data-testid="card-skeleton">
       <div className="h-5 w-1/3 bg-muted rounded animate-pulse" />
       <div className="h-4 w-2/3 bg-muted/50 rounded animate-pulse" />
       <div className="h-4 w-1/2 bg-muted/50 rounded animate-pulse" />

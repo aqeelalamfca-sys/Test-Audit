@@ -571,7 +571,7 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
     : filteredCoaMappings.slice(0, 10);
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -583,7 +583,7 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between mb-6 overflow-x-auto pb-2">
+          <div className="flex items-center justify-between mb-3 overflow-x-auto pb-2">
             {steps.map((step, index) => (
               <div key={step.id} className="flex items-center">
                 <div className={`
@@ -604,11 +604,11 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
           </div>
           
           {currentStep === 'upload' && (
-            <div className="space-y-6">
-              <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <div className="space-y-3">
+              <div className="border-2 border-dashed rounded-lg p-2.5 text-center">
+                <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-2.5" />
                 <h3 className="text-lg font-medium mb-2">Upload General Ledger</h3>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-sm text-muted-foreground mb-2.5">
                   Upload the client's General Ledger or Trial Balance export in Excel or CSV format
                 </p>
                 <input
@@ -648,14 +648,14 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
                   </div>
                 </div>
                 {isProcessing && (
-                  <div className="mt-4">
+                  <div className="mt-2.5">
                     <Progress value={uploadProgress} className="h-2" />
                     <p className="text-sm text-muted-foreground mt-2">Processing file...</p>
                   </div>
                 )}
               </div>
 
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-2.5">
                 <div className="flex items-start gap-3">
                   <Brain className="h-5 w-5 text-primary mt-0.5" />
                   <div>
@@ -669,7 +669,7 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
                 </div>
               </div>
               
-              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-2.5">
                 <div className="flex items-start gap-3">
                   <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
                   <div>
@@ -687,7 +687,7 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
           )}
           
           {currentStep === 'column-mapping' && fileInfo && (
-            <div className="space-y-6">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium">Column Mapping</h3>
@@ -760,7 +760,7 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
           )}
           
           {currentStep === 'coa-mapping' && (
-            <div className="space-y-6">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium">AI-Assisted Chart of Accounts Mapping</h3>
@@ -777,7 +777,7 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
               </div>
               
               {engagementCoA.length > 0 ? (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-2.5 flex items-center gap-3">
                   <CheckCircle2 className="h-5 w-5 text-green-600" />
                   <div>
                     <p className="text-sm font-medium text-green-800">
@@ -789,7 +789,7 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
                   </div>
                 </div>
               ) : (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 flex items-center gap-3">
                   <AlertCircle className="h-5 w-5 text-amber-600" />
                   <div>
                     <p className="text-sm font-medium text-amber-800">
@@ -802,7 +802,7 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
                 </div>
               )}
               
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2.5">
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox
                     checked={filterLowConfidence}
@@ -923,7 +923,7 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
           )}
           
           {currentStep === 'review' && (
-            <div className="space-y-6">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium">Trial Balance Review</h3>
@@ -937,11 +937,11 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
                 </Button>
               </div>
               
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-4 gap-2.5">
                 <Card>
                   <CardContent className="pt-4">
                     <div className="text-sm text-muted-foreground">Total Debits</div>
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-lg font-bold text-green-600">
                       {formatCurrency(glEntries.reduce((sum, e) => sum + e.debit, 0))}
                     </div>
                   </CardContent>
@@ -949,7 +949,7 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
                 <Card>
                   <CardContent className="pt-4">
                     <div className="text-sm text-muted-foreground">Total Credits</div>
-                    <div className="text-2xl font-bold text-red-600">
+                    <div className="text-lg font-bold text-red-600">
                       {formatCurrency(glEntries.reduce((sum, e) => sum + e.credit, 0))}
                     </div>
                   </CardContent>
@@ -957,7 +957,7 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
                 <Card>
                   <CardContent className="pt-4">
                     <div className="text-sm text-muted-foreground">Difference</div>
-                    <div className="text-2xl font-bold">
+                    <div className="text-lg font-bold">
                       {formatCurrency(
                         glEntries.reduce((sum, e) => sum + e.debit, 0) - 
                         glEntries.reduce((sum, e) => sum + e.credit, 0)
@@ -968,7 +968,7 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
                 <Card>
                   <CardContent className="pt-4">
                     <div className="text-sm text-muted-foreground">Accounts</div>
-                    <div className="text-2xl font-bold">{glEntries.length}</div>
+                    <div className="text-lg font-bold">{glEntries.length}</div>
                   </CardContent>
                 </Card>
               </div>
@@ -1024,7 +1024,7 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
           )}
           
           {currentStep === 'approval' && (
-            <div className="space-y-6">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium">Maker-Checker Approval</h3>
@@ -1038,12 +1038,12 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
                 </Button>
               </div>
               
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-3">
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">Approval Checklist</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-2.5">
                     <div className="flex items-center gap-3">
                       <CheckCircle2 className={`h-5 w-5 ${approvalStatus.columnMappingApproved ? 'text-green-600' : 'text-gray-400'}`} />
                       <span>Column Mapping Verified</span>
@@ -1080,7 +1080,7 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
                 </Card>
               </div>
               
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2.5">
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
                   <div>
@@ -1117,14 +1117,14 @@ export function GLWorkflow({ engagementId }: GLWorkflowProps) {
           
           {currentStep === 'complete' && (
             <div className="text-center py-12">
-              <CheckCircle2 className="h-16 w-16 text-green-600 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold mb-2">GL Processing Complete</h3>
-              <p className="text-muted-foreground mb-6">
+              <CheckCircle2 className="h-16 w-16 text-green-600 mx-auto mb-2.5" />
+              <h3 className="text-lg font-bold mb-2">GL Processing Complete</h3>
+              <p className="text-muted-foreground mb-3">
                 Trial Balance and Financial Statements have been generated successfully.
                 You can now view them in the respective tabs.
               </p>
               
-              <div className="flex justify-center gap-4">
+              <div className="flex justify-center gap-2.5">
                 <Button variant="outline" onClick={resetWorkflow}>
                   <Plus className="h-4 w-4 mr-2" />
                   Upload New GL

@@ -330,12 +330,12 @@ export default function EngagementControl() {
 
   if (error || !engagement) {
     return (
-      <div className="px-4 py-3">
+      <div className="px-3 py-3">
         <Card>
           <CardContent className="pt-6 text-center">
-            <AlertCircle className="h-12 w-12 mx-auto text-red-500 mb-4" />
+            <AlertCircle className="h-12 w-12 mx-auto text-red-500 mb-2.5" />
             <h2 className="text-lg font-semibold mb-2">Engagement Not Found</h2>
-            <p className="text-muted-foreground mb-4">The requested engagement could not be loaded.</p>
+            <p className="text-muted-foreground mb-2.5">The requested engagement could not be loaded.</p>
             <Link href="/engagements">
               <Button>Back to Engagements</Button>
             </Link>
@@ -355,7 +355,7 @@ export default function EngagementControl() {
               {engagement.status?.replace("_", " ") || "Draft"}
             </Badge>
           </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
             <span className="font-mono">{engagement.engagementCode}</span>
             <Separator orientation="vertical" className="h-4" />
             <span>{engagement.engagementType?.replace("_", " ")}</span>
@@ -383,7 +383,7 @@ export default function EngagementControl() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -392,7 +392,7 @@ export default function EngagementControl() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{PHASE_LABELS[engagement.currentPhase] || engagement.currentPhase || "Not Started"}</div>
+            <div className="text-lg font-bold">{PHASE_LABELS[engagement.currentPhase] || engagement.currentPhase || "Not Started"}</div>
             <p className="text-xs text-muted-foreground">Current Phase</p>
           </CardContent>
         </Card>
@@ -472,8 +472,8 @@ export default function EngagementControl() {
               </Button>
             )}
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <CardContent className="space-y-2.5">
+            <div className="grid grid-cols-2 gap-2.5">
               <div>
                 <p className="text-sm text-muted-foreground">Legal Name</p>
                 <p className="font-medium">{engagement.client?.name || "-"}</p>
@@ -500,7 +500,7 @@ export default function EngagementControl() {
               </div>
             </div>
             <Separator />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2.5">
               <div>
                 <p className="text-sm text-muted-foreground">Partner</p>
                 <p className="font-medium">{getPartner()}</p>
@@ -523,7 +523,7 @@ export default function EngagementControl() {
           </CardHeader>
           <CardContent>
             {activityLog.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
+              <div className="text-center py-2 text-muted-foreground">
                 <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>No activity recorded yet</p>
               </div>
@@ -552,7 +552,7 @@ export default function EngagementControl() {
             <DialogTitle>Edit Client Details</DialogTitle>
             <DialogDescription>Update the client master information for this engagement.</DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-2 gap-2.5 py-2">
             <div className="space-y-2">
               <Label htmlFor="name">Legal Name *</Label>
               <Input

@@ -307,7 +307,7 @@ export function SamplingFramePanel({ engagementId, className }: SamplingFramePan
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-4 w-64" />
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2.5">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-40 w-full" />
         </CardContent>
@@ -335,7 +335,7 @@ export function SamplingFramePanel({ engagementId, className }: SamplingFramePan
   }
 
   const FormContent = ({ isEdit = false }: { isEdit?: boolean }) => (
-    <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
+    <div className="space-y-2.5 py-2 max-h-[70vh] overflow-y-auto">
       <div className="space-y-2">
         <Label>Link to Procedure</Label>
         <Select
@@ -386,7 +386,7 @@ export function SamplingFramePanel({ engagementId, className }: SamplingFramePan
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-2.5">
         <div className="space-y-2">
           <Label>Sampling Method</Label>
           <Select
@@ -415,7 +415,7 @@ export function SamplingFramePanel({ engagementId, className }: SamplingFramePan
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-2.5">
         <div className="space-y-2">
           <Label>Confidence Level (%)</Label>
           <Input
@@ -523,8 +523,8 @@ export function SamplingFramePanel({ engagementId, className }: SamplingFramePan
 
       <CardContent>
         {filteredFrames.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground" data-testid="empty-state">
-            <Database className="h-12 w-12 mx-auto mb-4 opacity-30" />
+          <div className="text-center py-2 text-muted-foreground" data-testid="empty-state">
+            <Database className="h-12 w-12 mx-auto mb-2.5 opacity-30" />
             <p className="text-sm">No sampling frames defined yet.</p>
             <p className="text-xs mt-1">Create a sampling frame to define audit populations.</p>
           </div>

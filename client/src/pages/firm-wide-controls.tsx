@@ -923,7 +923,7 @@ export default function FirmWideControls() {
             <ShieldCheck className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold" data-testid="text-page-title">Firm Wide Controls</h1>
+            <h1 className="text-lg font-bold" data-testid="text-page-title">Firm Wide Controls</h1>
             <p className="text-muted-foreground text-sm">ISQM 1 / ISQM 2 / Code of Ethics — Quality Management Framework</p>
           </div>
         </div>
@@ -948,7 +948,7 @@ export default function FirmWideControls() {
         Administration <ChevronRight className="h-3 w-3 inline" /> Firm Wide Controls
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-2.5">
         <div className="overflow-x-auto">
           <TabsList className="inline-flex w-auto min-w-full">
             <TabsTrigger value="dashboard" className="text-xs" data-testid="tab-dashboard">
@@ -1010,20 +1010,20 @@ export default function FirmWideControls() {
           </TabsList>
         </div>
 
-        <TabsContent value="dashboard" className="space-y-4">
+        <TabsContent value="dashboard" className="space-y-2.5">
           {dashboardLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">Independence Compliance</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-600">{dashboard?.independenceCompliance || 0}%</div>
+                    <div className="text-lg font-bold text-green-600">{dashboard?.independenceCompliance || 0}%</div>
                     <p className="text-xs text-muted-foreground">{dashboard?.declaredUsers || 0} of {dashboard?.totalUsers || 0} declared</p>
                   </CardContent>
                 </Card>
@@ -1032,7 +1032,7 @@ export default function FirmWideControls() {
                     <CardTitle className="text-sm font-medium text-muted-foreground">Leadership Affirmations</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{dashboard?.leadershipAffirmations || 0}</div>
+                    <div className="text-lg font-bold">{dashboard?.leadershipAffirmations || 0}</div>
                     <p className="text-xs text-muted-foreground">This year</p>
                   </CardContent>
                 </Card>
@@ -1041,7 +1041,7 @@ export default function FirmWideControls() {
                     <CardTitle className="text-sm font-medium text-muted-foreground">Open Deficiencies</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-amber-600">{dashboard?.openDeficiencies || 0}</div>
+                    <div className="text-lg font-bold text-amber-600">{dashboard?.openDeficiencies || 0}</div>
                     <p className="text-xs text-muted-foreground">Requiring action</p>
                   </CardContent>
                 </Card>
@@ -1050,7 +1050,7 @@ export default function FirmWideControls() {
                     <CardTitle className="text-sm font-medium text-muted-foreground">Training Hours</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{dashboard?.totalTrainingHours || 0}</div>
+                    <div className="text-lg font-bold">{dashboard?.totalTrainingHours || 0}</div>
                     <p className="text-xs text-muted-foreground">CPD hours logged</p>
                   </CardContent>
                 </Card>
@@ -1059,7 +1059,7 @@ export default function FirmWideControls() {
                     <CardTitle className="text-sm font-medium text-muted-foreground">Total Staff</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{dashboard?.totalUsers || 0}</div>
+                    <div className="text-lg font-bold">{dashboard?.totalUsers || 0}</div>
                     <p className="text-xs text-muted-foreground">Active users</p>
                   </CardContent>
                 </Card>
@@ -1068,7 +1068,7 @@ export default function FirmWideControls() {
                     <CardTitle className="text-sm font-medium text-muted-foreground">Open Breaches</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-red-600">{dashboard?.openBreaches || 0}</div>
+                    <div className="text-lg font-bold text-red-600">{dashboard?.openBreaches || 0}</div>
                     <p className="text-xs text-muted-foreground">Ethics breaches</p>
                   </CardContent>
                 </Card>
@@ -1080,7 +1080,7 @@ export default function FirmWideControls() {
                   <CardDescription>Quality management system components per ISQM 1</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
                     {[
                       { name: "Governance & Leadership", icon: Building2, status: "Operational" },
                       { name: "Ethics & Independence", icon: Scale, status: "Operational" },
@@ -1107,7 +1107,7 @@ export default function FirmWideControls() {
           )}
         </TabsContent>
 
-        <TabsContent value="governance" className="space-y-4">
+        <TabsContent value="governance" className="space-y-2.5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -1125,7 +1125,7 @@ export default function FirmWideControls() {
                   <DialogHeader>
                     <DialogTitle>Leadership Affirmation</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4">
+                  <div className="space-y-2.5">
                     <div className="space-y-2">
                       <Label>Affirmation Type</Label>
                       <Select value={affirmationForm.affirmationType} onValueChange={(v) => setAffirmationForm({ ...affirmationForm, affirmationType: v })}>
@@ -1177,7 +1177,7 @@ export default function FirmWideControls() {
                 <TableBody>
                   {(affirmations || []).length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-4">
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-2">
                         No leadership affirmations recorded yet
                       </TableCell>
                     </TableRow>
@@ -1209,7 +1209,7 @@ export default function FirmWideControls() {
               <CardDescription>Technical consultations per ISQM 1 para 34</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex justify-end mb-4">
+              <div className="flex justify-end mb-2.5">
                 <Dialog open={showConsultationDialog} onOpenChange={setShowConsultationDialog}>
                   <DialogTrigger asChild>
                     <Button variant="outline">
@@ -1221,7 +1221,7 @@ export default function FirmWideControls() {
                     <DialogHeader>
                       <DialogTitle>Log Consultation</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
+                    <div className="space-y-2.5">
                       <div className="space-y-2">
                         <Label>Date</Label>
                         <Input type="date" value={consultationForm.consultationDate} onChange={(e) => setConsultationForm({ ...consultationForm, consultationDate: e.target.value })} />
@@ -1261,7 +1261,7 @@ export default function FirmWideControls() {
                 <TableBody>
                   {(consultations || []).length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-4">
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-2">
                         No consultations recorded
                       </TableCell>
                     </TableRow>
@@ -1281,7 +1281,7 @@ export default function FirmWideControls() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="independence" className="space-y-4">
+        <TabsContent value="independence" className="space-y-2.5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -1299,8 +1299,8 @@ export default function FirmWideControls() {
                   <DialogHeader>
                     <DialogTitle>Independence Declaration</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2.5">
+                    <div className="grid grid-cols-2 gap-2.5">
                       <div className="space-y-2">
                         <Label>Declaration Type</Label>
                         <Select value={declarationForm.declarationType} onValueChange={(v) => setDeclarationForm({ ...declarationForm, declarationType: v })}>
@@ -1374,7 +1374,7 @@ export default function FirmWideControls() {
                 <TableBody>
                   {(declarations || []).length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-4">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-2">
                         No independence declarations for current year
                       </TableCell>
                     </TableRow>
@@ -1441,10 +1441,10 @@ export default function FirmWideControls() {
                 <DialogTitle>{isEditingDeclaration ? "Edit" : "View"} Independence Declaration</DialogTitle>
               </DialogHeader>
               {selectedDeclaration && (
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {isEditingDeclaration ? (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Declaration Type</Label>
                           <Select value={declarationForm.declarationType} onValueChange={(v) => setDeclarationForm({ ...declarationForm, declarationType: v })}>
@@ -1463,7 +1463,7 @@ export default function FirmWideControls() {
                           <Input type="number" value={declarationForm.declarationYear} onChange={(e) => setDeclarationForm({ ...declarationForm, declarationYear: parseInt(e.target.value) })} />
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="flex items-center justify-between p-3 border rounded">
                           <Label>Financial Interest</Label>
                           <Switch checked={declarationForm.hasFinancialInterest} onCheckedChange={(v) => setDeclarationForm({ ...declarationForm, hasFinancialInterest: v })} />
@@ -1473,7 +1473,7 @@ export default function FirmWideControls() {
                           <Switch checked={declarationForm.hasFamilyRelationship} onCheckedChange={(v) => setDeclarationForm({ ...declarationForm, hasFamilyRelationship: v })} />
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="flex items-center justify-between p-3 border rounded">
                           <Label>Business Relationship</Label>
                           <Switch checked={declarationForm.hasBusinessRelationship} onCheckedChange={(v) => setDeclarationForm({ ...declarationForm, hasBusinessRelationship: v })} />
@@ -1494,7 +1494,7 @@ export default function FirmWideControls() {
                     </>
                   ) : (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Type</Label>
                           <p className="font-medium">{selectedDeclaration.declarationType}</p>
@@ -1504,7 +1504,7 @@ export default function FirmWideControls() {
                           <p className="font-medium">{selectedDeclaration.declarationYear}</p>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="flex items-center justify-between p-3 border rounded">
                           <Label>Financial Interest</Label>
                           {selectedDeclaration.hasFinancialInterest ? (
@@ -1522,7 +1522,7 @@ export default function FirmWideControls() {
                           )}
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="flex items-center justify-between p-3 border rounded">
                           <Label>Business Relationship</Label>
                           {selectedDeclaration.hasBusinessRelationship ? (
@@ -1546,7 +1546,7 @@ export default function FirmWideControls() {
                           <p className="mt-1 p-3 bg-muted rounded">{selectedDeclaration.safeguardsImplemented}</p>
                         </div>
                       )}
-                      <div className="flex items-center justify-between p-4 border rounded bg-muted/50">
+                      <div className="flex items-center justify-between p-2.5 border rounded bg-muted/50">
                         <Label className="font-medium">Independence Status</Label>
                         {selectedDeclaration.isIndependent ? (
                           <Badge className="bg-green-100 text-green-800"><CheckCircle2 className="h-3 w-3 mr-1" />Independent</Badge>
@@ -1577,7 +1577,7 @@ export default function FirmWideControls() {
             </DialogContent>
           </Dialog>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -1595,12 +1595,12 @@ export default function FirmWideControls() {
                     <DialogHeader>
                       <DialogTitle>Record Financial Interest</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
+                    <div className="space-y-2.5">
                       <div className="space-y-2">
                         <Label>Entity Name</Label>
                         <Input value={financialInterestForm.entityName} onChange={(e) => setFinancialInterestForm({ ...financialInterestForm, entityName: e.target.value })} placeholder="Company/Entity name" />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Nature of Interest</Label>
                           <Select value={financialInterestForm.natureOfInterest} onValueChange={(v) => setFinancialInterestForm({ ...financialInterestForm, natureOfInterest: v as any })}>
@@ -1629,7 +1629,7 @@ export default function FirmWideControls() {
                           </Select>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Approximate Value</Label>
                           <Input type="number" value={financialInterestForm.estimatedValue} onChange={(e) => setFinancialInterestForm({ ...financialInterestForm, estimatedValue: parseFloat(e.target.value) })} />
@@ -1670,7 +1670,7 @@ export default function FirmWideControls() {
                   <TableBody>
                     {(financialInterests || []).length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-3">
                           No financial interests reported
                         </TableCell>
                       </TableRow>
@@ -1734,8 +1734,8 @@ export default function FirmWideControls() {
                     <DialogHeader>
                       <DialogTitle>Record Gift/Hospitality</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Date Received</Label>
                           <Input type="date" value={giftForm.dateReceived} onChange={(e) => setGiftForm({ ...giftForm, dateReceived: e.target.value })} />
@@ -1749,7 +1749,7 @@ export default function FirmWideControls() {
                         <Label>Description</Label>
                         <Input value={giftForm.description} onChange={(e) => setGiftForm({ ...giftForm, description: e.target.value })} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Giver Name</Label>
                           <Input value={giftForm.giverName} onChange={(e) => setGiftForm({ ...giftForm, giverName: e.target.value })} />
@@ -1802,7 +1802,7 @@ export default function FirmWideControls() {
                   <TableBody>
                     {(giftsHospitality || []).length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-3">
                           No gifts/hospitality recorded
                         </TableCell>
                       </TableRow>
@@ -1857,14 +1857,14 @@ export default function FirmWideControls() {
                 <DialogTitle>{isEditingFinancialInterest ? "Edit" : "View"} Financial Interest</DialogTitle>
               </DialogHeader>
               {selectedFinancialInterest && (
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {isEditingFinancialInterest ? (
                     <>
                       <div className="space-y-2">
                         <Label>Entity Name</Label>
                         <Input value={financialInterestForm.entityName} onChange={(e) => setFinancialInterestForm({ ...financialInterestForm, entityName: e.target.value })} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Nature of Interest</Label>
                           <Select value={financialInterestForm.natureOfInterest} onValueChange={(v) => setFinancialInterestForm({ ...financialInterestForm, natureOfInterest: v })}>
@@ -1889,7 +1889,7 @@ export default function FirmWideControls() {
                           </Select>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Approximate Value (PKR)</Label>
                           <Input type="number" value={financialInterestForm.estimatedValue} onChange={(e) => setFinancialInterestForm({ ...financialInterestForm, estimatedValue: parseFloat(e.target.value) || 0 })} />
@@ -1910,7 +1910,7 @@ export default function FirmWideControls() {
                         <Label className="text-sm text-muted-foreground">Entity Name</Label>
                         <p className="font-medium text-lg">{selectedFinancialInterest.entityName}</p>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Nature of Interest</Label>
                           <p className="font-medium">{selectedFinancialInterest.natureOfInterest}</p>
@@ -1920,7 +1920,7 @@ export default function FirmWideControls() {
                           <p className="font-medium">{selectedFinancialInterest.relationshipType}</p>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Approximate Value</Label>
                           <p className="font-medium">{selectedFinancialInterest.approximateValue ? `PKR ${formatAccounting(parseFloat(selectedFinancialInterest.approximateValue))}` : "-"}</p>
@@ -1967,14 +1967,14 @@ export default function FirmWideControls() {
                 <DialogTitle>{isEditingGift ? "Edit" : "View"} Gift/Hospitality</DialogTitle>
               </DialogHeader>
               {selectedGift && (
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {isEditingGift ? (
                     <>
                       <div className="space-y-2">
                         <Label>Description</Label>
                         <Textarea value={giftForm.description} onChange={(e) => setGiftForm({ ...giftForm, description: e.target.value })} rows={2} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Date Received</Label>
                           <Input type="date" value={giftForm.dateReceived} onChange={(e) => setGiftForm({ ...giftForm, dateReceived: e.target.value })} />
@@ -1984,7 +1984,7 @@ export default function FirmWideControls() {
                           <Input type="number" value={giftForm.estimatedValue} onChange={(e) => setGiftForm({ ...giftForm, estimatedValue: parseFloat(e.target.value) || 0 })} />
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Giver Name</Label>
                           <Input value={giftForm.giverName} onChange={(e) => setGiftForm({ ...giftForm, giverName: e.target.value })} />
@@ -2017,7 +2017,7 @@ export default function FirmWideControls() {
                         <Label className="text-sm text-muted-foreground">Description</Label>
                         <p className="font-medium">{selectedGift.description}</p>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Date Received</Label>
                           <p className="font-medium">{format(new Date(selectedGift.dateReceived), "dd MMMM yyyy")}</p>
@@ -2027,7 +2027,7 @@ export default function FirmWideControls() {
                           <p className="font-medium">PKR {formatAccounting(selectedGift.estimatedValue)}</p>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Giver Name</Label>
                           <p className="font-medium">{selectedGift.giverName || "-"}</p>
@@ -2069,7 +2069,7 @@ export default function FirmWideControls() {
           </Dialog>
         </TabsContent>
 
-        <TabsContent value="ethics" className="space-y-4">
+        <TabsContent value="ethics" className="space-y-2.5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -2088,7 +2088,7 @@ export default function FirmWideControls() {
                     <DialogHeader>
                       <DialogTitle>Record Ethics Issue</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
+                    <div className="space-y-2.5">
                       <div className="space-y-2">
                         <Label>Issue Type</Label>
                         <Select value={ethicsBreachForm.breachType} onValueChange={(v) => setEthicsBreachForm({ ...ethicsBreachForm, breachType: v })}>
@@ -2127,7 +2127,7 @@ export default function FirmWideControls() {
             </CardHeader>
             <CardContent>
               {!isManager ? (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-2 text-muted-foreground">
                   <Lock className="h-8 w-8 mx-auto mb-2" />
                   <p>Manager or Partner access required to view ethics breaches</p>
                 </div>
@@ -2146,7 +2146,7 @@ export default function FirmWideControls() {
                   <TableBody>
                     {(ethicsBreaches || []).length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground py-4">
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-2">
                           <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-500" />
                           No ethics breaches recorded
                         </TableCell>
@@ -2205,10 +2205,10 @@ export default function FirmWideControls() {
                 <DialogTitle>{isEditingEthicsBreach ? "Edit" : "View"} Ethics Breach</DialogTitle>
               </DialogHeader>
               {selectedEthicsBreach && (
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {isEditingEthicsBreach ? (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Date Reported</Label>
                           <Input type="date" value={ethicsBreachForm.reportedDate} onChange={(e) => setEthicsBreachForm({ ...ethicsBreachForm, reportedDate: e.target.value })} />
@@ -2235,7 +2235,7 @@ export default function FirmWideControls() {
                         <Label>Persons Involved</Label>
                         <Input value={ethicsBreachForm.personsInvolved} onChange={(e) => setEthicsBreachForm({ ...ethicsBreachForm, personsInvolved: e.target.value })} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Status</Label>
                           <Select value={ethicsBreachForm.status} onValueChange={(v) => setEthicsBreachForm({ ...ethicsBreachForm, status: v })}>
@@ -2263,7 +2263,7 @@ export default function FirmWideControls() {
                     </>
                   ) : (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Date Reported</Label>
                           <p className="font-medium">{selectedEthicsBreach.reportedDate ? format(new Date(selectedEthicsBreach.reportedDate), "dd MMMM yyyy") : "-"}</p>
@@ -2285,7 +2285,7 @@ export default function FirmWideControls() {
                           <p className="font-medium">{selectedEthicsBreach.personsInvolved}</p>
                         </div>
                       )}
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Status</Label>
                           <div className="mt-1">
@@ -2331,7 +2331,7 @@ export default function FirmWideControls() {
           </Dialog>
         </TabsContent>
 
-        <TabsContent value="resources" className="space-y-4">
+        <TabsContent value="resources" className="space-y-2.5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -2350,8 +2350,8 @@ export default function FirmWideControls() {
                     <DialogHeader>
                       <DialogTitle>Staff Competency Assessment</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Technical Knowledge</Label>
                           <Select value={resourceForm.technicalKnowledgeRating} onValueChange={(v: any) => setResourceForm({ ...resourceForm, technicalKnowledgeRating: v })}>
@@ -2415,7 +2415,7 @@ export default function FirmWideControls() {
                 <TableBody>
                   {(competencies || []).length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-4">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-2">
                         No competency assessments recorded
                       </TableCell>
                     </TableRow>
@@ -2470,10 +2470,10 @@ export default function FirmWideControls() {
                 <DialogTitle>{isEditingResource ? "Edit" : "View"} Staff Competency Assessment</DialogTitle>
               </DialogHeader>
               {selectedResource && (
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {isEditingResource ? (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Technical Knowledge</Label>
                           <Select value={resourceForm.technicalKnowledgeRating} onValueChange={(v: any) => setResourceForm({ ...resourceForm, technicalKnowledgeRating: v })}>
@@ -2511,7 +2511,7 @@ export default function FirmWideControls() {
                     </>
                   ) : (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Assessment Date</Label>
                           <p className="font-medium">{format(new Date(selectedResource.assessmentDate), "dd MMMM yyyy")}</p>
@@ -2521,7 +2521,7 @@ export default function FirmWideControls() {
                           <p className="font-medium">{selectedResource.nextReviewDate ? format(new Date(selectedResource.nextReviewDate), "dd MMMM yyyy") : "-"}</p>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Technical Knowledge</Label>
                           <div className="mt-1">
@@ -2571,17 +2571,17 @@ export default function FirmWideControls() {
           </Dialog>
         </TabsContent>
 
-        <TabsContent value="training" className="space-y-4">
+        <TabsContent value="training" className="space-y-2.5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>CPD & Training Register</CardTitle>
                 <CardDescription>ICAP CPD compliance tracking - minimum 40 hours annually</CardDescription>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2.5">
                 <div className="text-right">
                   <p className="text-sm text-muted-foreground">Total CPD Hours</p>
-                  <p className="text-2xl font-bold text-primary">{trainingData?.totalHours || 0}</p>
+                  <p className="text-lg font-bold text-primary">{trainingData?.totalHours || 0}</p>
                 </div>
                 <Dialog open={showTrainingDialog} onOpenChange={setShowTrainingDialog}>
                   <DialogTrigger asChild>
@@ -2594,8 +2594,8 @@ export default function FirmWideControls() {
                     <DialogHeader>
                       <DialogTitle>Log Training / CPD</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Training Date</Label>
                           <Input type="date" value={trainingForm.trainingDate} onChange={(e) => setTrainingForm({ ...trainingForm, trainingDate: e.target.value })} />
@@ -2623,7 +2623,7 @@ export default function FirmWideControls() {
                         <Label>Provider</Label>
                         <Input value={trainingForm.provider} onChange={(e) => setTrainingForm({ ...trainingForm, provider: e.target.value })} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Duration (Hours)</Label>
                           <Input type="number" step="0.5" value={trainingForm.durationHours} onChange={(e) => setTrainingForm({ ...trainingForm, durationHours: parseFloat(e.target.value) })} />
@@ -2662,7 +2662,7 @@ export default function FirmWideControls() {
                 <TableBody>
                   {(trainingData?.trainings || []).length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-muted-foreground py-4">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-2">
                         No training records yet
                       </TableCell>
                     </TableRow>
@@ -2723,10 +2723,10 @@ export default function FirmWideControls() {
                 <DialogTitle>{isEditingTraining ? "Edit" : "View"} Training</DialogTitle>
               </DialogHeader>
               {selectedTraining && (
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {isEditingTraining ? (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Training Date</Label>
                           <Input type="date" value={trainingForm.trainingDate} onChange={(e) => setTrainingForm({ ...trainingForm, trainingDate: e.target.value })} />
@@ -2752,7 +2752,7 @@ export default function FirmWideControls() {
                         <Label>Provider</Label>
                         <Input value={trainingForm.provider} onChange={(e) => setTrainingForm({ ...trainingForm, provider: e.target.value })} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Duration (Hours)</Label>
                           <Input type="number" step="0.5" value={trainingForm.durationHours} onChange={(e) => setTrainingForm({ ...trainingForm, durationHours: parseFloat(e.target.value) })} />
@@ -2765,7 +2765,7 @@ export default function FirmWideControls() {
                     </>
                   ) : (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Training Date</Label>
                           <p className="font-medium">{format(new Date(selectedTraining.trainingDate), "dd MMMM yyyy")}</p>
@@ -2785,7 +2785,7 @@ export default function FirmWideControls() {
                         <Label className="text-sm text-muted-foreground">Provider</Label>
                         <p className="font-medium">{selectedTraining.provider || "-"}</p>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Duration</Label>
                           <p className="font-medium">{selectedTraining.durationHours} hours</p>
@@ -2836,7 +2836,7 @@ export default function FirmWideControls() {
           </Dialog>
         </TabsContent>
 
-        <TabsContent value="monitoring" className="space-y-4">
+        <TabsContent value="monitoring" className="space-y-2.5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -2855,8 +2855,8 @@ export default function FirmWideControls() {
                     <DialogHeader>
                       <DialogTitle>Create Monitoring Plan</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Plan Year</Label>
                           <Input type="number" value={monitoringForm.planYear} onChange={(e) => setMonitoringForm({ ...monitoringForm, planYear: parseInt(e.target.value) })} />
@@ -2874,7 +2874,7 @@ export default function FirmWideControls() {
                         <Label>Monitoring Methodology</Label>
                         <Textarea value={monitoringForm.monitoringMethodology} onChange={(e) => setMonitoringForm({ ...monitoringForm, monitoringMethodology: e.target.value })} placeholder="Describe the methodology for monitoring..." rows={2} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Planned Start Date</Label>
                           <Input type="date" value={monitoringForm.plannedStartDate} onChange={(e) => setMonitoringForm({ ...monitoringForm, plannedStartDate: e.target.value })} />
@@ -2898,7 +2898,7 @@ export default function FirmWideControls() {
             </CardHeader>
             <CardContent>
               {!isManager ? (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-2 text-muted-foreground">
                   <Lock className="h-8 w-8 mx-auto mb-2" />
                   <p>Manager or Partner access required</p>
                 </div>
@@ -2918,7 +2918,7 @@ export default function FirmWideControls() {
                   <TableBody>
                     {(monitoringPlans || []).length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground py-4">
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-2">
                           No monitoring plans created
                         </TableCell>
                       </TableRow>
@@ -2975,10 +2975,10 @@ export default function FirmWideControls() {
                 <DialogTitle>{isEditingMonitoring ? "Edit" : "View"} Monitoring Plan</DialogTitle>
               </DialogHeader>
               {selectedMonitoring && (
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {isEditingMonitoring ? (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Plan Year</Label>
                           <Input type="number" value={monitoringForm.planYear} onChange={(e) => setMonitoringForm({ ...monitoringForm, planYear: parseInt(e.target.value) })} />
@@ -2996,7 +2996,7 @@ export default function FirmWideControls() {
                         <Label>Monitoring Methodology</Label>
                         <Textarea value={monitoringForm.monitoringMethodology} onChange={(e) => setMonitoringForm({ ...monitoringForm, monitoringMethodology: e.target.value })} rows={2} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Planned Start Date</Label>
                           <Input type="date" value={monitoringForm.plannedStartDate} onChange={(e) => setMonitoringForm({ ...monitoringForm, plannedStartDate: e.target.value })} />
@@ -3009,10 +3009,10 @@ export default function FirmWideControls() {
                     </>
                   ) : (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Plan Year</Label>
-                          <p className="font-medium text-2xl">{selectedMonitoring.planYear}</p>
+                          <p className="font-medium text-lg">{selectedMonitoring.planYear}</p>
                         </div>
                         <div>
                           <Label className="text-sm text-muted-foreground">Status</Label>
@@ -3033,7 +3033,7 @@ export default function FirmWideControls() {
                           <p className="mt-1 p-3 bg-muted rounded">{selectedMonitoring.monitoringMethodology}</p>
                         </div>
                       )}
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Planned Start Date</Label>
                           <p className="font-medium">{selectedMonitoring.plannedStartDate ? format(new Date(selectedMonitoring.plannedStartDate), "dd MMMM yyyy") : "-"}</p>
@@ -3073,7 +3073,7 @@ export default function FirmWideControls() {
           </Dialog>
         </TabsContent>
 
-        <TabsContent value="deficiencies" className="space-y-4">
+        <TabsContent value="deficiencies" className="space-y-2.5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -3092,8 +3092,8 @@ export default function FirmWideControls() {
                     <DialogHeader>
                       <DialogTitle>Log Quality Deficiency</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Source</Label>
                           <Select value={deficiencyForm.sourceType} onValueChange={(v: any) => setDeficiencyForm({ ...deficiencyForm, sourceType: v })}>
@@ -3130,7 +3130,7 @@ export default function FirmWideControls() {
                         <Label>Root Cause Analysis</Label>
                         <Textarea value={deficiencyForm.rootCauseAnalysis} onChange={(e) => setDeficiencyForm({ ...deficiencyForm, rootCauseAnalysis: e.target.value })} rows={2} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Pervasiveness</Label>
                           <Select value={deficiencyForm.pervasiveness} onValueChange={(v: any) => setDeficiencyForm({ ...deficiencyForm, pervasiveness: v })}>
@@ -3162,7 +3162,7 @@ export default function FirmWideControls() {
             </CardHeader>
             <CardContent>
               {!isManager ? (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-2 text-muted-foreground">
                   <Lock className="h-8 w-8 mx-auto mb-2" />
                   <p>Manager or Partner access required</p>
                 </div>
@@ -3182,7 +3182,7 @@ export default function FirmWideControls() {
                   <TableBody>
                     {(deficiencies || []).length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground py-4">
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-2">
                           <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-500" />
                           No deficiencies recorded
                         </TableCell>
@@ -3248,10 +3248,10 @@ export default function FirmWideControls() {
                 <DialogTitle>{isEditingDeficiency ? "Edit" : "View"} Quality Deficiency</DialogTitle>
               </DialogHeader>
               {selectedDeficiency && (
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {isEditingDeficiency ? (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Source</Label>
                           <Select value={deficiencyForm.sourceType} onValueChange={(v: any) => setDeficiencyForm({ ...deficiencyForm, sourceType: v })}>
@@ -3284,7 +3284,7 @@ export default function FirmWideControls() {
                         <Label>Root Cause Analysis</Label>
                         <Textarea value={deficiencyForm.rootCauseAnalysis} onChange={(e) => setDeficiencyForm({ ...deficiencyForm, rootCauseAnalysis: e.target.value })} rows={2} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Pervasiveness</Label>
                           <Select value={deficiencyForm.pervasiveness} onValueChange={(v: any) => setDeficiencyForm({ ...deficiencyForm, pervasiveness: v })}>
@@ -3303,7 +3303,7 @@ export default function FirmWideControls() {
                     </>
                   ) : (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Source Type</Label>
                           <div className="mt-1">
@@ -3329,7 +3329,7 @@ export default function FirmWideControls() {
                           <p className="mt-1 p-3 bg-muted rounded">{selectedDeficiency.rootCauseAnalysis}</p>
                         </div>
                       )}
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Pervasiveness</Label>
                           <p className="font-medium">{selectedDeficiency.pervasiveness}</p>
@@ -3381,7 +3381,7 @@ export default function FirmWideControls() {
           </Dialog>
         </TabsContent>
 
-        <TabsContent value="objectives" className="space-y-4">
+        <TabsContent value="objectives" className="space-y-2.5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -3400,8 +3400,8 @@ export default function FirmWideControls() {
                     <DialogHeader>
                       <DialogTitle>Add Quality Objective</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>ISQM Component</Label>
                           <Select value={objectiveForm.isqmComponent} onValueChange={(v: any) => setObjectiveForm({ ...objectiveForm, isqmComponent: v })}>
@@ -3427,7 +3427,7 @@ export default function FirmWideControls() {
                         <Label>Objective Description</Label>
                         <Textarea value={objectiveForm.objectiveDescription} onChange={(e) => setObjectiveForm({ ...objectiveForm, objectiveDescription: e.target.value })} placeholder="Describe the quality objective..." rows={3} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Effective From</Label>
                           <Input type="date" value={objectiveForm.effectiveFrom} onChange={(e) => setObjectiveForm({ ...objectiveForm, effectiveFrom: e.target.value })} />
@@ -3450,14 +3450,14 @@ export default function FirmWideControls() {
               )}
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 {(qualityObjectives || []).length === 0 ? (
-                  <div className="text-center py-4 text-muted-foreground">
+                  <div className="text-center py-2 text-muted-foreground">
                     No quality objectives defined yet
                   </div>
                 ) : (
                   (qualityObjectives || []).map((obj: any) => (
-                    <div key={obj.id} className="border rounded-lg p-4 space-y-3">
+                    <div key={obj.id} className="border rounded-lg p-2.5 space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">{obj.objectiveCode}</Badge>
@@ -3522,10 +3522,10 @@ export default function FirmWideControls() {
                 <DialogTitle>{isEditingObjective ? "Edit" : "View"} Quality Objective</DialogTitle>
               </DialogHeader>
               {selectedObjective && (
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {isEditingObjective ? (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>ISQM Component</Label>
                           <Select value={objectiveForm.isqmComponent} onValueChange={(v: any) => setObjectiveForm({ ...objectiveForm, isqmComponent: v })}>
@@ -3549,7 +3549,7 @@ export default function FirmWideControls() {
                         <Label>Objective Description</Label>
                         <Textarea value={objectiveForm.objectiveDescription} onChange={(e) => setObjectiveForm({ ...objectiveForm, objectiveDescription: e.target.value })} rows={3} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Effective From</Label>
                           <Input type="date" value={objectiveForm.effectiveFrom} onChange={(e) => setObjectiveForm({ ...objectiveForm, effectiveFrom: e.target.value })} />
@@ -3562,7 +3562,7 @@ export default function FirmWideControls() {
                     </>
                   ) : (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Objective Code</Label>
                           <p className="font-medium text-lg">{selectedObjective.objectiveCode}</p>
@@ -3578,7 +3578,7 @@ export default function FirmWideControls() {
                         <Label className="text-sm text-muted-foreground">Objective Description</Label>
                         <p className="mt-1 p-3 bg-muted rounded">{selectedObjective.objectiveDescription}</p>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Effective From</Label>
                           <p className="font-medium">{selectedObjective.effectiveFrom ? format(new Date(selectedObjective.effectiveFrom), "dd MMMM yyyy") : "-"}</p>
@@ -3634,7 +3634,7 @@ export default function FirmWideControls() {
           </Dialog>
         </TabsContent>
 
-        <TabsContent value="policies" className="space-y-4">
+        <TabsContent value="policies" className="space-y-2.5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -3653,8 +3653,8 @@ export default function FirmWideControls() {
                     <DialogHeader>
                       <DialogTitle>Add Policy Document</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Policy Category</Label>
                           <Select value={policyForm.policyCategory} onValueChange={(v) => setPolicyForm({ ...policyForm, policyCategory: v })}>
@@ -3681,7 +3681,7 @@ export default function FirmWideControls() {
                         <Label>Policy Name</Label>
                         <Input value={policyForm.policyName} onChange={(e) => setPolicyForm({ ...policyForm, policyName: e.target.value })} placeholder="Enter policy name" />
                       </div>
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-3 gap-2.5">
                         <div className="space-y-2">
                           <Label>Version</Label>
                           <Input value={policyForm.versionNumber} onChange={(e) => setPolicyForm({ ...policyForm, versionNumber: e.target.value })} placeholder="1.0" />
@@ -3724,7 +3724,7 @@ export default function FirmWideControls() {
                 <TableBody>
                   {(policies || []).length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-muted-foreground py-4">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-2">
                         No policies documented yet
                       </TableCell>
                     </TableRow>
@@ -3785,10 +3785,10 @@ export default function FirmWideControls() {
                 <DialogTitle>{isEditingPolicy ? "Edit" : "View"} Policy Document</DialogTitle>
               </DialogHeader>
               {selectedPolicy && (
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {isEditingPolicy ? (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Policy Category</Label>
                           <Select value={policyForm.policyCategory} onValueChange={(v) => setPolicyForm({ ...policyForm, policyCategory: v })}>
@@ -3813,7 +3813,7 @@ export default function FirmWideControls() {
                         <Label>Policy Name</Label>
                         <Input value={policyForm.policyName} onChange={(e) => setPolicyForm({ ...policyForm, policyName: e.target.value })} />
                       </div>
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-3 gap-2.5">
                         <div className="space-y-2">
                           <Label>Version</Label>
                           <Input value={policyForm.versionNumber} onChange={(e) => setPolicyForm({ ...policyForm, versionNumber: e.target.value })} placeholder="1.0" />
@@ -3830,7 +3830,7 @@ export default function FirmWideControls() {
                     </>
                   ) : (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Policy Number</Label>
                           <p className="font-medium font-mono">{selectedPolicy.policyNumber || "-"}</p>
@@ -3846,7 +3846,7 @@ export default function FirmWideControls() {
                         <Label className="text-sm text-muted-foreground">Policy Name</Label>
                         <p className="font-medium text-lg">{selectedPolicy.policyName}</p>
                       </div>
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-3 gap-2.5">
                         <div>
                           <Label className="text-sm text-muted-foreground">Version</Label>
                           <p className="font-medium">{selectedPolicy.versionNumber || "-"}</p>
@@ -3901,7 +3901,7 @@ export default function FirmWideControls() {
         </TabsContent>
 
         {/* ISQM 1 Components Tab */}
-        <TabsContent value="isqm1" className="space-y-4">
+        <TabsContent value="isqm1" className="space-y-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -3946,7 +3946,7 @@ export default function FirmWideControls() {
               </div>
 
               {/* Selected Component Detail */}
-              <div className="mt-4 space-y-3">
+              <div className="mt-2.5 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold">{ISQM_COMPONENTS.find(c => c.key === selectedComponent)?.label || "Select Component"}</h3>
                   {isAdmin && (
@@ -4021,7 +4021,7 @@ export default function FirmWideControls() {
                     </Card>
                   ))}
                   {(fwcObjectives || []).filter((o: any) => o.componentType === selectedComponent).length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-2 text-muted-foreground">
                       <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">No quality objectives defined for this component yet.</p>
                       {isAdmin && <p className="text-xs mt-1">Click "Objective" to add one.</p>}
@@ -4185,7 +4185,7 @@ export default function FirmWideControls() {
         </TabsContent>
 
         {/* EQR (ISQM 2) Tab */}
-        <TabsContent value="eqcr" className="space-y-4">
+        <TabsContent value="eqcr" className="space-y-2.5">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -4203,12 +4203,12 @@ export default function FirmWideControls() {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2.5">
               {/* EQCR Policy Summary */}
               <Card className="bg-muted/50">
                 <CardContent className="pt-4">
                   <h4 className="font-medium text-sm mb-2">EQR Policy Configuration</h4>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="grid grid-cols-3 gap-2.5 text-sm">
                     <div>
                       <span className="text-muted-foreground">Independence Confirmation:</span>
                       <Badge variant={eqcrPolicy?.independenceConfirmRequired !== false ? "default" : "secondary"} className="ml-2">
@@ -4256,7 +4256,7 @@ export default function FirmWideControls() {
                   ))}
                   {(!eqcrAssignments || eqcrAssignments.length === 0) && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-2">
                         No EQR assignments yet
                       </TableCell>
                     </TableRow>
@@ -4292,8 +4292,8 @@ export default function FirmWideControls() {
         </TabsContent>
 
         {/* Documentation Library Tab */}
-        <TabsContent value="docs" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <TabsContent value="docs" className="space-y-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
             <ModuleTemplates moduleName="isqm-governance" title="ISQM Governance Templates" collapsible={false} defaultExpanded />
             <ModuleTemplates moduleName="isqm-resources" title="ISQM HR & Resources" collapsible={false} defaultExpanded />
             <ModuleTemplates moduleName="isqm-monitoring" title="ISQM Monitoring" collapsible={false} defaultExpanded />
@@ -4320,7 +4320,7 @@ export default function FirmWideControls() {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2.5">
               {/* Version Control */}
               <div>
                 <h4 className="font-medium text-sm mb-2">ISQM Version Control</h4>
@@ -4344,7 +4344,7 @@ export default function FirmWideControls() {
                     ))}
                     {(!isqmVersions || isqmVersions.length === 0) && (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground py-6">No version records</TableCell>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground py-3">No version records</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -4378,7 +4378,7 @@ export default function FirmWideControls() {
                     ))}
                     {(!policyDocuments || policyDocuments.length === 0) && (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-6">No policy documents uploaded</TableCell>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-3">No policy documents uploaded</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -4451,7 +4451,7 @@ export default function FirmWideControls() {
         </TabsContent>
 
         {/* Activity Log Tab */}
-        <TabsContent value="activity" className="space-y-4">
+        <TabsContent value="activity" className="space-y-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -4487,7 +4487,7 @@ export default function FirmWideControls() {
                   ))}
                   {(!activityLogs || activityLogs.length === 0) && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-2">
                         No activity logs yet
                       </TableCell>
                     </TableRow>

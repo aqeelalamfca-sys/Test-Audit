@@ -318,12 +318,12 @@ export default function ClientDetail() {
 
   if (error || !client) {
     return (
-      <div className="px-4 py-3">
+      <div className="px-3 py-3">
         <Card>
           <CardContent className="pt-6">
             <p className="text-red-500">Failed to load client details.</p>
             <Link href="/clients">
-              <Button variant="outline" className="mt-4">Back to Clients</Button>
+              <Button variant="outline" className="mt-2.5">Back to Clients</Button>
             </Link>
           </CardContent>
         </Card>
@@ -333,7 +333,7 @@ export default function ClientDetail() {
 
   return (
     <div className="page-container">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2.5">
         <Link href="/clients">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -348,7 +348,7 @@ export default function ClientDetail() {
             <Building2 className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">{client.name}</h1>
+            <h1 className="text-lg font-bold">{client.name}</h1>
             {client.tradingName && (
               <p className="text-muted-foreground">Trading as: {client.tradingName}</p>
             )}
@@ -381,7 +381,7 @@ export default function ClientDetail() {
           <TabsTrigger value="documents">Documents</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="engagements" className="space-y-4">
+        <TabsContent value="engagements" className="space-y-2.5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2">
               <CardTitle>Client Engagements</CardTitle>
@@ -400,7 +400,7 @@ export default function ClientDetail() {
             </CardHeader>
             <CardContent>
               {engagements.length === 0 ? (
-                <div className="text-center py-4">
+                <div className="text-center py-2">
                   <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                   <p className="text-muted-foreground">No engagements found for this client. Use the "New Engagement" button above to create one.</p>
                 </div>
@@ -470,7 +470,7 @@ export default function ClientDetail() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="contact" className="space-y-4">
+        <TabsContent value="contact" className="space-y-2.5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Client Master Information</CardTitle>
@@ -488,7 +488,7 @@ export default function ClientDetail() {
             </CardHeader>
             <CardContent>
               {editMode ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
                   <div className="space-y-2">
                     <Label>Legal Name</Label>
                     <Input
@@ -615,7 +615,7 @@ export default function ClientDetail() {
                   <InfoRow label="Address" value={client.address} className="md:col-span-3" />
                   <div className="col-span-full border-t pt-4 mt-2">
                     <h4 className="font-medium text-sm text-muted-foreground mb-3">Key Contacts</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
                       <InfoRow label="CEO Name" value={client.ceoName} />
                       <InfoRow label="CEO Contact" value={client.ceoContact} />
                       <InfoRow label="CFO Name" value={client.cfoName} />
@@ -625,7 +625,7 @@ export default function ClientDetail() {
                   {client.priorAuditorName && (
                     <div className="col-span-full border-t pt-4 mt-2">
                       <h4 className="font-medium text-sm text-muted-foreground mb-3">Prior Auditor</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
                         <InfoRow label="Auditor Name" value={client.priorAuditorName} />
                         <InfoRow label="Contact" value={client.priorAuditorContact} />
                         <InfoRow label="Change Reason" value={client.auditorChangeReason} />
@@ -638,9 +638,9 @@ export default function ClientDetail() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="documents" className="space-y-4">
+        <TabsContent value="documents" className="space-y-2.5">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-4">
+            <CardHeader className="flex flex-row items-center justify-between gap-2.5">
               <CardTitle>Master Client Documents</CardTitle>
               {isManager && (
                 <Button size="sm" onClick={() => setDocDialogOpen(true)}>
@@ -651,9 +651,9 @@ export default function ClientDetail() {
             </CardHeader>
             <CardContent>
               {documents.length === 0 ? (
-                <div className="text-center py-4">
+                <div className="text-center py-2">
                   <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground mb-4">No master documents uploaded for this client.</p>
+                  <p className="text-muted-foreground mb-2.5">No master documents uploaded for this client.</p>
                   {isManager && (
                     <Button onClick={() => setDocDialogOpen(true)}>
                       <Plus className="h-4 w-4 mr-2" />
@@ -717,7 +717,7 @@ export default function ClientDetail() {
             </CardHeader>
             <CardContent>
               {permanentDocs.length === 0 ? (
-                <div className="text-center py-4">
+                <div className="text-center py-2">
                   <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                   <p className="text-muted-foreground">No permanent documents from engagements yet.</p>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -803,7 +803,7 @@ export default function ClientDetail() {
               Add a new permanent document for this client.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-2.5 py-2">
             <div className="space-y-2">
               <Label htmlFor="docName">Document Name *</Label>
               <Input

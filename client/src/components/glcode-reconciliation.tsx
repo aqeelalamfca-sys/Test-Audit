@@ -217,7 +217,7 @@ function IntegrityStatusCard({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="animate-pulse space-y-4">
+          <div className="animate-pulse space-y-2.5">
             <div className="h-4 bg-muted rounded w-1/4" />
             <div className="h-20 bg-muted rounded" />
           </div>
@@ -256,32 +256,32 @@ function IntegrityStatusCard({
           Cross-dataset GL_CODE validation and integrity check
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2.5">
           <div className="text-center p-3 rounded-lg bg-muted/50">
-            <p className="text-2xl font-bold font-mono">{integrity.totalGLCodes}</p>
+            <p className="text-lg font-bold font-mono">{integrity.totalGLCodes}</p>
             <p className="text-xs text-muted-foreground">Total GL_CODEs</p>
           </div>
           <div className="text-center p-3 rounded-lg bg-green-500/10">
-            <p className="text-2xl font-bold font-mono text-green-600">
+            <p className="text-lg font-bold font-mono text-green-600">
               {integrity.validCount}
             </p>
             <p className="text-xs text-muted-foreground">Valid</p>
           </div>
           <div className="text-center p-3 rounded-lg bg-yellow-500/10">
-            <p className="text-2xl font-bold font-mono text-yellow-600">
+            <p className="text-lg font-bold font-mono text-yellow-600">
               {integrity.missingCount}
             </p>
             <p className="text-xs text-muted-foreground">Missing</p>
           </div>
           <div className="text-center p-3 rounded-lg bg-orange-500/10">
-            <p className="text-2xl font-bold font-mono text-orange-600">
+            <p className="text-lg font-bold font-mono text-orange-600">
               {integrity.duplicateCount}
             </p>
             <p className="text-xs text-muted-foreground">Duplicate</p>
           </div>
           <div className="text-center p-3 rounded-lg bg-red-500/10">
-            <p className="text-2xl font-bold font-mono text-red-600">
+            <p className="text-lg font-bold font-mono text-red-600">
               {integrity.invalidCount}
             </p>
             <p className="text-xs text-muted-foreground">Invalid</p>
@@ -393,7 +393,7 @@ function ReconciliationCard({
           {getStatusBadge(summary.status)}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2.5">
         <div className="flex justify-between items-center">
           <span className="text-sm text-muted-foreground">Matched</span>
           <span className="font-mono text-sm">
@@ -453,7 +453,7 @@ function ReconciliationTable({
 }) {
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-2">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -461,7 +461,7 @@ function ReconciliationTable({
 
   if (details.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
+      <div className="text-center py-2 text-muted-foreground">
         No reconciliation data available for this type.
       </div>
     );
@@ -553,18 +553,18 @@ function TransactionDrilldown({
         <SheetHeader>
           <SheetTitle>Transaction Drilldown: {glCode}</SheetTitle>
         </SheetHeader>
-        <div className="mt-6">
+        <div className="mt-3">
           {isLoading ? (
-            <div className="flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-2">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
           ) : !drilldown ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-2 text-muted-foreground">
               No data found for this GL_CODE.
             </div>
           ) : (
             <ScrollArea className="h-[calc(100vh-150px)]">
-              <div className="space-y-6">
+              <div className="space-y-3">
                 <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
                   <span className="font-medium">{drilldown.glName}</span>
                   <span
@@ -748,14 +748,14 @@ export function GLCodeReconciliation({
   const reconList = reconciliationsData?.reconciliations || defaultReconciliations;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <IntegrityStatusCard integrity={integrity} isLoading={integrityLoading} />
 
-      <div className="space-y-4">
+      <div className="space-y-2.5">
         <h3 className="text-lg font-semibold">Reconciliations</h3>
 
         {reconciliationsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
             {[1, 2, 3, 4].map((i) => (
               <Card key={i}>
                 <CardHeader className="pb-2">
@@ -776,7 +776,7 @@ export function GLCodeReconciliation({
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
             {reconList.map((summary) => (
               <ReconciliationCard
                 key={summary.type}
@@ -801,9 +801,9 @@ export function GLCodeReconciliation({
               Reconciliation Details
             </SheetTitle>
           </SheetHeader>
-          <div className="mt-6">
+          <div className="mt-3">
             <Tabs defaultValue="all" className="w-full">
-              <TabsList className="mb-4">
+              <TabsList className="mb-2.5">
                 <TabsTrigger value="all">All Items</TabsTrigger>
                 <TabsTrigger value="variances">Variances Only</TabsTrigger>
                 <TabsTrigger value="missing">Missing Items</TabsTrigger>

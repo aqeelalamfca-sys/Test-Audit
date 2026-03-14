@@ -454,7 +454,7 @@ export default function PrintView() {
       showSaveNext={true}
       showSaveClose={true}
     >
-    <div className="px-5 py-3 space-y-3 max-w-[1400px] mx-auto w-full">
+    <div className="px-3 py-3 space-y-3 max-w-[1400px] mx-auto w-full">
       <input
         type="file"
         ref={fileInputRef}
@@ -490,7 +490,7 @@ export default function PrintView() {
                     Add a new deliverable to the engagement register
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
+                <div className="space-y-2.5 py-2">
                   <div className="space-y-2">
                     <Label>Type of Deliverable *</Label>
                     <Select
@@ -588,7 +588,7 @@ export default function PrintView() {
           <CardTitle className="text-sm font-semibold">Auto-Generated Outputs</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
             <Card className="bg-muted/30 hover:shadow-sm transition-shadow" data-testid="card-draft-fs">
               <CardContent className="pt-4">
                 <div className="flex items-start gap-3">
@@ -798,7 +798,7 @@ export default function PrintView() {
             </Card>
           </div>
 
-          <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-dashed">
+          <div className="mt-2.5 p-3 bg-muted/50 rounded-lg border border-dashed">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <AlertCircle className="h-4 w-4" />
               <span>
@@ -826,7 +826,7 @@ export default function PrintView() {
         </CardHeader>
         <CardContent>
           {preReportCheck && !preReportCheck.readyForDraft && (
-            <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/5 p-4">
+            <div className="mb-2.5 rounded-lg border border-destructive/50 bg-destructive/5 p-2.5">
               <div className="flex items-center gap-2 mb-2">
                 <AlertCircle className="h-5 w-5 text-destructive" />
                 <h4 className="font-semibold text-destructive">Completion-Phase Blockers</h4>
@@ -845,12 +845,12 @@ export default function PrintView() {
             </div>
           )}
           {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading deliverables...</div>
+            <div className="text-center py-2 text-muted-foreground">Loading deliverables...</div>
           ) : deliverables.length === 0 ? (
-            <div className="text-center py-8">
-              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <div className="text-center py-2">
+              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2.5" />
               <h3 className="font-medium mb-2">No Deliverables Yet</h3>
-              <p className="text-muted-foreground mb-4">Create your first deliverable to start the register</p>
+              <p className="text-muted-foreground mb-2.5">Create your first deliverable to start the register</p>
               {canCreate && (
                 <Button onClick={() => setIsCreateOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -859,7 +859,7 @@ export default function PrintView() {
               )}
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-2.5">
               {deliverables.map((deliverable) => (
                 <Card key={deliverable.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="pt-2">
@@ -880,7 +880,7 @@ export default function PrintView() {
                           {DELIVERABLE_TYPES.find(t => t.value === deliverable.deliverableType)?.description || "Custom deliverable"}
                         </p>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-sm">
                           <div>
                             <span className="text-muted-foreground">Prepared:</span>
                             <span className="ml-2">{deliverable.preparedBy?.fullName || "-"}</span>
@@ -932,7 +932,7 @@ export default function PrintView() {
                     </div>
 
                     {deliverable.status === "DRAFT" && (
-                      <div className="flex gap-2 mt-4 pt-4 border-t">
+                      <div className="flex gap-2 mt-2.5 pt-4 border-t">
                         {canReview && !deliverable.reviewedById && (
                           <Button
                             size="sm"
@@ -959,7 +959,7 @@ export default function PrintView() {
                     )}
 
                     {deliverable.status === "FINAL" && canIssue && (
-                      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
+                      <div className="flex flex-wrap gap-2 mt-2.5 pt-4 border-t">
                         <Button
                           size="sm"
                           variant="default"
@@ -1009,15 +1009,15 @@ export default function PrintView() {
           </DialogHeader>
 
           {selectedDeliverable && (
-            <Tabs defaultValue="details" className="mt-4">
+            <Tabs defaultValue="details" className="mt-2.5">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="details">Details</TabsTrigger>
                 <TabsTrigger value="audit-trail">Audit Trail</TabsTrigger>
                 <TabsTrigger value="files">Files ({selectedDeliverable.files.length})</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="details" className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
+              <TabsContent value="details" className="space-y-2.5 mt-2.5">
+                <div className="grid grid-cols-2 gap-2.5">
                   <div className="space-y-2">
                     <Label className="text-muted-foreground">Deliverable Type</Label>
                     <p className="font-medium">{formatDeliverableType(selectedDeliverable.deliverableType, selectedDeliverable.customTypeName)}</p>
@@ -1054,9 +1054,9 @@ export default function PrintView() {
                 )}
 
                 {selectedDeliverable.status === "DRAFT" && canCreate && (
-                  <div className="pt-4 border-t space-y-4">
+                  <div className="pt-4 border-t space-y-2.5">
                     <h4 className="font-medium">Edit Details</h4>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-2.5">
                       {selectedDeliverable.deliverableType === "AUDIT_REPORT" && (
                         <div className="space-y-2">
                           <Label>Opinion Type</Label>
@@ -1090,7 +1090,7 @@ export default function PrintView() {
                 )}
               </TabsContent>
 
-              <TabsContent value="audit-trail" className="mt-4">
+              <TabsContent value="audit-trail" className="mt-2.5">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1145,10 +1145,10 @@ export default function PrintView() {
                 </Table>
               </TabsContent>
 
-              <TabsContent value="files" className="mt-4">
+              <TabsContent value="files" className="mt-2.5">
                 {selectedDeliverable.files.length > 0 && (
-                  <div className="mb-4 p-3 bg-muted rounded-md">
-                    <div className="flex items-center gap-4 text-sm">
+                  <div className="mb-2.5 p-3 bg-muted rounded-md">
+                    <div className="flex items-center gap-2.5 text-sm">
                       <span><strong>Total Versions:</strong> {selectedDeliverable.files.length}</span>
                       <span><strong>Current Files:</strong> {selectedDeliverable.files.filter(f => f.isCurrentVersion).length}</span>
                       <span><strong>Latest Version:</strong> v{Math.max(...selectedDeliverable.files.map(f => f.version))}</span>
@@ -1156,13 +1156,13 @@ export default function PrintView() {
                   </div>
                 )}
                 {selectedDeliverable.files.length === 0 ? (
-                  <div className="text-center py-8">
+                  <div className="text-center py-2">
                     <Files className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                     <p className="text-muted-foreground">No files uploaded yet</p>
                     {selectedDeliverable.status === "DRAFT" && (
                       <Button
                         variant="outline"
-                        className="mt-4"
+                        className="mt-2.5"
                         onClick={() => handleFileUpload(selectedDeliverable.id)}
                       >
                         <Upload className="h-4 w-4 mr-2" />
@@ -1226,7 +1226,7 @@ export default function PrintView() {
                 )}
 
                 {selectedDeliverable.status === "DRAFT" && selectedDeliverable.files.length > 0 && (
-                  <div className="mt-4">
+                  <div className="mt-2.5">
                     <Button variant="outline" onClick={() => handleFileUpload(selectedDeliverable.id)}>
                       <Upload className="h-4 w-4 mr-2" />
                       Upload New Version

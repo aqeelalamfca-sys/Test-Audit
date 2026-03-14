@@ -3,7 +3,7 @@ import { FlaskConical } from "lucide-react";
 export function AlphaRibbon() {
   return (
     <div
-      className="w-full bg-amber-500/10 border-b border-amber-300/30 dark:border-amber-700/40 px-4 py-1 flex items-center justify-center gap-2"
+      className="w-full bg-amber-500/10 border-b border-amber-300/30 dark:border-amber-700/40 px-3 py-1 flex items-center justify-center gap-2"
       data-testid="ribbon-beta-version"
     >
       <FlaskConical className="h-3 w-3 text-amber-600 dark:text-amber-400 flex-shrink-0" />

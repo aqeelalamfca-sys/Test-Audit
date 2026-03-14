@@ -212,7 +212,7 @@ export function SectionAttachments({
   const totalAttachments = attachments.length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Paperclip className="h-4 w-4 text-muted-foreground" />
@@ -414,7 +414,7 @@ export function SectionAttachments({
       )}
 
       {attachments.length === 0 && suggestedDocuments.length === 0 && (
-        <div className="text-center py-4 text-xs text-muted-foreground border border-dashed rounded-md">
+        <div className="text-center py-2 text-xs text-muted-foreground border border-dashed rounded-md">
           No files attached. Click upload to add supporting documents.
         </div>
       )}

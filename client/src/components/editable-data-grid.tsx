@@ -572,7 +572,7 @@ export function EditableDataGrid({
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
+      <div className="flex flex-col items-center justify-center py-3 text-muted-foreground">
         <AlertCircle className="h-8 w-8 mb-2 text-red-500" />
         <p className="text-sm">Failed to load data</p>
         <Button variant="outline" size="sm" className="mt-2" onClick={() => refetch()}>
@@ -647,7 +647,7 @@ export function EditableDataGrid({
 
       {/* Selection Action Bar */}
       {enableSelection && selectedIds.length > 0 && (
-        <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg px-4 py-2" data-testid="selection-action-bar">
+        <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg px-3 py-2" data-testid="selection-action-bar">
           <span className="text-sm font-medium">
             {selectedIds.length} item{selectedIds.length > 1 ? 's' : ''} selected
           </span>
@@ -677,12 +677,12 @@ export function EditableDataGrid({
       )}
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-6">
+        <div className="flex items-center justify-center py-3">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           <span className="ml-2 text-sm text-muted-foreground">Loading data...</span>
         </div>
       ) : data.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-6 text-muted-foreground border rounded-lg">
+        <div className="flex flex-col items-center justify-center py-3 text-muted-foreground border rounded-lg">
           <p className="text-sm">No data found</p>
           {searchTerm && (
             <Button variant="ghost" size="sm" className="mt-2" onClick={() => setSearchTerm('')}>
@@ -917,7 +917,7 @@ export function EditableDataGrid({
 
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] p-0 gap-0 overflow-hidden">
-          <div className="bg-primary/5 dark:bg-primary/10 px-6 py-5 border-b">
+          <div className="bg-primary/5 dark:bg-primary/10 px-3 py-2.5 border-b">
             <DialogHeader className="space-y-1.5">
               <DialogTitle className="flex items-center gap-2 text-lg" data-testid="text-add-entry-title">
                 <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 text-primary">
@@ -932,7 +932,7 @@ export function EditableDataGrid({
           </div>
 
           {validationErrors.length > 0 && (
-            <div className="px-6 pt-4">
+            <div className="px-3 pt-4">
               <Alert variant="destructive" className="py-2.5">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle className="text-sm font-medium">Please fix the following errors</AlertTitle>
@@ -945,8 +945,8 @@ export function EditableDataGrid({
             </div>
           )}
 
-          <ScrollArea className="px-6 py-5 max-h-[calc(85vh-180px)]">
-            <div className="space-y-5">
+          <ScrollArea className="px-3 py-2.5 max-h-[calc(85vh-180px)]">
+            <div className="space-y-3">
               {(() => {
                 const editableCols = columns.filter(col => col.editable !== false);
                 const identityCols = editableCols.filter(col =>
@@ -1026,7 +1026,7 @@ export function EditableDataGrid({
             </div>
           </ScrollArea>
 
-          <div className="border-t bg-muted/30 px-6 py-4">
+          <div className="border-t bg-muted/30 px-3 py-2">
             <DialogFooter className="gap-2 sm:gap-2">
               <Button
                 variant="outline"
@@ -1101,7 +1101,7 @@ export function EditableDataGrid({
           
           <ScrollArea className="flex-1 max-h-[50vh]">
             {drilldownLoading ? (
-              <div className="flex items-center justify-center py-8">
+              <div className="flex items-center justify-center py-2">
                 <Loader2 className="h-6 w-6 animate-spin" />
                 <span className="ml-2">Loading GL entries...</span>
               </div>
@@ -1202,7 +1202,7 @@ export function EditableDataGrid({
                 </TableBody>
               </Table>
             ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <div className="flex flex-col items-center justify-center py-2 text-muted-foreground">
                 <AlertCircle className="h-8 w-8 mb-2" />
                 <p>No GL entries found for this account</p>
                 <p className="text-xs mt-1">Movement may come from opening/closing balance adjustments</p>
@@ -1214,7 +1214,7 @@ export function EditableDataGrid({
             <div className="border-t pt-3 mt-3">
               <div className="flex justify-between text-sm">
                 <span className="font-medium">Totals:</span>
-                <div className="flex gap-8">
+                <div className="flex gap-2.5">
                   <span className="font-mono">
                     DR: {drilldownData.data.reduce((sum: number, e: Record<string, any>) => sum + Number(e.debit || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </span>

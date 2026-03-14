@@ -412,7 +412,7 @@ export function AuditPlanPanel({ engagementId, className }: AuditPlanPanelProps)
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-4 w-64" />
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2.5">
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-10 w-full" />
         </CardContent>
@@ -440,7 +440,7 @@ export function AuditPlanPanel({ engagementId, className }: AuditPlanPanelProps)
   }
 
   const FormContent = ({ isEdit = false }: { isEdit?: boolean }) => (
-    <div className="space-y-4 py-4">
+    <div className="space-y-2.5 py-2">
       <div className="space-y-2">
         <Label>Link to Materiality Set</Label>
         <Select
@@ -461,7 +461,7 @@ export function AuditPlanPanel({ engagementId, className }: AuditPlanPanelProps)
         </Select>
       </div>
       
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-2.5">
         <div className="space-y-2">
           <Label>Audit Approach</Label>
           <Select
@@ -511,7 +511,7 @@ export function AuditPlanPanel({ engagementId, className }: AuditPlanPanelProps)
 
       <div className="space-y-3">
         <Label className="text-sm font-medium">Reliance Assessment</Label>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-2.5">
           <div className="flex items-center justify-between space-x-2">
             <Label htmlFor="reliance-controls" className="text-sm font-normal">
               Reliance on Controls
@@ -564,7 +564,7 @@ export function AuditPlanPanel({ engagementId, className }: AuditPlanPanelProps)
       <div className="space-y-3">
         <Label className="text-sm font-medium">Key Dates</Label>
         {(newPlanForm.auditTiming === "INTERIM" || newPlanForm.auditTiming === "BOTH") && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2.5">
             <div className="space-y-2">
               <Label className="text-sm font-normal">Interim Start</Label>
               <Input
@@ -586,7 +586,7 @@ export function AuditPlanPanel({ engagementId, className }: AuditPlanPanelProps)
           </div>
         )}
         {(newPlanForm.auditTiming === "FINAL" || newPlanForm.auditTiming === "BOTH") && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2.5">
             <div className="space-y-2">
               <Label className="text-sm font-normal">Final Start</Label>
               <Input
@@ -684,7 +684,7 @@ export function AuditPlanPanel({ engagementId, className }: AuditPlanPanelProps)
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2.5">
         {displayPlan ? (
           <>
             <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -700,7 +700,7 @@ export function AuditPlanPanel({ engagementId, className }: AuditPlanPanelProps)
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2.5">
               <div className="p-3 rounded-lg bg-muted/50">
                 <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                   <Target className="h-3 w-3" />
@@ -730,7 +730,7 @@ export function AuditPlanPanel({ engagementId, className }: AuditPlanPanelProps)
               </div>
             )}
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+            <div className="flex items-center gap-2.5 text-sm text-muted-foreground flex-wrap">
               {displayPlan.relianceOnControls && (
                 <Badge variant="secondary" className="text-xs">Controls</Badge>
               )}
@@ -746,7 +746,7 @@ export function AuditPlanPanel({ engagementId, className }: AuditPlanPanelProps)
             </div>
 
             {(displayPlan.finalStartDate || displayPlan.interimStartDate || displayPlan.reportDeadline) && (
-              <div className="grid grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-3 gap-2.5 text-sm">
                 {displayPlan.interimStartDate && (
                   <div>
                     <div className="text-xs text-muted-foreground">Interim Period</div>
@@ -891,7 +891,7 @@ export function AuditPlanPanel({ engagementId, className }: AuditPlanPanelProps)
             )}
           </>
         ) : (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-2 text-muted-foreground">
             <ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-50" />
             <p className="text-sm">No audit plan created yet</p>
             <p className="text-xs mt-1">Click "New Plan" to create the first version</p>

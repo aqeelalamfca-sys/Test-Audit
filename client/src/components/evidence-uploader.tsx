@@ -187,7 +187,7 @@ export function EvidenceUploader({
   }
 
   return (
-    <Card className="p-4 space-y-4">
+    <Card className="p-2.5 space-y-2.5">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h4 className="text-sm font-semibold flex items-center gap-2">
@@ -241,7 +241,7 @@ export function EvidenceUploader({
 
           <div
             className={`
-              border-2 border-dashed rounded-lg p-6 text-center transition-colors
+              border-2 border-dashed rounded-lg p-3 text-center transition-colors
               ${dragActive ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}
             `}
             onDragEnter={handleDrag}
@@ -343,7 +343,7 @@ export function EvidenceUploader({
       )}
 
       {sectionFiles.length === 0 && readOnly && (
-        <div className="p-4 text-center text-muted-foreground border border-dashed rounded-lg">
+        <div className="p-2.5 text-center text-muted-foreground border border-dashed rounded-lg">
           <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
           <p className="text-sm">No evidence documents uploaded</p>
         </div>

@@ -666,10 +666,10 @@ export default function PrePlanning() {
       headerActions={null}
     >
     <div className="w-full bg-background" data-testid="preplanning-wizard-page">
-      <div className="px-4 pt-2">
+      <div className="px-3 pt-2">
         <AIAssistantPanel engagementId={engagementId} phaseKey="engagement-setup" />
       </div>
-      <div className="px-4 py-2 space-y-2">
+      <div className="px-3 py-2 space-y-2">
         <Tabs value={activeStep} onValueChange={(v) => setActiveStep(v as StepId)}>
           <SimpleTabNavigation
             activeTab={activeStep}
@@ -683,7 +683,7 @@ export default function PrePlanning() {
             const warnings = getDependencyWarnings(activeStep);
             if (warnings.length === 0) return null;
             return (
-              <div className="mt-4 p-3 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800" data-testid="dependency-warning">
+              <div className="mt-2.5 p-3 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800" data-testid="dependency-warning">
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
                   <div className="text-sm">
@@ -697,7 +697,7 @@ export default function PrePlanning() {
             );
           })()}
 
-          <TabsContent value="setup" className="space-y-4 mt-3" data-testid="tab-content-setup">
+          <TabsContent value="setup" className="space-y-2.5 mt-3" data-testid="tab-content-setup">
             <EngagementSetupSection
               engagementId={engagementId}
               data={setupData}
@@ -705,7 +705,7 @@ export default function PrePlanning() {
             />
           </TabsContent>
 
-          <TabsContent value="acceptance_due_diligence" className="space-y-4 mt-3" data-testid="tab-content-acceptance">
+          <TabsContent value="acceptance_due_diligence" className="space-y-2.5 mt-3" data-testid="tab-content-acceptance">
             <AcceptanceDueDiligenceSection
               engagementId={engagementId}
               data={acceptanceData}
@@ -713,7 +713,7 @@ export default function PrePlanning() {
             />
           </TabsContent>
 
-          <TabsContent value="ethics" className="space-y-4 mt-3" data-testid="tab-content-ethics">
+          <TabsContent value="ethics" className="space-y-2.5 mt-3" data-testid="tab-content-ethics">
             <EthicsIndependenceSection
               engagementId={engagementId}
               data={ethicsData}
@@ -721,7 +721,7 @@ export default function PrePlanning() {
             />
           </TabsContent>
 
-          <TabsContent value="letter" className="space-y-4 mt-3" data-testid="tab-content-letter">
+          <TabsContent value="letter" className="space-y-2.5 mt-3" data-testid="tab-content-letter">
             <EngagementLetterSection
               engagementId={engagementId}
               data={letterData}
@@ -729,7 +729,7 @@ export default function PrePlanning() {
             />
           </TabsContent>
 
-          <TabsContent value="entity_understanding" className="space-y-4 mt-3" data-testid="tab-content-entity-understanding">
+          <TabsContent value="entity_understanding" className="space-y-2.5 mt-3" data-testid="tab-content-entity-understanding">
             <EntityUnderstandingSection
               engagementId={engagementId}
               data={entityUnderstandingData}
@@ -737,7 +737,7 @@ export default function PrePlanning() {
             />
           </TabsContent>
 
-          <TabsContent value="signoff" className="space-y-4 mt-3" data-testid="tab-content-signoff">
+          <TabsContent value="signoff" className="space-y-2.5 mt-3" data-testid="tab-content-signoff">
             <SignOffGateSection
               engagementId={engagementId}
               data={signoffData}

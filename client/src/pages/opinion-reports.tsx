@@ -390,7 +390,7 @@ export default function OpinionReportsPage() {
       showSaveNext={true}
       showSaveClose={true}
     >
-      <div className="px-5 py-3 space-y-3 max-w-[1400px] mx-auto w-full">
+      <div className="px-3 py-3 space-y-3 max-w-[1400px] mx-auto w-full">
         <AIAssistantPanel engagementId={engagementId || ""} phaseKey="opinion-reports" className="mb-2" />
         <input
           type="file"
@@ -411,7 +411,7 @@ export default function OpinionReportsPage() {
           </TabsList>
 
           {/* Dashboard */}
-          <TabsContent value="dashboard" className="space-y-4 mt-3">
+          <TabsContent value="dashboard" className="space-y-2.5 mt-3">
             {stats ? (
               <>
                 <Card>
@@ -452,10 +452,10 @@ export default function OpinionReportsPage() {
                   </CardContent>
                 </Card>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
                   <Card>
                     <CardContent className="pt-4 text-center">
-                      <p className="text-2xl font-bold">{stats.deliverables?.total || 0}</p>
+                      <p className="text-lg font-bold">{stats.deliverables?.total || 0}</p>
                       <p className="text-xs text-muted-foreground">Total Deliverables</p>
                       <div className="flex justify-center gap-2 mt-2">
                         <Badge variant="secondary">{stats.deliverables?.draft || 0} Draft</Badge>
@@ -466,13 +466,13 @@ export default function OpinionReportsPage() {
                   </Card>
                   <Card>
                     <CardContent className="pt-4 text-center">
-                      <p className="text-2xl font-bold">{stats.keyAuditMatters?.count || 0}</p>
+                      <p className="text-lg font-bold">{stats.keyAuditMatters?.count || 0}</p>
                       <p className="text-xs text-muted-foreground">Key Audit Matters</p>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardContent className="pt-4 text-center">
-                      <p className="text-2xl font-bold">{stats.controlDeficiencies?.total || 0}</p>
+                      <p className="text-lg font-bold">{stats.controlDeficiencies?.total || 0}</p>
                       <p className="text-xs text-muted-foreground">Control Deficiencies</p>
                       {stats.controlDeficiencies?.open > 0 && (
                         <Badge variant="destructive" className="mt-1">{stats.controlDeficiencies.open} Open</Badge>
@@ -508,7 +508,7 @@ export default function OpinionReportsPage() {
           </TabsContent>
 
           {/* Report Type & Opinion */}
-          <TabsContent value="opinion-basis" className="space-y-4 mt-3">
+          <TabsContent value="opinion-basis" className="space-y-2.5 mt-3">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -517,7 +517,7 @@ export default function OpinionReportsPage() {
                 </CardTitle>
                 <CardDescription>Select opinion type and document the basis for opinion</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2.5">
                 <div className="space-y-3">
                   <h3 className="text-sm font-semibold flex items-center gap-2">
                     <ClipboardCheck className="h-4 w-4" />
@@ -573,7 +573,7 @@ export default function OpinionReportsPage() {
                 </div>
 
                 {opinionType && opinionType !== "UNMODIFIED" && (
-                  <div className="space-y-2 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                  <div className="space-y-2 p-2.5 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                     <Label className="text-base font-medium">Basis for Modification (ISA 705) <span className="text-destructive">*</span></Label>
                     <Textarea
                       value={basisForModification}
@@ -602,7 +602,7 @@ export default function OpinionReportsPage() {
           </TabsContent>
 
           {/* Emphasis & Other Matter */}
-          <TabsContent value="emphasis-other" className="space-y-4 mt-3">
+          <TabsContent value="emphasis-other" className="space-y-2.5 mt-3">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -611,7 +611,7 @@ export default function OpinionReportsPage() {
                 </CardTitle>
                 <CardDescription>Document paragraphs to be included in the auditor's report where applicable</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2.5">
                 <div className="space-y-2">
                   <Label className="text-base font-medium">Emphasis of Matter Paragraph</Label>
                   <p className="text-xs text-muted-foreground">Include when a matter is appropriately presented or disclosed in the financial statements but is of such importance that it is fundamental to users' understanding</p>
@@ -671,7 +671,7 @@ export default function OpinionReportsPage() {
           </TabsContent>
 
           {/* Key Audit Matters */}
-          <TabsContent value="kam" className="space-y-4 mt-3">
+          <TabsContent value="kam" className="space-y-2.5 mt-3">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -680,7 +680,7 @@ export default function OpinionReportsPage() {
                 </CardTitle>
                 <CardDescription>Matters communicated with TCWG that required significant auditor attention</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2.5">
                 {stats?.keyAuditMatters?.count > 0 ? (
                   <div className="space-y-2">
                     {stats.keyAuditMatters.items.map((kam: any) => (
@@ -692,7 +692,7 @@ export default function OpinionReportsPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-6 text-muted-foreground">
+                  <div className="text-center py-3 text-muted-foreground">
                     <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-30" />
                     <p className="text-sm">No key audit matters documented yet</p>
                     <p className="text-xs mt-1">Use the AI Opinion Engine to identify potential KAMs</p>
@@ -721,7 +721,7 @@ export default function OpinionReportsPage() {
           </TabsContent>
 
           {/* FS Pack Readiness */}
-          <TabsContent value="fs-pack" className="space-y-4 mt-3">
+          <TabsContent value="fs-pack" className="space-y-2.5 mt-3">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -763,7 +763,7 @@ export default function OpinionReportsPage() {
           </TabsContent>
 
           {/* Management Letter */}
-          <TabsContent value="management-letter" className="space-y-4 mt-3">
+          <TabsContent value="management-letter" className="space-y-2.5 mt-3">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -772,9 +772,9 @@ export default function OpinionReportsPage() {
                 </CardTitle>
                 <CardDescription>Communicate significant deficiencies in internal control to those charged with governance</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2.5">
                 {stats?.controlDeficiencies && stats.controlDeficiencies.total > 0 && (
-                  <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="grid grid-cols-3 gap-3 mb-2.5">
                     <div className="p-3 border rounded-md text-center">
                       <p className="text-xl font-bold">{stats.controlDeficiencies.total}</p>
                       <p className="text-xs text-muted-foreground">Total Deficiencies</p>
@@ -817,7 +817,7 @@ export default function OpinionReportsPage() {
           </TabsContent>
 
           {/* Deliverables Checklist */}
-          <TabsContent value="deliverables" className="space-y-4 mt-3">
+          <TabsContent value="deliverables" className="space-y-2.5 mt-3">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -841,7 +841,7 @@ export default function OpinionReportsPage() {
                           <DialogTitle>Create New Deliverable</DialogTitle>
                           <DialogDescription>Add a new deliverable to the engagement register</DialogDescription>
                         </DialogHeader>
-                        <div className="space-y-4 py-4">
+                        <div className="space-y-2.5 py-2">
                           <div className="space-y-2">
                             <Label>Type *</Label>
                             <Select value={newDeliverable.deliverableType} onValueChange={(v) => setNewDeliverable({ ...newDeliverable, deliverableType: v })}>
@@ -893,9 +893,9 @@ export default function OpinionReportsPage() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="text-center py-8 text-muted-foreground">Loading deliverables...</div>
+                  <div className="text-center py-2 text-muted-foreground">Loading deliverables...</div>
                 ) : deliverables.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-2 text-muted-foreground">
                     <Package className="h-8 w-8 mx-auto mb-2 opacity-30" />
                     <p className="text-sm">No deliverables yet</p>
                     <p className="text-xs mt-1">Add deliverables to track client-facing documents</p>
@@ -963,7 +963,7 @@ export default function OpinionReportsPage() {
           </TabsContent>
 
           {/* Report Package */}
-          <TabsContent value="report-package" className="space-y-4 mt-3">
+          <TabsContent value="report-package" className="space-y-2.5 mt-3">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -972,8 +972,8 @@ export default function OpinionReportsPage() {
                 </CardTitle>
                 <CardDescription>Generated documents for the final report package</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <CardContent className="space-y-2.5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
                   {[
                     { type: "AUDIT_REPORT", label: "Audit Report", icon: <FileCheck className="h-5 w-5" />, color: "bg-purple-500/10 text-purple-500", isa: "ISA 700" },
                     { type: "MANAGEMENT_LETTER", label: "Management Letter", icon: <Mail className="h-5 w-5" />, color: "bg-orange-500/10 text-orange-500", isa: "ISA 265" },
@@ -1023,7 +1023,7 @@ export default function OpinionReportsPage() {
           </TabsContent>
 
           {/* Release Controls */}
-          <TabsContent value="release-controls" className="space-y-4 mt-3">
+          <TabsContent value="release-controls" className="space-y-2.5 mt-3">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1032,7 +1032,7 @@ export default function OpinionReportsPage() {
                 </CardTitle>
                 <CardDescription>Final approval and issuance controls for the audit report</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2.5">
                 {stats?.readiness && (
                   <div className="space-y-3">
                     {[
@@ -1055,7 +1055,7 @@ export default function OpinionReportsPage() {
                 <Separator />
 
                 {auditReport && auditReport.status === "FINAL" && canIssue && (
-                  <div className="flex items-center gap-3 p-4 rounded-md border-2 border-primary/50 bg-primary/5">
+                  <div className="flex items-center gap-3 p-2.5 rounded-md border-2 border-primary/50 bg-primary/5">
                     <Send className="h-6 w-6 text-primary" />
                     <div className="flex-1">
                       <p className="font-medium">Ready to Issue Audit Report</p>
@@ -1072,7 +1072,7 @@ export default function OpinionReportsPage() {
                 )}
 
                 {auditReport?.status === "ISSUED" && (
-                  <div className="flex items-center gap-3 p-4 rounded-md border bg-green-50 dark:bg-green-950/20 border-green-200">
+                  <div className="flex items-center gap-3 p-2.5 rounded-md border bg-green-50 dark:bg-green-950/20 border-green-200">
                     <CheckCircle2 className="h-6 w-6 text-green-600" />
                     <div>
                       <p className="font-medium text-green-700 dark:text-green-400">Audit Report Issued</p>
@@ -1084,7 +1084,7 @@ export default function OpinionReportsPage() {
                 )}
 
                 {!auditReport && (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-2 text-muted-foreground">
                     <Lock className="h-8 w-8 mx-auto mb-2 opacity-30" />
                     <p className="text-sm">No audit report deliverable created yet</p>
                     <p className="text-xs mt-1">Create an Audit Report deliverable in the Deliverables tab first</p>

@@ -44,7 +44,7 @@ export function AIRephraseModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-2.5">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="text-xs">Original</Badge>

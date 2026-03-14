@@ -175,7 +175,7 @@ function FirstLoginSteps() {
 
 function AWSGuide() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2"><Layers className="h-4 w-4" /> Architecture</CardTitle>
@@ -195,7 +195,7 @@ function AWSGuide() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2"><DollarSign className="h-4 w-4" /> Monthly Cost</CardTitle>
@@ -337,7 +337,7 @@ aws ecs create-service \\
 
 function HostingerGuide() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2"><Layers className="h-4 w-4" /> Architecture</CardTitle>
@@ -358,7 +358,7 @@ function HostingerGuide() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2"><DollarSign className="h-4 w-4" /> Monthly Cost</CardTitle>
@@ -580,7 +580,7 @@ pm2 restart auditwise`}</CodeBlock>
 
 function DigitalOceanGuide() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2"><Layers className="h-4 w-4" /> Architecture</CardTitle>
@@ -598,7 +598,7 @@ function DigitalOceanGuide() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2"><DollarSign className="h-4 w-4" /> Monthly Cost</CardTitle>
@@ -718,7 +718,7 @@ pm2 restart auditwise`}</CodeBlock>
 
 function AzureGuide() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2"><Layers className="h-4 w-4" /> Architecture</CardTitle>
@@ -736,7 +736,7 @@ function AzureGuide() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2"><DollarSign className="h-4 w-4" /> Monthly Cost</CardTitle>
@@ -876,7 +876,7 @@ az webapp config ssl create \\
 
 function GCPGuide() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2"><Layers className="h-4 w-4" /> Architecture</CardTitle>
@@ -894,7 +894,7 @@ function GCPGuide() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2"><DollarSign className="h-4 w-4" /> Monthly Cost</CardTitle>
@@ -1006,7 +1006,7 @@ gcloud run deploy auditwise \\
 
 function RailwayGuide() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2"><Layers className="h-4 w-4" /> Architecture</CardTitle>
@@ -1023,7 +1023,7 @@ function RailwayGuide() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2"><DollarSign className="h-4 w-4" /> Monthly Cost</CardTitle>
@@ -1116,7 +1116,7 @@ FIRM_NAME=Your Audit Firm Name`}</CodeBlock>
 
 function RenderGuide() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2"><Layers className="h-4 w-4" /> Architecture</CardTitle>
@@ -1132,7 +1132,7 @@ function RenderGuide() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2"><DollarSign className="h-4 w-4" /> Monthly Cost</CardTitle>
@@ -1215,7 +1215,7 @@ FIRM_NAME=Your Audit Firm Name`}</CodeBlock>
 
 function LinodeGuide() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2"><Layers className="h-4 w-4" /> Architecture</CardTitle>
@@ -1234,7 +1234,7 @@ function LinodeGuide() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2"><DollarSign className="h-4 w-4" /> Monthly Cost</CardTitle>
@@ -1308,7 +1308,7 @@ linode-cli linodes create \\
 
 function HetznerGuide() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2"><Layers className="h-4 w-4" /> Architecture</CardTitle>
@@ -1327,7 +1327,7 @@ function HetznerGuide() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2"><DollarSign className="h-4 w-4" /> Monthly Cost</CardTitle>
@@ -1703,7 +1703,7 @@ export default function DeploymentGuide() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <Card className="max-w-md w-full">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Shield className="h-12 w-12 text-destructive mb-4" />
+            <Shield className="h-12 w-12 text-destructive mb-2.5" />
             <h2 className="text-xl font-semibold mb-2">Access Restricted</h2>
             <p className="text-muted-foreground text-center">
               The Deployment Guide is only available to Super Administrators.
@@ -1727,8 +1727,8 @@ export default function DeploymentGuide() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="max-w-4xl mx-auto px-3 py-3 space-y-3">
+        <div className="flex items-start justify-between gap-2.5 flex-wrap">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Rocket className="h-7 w-7 text-primary" />
@@ -1770,7 +1770,7 @@ export default function DeploymentGuide() {
             ))}
           </TabsList>
 
-          <div className="mt-4">
+          <div className="mt-2.5">
             <TabsContent value="hostinger"><HostingerGuide /></TabsContent>
             <TabsContent value="aws"><AWSGuide /></TabsContent>
             <TabsContent value="digitalocean"><DigitalOceanGuide /></TabsContent>

@@ -50,19 +50,19 @@ export default function PortalLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-2.5">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center pb-4">
-          <div className="mx-auto mb-4 h-16 w-16 rounded-2xl bg-primary flex items-center justify-center">
+          <div className="mx-auto mb-2.5 h-16 w-16 rounded-2xl bg-primary flex items-center justify-center">
             <Shield className="h-8 w-8 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl font-semibold tracking-tight">Client Portal</CardTitle>
+          <CardTitle className="text-lg font-semibold tracking-tight">Client Portal</CardTitle>
           <CardDescription>
             Access your audit engagement documents and requests
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-2.5">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -101,7 +101,7 @@ export default function PortalLogin() {
             </Button>
           </form>
 
-          <div className="mt-6 pt-6 border-t text-center">
+          <div className="mt-3 pt-6 border-t text-center">
             <a href="/login" className="text-sm text-primary hover:underline">
               Audit Team Login
             </a>

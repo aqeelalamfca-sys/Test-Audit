@@ -155,7 +155,7 @@ export function GlobalStatusBar({
   return (
     <div
       className={cn(
-        "flex items-center justify-between px-4 py-2 rounded-lg border",
+        "flex items-center justify-between px-3 py-2 rounded-lg border",
         config.bgColor,
         className
       )}
@@ -626,7 +626,7 @@ export interface WhatsMissingPanelProps {
 export function WhatsMissingPanel({ items, onItemClick, className }: WhatsMissingPanelProps) {
   if (items.length === 0) {
     return (
-      <div className={cn("p-4 border rounded-lg bg-green-50 border-green-200", className)}>
+      <div className={cn("p-2.5 border rounded-lg bg-green-50 border-green-200", className)}>
         <div className="flex items-center gap-2 text-green-700">
           <CheckCircle2 className="h-5 w-5" />
           <span className="font-medium">All items complete</span>
@@ -643,7 +643,7 @@ export function WhatsMissingPanel({ items, onItemClick, className }: WhatsMissin
 
   return (
     <div className={cn("border rounded-lg bg-white", className)}>
-      <div className="px-4 py-3 border-b bg-red-50">
+      <div className="px-3 py-3 border-b bg-red-50">
         <div className="flex items-center gap-2 text-red-700">
           <AlertCircle className="h-5 w-5" />
           <span className="font-medium">What's Missing ({items.length})</span>
@@ -654,7 +654,7 @@ export function WhatsMissingPanel({ items, onItemClick, className }: WhatsMissin
           <li
             key={item.id}
             className={cn(
-              "flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50",
+              "flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50",
               onItemClick && "cursor-pointer"
             )}
             onClick={() => onItemClick?.(item)}
@@ -676,16 +676,15 @@ export function AIAssistBanner({ className }: AIAssistBannerProps) {
   return (
     <div
       className={cn(
-        "flex items-center gap-3 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg",
+        "flex items-center gap-2 px-2.5 py-1.5 bg-blue-50 border border-blue-200 rounded-md",
         className
       )}
     >
-      <Brain className="h-5 w-5 text-blue-600 flex-shrink-0" />
+      <Brain className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
       <div className="flex-1">
-        <p className="text-sm text-blue-800 font-medium">
+        <p className="text-xs text-blue-800 font-medium">
           AI-Assisted — Subject to Professional Judgment
         </p>
-        <p className="text-xs text-blue-600">Manual edits supersede AI suggestions</p>
       </div>
     </div>
   );

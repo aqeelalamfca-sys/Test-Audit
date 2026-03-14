@@ -112,7 +112,7 @@ export default function EngagementDetail() {
     return (
       <div className="page-container">
         <Skeleton className="h-12 w-full" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
           <Skeleton className="h-24" />
           <Skeleton className="h-24" />
           <Skeleton className="h-24" />
@@ -126,7 +126,7 @@ export default function EngagementDetail() {
 
   return (
     <div className="page-container">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2.5">
         <Link href="/engagements">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -144,7 +144,7 @@ export default function EngagementDetail() {
         />
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
         <Card>
           <CardContent className="pt-3">
             <div className="flex items-center gap-3">
@@ -188,7 +188,7 @@ export default function EngagementDetail() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Audit Phases</CardTitle>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <span className="w-3 h-3 rounded-full bg-green-500" /> Complete
               </span>
@@ -202,7 +202,7 @@ export default function EngagementDetail() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
             {phaseCards.map((phase) => {
               const Icon = phase.icon;
               const phaseData = getPhaseData(phase.id);
@@ -237,7 +237,7 @@ export default function EngagementDetail() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">

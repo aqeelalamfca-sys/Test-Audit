@@ -50,7 +50,7 @@ export function WorkspacePageHeader({
   const signoffSection = section || phase;
 
   return (
-    <div className="border-b bg-gradient-to-r from-background to-muted/30 px-6 py-2.5" data-testid="workspace-page-header">
+    <div className="border-b bg-gradient-to-r from-background to-muted/30 px-3 py-2.5" data-testid="workspace-page-header">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap min-w-0">
           <h1 className="text-lg font-semibold whitespace-nowrap" data-testid="text-page-title">{title}</h1>

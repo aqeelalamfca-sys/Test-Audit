@@ -133,14 +133,14 @@ export function EngagementStatusHeader({
       />
 
       {showAIBanner && (
-        <div className="mt-3">
+        <div className="mt-1.5">
           <AIAssistBanner />
         </div>
       )}
 
       {showProgressDetails && (
-        <div className="mt-3">
-          <div className="flex items-center justify-between mb-2">
+        <div className="mt-1.5">
+          <div className="flex items-center justify-between mb-1">
             <span className="text-sm font-medium">Overall Progress</span>
             <Button
               variant="ghost"
@@ -164,7 +164,7 @@ export function EngagementStatusHeader({
           <ProgressBar value={overallProgress} size="md" showPercentage />
 
           {expanded && (
-            <div className="mt-4 space-y-4">
+            <div className="mt-2.5 space-y-2.5">
               {phases.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {phases.map((phase) => (

@@ -58,7 +58,7 @@ export function EngagementCard({
           <RiskBadge level={riskRating} />
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2.5">
         <div className="flex items-center justify-between gap-2">
           <div>
             <p className="text-xs text-muted-foreground mb-1">Current Phase</p>

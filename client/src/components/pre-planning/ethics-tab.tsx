@@ -414,7 +414,7 @@ const EthicsTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
             />
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2.5">
           {rows.map((row, idx) => {
             const meta = getQuestionMeta(row.id);
             const isComplete = isEthicsRowComplete(row, meta);
@@ -425,7 +425,7 @@ const EthicsTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
             return (
               <div 
                 key={row.id} 
-                className={`border rounded-lg p-4 transition-all ${
+                className={`border rounded-lg p-2.5 transition-all ${
                   isComplete ? 'border-green-200 bg-green-50/30 dark:border-green-900 dark:bg-green-950/30' : 
                   (meta?.inputType === "yes-no" && row.response === "No" && !row.remarks.trim()) ? 'border-red-200 bg-red-50/30 dark:border-red-900 dark:bg-red-950/30' :
                   !row.response ? 'border-amber-200 bg-amber-50/20 dark:border-amber-900 dark:bg-amber-950/20' :
@@ -567,7 +567,7 @@ const EthicsTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {renderEthicsQuestionnaireSection(
         "Ethics Assessment",
         "Evaluate PIE status, non-audit services, and overall ethics compliance",
@@ -609,8 +609,8 @@ const EthicsTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
       )}
 
       <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
+        <CardContent className="py-2">
+          <div className="flex items-center justify-between gap-2.5 flex-wrap">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
                 <ClipboardCheck className="h-5 w-5 text-primary" />
@@ -628,7 +628,7 @@ const EthicsTab = forwardRef<{ save: () => Promise<void> }>((props, ref) => {
         </CardContent>
       </Card>
 
-      <Card className="mt-6">
+      <Card className="mt-3">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Paperclip className="h-4 w-4" />

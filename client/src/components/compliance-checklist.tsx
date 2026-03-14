@@ -101,7 +101,7 @@ export function ComplianceChecklist({
   const globalStartIndex = isPaginated ? (currentPage - 1) * pageSize : 0;
 
   return (
-    <div className="space-y-4" data-testid="compliance-checklist">
+    <div className="space-y-2.5" data-testid="compliance-checklist">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h4 className="text-sm font-semibold flex items-center gap-2">
@@ -401,7 +401,7 @@ export function QAFormChecklist({
           return (
             <div
               key={item.id}
-              className={`rounded-lg border p-4 transition-colors ${
+              className={`rounded-lg border p-2.5 transition-colors ${
                 isAnswered
                   ? item.status === "completed" ? "border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-950/20"
                   : item.status === "pending" ? "border-red-200 dark:border-red-800 bg-red-50/30 dark:bg-red-950/20"

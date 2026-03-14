@@ -162,12 +162,12 @@ export default function EngagementEdit() {
 
   if (error || !engagement) {
     return (
-      <div className="px-4 py-3">
+      <div className="px-3 py-3">
         <Card>
           <CardContent className="pt-6">
             <p className="text-red-500">Failed to load engagement details.</p>
             <Link href="/engagements">
-              <Button variant="outline" className="mt-4">Back to Engagements</Button>
+              <Button variant="outline" className="mt-2.5">Back to Engagements</Button>
             </Link>
           </CardContent>
         </Card>
@@ -177,7 +177,7 @@ export default function EngagementEdit() {
 
   return (
     <div className="page-container">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2.5">
         <Link href="/engagements">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -188,7 +188,7 @@ export default function EngagementEdit() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Edit Engagement</h1>
+          <h1 className="text-lg font-bold">Edit Engagement</h1>
           <p className="text-muted-foreground">
             {engagement.engagementCode} - {engagement.client?.name}
           </p>
@@ -199,8 +199,8 @@ export default function EngagementEdit() {
         <CardHeader>
           <CardTitle>Engagement Details</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <CardContent className="space-y-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
             <div className="space-y-2">
               <Label htmlFor="engagementType">Engagement Type</Label>
               <Select
@@ -296,7 +296,7 @@ export default function EngagementEdit() {
 
           <div className="border-t pt-4">
             <h4 className="font-medium mb-3">Period Information</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
               <div className="space-y-2">
                 <Label htmlFor="fiscalYearEnd">Fiscal Year End</Label>
                 <Input
@@ -329,7 +329,7 @@ export default function EngagementEdit() {
 
           <div className="border-t pt-4">
             <h4 className="font-medium mb-3">Key Dates</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
               <div className="space-y-2">
                 <Label htmlFor="fieldworkStartDate">Fieldwork Start</Label>
                 <Input
@@ -371,7 +371,7 @@ export default function EngagementEdit() {
 
           <div className="border-t pt-4">
             <h4 className="font-medium mb-3">Prior Auditor Information</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
               <div className="space-y-2">
                 <Label htmlFor="priorAuditor">Prior Auditor Name</Label>
                 <Input

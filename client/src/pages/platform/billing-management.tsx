@@ -366,7 +366,7 @@ function FirmBillingRow({ firm }: { firm: FirmRow }) {
           </TableRow>
       {expanded && (
           <TableRow className="bg-muted/20">
-            <TableCell colSpan={8} className="py-3 px-6">
+            <TableCell colSpan={8} className="py-3 px-3">
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Invoice History</p>
                 {sub?.invoices.length ? (
@@ -468,7 +468,7 @@ export default function BillingManagement() {
   }).length;
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-2.5 p-2.5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <Banknote className="h-5 w-5 text-primary" />
@@ -534,7 +534,7 @@ export default function BillingManagement() {
       </div>
 
       <Card>
-        <CardHeader className="pb-2 pt-3 px-4">
+        <CardHeader className="pb-2 pt-3 px-3">
           <div className="flex items-center gap-2 flex-wrap">
             <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
               <Building2 className="h-4 w-4 text-primary" />
@@ -580,7 +580,7 @@ export default function BillingManagement() {
               <TableBody>
                 {firms.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground text-sm">
+                    <TableCell colSpan={8} className="text-center py-2 text-muted-foreground text-sm">
                       No firms found.
                     </TableCell>
                   </TableRow>
@@ -594,7 +594,7 @@ export default function BillingManagement() {
       </Card>
 
       <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/15">
-        <CardContent className="p-4">
+        <CardContent className="p-2.5">
           <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
             <FileText className="h-4 w-4 text-blue-500" />
             Billing Workflow Guide

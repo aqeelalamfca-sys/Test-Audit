@@ -395,7 +395,7 @@ function StepHeader({
       <button
         onClick={onToggle}
         className={cn(
-          "flex w-full items-center justify-between p-4 hover-elevate rounded-md transition-colors",
+          "flex w-full items-center justify-between p-2.5 hover-elevate rounded-md transition-colors",
           isImportant && "bg-primary/5"
         )}
         data-testid={`step-${step}-toggle`}
@@ -454,29 +454,29 @@ function CopyButton({ text, label }: { text: string; label: string }) {
 
 function Step1PlanningInputs({ data }: { data: PlanningInput }) {
   return (
-    <div className="space-y-4 p-4 pt-0">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+    <div className="space-y-2.5 p-2.5 pt-0">
+      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
         <div className="rounded-lg border p-3" data-testid="count-significant-risks">
           <div className="text-sm text-muted-foreground">Significant Risks</div>
-          <div className="text-2xl font-bold">{data.riskAssessment.significantRisks.length}</div>
+          <div className="text-lg font-bold">{data.riskAssessment.significantRisks.length}</div>
         </div>
         <div className="rounded-lg border p-3" data-testid="count-fraud-risks">
           <div className="text-sm text-muted-foreground">Fraud Risks</div>
-          <div className="text-2xl font-bold text-destructive">{data.riskAssessment.fraudRisks.length}</div>
+          <div className="text-lg font-bold text-destructive">{data.riskAssessment.fraudRisks.length}</div>
         </div>
         <div className="rounded-lg border p-3" data-testid="count-fs-level-risks">
           <div className="text-sm text-muted-foreground">FS-Level Risks</div>
-          <div className="text-2xl font-bold">{data.riskAssessment.fsLevelRisks.length}</div>
+          <div className="text-lg font-bold">{data.riskAssessment.fsLevelRisks.length}</div>
         </div>
         <div className="rounded-lg border p-3" data-testid="count-assertion-risks">
           <div className="text-sm text-muted-foreground">Assertion-Level Risks</div>
-          <div className="text-2xl font-bold">{data.riskAssessment.assertionLevelRisks.length}</div>
+          <div className="text-lg font-bold">{data.riskAssessment.assertionLevelRisks.length}</div>
         </div>
       </div>
 
       <Separator />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-2.5 md:grid-cols-3">
         <Card data-testid="card-overall-materiality">
           <CardHeader className="pb-2">
             <CardDescription>Overall Materiality</CardDescription>
@@ -565,11 +565,11 @@ function Step2OverallApproach({ data }: { data: OverallAuditApproach }) {
   };
 
   return (
-    <div className="space-y-4 p-4 pt-0">
-      <div className="rounded-lg border-2 border-primary bg-primary/5 p-4">
-        <div className="flex items-start justify-between gap-4">
+    <div className="space-y-2.5 p-2.5 pt-0">
+      <div className="rounded-lg border-2 border-primary bg-primary/5 p-2.5">
+        <div className="flex items-start justify-between gap-2.5">
           <div>
-            <Badge className={cn("mb-3 text-base px-4 py-1", getApproachColor(data.approachType))} data-testid="badge-approach-type">
+            <Badge className={cn("mb-3 text-base px-3 py-1", getApproachColor(data.approachType))} data-testid="badge-approach-type">
               {data.approachType}
             </Badge>
             <div className="flex items-center gap-2 mt-2">
@@ -583,7 +583,7 @@ function Step2OverallApproach({ data }: { data: OverallAuditApproach }) {
         </div>
       </div>
 
-      <div className="rounded-lg bg-muted/30 p-4">
+      <div className="rounded-lg bg-muted/30 p-2.5">
         <div className="mb-2 text-sm font-medium">Justification</div>
         <p className="text-sm text-muted-foreground">{data.justification}</p>
       </div>
@@ -602,7 +602,7 @@ function Step2OverallApproach({ data }: { data: OverallAuditApproach }) {
 
       <Separator />
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-2.5 md:grid-cols-2">
         <div className="rounded-lg border p-3">
           <div className="mb-1 text-sm font-medium">Control Reliability Rationale</div>
           <p className="text-sm text-muted-foreground">{data.controlReliabilityRationale}</p>
@@ -623,7 +623,7 @@ function Step2OverallApproach({ data }: { data: OverallAuditApproach }) {
 
 function Step3ScopeTimingDirection({ data }: { data: ScopeTimingDirection }) {
   return (
-    <div className="space-y-6 p-4 pt-0">
+    <div className="space-y-3 p-2.5 pt-0">
       <div>
         <div className="mb-3 flex items-center gap-2 text-sm font-medium">
           <Target className="h-4 w-4" />
@@ -674,7 +674,7 @@ function Step3ScopeTimingDirection({ data }: { data: ScopeTimingDirection }) {
           <Clock className="h-4 w-4" />
           Timing
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-2.5 md:grid-cols-2">
           <div className="rounded-lg border p-3">
             <div className="mb-2 text-xs text-muted-foreground uppercase">Interim Work Scope</div>
             <ul className="space-y-1">
@@ -700,7 +700,7 @@ function Step3ScopeTimingDirection({ data }: { data: ScopeTimingDirection }) {
         </div>
 
         {data.timing.reportingDeadlines.length > 0 && (
-          <div className="mt-4">
+          <div className="mt-2.5">
             <div className="mb-2 text-xs text-muted-foreground uppercase">Milestones</div>
             <Table>
               <TableHeader>
@@ -731,7 +731,7 @@ function Step3ScopeTimingDirection({ data }: { data: ScopeTimingDirection }) {
           <Compass className="h-4 w-4" />
           Direction
         </div>
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <div>
             <div className="mb-2 text-xs text-muted-foreground uppercase">High-Risk Emphasis Areas</div>
             <div className="space-y-1">
@@ -781,7 +781,7 @@ function Step4RiskResponses({ data }: { data: RiskResponse[] }) {
   };
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       <Alert variant={hasOrphanRisks ? "destructive" : "default"}>
         {hasOrphanRisks ? (
           <>
@@ -909,18 +909,18 @@ function Step5ControlsReliance({ data }: { data: ControlsRelianceDecision[] }) {
   };
 
   return (
-    <div className="space-y-4 p-4 pt-0">
-      <div className="grid gap-4 md:grid-cols-3">
+    <div className="space-y-2.5 p-2.5 pt-0">
+      <div className="grid gap-2.5 md:grid-cols-3">
         <div className="rounded-lg border p-3 text-center">
-          <div className="text-2xl font-bold text-green-600">{data.filter(d => d.relianceDecision === 'Full Reliance').length}</div>
+          <div className="text-lg font-bold text-green-600">{data.filter(d => d.relianceDecision === 'Full Reliance').length}</div>
           <div className="text-sm text-muted-foreground">Full Reliance</div>
         </div>
         <div className="rounded-lg border p-3 text-center">
-          <div className="text-2xl font-bold text-amber-600">{data.filter(d => d.relianceDecision === 'Partial Reliance').length}</div>
+          <div className="text-lg font-bold text-amber-600">{data.filter(d => d.relianceDecision === 'Partial Reliance').length}</div>
           <div className="text-sm text-muted-foreground">Partial Reliance</div>
         </div>
         <div className="rounded-lg border p-3 text-center">
-          <div className="text-2xl font-bold text-red-600">{data.filter(d => d.relianceDecision === 'No Reliance').length}</div>
+          <div className="text-lg font-bold text-red-600">{data.filter(d => d.relianceDecision === 'No Reliance').length}</div>
           <div className="text-sm text-muted-foreground">No Reliance</div>
         </div>
       </div>
@@ -985,7 +985,7 @@ function Step6Sampling({ data }: { data: SamplingApproach[] }) {
   };
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       <Table>
         <TableHeader>
           <TableRow>
@@ -1037,8 +1037,8 @@ function Step7PotentialKAMs({ data }: { data: PotentialKAM[] }) {
 
   if (data.length === 0) {
     return (
-      <div className="p-4 pt-0">
-        <div className="rounded-lg border border-dashed p-6 text-center">
+      <div className="p-2.5 pt-0">
+        <div className="rounded-lg border border-dashed p-3 text-center">
           <Lightbulb className="mx-auto h-8 w-8 text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">No potential Key Audit Matters identified yet.</p>
         </div>
@@ -1047,8 +1047,8 @@ function Step7PotentialKAMs({ data }: { data: PotentialKAM[] }) {
   }
 
   return (
-    <div className="space-y-4 p-4 pt-0">
-      <div className="grid gap-4 md:grid-cols-2">
+    <div className="space-y-2.5 p-2.5 pt-0">
+      <div className="grid gap-2.5 md:grid-cols-2">
         {data.map((kam) => (
           <Card key={kam.id} data-testid={`kam-${kam.id}`}>
             <CardHeader className="pb-2">
@@ -1115,7 +1115,7 @@ function Step8ResourcePlanning({ data }: { data: ResourcePlanning }) {
   };
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       <div>
         <div className="mb-3 text-sm font-medium">Team Composition</div>
         <Table>
@@ -1182,7 +1182,7 @@ function Step8ResourcePlanning({ data }: { data: ResourcePlanning }) {
 
       <div>
         <div className="mb-3 text-sm font-medium">Review Intensity</div>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-2.5 md:grid-cols-3">
           <div className="rounded-lg border p-3">
             <div className="mb-2 flex items-center gap-2">
               <Badge className="bg-blue-100 text-blue-800">Manager</Badge>
@@ -1253,7 +1253,7 @@ function Step9Documentation({ data, onCopyAll }: { data: DocumentationOutput; on
   ];
 
   return (
-    <div className="space-y-4 p-4 pt-0">
+    <div className="space-y-2.5 p-2.5 pt-0">
       <div className="flex justify-end">
         <Button onClick={onCopyAll} variant="outline" data-testid="button-copy-all-documentation">
           <ClipboardCopy className="mr-2 h-4 w-4" />
@@ -1263,7 +1263,7 @@ function Step9Documentation({ data, onCopyAll }: { data: DocumentationOutput; on
 
       <div className="space-y-3">
         {sections.map((section) => (
-          <div key={section.key} className="rounded-lg border p-4" data-testid={`doc-section-${section.key}`}>
+          <div key={section.key} className="rounded-lg border p-2.5" data-testid={`doc-section-${section.key}`}>
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
                 <div className="mb-2 text-sm font-medium">{section.label}</div>
@@ -1294,9 +1294,9 @@ function Step9Documentation({ data, onCopyAll }: { data: DocumentationOutput; on
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       {[1, 2, 3, 4, 5].map((i) => (
-        <div key={i} className="rounded-lg border p-4">
+        <div key={i} className="rounded-lg border p-2.5">
           <div className="flex items-center gap-3">
             <Skeleton className="h-8 w-8 rounded-full" />
             <div className="space-y-2">
@@ -1393,7 +1393,7 @@ export function ISA300StrategyPanel({ engagementId, onStrategyGenerated, classNa
   return (
     <Card className={cn("w-full", className)}>
       <CardHeader>
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center justify-between gap-2.5 flex-wrap">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Brain className="h-5 w-5 text-primary" />
@@ -1434,9 +1434,9 @@ export function ISA300StrategyPanel({ engagementId, onStrategyGenerated, classNa
         {isLoadingStrategy ? (
           <LoadingSkeleton />
         ) : !savedStrategy ? (
-          <div className="rounded-lg border border-dashed p-8 text-center">
+          <div className="rounded-lg border border-dashed p-2.5 text-center">
             <Brain className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-            <p className="mt-4 text-muted-foreground">
+            <p className="mt-2.5 text-muted-foreground">
               No audit strategy generated yet. Click "Generate Audit Strategy" to run ISA 300/330 analysis.
             </p>
           </div>
@@ -1480,7 +1480,7 @@ export function ISA300StrategyPanel({ engagementId, onStrategyGenerated, classNa
 
             {/* Quality Gates Section */}
             {savedStrategy.qualityGates && (
-              <div className="space-y-3 p-4 bg-muted/30 rounded-lg border">
+              <div className="space-y-3 p-2.5 bg-muted/30 rounded-lg border">
                 <div className="flex items-center gap-2">
                   {savedStrategy.qualityGates.overallPassed ? (
                     <CheckCircle2 className="h-5 w-5 text-green-600" />

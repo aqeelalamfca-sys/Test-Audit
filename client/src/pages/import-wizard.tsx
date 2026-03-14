@@ -422,8 +422,8 @@ export default function ImportWizard() {
 
   return (
     <div className="space-y-0">
-    <div className="p-4 md:p-4 space-y-4">
-      <div className="flex items-center gap-4">
+    <div className="p-2.5 md:p-2.5 space-y-2.5">
+      <div className="flex items-center gap-2.5">
         <Link href={`/workspace/${engagementId}/planning`} data-testid="link-back">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="w-4 h-4 mr-1" /> Back
@@ -446,7 +446,7 @@ export default function ImportWizard() {
           <TabsTrigger value="upload" data-testid="tab-upload">Upload New File</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="upload" className="space-y-4">
+        <TabsContent value="upload" className="space-y-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -457,9 +457,9 @@ export default function ImportWizard() {
                 Download the Excel template with 7 sheets, fill in your data, then upload
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <Card className="p-4 border-dashed">
+            <CardContent className="space-y-2.5">
+              <div className="grid md:grid-cols-2 gap-2.5">
+                <Card className="p-2.5 border-dashed">
                   <div className="flex flex-col items-center gap-3 text-center">
                     <Download className="w-10 h-10 text-primary" />
                     <div>
@@ -474,7 +474,7 @@ export default function ImportWizard() {
                   </div>
                 </Card>
 
-                <Card className="p-4 border-dashed">
+                <Card className="p-2.5 border-dashed">
                   <div className="flex flex-col items-center gap-3 text-center">
                     <Upload className="w-10 h-10 text-primary" />
                     <div>
@@ -534,7 +534,7 @@ export default function ImportWizard() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="batches" className="space-y-4">
+        <TabsContent value="batches" className="space-y-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -547,11 +547,11 @@ export default function ImportWizard() {
             </CardHeader>
             <CardContent>
               {batchesLoading ? (
-                <div className="flex items-center justify-center py-4">
+                <div className="flex items-center justify-center py-2">
                   <Loader2 className="w-6 h-6 animate-spin" />
                 </div>
               ) : batches.length === 0 ? (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-2 text-muted-foreground">
                   <FileSpreadsheet className="w-12 h-12 mx-auto mb-2 opacity-50" />
                   <p>No import batches yet. Upload a file to get started.</p>
                   <Button 
@@ -621,7 +621,7 @@ export default function ImportWizard() {
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2.5">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Progress</span>
@@ -772,27 +772,27 @@ export default function ImportWizard() {
                       <Users className="w-4 h-4" /> Confirmation Candidates Preview
                     </h4>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
                       <div className="rounded-lg border p-3 text-center" data-testid="stat-ar-confirmations">
-                        <div className="text-2xl font-bold text-blue-600">
+                        <div className="text-lg font-bold text-blue-600">
                           {confirmationCandidates.summary.arConfirmations}
                         </div>
                         <div className="text-xs text-muted-foreground">AR Confirmations</div>
                       </div>
                       <div className="rounded-lg border p-3 text-center" data-testid="stat-ap-confirmations">
-                        <div className="text-2xl font-bold text-orange-600">
+                        <div className="text-lg font-bold text-orange-600">
                           {confirmationCandidates.summary.apConfirmations}
                         </div>
                         <div className="text-xs text-muted-foreground">AP Confirmations</div>
                       </div>
                       <div className="rounded-lg border p-3 text-center" data-testid="stat-bank-confirmations">
-                        <div className="text-2xl font-bold text-green-600">
+                        <div className="text-lg font-bold text-green-600">
                           {confirmationCandidates.summary.bankConfirmations}
                         </div>
                         <div className="text-xs text-muted-foreground">Bank Confirmations</div>
                       </div>
                       <div className="rounded-lg border p-3 text-center" data-testid="stat-total-confirmations">
-                        <div className="text-2xl font-bold">
+                        <div className="text-lg font-bold">
                           {confirmationCandidates.summary.totalConfirmations}
                         </div>
                         <div className="text-xs text-muted-foreground">Total</div>

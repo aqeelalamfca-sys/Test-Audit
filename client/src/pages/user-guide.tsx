@@ -342,7 +342,7 @@ export default function UserGuide() {
       <Card key={mod.key} className="mb-3" data-testid={`guide-module-${mod.key}`}>
         <Collapsible open={isExpanded} onOpenChange={() => toggleModule(mod.key)}>
           <CollapsibleTrigger className="w-full" data-testid={`toggle-module-${mod.key}`}>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 py-3 px-4 cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 py-3 px-3 cursor-pointer">
               <div className="flex items-center gap-3 min-w-0">
                 {isExpanded ? <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />}
                 <div className="text-left min-w-0">
@@ -362,8 +362,8 @@ export default function UserGuide() {
           </CollapsibleTrigger>
           
           <CollapsibleContent>
-            <CardContent className="pt-0 px-4 pb-4">
-              <div className="space-y-4">
+            <CardContent className="pt-0 px-3 pb-4">
+              <div className="space-y-2.5">
                 <div>
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Purpose</h4>
                   <p className="text-sm">{mod.purpose}</p>
@@ -410,7 +410,7 @@ export default function UserGuide() {
                   );
                 })()}
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                   {mod.prerequisites.length > 0 && (
                     <div>
                       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Prerequisites</h4>
@@ -439,7 +439,7 @@ export default function UserGuide() {
                   )}
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                   {mod.approvals.length > 0 && (
                     <div>
                       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Approvals & Gates</h4>
@@ -569,18 +569,18 @@ export default function UserGuide() {
   };
 
   return (
-    <div className="p-4 md:p-4 max-w-5xl mx-auto space-y-4" data-testid="page-user-guide">
+    <div className="p-2.5 md:p-2.5 max-w-5xl mx-auto space-y-2.5" data-testid="page-user-guide">
       {(versionLoading || issuesLoading) && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Clock className="h-4 w-4 animate-spin" />
           Loading guide data...
         </div>
       )}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="flex items-start justify-between gap-2.5 flex-wrap">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <BookOpen className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold" data-testid="text-guide-title">AuditWise Live User Guide</h1>
+            <h1 className="text-lg font-bold" data-testid="text-guide-title">AuditWise Live User Guide</h1>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
             Comprehensive guide to all modules, workflows, and features. Auto-generated from the current portal configuration.
@@ -616,7 +616,7 @@ export default function UserGuide() {
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="guide" className="mt-4 space-y-4">
+        <TabsContent value="guide" className="mt-2.5 space-y-2.5">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -645,9 +645,9 @@ export default function UserGuide() {
           })}
         </TabsContent>
         
-        <TabsContent value="issues" className="mt-4 space-y-4">
+        <TabsContent value="issues" className="mt-2.5 space-y-2.5">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 py-3 px-4">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 py-3 px-3">
               <div>
                 <CardTitle className="text-sm">Issues & Gaps Tracker</CardTitle>
                 <CardDescription className="text-xs">Report missing steps, screens, or documentation gaps by module.</CardDescription>
@@ -728,7 +728,7 @@ export default function UserGuide() {
           
           {guideIssues.length === 0 ? (
             <Card>
-              <CardContent className="py-4 text-center">
+              <CardContent className="py-2 text-center">
                 <CheckCircle2 className="h-8 w-8 mx-auto text-green-500 mb-2" />
                 <p className="text-sm font-medium">No issues reported</p>
                 <p className="text-xs text-muted-foreground">All documentation appears to be complete.</p>
@@ -740,7 +740,7 @@ export default function UserGuide() {
                 const mod = USER_GUIDE_REGISTRY.find(m => m.key === issue.moduleKey);
                 return (
                   <Card key={issue.id} data-testid={`issue-card-${issue.id}`}>
-                    <CardContent className="py-3 px-4">
+                    <CardContent className="py-3 px-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 mb-0.5 flex-wrap">

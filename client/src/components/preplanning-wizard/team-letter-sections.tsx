@@ -167,7 +167,7 @@ const FormSection = ({
         </div>
       </div>
     </CardHeader>
-    <CardContent className="pt-6 space-y-6">
+    <CardContent className="pt-6 space-y-3">
       {children}
     </CardContent>
   </Card>
@@ -199,7 +199,7 @@ const FormField = ({
 );
 
 const FormRow = ({ children, cols = 3 }: { children: React.ReactNode; cols?: 2 | 3 | 4 }) => (
-  <div className={`grid gap-4 ${cols === 2 ? 'sm:grid-cols-2' : cols === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
+  <div className={`grid gap-2.5 ${cols === 2 ? 'sm:grid-cols-2' : cols === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
     {children}
   </div>
 );
@@ -374,13 +374,13 @@ export function EngagementTeamSection({
   const allBriefingsCompleted = data.teamMembers.every(m => m.briefingCompleted);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <FormSection
         icon={<Users className="h-5 w-5" />}
         title="Engagement Team Allocation (ISA 220 / ISQM)"
         description="Assign team members with appropriate competence and experience for this engagement"
       >
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
@@ -527,7 +527,7 @@ export function EngagementTeamSection({
                 ))}
                 {data.teamMembers.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-2">
                       No team members added. Click "Add Team Member" to start.
                     </TableCell>
                   </TableRow>
@@ -543,7 +543,7 @@ export function EngagementTeamSection({
         title="Training Needs & Briefing"
         description="Document training requirements and team briefing status"
       >
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <div className="flex items-center gap-2">
             {allBriefingsCompleted && data.teamMembers.length > 0 && (
               <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 gap-1">
@@ -616,7 +616,7 @@ export function EngagementTeamSection({
                 ))}
                 {data.teamMembers.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-2">
                       Add team members above to configure training and briefing.
                     </TableCell>
                   </TableRow>
@@ -643,7 +643,7 @@ export function EngagementTeamSection({
         title="Supervision Plan"
         description="Define review levels and milestone checkpoints (ISA 220)"
       >
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
               {data.supervisionMilestones.length} milestone(s) defined
@@ -750,7 +750,7 @@ export function EngagementTeamSection({
                 ))}
                 {data.supervisionMilestones.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-2">
                       No milestones defined. Click "Add Milestone" to create supervision checkpoints.
                     </TableCell>
                   </TableRow>
@@ -870,14 +870,14 @@ export function EngagementLetterSection({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Letter Workflow Status */}
       <FormSection
         icon={<FileSignature className="h-5 w-5" />}
         title="Engagement Letter Workflow (ISA 210)"
         description="Generate, send, and track the engagement letter through to filing"
       >
-        <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+        <div className="flex items-center justify-between p-2.5 bg-muted/30 rounded-lg">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium">Current Status:</span>
@@ -1252,7 +1252,7 @@ export function EngagementLetterSection({
         />
 
         {!checklistComplete && (
-          <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 mt-4">
+          <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 mt-2.5">
             <CardContent className="py-3">
               <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                 <AlertCircle className="h-4 w-4" />

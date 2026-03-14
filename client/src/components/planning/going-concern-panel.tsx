@@ -39,7 +39,7 @@ export function GoingConcernPanel({ engagementId, readOnly, onFieldChange, plann
   const financialSummary = data?.financialSummary || {};
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">

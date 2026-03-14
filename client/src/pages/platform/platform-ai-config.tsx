@@ -85,7 +85,7 @@ export default function PlatformAIConfig() {
         <Card>
           <CardHeader><CardTitle className="text-base">Current Configuration</CardTitle></CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2.5">
               <div>
                 <span className="font-medium text-muted-foreground">Provider</span>
                 <div className="mt-1">
@@ -117,7 +117,7 @@ export default function PlatformAIConfig() {
 
       <Card>
         <CardHeader><CardTitle className="text-base">Update Configuration</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2.5">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Provider</Label>

@@ -643,7 +643,7 @@ export default function ReviewMapping() {
   return (
     <div className="flex flex-col h-full">
       <SignOffBar phase="REQUISITION" section="coa-mapping" className="mx-4 mt-2" />
-      <div className="flex flex-col gap-2 p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex flex-col gap-2 p-2.5 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href={`/workspace/${engagementId}/planning`}>
@@ -784,7 +784,7 @@ export default function ReviewMapping() {
         </div>
       </div>
 
-      <div className="px-4 pt-3">
+      <div className="px-3 pt-3">
         <AIAssistantPanel engagementId={engagementId || ""} phaseKey="coa-mapping" />
       </div>
       <div className="flex flex-1 overflow-hidden">
@@ -798,7 +798,7 @@ export default function ReviewMapping() {
           <ScrollArea className="flex-1">
             <div className="p-2">
               {fsHeads.length === 0 ? (
-                <div className="text-center text-muted-foreground text-sm py-4">
+                <div className="text-center text-muted-foreground text-sm py-2">
                   No FS taxonomy defined.
                   <br />Click "Initialize Taxonomy" to start.
                 </div>
@@ -948,7 +948,7 @@ export default function ReviewMapping() {
               <TableBody>
                 {filteredEntries.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center text-muted-foreground py-4">
+                    <TableCell colSpan={10} className="text-center text-muted-foreground py-2">
                       {tbEntries.length === 0 
                         ? "No TB data available. Upload TB data in the Planning phase first."
                         : "No matching accounts found."}
@@ -1052,7 +1052,7 @@ export default function ReviewMapping() {
             </div>
           </div>
           <ScrollArea className="flex-1">
-            <div className="p-4 space-y-4">
+            <div className="p-2.5 space-y-2.5">
               <div>
                 <div className="text-sm font-medium mb-2">Mapping Progress</div>
                 <Progress value={summary?.completeness || 0} className="h-2" />
@@ -1197,7 +1197,7 @@ export default function ReviewMapping() {
               <span className="font-mono">Balance: {formatNumber(selectedAccount?.netBalance || 0)}</span>
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-2.5 py-2">
             <div className="space-y-2">
               <Label>FS Head</Label>
               <Select value={selectedFsHeadId} onValueChange={(v) => { setSelectedFsHeadId(v); setSelectedFsLineId(""); }}>
@@ -1250,7 +1250,7 @@ export default function ReviewMapping() {
               Create a new FS Line under an existing FS Head
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-2.5 py-2">
             <div className="space-y-2">
               <Label>FS Head</Label>
               <Select value={newLineFsHeadId} onValueChange={setNewLineFsHeadId}>
@@ -1303,7 +1303,7 @@ export default function ReviewMapping() {
               Update the name of this FS Line. Changes will reflect immediately across all mapped accounts.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-2.5 py-2">
             <div className="space-y-2">
               <Label>New Name</Label>
               <Input 
@@ -1334,7 +1334,7 @@ export default function ReviewMapping() {
               Select source lines to merge into a target line. All mappings will be transferred.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-2.5 py-2">
             <div className="space-y-2">
               <Label>Source Lines (to be merged)</Label>
               <div className="border rounded-md p-2 max-h-40 overflow-y-auto space-y-1" data-testid="merge-source-list">
@@ -1403,7 +1403,7 @@ export default function ReviewMapping() {
               Assign {selectedRows.size} selected accounts to an FS Head/Line
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-2.5 py-2">
             <div className="space-y-2">
               <Label>FS Head</Label>
               <Select value={bulkFsHeadId} onValueChange={(v) => { setBulkFsHeadId(v); setBulkFsLineId(""); }}>

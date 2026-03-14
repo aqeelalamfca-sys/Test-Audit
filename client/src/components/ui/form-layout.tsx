@@ -21,7 +21,7 @@ const FormLayout = React.forwardRef<HTMLDivElement, FormLayoutProps>(
       ref={ref}
       data-slot="form-layout"
       className={cn(
-        "w-full px-4 sm:px-6 py-4",
+        "w-full px-3 sm:px-3 py-2",
         widthMap[maxWidth],
         centered && "mx-auto",
         className
@@ -45,7 +45,7 @@ const FormSection = React.forwardRef<HTMLDivElement, FormSectionProps>(
     <div
       ref={ref}
       data-slot="form-section"
-      className={cn("space-y-4", className)}
+      className={cn("space-y-2.5", className)}
       {...props}
     >
       {(title || description) && (
@@ -68,7 +68,7 @@ const FormSection = React.forwardRef<HTMLDivElement, FormSectionProps>(
 FormSection.displayName = "FormSection"
 
 const FormDivider = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <Separator className={cn("my-4", className)} {...props} />
+  <Separator className={cn("my-2", className)} {...props} />
 )
 FormDivider.displayName = "FormDivider"
 
@@ -89,7 +89,7 @@ const FormRow = React.forwardRef<HTMLDivElement, FormRowProps>(
       ref={ref}
       data-slot="form-row"
       className={cn(
-        "grid gap-4",
+        "grid gap-3",
         colsMap[cols],
         className
       )}
@@ -111,8 +111,8 @@ const FormActions = React.forwardRef<HTMLDivElement, FormActionsProps>(
       ref={ref}
       data-slot="form-actions"
       className={cn(
-        "flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-4",
-        sticky && "sticky bottom-0 bg-background pb-4 border-t border-border/50 -mx-4 sm:-mx-6 px-4 sm:px-6 z-10",
+        "flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2.5",
+        sticky && "sticky bottom-0 bg-background pb-2.5 border-t border-border/50 -mx-3 sm:-mx-4 px-3 sm:px-3 z-10",
         className
       )}
       {...props}

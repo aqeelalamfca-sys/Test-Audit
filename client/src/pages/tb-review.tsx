@@ -609,7 +609,7 @@ export default function TBReview() {
 
   if (loading) {
     return (
-      <div className="px-4 py-3 flex items-center justify-center min-h-[400px]">
+      <div className="px-3 py-3 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2" />
           <p>Loading trial balance...</p>
@@ -620,11 +620,11 @@ export default function TBReview() {
 
   if (!trialBalance) {
     return (
-      <div className="px-4 py-3">
-        <Card className="p-8 text-center">
-          <AlertCircle className="h-12 w-12 mx-auto text-amber-500 mb-4" />
+      <div className="px-3 py-3">
+        <Card className="p-2.5 text-center">
+          <AlertCircle className="h-12 w-12 mx-auto text-amber-500 mb-2.5" />
           <h2 className="text-xl font-semibold mb-2">No Trial Balance Found</h2>
-          <p className="text-muted-foreground mb-4">
+          <p className="text-muted-foreground mb-2.5">
             Please upload a trial balance first from the Planning page.
           </p>
           <Link href={`/workspace/${engagementId}/planning`}>
@@ -694,7 +694,7 @@ export default function TBReview() {
               <p className="text-xs text-muted-foreground">Total Accounts</p>
               <Layers className="h-4 w-4 text-muted-foreground" />
             </div>
-            <p className="text-2xl font-bold" data-testid="text-total-accounts">{totalCount}</p>
+            <p className="text-lg font-bold" data-testid="text-total-accounts">{totalCount}</p>
           </CardContent>
         </Card>
         <Card data-testid="card-mapped-accounts">
@@ -703,7 +703,7 @@ export default function TBReview() {
               <p className="text-xs text-muted-foreground">Mapped</p>
               <CheckCircle2 className="h-4 w-4 text-green-600" />
             </div>
-            <p className="text-2xl font-bold text-green-600" data-testid="text-mapped-count">{mappedCount}</p>
+            <p className="text-lg font-bold text-green-600" data-testid="text-mapped-count">{mappedCount}</p>
           </CardContent>
         </Card>
         <Card data-testid="card-unmapped-accounts">
@@ -712,7 +712,7 @@ export default function TBReview() {
               <p className="text-xs text-muted-foreground">Unmapped</p>
               <AlertCircle className="h-4 w-4 text-amber-600" />
             </div>
-            <p className="text-2xl font-bold text-amber-600" data-testid="text-unmapped-count">{totalCount - mappedCount}</p>
+            <p className="text-lg font-bold text-amber-600" data-testid="text-unmapped-count">{totalCount - mappedCount}</p>
           </CardContent>
         </Card>
         <Card data-testid="card-exceptions">
@@ -721,7 +721,7 @@ export default function TBReview() {
               <p className="text-xs text-muted-foreground">Exceptions</p>
               <XCircle className="h-4 w-4 text-red-600" />
             </div>
-            <p className="text-2xl font-bold text-red-600" data-testid="text-exceptions-count">{computedExceptions.length}</p>
+            <p className="text-lg font-bold text-red-600" data-testid="text-exceptions-count">{computedExceptions.length}</p>
           </CardContent>
         </Card>
         <Card data-testid="card-progress">
@@ -751,7 +751,7 @@ export default function TBReview() {
       </div>
 
       {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="space-y-2.5">
         <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
           <TabsTrigger value="tb-grid" className="gap-2" data-testid="tab-tb-grid">
             <FileSpreadsheet className="h-4 w-4" />
@@ -772,7 +772,7 @@ export default function TBReview() {
         </TabsList>
 
         {/* TB Details Grid Tab */}
-        <TabsContent value="tb-grid" className="space-y-4">
+        <TabsContent value="tb-grid" className="space-y-2.5">
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
@@ -912,7 +912,7 @@ export default function TBReview() {
         </TabsContent>
 
         {/* GL Details Grid Tab */}
-        <TabsContent value="gl-grid" className="space-y-4">
+        <TabsContent value="gl-grid" className="space-y-2.5">
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
@@ -1001,7 +1001,7 @@ export default function TBReview() {
                         </TableRow>
                       )) : (
                         <TableRow>
-                          <TableCell colSpan={9} className="text-center text-muted-foreground py-4">
+                          <TableCell colSpan={9} className="text-center text-muted-foreground py-2">
                             No GL entries found. Upload GL data to view entries.
                           </TableCell>
                         </TableRow>
@@ -1016,7 +1016,7 @@ export default function TBReview() {
         </TabsContent>
 
         {/* Mapping Tab - INPUTS Section */}
-        <TabsContent value="mapping" className="space-y-4">
+        <TabsContent value="mapping" className="space-y-2.5">
           {/* INPUTS Section */}
           <Card>
             <CardHeader className="pb-3">
@@ -1026,8 +1026,8 @@ export default function TBReview() {
               </CardTitle>
               <CardDescription>Configure CoA templates and mapping rules</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="space-y-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 <div className="space-y-2">
                   <Label>CoA Template</Label>
                   <div className="flex items-center gap-2">
@@ -1169,13 +1169,13 @@ export default function TBReview() {
         </TabsContent>
 
         {/* Reconciliation Tab - OUTPUTS Section */}
-        <TabsContent value="reconciliation" className="space-y-4">
+        <TabsContent value="reconciliation" className="space-y-2.5">
           {/* GL_CODE Integrity & Reconciliation Component */}
           {engagementId && (
             <GLCodeReconciliation engagementId={engagementId} />
           )}
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
             {/* Movement Totals Comparison */}
             <Card>
               <CardHeader className="pb-3">
@@ -1289,7 +1289,7 @@ export default function TBReview() {
                   <TabsTrigger value="balance-sheet" data-testid="tab-preview-bs">Balance Sheet</TabsTrigger>
                   <TabsTrigger value="profit-loss" data-testid="tab-preview-pl">Profit & Loss</TabsTrigger>
                 </TabsList>
-                <TabsContent value="balance-sheet" className="mt-4">
+                <TabsContent value="balance-sheet" className="mt-2.5">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -1326,7 +1326,7 @@ export default function TBReview() {
                       ))}
                       {Object.keys(previewData).length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={2} className="text-center text-muted-foreground py-4">
+                          <TableCell colSpan={2} className="text-center text-muted-foreground py-2">
                             No {activePreview === "balance-sheet" ? "Balance Sheet" : "P&L"} mappings yet. Map accounts above to see preview.
                           </TableCell>
                         </TableRow>
@@ -1334,7 +1334,7 @@ export default function TBReview() {
                     </TableBody>
                   </Table>
                 </TabsContent>
-                <TabsContent value="profit-loss" className="mt-4">
+                <TabsContent value="profit-loss" className="mt-2.5">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -1370,7 +1370,7 @@ export default function TBReview() {
                       ))}
                       {Object.keys(previewData).length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={2} className="text-center text-muted-foreground py-4">
+                          <TableCell colSpan={2} className="text-center text-muted-foreground py-2">
                             No {activePreview === "balance-sheet" ? "Balance Sheet" : "P&L"} mappings yet. Map accounts above to see preview.
                           </TableCell>
                         </TableRow>
@@ -1393,7 +1393,7 @@ export default function TBReview() {
               Assign the same FS Line Item to {selectedAccounts.length} selected accounts
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-2.5 py-2">
             <div className="space-y-2">
               <Label>FS Line Item</Label>
               <Select value={bulkFsLineItem} onValueChange={setBulkFsLineItem}>

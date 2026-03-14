@@ -661,7 +661,7 @@ export default function Finalization() {
         </Badge>
       }
     >
-      <div className="w-full px-4 py-2 space-y-2">
+      <div className="w-full px-3 py-2 space-y-2">
       <AIAssistantPanel engagementId={engagementId || ""} phaseKey="finalization" className="mb-2" />
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <SimpleTabNavigation
@@ -672,9 +672,9 @@ export default function Finalization() {
         />
 
         {/* Finalization Control Board */}
-        <TabsContent value="control-board" className="space-y-4 mt-3">
+        <TabsContent value="control-board" className="space-y-2.5 mt-3">
           {finStats && (
-            <Card className="mb-4">
+            <Card className="mb-2.5">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <ClipboardCheck className="h-5 w-5 text-primary" />
@@ -687,7 +687,7 @@ export default function Finalization() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2.5">
                   <div className="p-3 border rounded-md text-center">
                     <p className="text-xl font-bold">{finStats.subsequentEvents?.total || 0}</p>
                     <p className="text-xs text-muted-foreground">Subsequent Events</p>
@@ -739,7 +739,7 @@ export default function Finalization() {
         </TabsContent>
 
         {/* Adjusted Financial Statements - Combined Balance Sheet and P&L */}
-        <TabsContent value="adjusted-fs" className="space-y-4 mt-3">
+        <TabsContent value="adjusted-fs" className="space-y-2.5 mt-3">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -748,7 +748,7 @@ export default function Finalization() {
               </CardTitle>
               <CardDescription>Financial Statements with audit adjustments applied - ISA 450, ISA 700</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2.5">
               <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
@@ -815,7 +815,7 @@ export default function Finalization() {
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="adjusted-bs" className="mt-4">
+                <TabsContent value="adjusted-bs" className="mt-2.5">
                   {draftFsData?.balanceSheet?.sections ? (
                     <Table>
                       <TableHeader>
@@ -973,7 +973,7 @@ export default function Finalization() {
                   )}
                 </TabsContent>
 
-                <TabsContent value="adjusted-pl" className="mt-4">
+                <TabsContent value="adjusted-pl" className="mt-2.5">
                   {draftFsData?.profitLoss?.sections ? (
                     <Table>
                       <TableHeader>
@@ -1130,7 +1130,7 @@ export default function Finalization() {
                   )}
                 </TabsContent>
 
-                <TabsContent value="socf" className="mt-4" data-testid="tab-content-adjusted-socf">
+                <TabsContent value="socf" className="mt-2.5" data-testid="tab-content-adjusted-socf">
                   <FSSoCF
                     draftFsData={draftFsData}
                     fsPriorYear={fsPriorYear}
@@ -1143,7 +1143,7 @@ export default function Finalization() {
                   />
                 </TabsContent>
 
-                <TabsContent value="soce" className="mt-4" data-testid="tab-content-adjusted-soce">
+                <TabsContent value="soce" className="mt-2.5" data-testid="tab-content-adjusted-soce">
                   <FSSoCE
                     draftFsData={draftFsData}
                     fsPriorYear={fsPriorYear}
@@ -1156,7 +1156,7 @@ export default function Finalization() {
                   />
                 </TabsContent>
 
-                <TabsContent value="notes" className="mt-4" data-testid="tab-content-adjusted-notes">
+                <TabsContent value="notes" className="mt-2.5" data-testid="tab-content-adjusted-notes">
                   <FSNotes
                     draftFsData={draftFsData}
                     coaAccounts={coaAccounts}
@@ -1176,7 +1176,7 @@ export default function Finalization() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="checklist" className="space-y-4">
+        <TabsContent value="checklist" className="space-y-2.5">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -1344,7 +1344,7 @@ export default function Finalization() {
               )}
               
               {checklistItems.some(item => item.response === "no" && !item.remarks) && (
-                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-center gap-2 text-red-700 dark:text-red-300">
+                <div className="mt-2.5 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-center gap-2 text-red-700 dark:text-red-300">
                   <AlertTriangle className="h-4 w-4" />
                   <span className="text-sm">Remarks are mandatory for items with "No" response.</span>
                 </div>
@@ -1353,7 +1353,7 @@ export default function Finalization() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="events" className="space-y-4">
+        <TabsContent value="events" className="space-y-2.5">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -1377,8 +1377,8 @@ export default function Finalization() {
                       <DialogTitle>Add Subsequent Event</DialogTitle>
                       <DialogDescription>Document an event occurring after the reporting period per ISA 560</DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4 overflow-y-auto max-h-[calc(90vh-180px)]">
-                      <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2.5 py-2 overflow-y-auto max-h-[calc(90vh-180px)]">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Event Date <span className="text-destructive">*</span></Label>
                           <Input
@@ -1474,8 +1474,8 @@ export default function Finalization() {
                       <DialogDescription>Event details (read-only)</DialogDescription>
                     </DialogHeader>
                     {selectedEventIndex !== null && (
-                      <div className="grid gap-4 py-4 overflow-y-auto max-h-[calc(90vh-180px)]">
-                        <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2.5 py-2 overflow-y-auto max-h-[calc(90vh-180px)]">
+                        <div className="grid grid-cols-2 gap-2.5">
                           <div className="space-y-2">
                             <Label>Event Date</Label>
                             <Input type="text" value={subsequentEvents[selectedEventIndex].eventDate} readOnly className="bg-muted" />
@@ -1531,8 +1531,8 @@ export default function Finalization() {
                       <DialogTitle>Edit Event - {selectedEventIndex !== null && subsequentEvents[selectedEventIndex]?.eventRef}</DialogTitle>
                       <DialogDescription>Modify event details</DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4 overflow-y-auto max-h-[calc(90vh-180px)]">
-                      <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2.5 py-2 overflow-y-auto max-h-[calc(90vh-180px)]">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-2">
                           <Label>Event Date <span className="text-destructive">*</span></Label>
                           <Input
@@ -1622,7 +1622,7 @@ export default function Finalization() {
                 </Dialog>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2.5">
               {subsequentEvents.length > 0 && (
                 <div className="rounded-lg border overflow-hidden">
                   <Table>
@@ -1812,7 +1812,7 @@ export default function Finalization() {
               )}
 
               {subsequentEvents.length === 0 && (
-                <div className="text-center py-4 text-muted-foreground border rounded-lg">
+                <div className="text-center py-2 text-muted-foreground border rounded-lg">
                   <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p>No subsequent events documented yet.</p>
                   <p className="text-sm">Click "Add Event" to document events per ISA 560.</p>
@@ -1821,7 +1821,7 @@ export default function Finalization() {
 
               <Separator />
 
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-base font-medium">Procedures Performed (ISA 560)</Label>
                   <Button 
@@ -1854,7 +1854,7 @@ export default function Finalization() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-2">
                   <Label>Written Representations Obtained</Label>
                   <Select
@@ -1892,7 +1892,7 @@ export default function Finalization() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="going-concern" className="space-y-4">
+        <TabsContent value="going-concern" className="space-y-2.5">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -1910,8 +1910,8 @@ export default function Finalization() {
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-start gap-3">
+            <CardContent className="space-y-2.5">
+              <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-start gap-3">
                 <Info className="h-5 w-5 text-blue-500 mt-0.5" />
                 <div className="text-sm">
                   <p className="font-medium text-blue-800 dark:text-blue-300">Going Concern Indicators (ISA 570.A3)</p>
@@ -2011,7 +2011,7 @@ export default function Finalization() {
               <Separator />
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   <div className="space-y-2">
                     <Label className="text-base font-medium">Overall Going Concern Conclusion <span className="text-destructive">*</span></Label>
                     <Select
@@ -2041,7 +2041,7 @@ export default function Finalization() {
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   <div className="space-y-2">
                     <Label>Reviewed By</Label>
                     <Select
@@ -2166,7 +2166,7 @@ export default function Finalization() {
               </div>
 
               {goingConcernConclusion === "material-uncertainty-exists" && (
-                <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-start gap-3">
+                <div className="p-2.5 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-start gap-3">
                   <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
                   <div className="text-sm">
                     <p className="font-medium text-red-800 dark:text-red-300">Material Uncertainty Identified</p>
@@ -2183,7 +2183,7 @@ export default function Finalization() {
         </TabsContent>
 
         {/* Legal & Claims Status */}
-        <TabsContent value="legal-claims" className="space-y-4">
+        <TabsContent value="legal-claims" className="space-y-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -2192,8 +2192,8 @@ export default function Finalization() {
               </CardTitle>
               <CardDescription>Review status of litigation, claims, and assessments — ISA 501</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="space-y-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 <div className="space-y-2">
                   <Label className="font-medium">Outstanding Litigation</Label>
                   <Textarea
@@ -2240,7 +2240,7 @@ export default function Finalization() {
         </TabsContent>
 
         {/* Related Parties Completion Review */}
-        <TabsContent value="related-parties" className="space-y-4">
+        <TabsContent value="related-parties" className="space-y-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -2249,7 +2249,7 @@ export default function Finalization() {
               </CardTitle>
               <CardDescription>Completion review of related party transactions and disclosures — ISA 550</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2.5">
               <div className="space-y-2">
                 <Label className="font-medium">Related Party Transactions Identified</Label>
                 <Textarea
@@ -2286,7 +2286,7 @@ export default function Finalization() {
         </TabsContent>
 
         {/* Final Analytics */}
-        <TabsContent value="final-analytics" className="space-y-4">
+        <TabsContent value="final-analytics" className="space-y-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -2295,7 +2295,7 @@ export default function Finalization() {
               </CardTitle>
               <CardDescription>Overall analytical review near end of audit — ISA 520</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2.5">
               <div className="space-y-2">
                 <Label className="font-medium">Overall Analytical Review</Label>
                 <Textarea
@@ -2305,7 +2305,7 @@ export default function Finalization() {
                   data-testid="textarea-final-analytics"
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 <div className="space-y-2">
                   <Label className="font-medium">Key Ratios / Trends Noted</Label>
                   <Textarea
@@ -2343,7 +2343,7 @@ export default function Finalization() {
         </TabsContent>
 
         {/* Final Overall Conclusion */}
-        <TabsContent value="final-conclusion" className="space-y-4">
+        <TabsContent value="final-conclusion" className="space-y-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -2352,23 +2352,23 @@ export default function Finalization() {
               </CardTitle>
               <CardDescription>Document the overall audit conclusion before forming the opinion</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2.5">
               {finStats && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2.5">
                   <div className="p-3 border rounded-md text-center">
-                    <p className="text-2xl font-bold">{finStats.findings?.total || 0}</p>
+                    <p className="text-lg font-bold">{finStats.findings?.total || 0}</p>
                     <p className="text-xs text-muted-foreground">Total Findings</p>
                   </div>
                   <div className="p-3 border rounded-md text-center">
-                    <p className="text-2xl font-bold text-red-600">{finStats.findings?.criticalOpen || 0}</p>
+                    <p className="text-lg font-bold text-red-600">{finStats.findings?.criticalOpen || 0}</p>
                     <p className="text-xs text-muted-foreground">Critical Open</p>
                   </div>
                   <div className="p-3 border rounded-md text-center">
-                    <p className="text-2xl font-bold">{finStats.adjustments?.total || 0}</p>
+                    <p className="text-lg font-bold">{finStats.adjustments?.total || 0}</p>
                     <p className="text-xs text-muted-foreground">Adjustments</p>
                   </div>
                   <div className="p-3 border rounded-md text-center">
-                    <p className="text-2xl font-bold text-amber-600">{finStats.adjustments?.uncorrected || 0}</p>
+                    <p className="text-lg font-bold text-amber-600">{finStats.adjustments?.uncorrected || 0}</p>
                     <p className="text-xs text-muted-foreground">Uncorrected</p>
                   </div>
                 </div>
@@ -2405,7 +2405,7 @@ export default function Finalization() {
         </TabsContent>
 
         {/* Completion Memo */}
-        <TabsContent value="completion-memo" className="space-y-4">
+        <TabsContent value="completion-memo" className="space-y-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -2414,7 +2414,7 @@ export default function Finalization() {
               </CardTitle>
               <CardDescription>Audit completion memorandum summarizing the audit — ISA 230</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2.5">
               <div className="space-y-2">
                 <Label className="font-medium">Executive Summary</Label>
                 <Textarea
@@ -2424,7 +2424,7 @@ export default function Finalization() {
                   data-testid="textarea-memo-summary"
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 <div className="space-y-2">
                   <Label className="font-medium">Subsequent Events Conclusion</Label>
                   <Textarea
@@ -2471,7 +2471,7 @@ export default function Finalization() {
         </TabsContent>
 
         {/* Partner Review Readiness */}
-        <TabsContent value="partner-review" className="space-y-4">
+        <TabsContent value="partner-review" className="space-y-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -2480,7 +2480,7 @@ export default function Finalization() {
               </CardTitle>
               <CardDescription>Assess readiness for partner final review and approval</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2.5">
               {finStats ? (
                 <>
                   <div className="space-y-3">
@@ -2509,7 +2509,7 @@ export default function Finalization() {
 
                   <Separator />
 
-                  <div className="flex items-center justify-between p-4 rounded-md border">
+                  <div className="flex items-center justify-between p-2.5 rounded-md border">
                     <div>
                       <p className="font-medium">Completion Progress</p>
                       <p className="text-sm text-muted-foreground">{finStats.completionPercent}% complete</p>
@@ -2532,13 +2532,13 @@ export default function Finalization() {
                   )}
                 </>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">Loading completion status...</div>
+                <div className="text-center py-2 text-muted-foreground">Loading completion status...</div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
         {/* Lock Gate Tab - Final engagement lock before archiving */}
-        <TabsContent value="lock-gate" className="space-y-4">
+        <TabsContent value="lock-gate" className="space-y-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

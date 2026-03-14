@@ -107,7 +107,7 @@ export function GlobalSaveIndicator({ className, showDetails = true }: GlobalSav
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80" align="end">
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <div className="flex items-center justify-between">
             <h4 className="font-medium">Save Status</h4>
             <Badge variant="outline" className={getStatusColor()}>

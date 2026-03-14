@@ -370,8 +370,8 @@ export default function Adjustments() {
     <div className="flex flex-col h-full">
       <SignOffBar phase="EXECUTION" section="adjustments" className="mx-6 mt-2" />
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2.5">
             <Link href={`/workspace/${engagementId}`}>
               <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
             </Link>
@@ -387,10 +387,10 @@ export default function Adjustments() {
         </div>
       </div>
 
-      <div className="px-4 pt-3">
+      <div className="px-3 pt-3">
         <AIAssistantPanel engagementId={engagementId || ""} phaseKey="adjustments" />
       </div>
-      <div className="flex-1 overflow-auto p-4 space-y-4">
+      <div className="flex-1 overflow-auto p-2.5 space-y-2.5">
         <div className="flex items-center gap-2 mb-2">
           <Badge variant="outline" className="text-xs">
             <Shield className="h-3 w-3 mr-1" />
@@ -406,43 +406,43 @@ export default function Adjustments() {
             <TabsTrigger value="review"><Users className="h-3.5 w-3.5 mr-1" />Review</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dashboard" className="space-y-4">
+          <TabsContent value="dashboard" className="space-y-2.5">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
               <Card>
-                <CardContent className="p-4">
+                <CardContent className="p-2.5">
                   <div className="flex items-center gap-2">
                     <FileText className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-2xl font-bold">{s.total}</p>
+                      <p className="text-lg font-bold">{s.total}</p>
                       <p className="text-xs text-muted-foreground">Total</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
+                <CardContent className="p-2.5">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-5 w-5 text-green-500" />
                     <div>
-                      <p className="text-2xl font-bold">{s.correctedCount}</p>
+                      <p className="text-lg font-bold">{s.correctedCount}</p>
                       <p className="text-xs text-muted-foreground">Corrected</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
+                <CardContent className="p-2.5">
                   <div className="flex items-center gap-2">
                     <XCircle className="h-5 w-5 text-red-500" />
                     <div>
-                      <p className="text-2xl font-bold">{s.uncorrectedCount}</p>
+                      <p className="text-lg font-bold">{s.uncorrectedCount}</p>
                       <p className="text-xs text-muted-foreground">Uncorrected</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
+                <CardContent className="p-2.5">
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-5 w-5 text-blue-500" />
                     <div>
@@ -453,22 +453,22 @@ export default function Adjustments() {
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
+                <CardContent className="p-2.5">
                   <div className="flex items-center gap-2">
                     <ThumbsUp className="h-5 w-5 text-emerald-500" />
                     <div>
-                      <p className="text-2xl font-bold">{s.acceptedCount}</p>
+                      <p className="text-lg font-bold">{s.acceptedCount}</p>
                       <p className="text-xs text-muted-foreground">Accepted</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
+                <CardContent className="p-2.5">
                   <div className="flex items-center gap-2">
                     <ThumbsDown className="h-5 w-5 text-orange-500" />
                     <div>
-                      <p className="text-2xl font-bold">{s.disputedCount}</p>
+                      <p className="text-lg font-bold">{s.disputedCount}</p>
                       <p className="text-xs text-muted-foreground">Disputed</p>
                     </div>
                   </div>
@@ -485,7 +485,7 @@ export default function Adjustments() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-2.5">
                     <div className="p-3 border rounded-md text-center">
                       <p className="text-lg font-bold">{formatCurrency(s.materiality.overall)}</p>
                       <p className="text-xs text-muted-foreground">Overall Materiality</p>
@@ -553,17 +553,17 @@ export default function Adjustments() {
                   <CardTitle className="text-sm font-semibold">Classification Summary</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-2.5">
                     <div className="text-center p-3 border rounded-md">
-                      <p className="text-2xl font-bold text-blue-600">{s.factualCount}</p>
+                      <p className="text-lg font-bold text-blue-600">{s.factualCount}</p>
                       <p className="text-xs text-muted-foreground">Factual</p>
                     </div>
                     <div className="text-center p-3 border rounded-md">
-                      <p className="text-2xl font-bold text-amber-600">{s.judgmentalCount}</p>
+                      <p className="text-lg font-bold text-amber-600">{s.judgmentalCount}</p>
                       <p className="text-xs text-muted-foreground">Judgmental</p>
                     </div>
                     <div className="text-center p-3 border rounded-md">
-                      <p className="text-2xl font-bold text-purple-600">{s.projectedCount}</p>
+                      <p className="text-lg font-bold text-purple-600">{s.projectedCount}</p>
                       <p className="text-xs text-muted-foreground">Projected</p>
                     </div>
                   </div>
@@ -572,7 +572,7 @@ export default function Adjustments() {
             )}
           </TabsContent>
 
-          <TabsContent value="journal" className="space-y-4">
+          <TabsContent value="journal" className="space-y-2.5">
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -590,9 +590,9 @@ export default function Adjustments() {
                   </div>
                 ) : s.adjustments.length === 0 ? (
                   <div className="text-center py-12">
-                    <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-2.5" />
                     <h3 className="text-lg font-medium mb-1">No adjustments yet</h3>
-                    <p className="text-sm text-muted-foreground mb-4">Record proposed or actual journal entries</p>
+                    <p className="text-sm text-muted-foreground mb-2.5">Record proposed or actual journal entries</p>
                     <Button onClick={openCreateDialog}><Plus className="h-4 w-4 mr-2" />Create First Entry</Button>
                   </div>
                 ) : (
@@ -676,8 +676,8 @@ export default function Adjustments() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="sad" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TabsContent value="sad" className="space-y-2.5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -687,8 +687,8 @@ export default function Adjustments() {
                   <CardDescription className="text-xs">Adjustments agreed and posted by management</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-4 border rounded-md mb-3">
-                    <p className="text-3xl font-bold text-green-600">{formatCurrency(s.totalCorrected)}</p>
+                  <div className="text-center py-2 border rounded-md mb-3">
+                    <p className="text-xl font-bold text-green-600">{formatCurrency(s.totalCorrected)}</p>
                     <p className="text-xs text-muted-foreground">{s.correctedCount} adjustment(s)</p>
                   </div>
                   <ScrollArea className="max-h-[200px]">
@@ -701,7 +701,7 @@ export default function Adjustments() {
                         <span className="text-xs font-medium">{formatCurrency(adj.netImpact)}</span>
                       </div>
                     ))}
-                    {s.correctedCount === 0 && <p className="text-xs text-muted-foreground text-center py-4">No corrected entries</p>}
+                    {s.correctedCount === 0 && <p className="text-xs text-muted-foreground text-center py-2">No corrected entries</p>}
                   </ScrollArea>
                 </CardContent>
               </Card>
@@ -715,8 +715,8 @@ export default function Adjustments() {
                   <CardDescription className="text-xs">Misstatements not adjusted — evaluate cumulative effect</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-4 border rounded-md mb-3">
-                    <p className="text-3xl font-bold text-red-600">{formatCurrency(s.totalUncorrected)}</p>
+                  <div className="text-center py-2 border rounded-md mb-3">
+                    <p className="text-xl font-bold text-red-600">{formatCurrency(s.totalUncorrected)}</p>
                     <p className="text-xs text-muted-foreground">{s.uncorrectedCount} uncorrected</p>
                   </div>
                   <ScrollArea className="max-h-[200px]">
@@ -737,7 +737,7 @@ export default function Adjustments() {
                         </div>
                       </div>
                     ))}
-                    {s.uncorrectedCount === 0 && <p className="text-xs text-muted-foreground text-center py-4">No uncorrected entries</p>}
+                    {s.uncorrectedCount === 0 && <p className="text-xs text-muted-foreground text-center py-2">No uncorrected entries</p>}
                   </ScrollArea>
                 </CardContent>
               </Card>
@@ -817,8 +817,8 @@ export default function Adjustments() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="review" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TabsContent value="review" className="space-y-2.5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -876,7 +876,7 @@ export default function Adjustments() {
               <CardContent>
                 <ScrollArea className="max-h-[400px]">
                   {s.adjustments.filter(a => a.managementAccepted === null || !a.reviewedAt).length === 0 ? (
-                    <div className="text-center py-8">
+                    <div className="text-center py-2">
                       <CheckCircle2 className="h-10 w-10 mx-auto text-green-500 mb-3" />
                       <p className="text-sm text-muted-foreground">All adjustments reviewed and accepted</p>
                     </div>
@@ -929,8 +929,8 @@ export default function Adjustments() {
           </DialogHeader>
 
           <ScrollArea className="flex-1">
-            <div className="space-y-4 pr-2">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2.5 pr-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-2">
                   <Label>Adjustment Type</Label>
                   <Select value={formData.adjustmentType} onValueChange={v => setFormData({ ...formData, adjustmentType: v })}>
@@ -982,7 +982,7 @@ export default function Adjustments() {
               <Separator />
 
               <h4 className="text-sm font-medium">Journal Entry</h4>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-3 p-3 border rounded-md bg-green-50/50 dark:bg-green-950/20">
                   <h5 className="text-sm font-medium text-green-700 dark:text-green-400">Debit</h5>
                   <div className="space-y-2">
@@ -1059,7 +1059,7 @@ export default function Adjustments() {
             </div>
           </ScrollArea>
 
-          <DialogFooter className="mt-4">
+          <DialogFooter className="mt-2.5">
             <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>Cancel</Button>
             <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
               {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -1077,7 +1077,7 @@ export default function Adjustments() {
               Record whether management accepts or disputes this adjustment
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <div className="p-3 border rounded-md">
               <p className="text-sm">{selectedAdj?.description}</p>
               <p className="text-xs text-muted-foreground mt-1">

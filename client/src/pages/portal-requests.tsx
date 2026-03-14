@@ -288,7 +288,7 @@ export default function PortalRequests() {
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="text-center">
           <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto" />
-          <p className="mt-4 text-muted-foreground">Loading engagement details...</p>
+          <p className="mt-2.5 text-muted-foreground">Loading engagement details...</p>
         </div>
       </div>
     );
@@ -297,8 +297,8 @@ export default function PortalRequests() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <header className="bg-white dark:bg-slate-800 border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-3 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
             <Link href="/portal/dashboard">
               <Button variant="ghost" size="icon">
                 <ArrowLeft className="h-4 w-4" />
@@ -325,39 +325,39 @@ export default function PortalRequests() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-3">
+      <main className="container mx-auto px-3 py-3">
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 mb-3">
-          <Card className="p-4">
+          <Card className="p-2.5">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-yellow-600" />
               <span className="text-sm text-muted-foreground">Pending</span>
             </div>
-            <p className="text-2xl font-bold mt-1">{stats?.pendingRequests || 0}</p>
+            <p className="text-lg font-bold mt-1">{stats?.pendingRequests || 0}</p>
           </Card>
-          <Card className="p-4">
+          <Card className="p-2.5">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-blue-600" />
               <span className="text-sm text-muted-foreground">In Progress</span>
             </div>
-            <p className="text-2xl font-bold mt-1">{stats?.inProgressRequests || 0}</p>
+            <p className="text-lg font-bold mt-1">{stats?.inProgressRequests || 0}</p>
           </Card>
-          <Card className="p-4">
+          <Card className="p-2.5">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <span className="text-sm text-muted-foreground">Completed</span>
             </div>
-            <p className="text-2xl font-bold mt-1">{stats?.completedRequests || 0}</p>
+            <p className="text-lg font-bold mt-1">{stats?.completedRequests || 0}</p>
           </Card>
-          <Card className="p-4">
+          <Card className="p-2.5">
             <div className="flex items-center gap-2">
               <Paperclip className="h-4 w-4 text-purple-600" />
               <span className="text-sm text-muted-foreground">Attachments</span>
             </div>
-            <p className="text-2xl font-bold mt-1">{stats?.totalAttachments || 0}</p>
+            <p className="text-lg font-bold mt-1">{stats?.totalAttachments || 0}</p>
           </Card>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-2.5">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="company" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
@@ -387,7 +387,7 @@ export default function PortalRequests() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="company" className="space-y-4">
+          <TabsContent value="company" className="space-y-2.5">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -398,8 +398,8 @@ export default function PortalRequests() {
                   Review your company details on file with the audit firm
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
+              <CardContent className="space-y-2.5">
+                <div className="grid gap-2.5 sm:grid-cols-2">
                   <div>
                     <Label className="text-muted-foreground">Company Name</Label>
                     <p className="font-medium">{engagement?.client.name || "-"}</p>
@@ -423,7 +423,7 @@ export default function PortalRequests() {
                     <Phone className="h-4 w-4" />
                     Contact Information
                   </h4>
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2.5 sm:grid-cols-2">
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-muted-foreground" />
                       <span>{engagement?.client.email || "-"}</span>
@@ -444,7 +444,7 @@ export default function PortalRequests() {
                     <User className="h-4 w-4" />
                     Key Personnel
                   </h4>
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2.5 sm:grid-cols-2">
                     <div>
                       <Label className="text-muted-foreground">CEO</Label>
                       <p className="font-medium">{engagement?.client.ceoName || "-"}</p>
@@ -461,7 +461,7 @@ export default function PortalRequests() {
                     <Calendar className="h-4 w-4" />
                     Engagement Details
                   </h4>
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2.5 sm:grid-cols-2">
                     <div>
                       <Label className="text-muted-foreground">Engagement Type</Label>
                       <p className="font-medium">{engagement?.engagementType.replace(/_/g, " ") || "-"}</p>
@@ -486,11 +486,11 @@ export default function PortalRequests() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="requests" className="space-y-4">
+          <TabsContent value="requests" className="space-y-2.5">
             {requests.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
-                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2.5" />
                   <h3 className="font-semibold mb-2">No Requests Yet</h3>
                   <p className="text-muted-foreground">
                     The audit team hasn't raised any information requests yet.
@@ -506,7 +506,7 @@ export default function PortalRequests() {
                 return (
                   <Card key={request.id}>
                     <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start justify-between gap-2.5">
                         <div className="flex-1">
                           <CardTitle className="text-lg flex flex-wrap items-center gap-2">
                             <span className="text-sm font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded">
@@ -525,7 +525,7 @@ export default function PortalRequests() {
                         </Badge>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-2.5">
                       <div>
                         <Label className="text-muted-foreground">Description</Label>
                         <p className="text-sm mt-1">{request.description}</p>
@@ -609,7 +609,7 @@ export default function PortalRequests() {
             )}
           </TabsContent>
 
-          <TabsContent value="deliverables" className="space-y-4">
+          <TabsContent value="deliverables" className="space-y-2.5">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -623,17 +623,17 @@ export default function PortalRequests() {
               <CardContent>
                 {deliverables.length === 0 ? (
                   <div className="py-12 text-center">
-                    <FileCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <FileCheck className="h-12 w-12 mx-auto text-muted-foreground mb-2.5" />
                     <h3 className="font-semibold mb-2">No Deliverables Yet</h3>
                     <p className="text-muted-foreground">
                       Audit reports and other deliverables will appear here once issued.
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-2.5">
                     {deliverables.map((deliverable) => (
-                      <div key={deliverable.id} className="border rounded-lg p-4 space-y-3">
-                        <div className="flex items-start justify-between gap-4">
+                      <div key={deliverable.id} className="border rounded-lg p-2.5 space-y-3">
+                        <div className="flex items-start justify-between gap-2.5">
                           <div>
                             <h4 className="font-semibold flex items-center gap-2">
                               {deliverable.deliverableType.replace(/_/g, " ")}
@@ -665,7 +665,7 @@ export default function PortalRequests() {
                           <div className="space-y-2">
                             <Label className="text-muted-foreground">Documents</Label>
                             {deliverable.files.map((file) => (
-                              <div key={file.id} className="flex items-center justify-between gap-4 p-2 bg-muted rounded-lg">
+                              <div key={file.id} className="flex items-center justify-between gap-2.5 p-2 bg-muted rounded-lg">
                                 <div className="flex items-center gap-2 min-w-0">
                                   <FileText className="h-4 w-4 text-primary shrink-0" />
                                   <span className="truncate text-sm">{file.originalName}</span>
@@ -690,7 +690,7 @@ export default function PortalRequests() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="attachments" className="space-y-4">
+          <TabsContent value="attachments" className="space-y-2.5">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -704,7 +704,7 @@ export default function PortalRequests() {
               <CardContent>
                 {allAttachments.length === 0 ? (
                   <div className="py-12 text-center">
-                    <Paperclip className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <Paperclip className="h-12 w-12 mx-auto text-muted-foreground mb-2.5" />
                     <h3 className="font-semibold mb-2">No Attachments Yet</h3>
                     <p className="text-muted-foreground">
                       Upload documents through the Requests tab.
@@ -713,7 +713,7 @@ export default function PortalRequests() {
                 ) : (
                   <div className="space-y-2">
                     {allAttachments.map((att) => (
-                      <div key={att.id} className="flex items-center justify-between gap-4 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div key={att.id} className="flex items-center justify-between gap-2.5 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="h-10 w-10 rounded bg-primary/10 flex items-center justify-center shrink-0">
                             <FileText className="h-5 w-5 text-primary" />
@@ -744,7 +744,7 @@ export default function PortalRequests() {
               #{selectedRequest?.srNumber} - {selectedRequest?.requestTitle}
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-2">
             <Textarea
               placeholder="Enter your response..."
               value={response}

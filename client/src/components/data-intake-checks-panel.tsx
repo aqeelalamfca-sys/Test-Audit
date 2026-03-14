@@ -202,8 +202,8 @@ export function DataIntakeChecksPanel({ engagementId }: { engagementId: string }
   const isFullyReady = gateCompletionPct === 100 && fsReadinessPct === 100 && blockingIssueCount === 0;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+    <div className="space-y-2.5">
+      <div className="flex items-center justify-between gap-2.5 flex-wrap">
         <div>
           <h3 className="text-lg font-semibold">Data Intake Checks & Readiness</h3>
           <p className="text-sm text-muted-foreground">
@@ -224,15 +224,15 @@ export function DataIntakeChecksPanel({ engagementId }: { engagementId: string }
         </Button>
       </div>
 
-      <div className={`rounded-lg border-2 p-4 ${isFullyReady ? 'border-green-300 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20' : blockingIssueCount > 0 ? 'border-red-200 bg-red-50/30 dark:border-red-900 dark:bg-red-950/10' : 'border-border bg-muted/20'}`}>
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-4">
+      <div className={`rounded-lg border-2 p-2.5 ${isFullyReady ? 'border-green-300 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20' : blockingIssueCount > 0 ? 'border-red-200 bg-red-50/30 dark:border-red-900 dark:bg-red-950/10' : 'border-border bg-muted/20'}`}>
+        <div className="flex items-center justify-between gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2.5">
             <div className="text-center">
-              <div className="text-2xl font-bold tabular-nums">{overallReadyPct}%</div>
+              <div className="text-lg font-bold tabular-nums">{overallReadyPct}%</div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Readiness</div>
             </div>
             <div className="h-10 w-px bg-border" />
-            <div className="flex gap-5">
+            <div className="flex gap-3">
               <div className="text-center">
                 <div className="text-lg font-semibold tabular-nums">{passCount}<span className="text-muted-foreground font-normal text-sm">/{totalGates}</span></div>
                 <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Gates Pass</div>
@@ -303,7 +303,7 @@ export function DataIntakeChecksPanel({ engagementId }: { engagementId: string }
                 </div>
               )}
               {gates && (
-                <div className="flex items-center gap-4 mt-3 pt-3 border-t">
+                <div className="flex items-center gap-2.5 mt-3 pt-3 border-t">
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-muted-foreground">Can Approve Lock:</span>
                     {gates.canApproveLock ? (
@@ -503,7 +503,7 @@ export function DataIntakeChecksPanel({ engagementId }: { engagementId: string }
                   </Table>
                 </div>
               ) : (
-                <div className="text-center py-6 text-sm text-muted-foreground">
+                <div className="text-center py-3 text-sm text-muted-foreground">
                   <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500 opacity-50" />
                   No open exceptions
                 </div>

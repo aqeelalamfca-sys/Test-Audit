@@ -596,10 +596,10 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
   if (error) {
     return (
       <Card data-testid="summary-error">
-        <CardContent className="py-4 text-center">
-          <XCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
+        <CardContent className="py-2 text-center">
+          <XCircle className="h-12 w-12 mx-auto text-destructive mb-2.5" />
           <p className="text-muted-foreground">Failed to load summary data</p>
-          <Button variant="outline" className="mt-4" onClick={() => refetch()}>
+          <Button variant="outline" className="mt-2.5" onClick={() => refetch()}>
             Retry
           </Button>
         </CardContent>
@@ -610,7 +610,7 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
   const hasSummary = summaryData?.hasSummary;
 
   return (
-    <div className="space-y-4" data-testid="summary-tab">
+    <div className="space-y-2.5" data-testid="summary-tab">
       <Card data-testid="card-file-upload">
         <CardHeader className="py-3">
           <CardTitle className="text-base flex items-center gap-2">
@@ -619,7 +619,7 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
           </CardTitle>
           <CardDescription>Upload individual datasets or a combined workbook with all sheets</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2.5">
           <DatasetUploadPanel
             engagementId={engagementId || ''}
             onUploadComplete={() => {
@@ -631,7 +631,7 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
             onNavigateToTab={onNavigate}
           />
 
-          <div className="border rounded-lg p-4 bg-muted/30 mt-4">
+          <div className="border rounded-lg p-2.5 bg-muted/30 mt-2.5">
             <h4 className="text-sm font-medium flex items-center gap-2 mb-3">
               <Tag className="h-4 w-4" />
               Upload Metadata (Source & Period Tags)
@@ -781,7 +781,7 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
       {hasSummary && (
         <>
           <Card className={`border-2 ${overallStatusColors[summaryData?.overallStatus || 'NOT_RUN']}`} data-testid="card-overall-status">
-            <CardContent className="py-4">
+            <CardContent className="py-2">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Overall Status</p>
@@ -837,9 +837,9 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
             <Card data-testid="card-validation-tb-arithmetic">
-              <CardContent className="py-4">
+              <CardContent className="py-2">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">TB Arithmetic</p>
@@ -851,7 +851,7 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
             </Card>
 
             <Card data-testid="card-validation-gl-drcr">
-              <CardContent className="py-4">
+              <CardContent className="py-2">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">GL DR = CR</p>
@@ -863,7 +863,7 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
             </Card>
 
             <Card data-testid="card-validation-tb-gl-tieout">
-              <CardContent className="py-4">
+              <CardContent className="py-2">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">TB-GL Tie-out</p>
@@ -875,7 +875,7 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
             </Card>
 
             <Card data-testid="card-validation-tb-gl-totals" className={summaryData?.tbGlTotalsStatus === 'FAIL' ? 'border-red-500' : ''}>
-              <CardContent className="py-4">
+              <CardContent className="py-2">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">TB↔GL Totals (DR/CR)</p>
@@ -892,51 +892,51 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
             </Card>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-2.5">
             <Card data-testid="card-count-tb">
-              <CardContent className="py-4 text-center">
+              <CardContent className="py-2 text-center">
                 <Database className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
-                <p className="text-2xl font-bold">{summaryData?.tbRowCount || 0}</p>
+                <p className="text-lg font-bold">{summaryData?.tbRowCount || 0}</p>
                 <p className="text-xs text-muted-foreground">TB Rows</p>
                 {dataSources.tb && <div className="mt-1.5 flex justify-center"><DataSourceBadgeInline source={dataSources.tb} /></div>}
               </CardContent>
             </Card>
             <Card data-testid="card-count-gl">
-              <CardContent className="py-4 text-center">
+              <CardContent className="py-2 text-center">
                 <FileText className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
-                <p className="text-2xl font-bold">{summaryData?.glEntryCount || 0}</p>
+                <p className="text-lg font-bold">{summaryData?.glEntryCount || 0}</p>
                 <p className="text-xs text-muted-foreground">GL Entries</p>
                 {dataSources.gl && <div className="mt-1.5 flex justify-center"><DataSourceBadgeInline source={dataSources.gl} /></div>}
               </CardContent>
             </Card>
             <Card data-testid="card-count-ap">
-              <CardContent className="py-4 text-center">
+              <CardContent className="py-2 text-center">
                 <Building2 className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
-                <p className="text-2xl font-bold">{summaryData?.apRowCount || 0}</p>
+                <p className="text-lg font-bold">{summaryData?.apRowCount || 0}</p>
                 <p className="text-xs text-muted-foreground">AP Rows</p>
                 {dataSources.ap && <div className="mt-1.5 flex justify-center"><DataSourceBadgeInline source={dataSources.ap} /></div>}
               </CardContent>
             </Card>
             <Card data-testid="card-count-ar">
-              <CardContent className="py-4 text-center">
+              <CardContent className="py-2 text-center">
                 <Users className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
-                <p className="text-2xl font-bold">{summaryData?.arRowCount || 0}</p>
+                <p className="text-lg font-bold">{summaryData?.arRowCount || 0}</p>
                 <p className="text-xs text-muted-foreground">AR Rows</p>
                 {dataSources.ar && <div className="mt-1.5 flex justify-center"><DataSourceBadgeInline source={dataSources.ar} /></div>}
               </CardContent>
             </Card>
             <Card data-testid="card-count-bank">
-              <CardContent className="py-4 text-center">
+              <CardContent className="py-2 text-center">
                 <Scale className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
-                <p className="text-2xl font-bold">{summaryData?.bankRowCount || 0}</p>
+                <p className="text-lg font-bold">{summaryData?.bankRowCount || 0}</p>
                 <p className="text-xs text-muted-foreground">Bank Accounts</p>
                 {dataSources.bank && <div className="mt-1.5 flex justify-center"><DataSourceBadgeInline source={dataSources.bank} /></div>}
               </CardContent>
             </Card>
             <Card data-testid="card-count-parties">
-              <CardContent className="py-4 text-center">
+              <CardContent className="py-2 text-center">
                 <Users className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
-                <p className="text-2xl font-bold">{summaryData?.partyCount || 0}</p>
+                <p className="text-lg font-bold">{summaryData?.partyCount || 0}</p>
                 <p className="text-xs text-muted-foreground">Parties</p>
               </CardContent>
             </Card>
@@ -946,8 +946,8 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
             <CardHeader className="py-3">
               <CardTitle className="text-base">Control Totals</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <CardContent className="space-y-2.5">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
                 <div>
                   <p className="text-xs text-muted-foreground">TB Opening Debits</p>
                   <p className="font-mono text-sm font-medium">{formatNumber(summaryData?.tbOpeningDebitTotal)}</p>
@@ -1102,7 +1102,7 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
                   </Table>
                 </div>
               ) : (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-2 text-muted-foreground">
                   <CheckCircle className="h-8 w-8 mx-auto text-green-500 mb-2" />
                   <p>No exceptions found</p>
                 </div>

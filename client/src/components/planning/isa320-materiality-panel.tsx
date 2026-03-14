@@ -320,7 +320,7 @@ export function ISA320MaterialityPanel({ engagementId, readOnly = false }: Props
     <TooltipProvider>
       <div className="space-y-3">
         <div className="sticky top-0 z-10 bg-background border-b pb-3 -mx-1 px-1">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-2.5">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-semibold text-base">ISA 320 — Planning Materiality</h3>
@@ -907,7 +907,7 @@ function renderDocumentation(
       </div>
 
       {showMemo && memoData && (
-        <div className="p-4 border rounded-lg bg-white dark:bg-gray-950 text-sm space-y-4 print:shadow-none" id="isa320-memo">
+        <div className="p-2.5 border rounded-lg bg-white dark:bg-gray-950 text-sm space-y-2.5 print:shadow-none" id="isa320-memo">
           <div className="text-center border-b pb-3">
             <h2 className="text-lg font-bold">{String(memoData.title || "ISA 320 — Planning Materiality Memo")}</h2>
             <p className="text-xs text-muted-foreground mt-1">Generated: {fmtDate(String(memoData.generatedAt || ""))}</p>

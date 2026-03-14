@@ -173,7 +173,7 @@ export function PhaseGatesPanel({
         </CardHeader>
         
         <CollapsibleContent>
-          <CardContent className="pt-0 space-y-4">
+          <CardContent className="pt-0 space-y-2.5">
             {blockers.length > 0 && (
               <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3">
                 <p className="text-sm font-medium text-amber-800 dark:text-amber-200 flex items-center gap-2 mb-2">
@@ -270,7 +270,7 @@ export function PhaseGatesSummary({ className }: PhaseGatesSummaryProps) {
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-2xl font-bold">{completedPhases}/{totalPhases}</span>
+          <span className="text-lg font-bold">{completedPhases}/{totalPhases}</span>
           <span className="text-sm text-muted-foreground">phases complete</span>
         </div>
         <Progress value={(completedPhases / totalPhases) * 100} className="h-2" />

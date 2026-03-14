@@ -114,7 +114,7 @@ export function FSHeadProcedureSelector({ fsHeadId, onProcedureSelect }: FSHeadP
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-6">
+        <CardContent className="p-3">
           <div className="flex items-center justify-center gap-2">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
             <span className="text-muted-foreground">Loading procedure mapping...</span>
@@ -127,7 +127,7 @@ export function FSHeadProcedureSelector({ fsHeadId, onProcedureSelect }: FSHeadP
   if (error || !data) {
     return (
       <Card>
-        <CardContent className="p-6">
+        <CardContent className="p-3">
           <div className="flex items-center gap-2 text-destructive">
             <XCircle className="h-4 w-4" />
             <span>Failed to load procedure mapping</span>
@@ -197,10 +197,10 @@ export function FSHeadProcedureSelector({ fsHeadId, onProcedureSelect }: FSHeadP
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center justify-between gap-2.5 flex-wrap">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5" />
@@ -218,7 +218,7 @@ export function FSHeadProcedureSelector({ fsHeadId, onProcedureSelect }: FSHeadP
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Mandatory Procedures: {mapping.completedCount} / {mapping.totalMandatory}</span>
               <span className="font-medium">{progressPercentage}%</span>
@@ -228,8 +228,8 @@ export function FSHeadProcedureSelector({ fsHeadId, onProcedureSelect }: FSHeadP
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
+        <div className="lg:col-span-2 space-y-2.5">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
@@ -356,7 +356,7 @@ export function FSHeadProcedureSelector({ fsHeadId, onProcedureSelect }: FSHeadP
           )}
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
@@ -465,7 +465,7 @@ export function FSHeadProcedureSelector({ fsHeadId, onProcedureSelect }: FSHeadP
               {selectedOptionalProcedure?.description}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <div>
               <Label htmlFor="justification">Justification (required)</Label>
               <Textarea

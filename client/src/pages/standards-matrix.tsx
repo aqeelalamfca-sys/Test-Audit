@@ -259,7 +259,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function StatusLegend() {
   return (
-    <div className="flex items-center gap-4 flex-wrap">
+    <div className="flex items-center gap-2.5 flex-wrap">
       {Object.entries(STATUS_COLORS).map(([k, v]) => (
         <div key={k} className="flex items-center gap-1.5">
           <div className={`w-3 h-3 rounded-full ${v.bg}`} />
@@ -409,7 +409,7 @@ function ComplianceOverviewTab({ data }: { data: ComplianceDataHook }) {
   const passedGates = gates.filter((g) => g.passed).length;
 
   return (
-    <div className="space-y-4" data-testid="tab-compliance-overview">
+    <div className="space-y-2.5" data-testid="tab-compliance-overview">
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3" data-testid="kpi-cards">
         <KPICard
           title="Compliance Score"
@@ -615,7 +615,7 @@ function ISAHeatmapTab({ data }: { data: ComplianceDataHook }) {
   }, []);
 
   return (
-    <div className="space-y-4" data-testid="tab-isa-heatmap">
+    <div className="space-y-2.5" data-testid="tab-isa-heatmap">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2"><BarChart3 className="w-4 h-4" />ISA x Phase Compliance Heatmap</CardTitle>
@@ -727,7 +727,7 @@ function GapAnalysisTab({ data, engagementId }: { data: ComplianceDataHook; enga
   }, [engagementId, gapResolutionMutation]);
 
   return (
-    <div className="space-y-4" data-testid="tab-gap-analysis">
+    <div className="space-y-2.5" data-testid="tab-gap-analysis">
       <div className="flex items-center gap-3 flex-wrap">
         <Card className="flex items-center gap-2 px-3 py-2 border-red-200 dark:border-red-900">
           <div className="w-3 h-3 rounded-full bg-red-500" />
@@ -778,7 +778,7 @@ function GapAnalysisTab({ data, engagementId }: { data: ComplianceDataHook; enga
             </TableHeader>
             <TableBody>
               {filteredGaps.length === 0 ? (
-                <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8"><CheckCircle2 className="w-6 h-6 mx-auto mb-2 text-green-600" />No gaps detected — all ISA requirements satisfied</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-2"><CheckCircle2 className="w-6 h-6 mx-auto mb-2 text-green-600" />No gaps detected — all ISA requirements satisfied</TableCell></TableRow>
               ) : filteredGaps.map((g, i) => (
                 <TableRow key={`${g.isaId}-${g.phase}-${i}`} className={g.severity === "Red" ? "bg-red-50/50 dark:bg-red-950/20" : g.severity === "Orange" ? "bg-orange-50/30 dark:bg-orange-950/10" : ""} data-testid={`gap-row-${g.isaId}`}>
                   <TableCell className="text-center"><StatusDot status={g.severity} size="sm" /></TableCell>
@@ -849,7 +849,7 @@ function RiskTraceabilityTab({ data }: { data: ComplianceDataHook }) {
   ], [scores]);
 
   return (
-    <div className="space-y-4" data-testid="tab-risk-traceability">
+    <div className="space-y-2.5" data-testid="tab-risk-traceability">
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -859,7 +859,7 @@ function RiskTraceabilityTab({ data }: { data: ComplianceDataHook }) {
             </div>
             <div className="text-right">
               <div className="text-xs text-muted-foreground">Risk Link Score</div>
-              <div className={`text-2xl font-bold ${overallRiskLinkScore >= 80 ? "text-green-600" : overallRiskLinkScore >= 60 ? "text-amber-600" : "text-red-600"}`}>{overallRiskLinkScore}%</div>
+              <div className={`text-lg font-bold ${overallRiskLinkScore >= 80 ? "text-green-600" : overallRiskLinkScore >= 60 ? "text-amber-600" : "text-red-600"}`}>{overallRiskLinkScore}%</div>
             </div>
           </div>
         </CardHeader>
@@ -870,7 +870,7 @@ function RiskTraceabilityTab({ data }: { data: ComplianceDataHook }) {
               const isPartial = step.score >= 50 && step.score < 80;
               return (
                 <div key={step.isa} className="flex items-center gap-1">
-                  <div className={`px-4 py-3 rounded-lg border-2 text-center min-w-[120px] transition-colors ${isComplete ? "border-green-400 bg-green-50 dark:bg-green-950/20" : isPartial ? "border-amber-400 bg-amber-50 dark:bg-amber-950/20" : "border-red-400 bg-red-50 dark:bg-red-950/20"}`}>
+                  <div className={`px-3 py-3 rounded-lg border-2 text-center min-w-[120px] transition-colors ${isComplete ? "border-green-400 bg-green-50 dark:bg-green-950/20" : isPartial ? "border-amber-400 bg-amber-50 dark:bg-amber-950/20" : "border-red-400 bg-red-50 dark:bg-red-950/20"}`}>
                     <div className="text-xs font-medium">{step.label}</div>
                     <div className={`text-lg font-bold ${isComplete ? "text-green-600" : isPartial ? "text-amber-600" : "text-red-600"}`}>{step.score}%</div>
                     <div className="text-[10px] text-muted-foreground">{step.isa}</div>
@@ -982,15 +982,15 @@ function SignoffRegisterTab({ data }: { data: ComplianceDataHook }) {
   const completionRate = records.length > 0 ? Math.round((signedOff.length / records.length) * 100) : 0;
 
   return (
-    <div className="space-y-4" data-testid="tab-signoff-register">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-2.5" data-testid="tab-signoff-register">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2"><ClipboardList className="w-4 h-4" />Sign-off Funnel</CardTitle>
             <CardDescription>Prepared — Reviewed — EP Signed — EQCR — Locked</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-end gap-4 h-44 justify-center px-2">
+            <div className="flex items-end gap-2.5 h-44 justify-center px-2">
               {funnelData.map((f) => (
                 <div key={f.label} className="flex flex-col items-center gap-1.5 flex-1 max-w-24">
                   <span className="text-sm font-bold">{f.count}</span>
@@ -1113,7 +1113,7 @@ function IntegrationMatrixTab() {
   }, []);
 
   return (
-    <div className="space-y-4" data-testid="tab-integration-matrix">
+    <div className="space-y-2.5" data-testid="tab-integration-matrix">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2"><Layers className="w-4 h-4" />Audit Software Integration Matrix</CardTitle>
@@ -1125,7 +1125,7 @@ function IntegrationMatrixTab() {
               const isExpanded = expandedPhase === phase;
               return (
                 <div key={phase} data-testid={`integration-phase-${phase}`}>
-                  <button className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors" onClick={() => setExpandedPhase(isExpanded ? null : phase)} data-testid={`toggle-phase-${phase}`}>
+                  <button className="w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-muted/50 transition-colors" onClick={() => setExpandedPhase(isExpanded ? null : phase)} data-testid={`toggle-phase-${phase}`}>
                     {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                     <PhaseBadge phase={phase} />
                     <span className="text-sm font-medium flex-1">{pc?.label}</span>
@@ -1135,8 +1135,8 @@ function IntegrationMatrixTab() {
                     </div>
                   </button>
                   {isExpanded && (
-                    <div className="px-4 pb-4 space-y-3 bg-muted/20">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="px-3 pb-4 space-y-3 bg-muted/20">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                         <IntegrationSection icon={<Zap className="w-3 h-3" />} label="Triggers" items={[...allTriggers]} itemIcon={<ArrowRight className="w-2.5 h-2.5 text-muted-foreground" />} emptyText="No specific triggers" />
                         <IntegrationSection icon={<Lock className="w-3 h-3" />} label="Mandatory Controls" items={[...allControls].slice(0, 10)} itemIcon={<CheckCircle2 className="w-2.5 h-2.5 text-green-500" />} overflow={allControls.size > 10 ? allControls.size - 10 : 0} />
                         <IntegrationSection icon={<Target className="w-3 h-3" />} label="Auto-Fetch Sources" items={[...allAutoFetch].slice(0, 8)} itemIcon={<FileCheck className="w-2.5 h-2.5 text-blue-500" />} overflow={allAutoFetch.size > 8 ? allAutoFetch.size - 8 : 0} />
@@ -1211,7 +1211,7 @@ function AIAssistTab({ engagementId }: { engagementId?: string }) {
 
   return (
     <>
-      <div className="space-y-4" data-testid="tab-ai-assist">
+      <div className="space-y-2.5" data-testid="tab-ai-assist">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2"><Sparkles className="w-4 h-4" />AI-Assisted ISA Output Drafting</CardTitle>
@@ -1221,7 +1221,7 @@ function AIAssistTab({ engagementId }: { engagementId?: string }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {ISA_DRAFT_OPTIONS.map((option) => (
                 <Card key={option.outputType} className="hover:border-primary/50 transition-colors cursor-pointer" data-testid={`card-draft-${option.outputType}`}>
-                  <CardContent className="p-4">
+                  <CardContent className="p-2.5">
                     <div className="space-y-3">
                       <div className="flex items-start gap-3">
                         <div className="p-1.5 rounded-md bg-muted">
@@ -1246,7 +1246,7 @@ function AIAssistTab({ engagementId }: { engagementId?: string }) {
               ))}
             </div>
             {!engagementId && (
-              <div className="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900">
+              <div className="mt-2.5 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900">
                 <p className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-1" data-testid="text-no-engagement-warning">
                   <AlertTriangle className="w-4 h-4" />Navigate to a specific engagement to enable AI drafting.
                 </p>
@@ -1258,7 +1258,7 @@ function AIAssistTab({ engagementId }: { engagementId?: string }) {
         <Card>
           <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><BookMarked className="w-4 h-4" />AI Capabilities & Governance</CardTitle></CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
               <GovernanceItem icon={<Sparkles className="w-3.5 h-3.5 text-purple-600" />} bgClass="bg-purple-100 dark:bg-purple-950/40" title="Gap Resolution" description="Available on Gap Analysis tab — click resolve on any gap for AI-suggested steps with ISA paragraph references" />
               <GovernanceItem icon={<FileText className="w-3.5 h-3.5 text-blue-600" />} bgClass="bg-blue-100 dark:bg-blue-950/40" title="Draft ISA Outputs" description="Generate draft communications, memos, and reports for ISA 260, 570, 580, 700, 701" />
               <GovernanceItem icon={<Shield className="w-3.5 h-3.5 text-red-600" />} bgClass="bg-red-100 dark:bg-red-950/40" title="Professional Judgment" description="All AI outputs are non-authoritative drafts. They do not replace auditor judgment per ISA 220 and ISQM 1." />
@@ -1273,7 +1273,7 @@ function AIAssistTab({ engagementId }: { engagementId?: string }) {
             <DialogTitle className="flex items-center gap-2"><Sparkles className="w-4 h-4" />{draftDialog.label}</DialogTitle>
             <DialogDescription>AI-generated draft — requires professional review before use</DialogDescription>
           </DialogHeader>
-          <div className="flex flex-1 gap-4 min-h-0 overflow-hidden">
+          <div className="flex flex-1 gap-2.5 min-h-0 overflow-hidden">
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
               {draftMutation.isPending ? <LoadingState message="Generating ISA-compliant draft..." /> : draftDialog.content ? (
                 <div className="flex flex-col flex-1 gap-2 min-h-0 overflow-hidden">
@@ -1327,22 +1327,22 @@ function ISACoverageMatrixTab() {
   };
 
   return (
-    <div className="space-y-4" data-testid="isa-coverage-matrix-tab">
+    <div className="space-y-2.5" data-testid="isa-coverage-matrix-tab">
       <div className="grid grid-cols-4 gap-3">
         <Card className="p-3 text-center">
-          <p className="text-2xl font-bold" data-testid="stat-total-isa">{stats.total}</p>
+          <p className="text-lg font-bold" data-testid="stat-total-isa">{stats.total}</p>
           <p className="text-xs text-muted-foreground">Total ISA Standards</p>
         </Card>
         <Card className="p-3 text-center border-emerald-200 dark:border-emerald-800">
-          <p className="text-2xl font-bold text-emerald-600" data-testid="stat-full-coverage">{stats.full}</p>
+          <p className="text-lg font-bold text-emerald-600" data-testid="stat-full-coverage">{stats.full}</p>
           <p className="text-xs text-muted-foreground">Full Coverage</p>
         </Card>
         <Card className="p-3 text-center border-amber-200 dark:border-amber-800">
-          <p className="text-2xl font-bold text-amber-600" data-testid="stat-partial-coverage">{stats.partial}</p>
+          <p className="text-lg font-bold text-amber-600" data-testid="stat-partial-coverage">{stats.partial}</p>
           <p className="text-xs text-muted-foreground">Partial Coverage</p>
         </Card>
         <Card className="p-3 text-center border-red-200 dark:border-red-800">
-          <p className="text-2xl font-bold text-red-600" data-testid="stat-missing-coverage">{stats.missing}</p>
+          <p className="text-lg font-bold text-red-600" data-testid="stat-missing-coverage">{stats.missing}</p>
           <p className="text-xs text-muted-foreground">Missing</p>
         </Card>
       </div>
@@ -1430,22 +1430,22 @@ function ISQMRegisterTab() {
   };
 
   return (
-    <div className="space-y-4" data-testid="isqm-register-tab">
+    <div className="space-y-2.5" data-testid="isqm-register-tab">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-3 text-center">
-          <p className="text-2xl font-bold" data-testid="stat-total-controls">{registerData.length}</p>
+          <p className="text-lg font-bold" data-testid="stat-total-controls">{registerData.length}</p>
           <p className="text-xs text-muted-foreground">Total Controls</p>
         </Card>
         <Card className="p-3 text-center border-emerald-200 dark:border-emerald-800">
-          <p className="text-2xl font-bold text-emerald-600" data-testid="stat-active-controls">{registerData.filter((r: any) => r.status === "ACTIVE").length}</p>
+          <p className="text-lg font-bold text-emerald-600" data-testid="stat-active-controls">{registerData.filter((r: any) => r.status === "ACTIVE").length}</p>
           <p className="text-xs text-muted-foreground">Active Controls</p>
         </Card>
         <Card className="p-3 text-center">
-          <p className="text-2xl font-bold" data-testid="stat-domains">{Object.keys(domains).length}</p>
+          <p className="text-lg font-bold" data-testid="stat-domains">{Object.keys(domains).length}</p>
           <p className="text-xs text-muted-foreground">Domains</p>
         </Card>
         <Card className="p-3 text-center border-emerald-200 dark:border-emerald-800">
-          <p className="text-2xl font-bold text-emerald-600">100%</p>
+          <p className="text-lg font-bold text-emerald-600">100%</p>
           <p className="text-xs text-muted-foreground">Implementation Rate</p>
         </Card>
       </div>
@@ -1526,30 +1526,30 @@ export default function StandardsMatrixPage() {
       showTopBar={false}
       showBottomBar={false}
     >
-      <div className="space-y-4" data-testid="standards-matrix-page">
+      <div className="space-y-2.5" data-testid="standards-matrix-page">
         <div className="flex items-center gap-3 flex-wrap" data-testid="stats-bar">
-          <Card className="flex items-center gap-2 px-4 py-2">
+          <Card className="flex items-center gap-2 px-3 py-2">
             <FileCheck className="w-4 h-4 text-primary" />
             <div className="flex items-center gap-1.5">
               <span className="text-sm text-muted-foreground">Standards:</span>
               <span className="text-sm font-bold" data-testid="stat-total-standards">{stats.totalStandards}</span>
             </div>
           </Card>
-          <Card className="flex items-center gap-2 px-4 py-2">
+          <Card className="flex items-center gap-2 px-3 py-2">
             <Layers className="w-4 h-4 text-purple-500" />
             <div className="flex items-center gap-1.5">
               <span className="text-sm text-muted-foreground">Phases:</span>
               <span className="text-sm font-bold" data-testid="stat-phases">{stats.phaseCount}</span>
             </div>
           </Card>
-          <Card className="flex items-center gap-2 px-4 py-2">
+          <Card className="flex items-center gap-2 px-3 py-2">
             <Lock className="w-4 h-4 text-amber-500" />
             <div className="flex items-center gap-1.5">
               <span className="text-sm text-muted-foreground">Stage Gates:</span>
               <span className="text-sm font-bold" data-testid="stat-stage-gates">{stats.stageGateCount}</span>
             </div>
           </Card>
-          <Card className="flex items-center gap-2 px-4 py-2">
+          <Card className="flex items-center gap-2 px-3 py-2">
             <AlertOctagon className="w-4 h-4 text-red-500" />
             <div className="flex items-center gap-1.5">
               <span className="text-sm text-muted-foreground">No-Report Blockers:</span>
@@ -1571,7 +1571,7 @@ export default function StandardsMatrixPage() {
         {activeTab === "ai-assist" && <AIAssistTab engagementId={engagementId} />}
 
         {!engagementId && activeTab !== "integration" && activeTab !== "ai-assist" && activeTab !== "isa-matrix" && activeTab !== "isqm-register" && (
-          <Card className="p-8 text-center">
+          <Card className="p-2.5 text-center">
             <Shield className="w-8 h-8 mx-auto text-muted-foreground mb-3" />
             <p className="text-sm text-muted-foreground" data-testid="text-select-engagement">Select an engagement from the workspace to view compliance data</p>
           </Card>

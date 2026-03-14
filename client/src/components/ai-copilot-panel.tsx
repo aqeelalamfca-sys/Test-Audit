@@ -315,11 +315,11 @@ export function AICopilotPanel({
 
         <ScrollArea className="flex-1">
           {isLoading ? (
-            <div className="flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-2">
               <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : visibleObservations.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
+            <div className="text-center py-2 text-muted-foreground text-sm">
               <ShieldCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
               No observations at this time
             </div>

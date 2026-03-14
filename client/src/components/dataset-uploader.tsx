@@ -239,7 +239,7 @@ export function DatasetUploader({ engagementId, datasetType, compact = false, on
       onDrop={handleDrop}
       data-testid={`uploader-card-${datasetType}`}
     >
-      <CardContent className="py-4">
+      <CardContent className="py-2">
         <input
           ref={fileInputRef}
           type="file"

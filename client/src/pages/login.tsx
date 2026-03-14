@@ -203,7 +203,7 @@ export default function Login() {
           </div>
           <DialogDescription className="sr-only">Beta version notice and contact information</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 text-sm text-muted-foreground leading-relaxed pt-2">
+        <div className="space-y-2.5 text-sm text-muted-foreground leading-relaxed pt-2">
           <p className="font-medium text-foreground">Welcome to the AI-Enabled Audit Software.</p>
           <p>
             This platform is currently running in <span className="font-semibold text-foreground">Beta Version</span>. An independent Australia-based IT security company has been engaged to perform cybersecurity review, penetration testing, and end-to-end (E2E) system validation to ensure platform stability and protection against cyber threats.
@@ -234,14 +234,14 @@ export default function Login() {
         <div className="absolute inset-0 opacity-[0.03]" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M20 18v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
-        <div className="relative z-10 w-full max-w-[420px] px-6">
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
+        <div className="relative z-10 w-full max-w-[420px] px-3">
+          <div className="text-center mb-2.5">
+            <div className="flex justify-center mb-2.5">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-600/90 shadow-lg shadow-red-900/30 border border-red-500/30">
                 <Shield className="h-7 w-7 text-white" />
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Platform Administration</h1>
+            <h1 className="text-lg font-bold text-white tracking-tight">Platform Administration</h1>
             <p className="text-sm text-slate-400 mt-1.5">AuditWise SuperAdmin Console</p>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 mt-3">
               <Lock className="h-3 w-3 text-red-400" />
@@ -250,9 +250,9 @@ export default function Login() {
           </div>
 
           <Card className="border-slate-700/60 bg-slate-800/50 backdrop-blur-sm shadow-2xl">
-            <CardContent className="p-6">
+            <CardContent className="p-3">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" data-testid="superadmin-login-form">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2.5" data-testid="superadmin-login-form">
                   <FormField
                     control={form.control}
                     name="email"
@@ -331,7 +331,7 @@ export default function Login() {
             </CardContent>
           </Card>
 
-          <p className="mt-6 text-[10px] text-slate-600 text-center">
+          <p className="mt-3 text-[10px] text-slate-600 text-center">
             IP-Restricted Access Point &middot; All attempts are logged
           </p>
         </div>
@@ -359,7 +359,7 @@ export default function Login() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M20 18v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
 
-        <div className="relative z-10 flex flex-col w-full px-10 xl:px-14 py-8">
+        <div className="relative z-10 flex flex-col w-full px-10 xl:px-14 py-2">
 
           {/* Logo */}
           <div className="flex items-center gap-3">
@@ -373,16 +373,16 @@ export default function Login() {
           </div>
 
           {/* Hero content */}
-          <div className="flex-1 flex flex-col justify-center max-w-xl mt-8">
+          <div className="flex-1 flex flex-col justify-center max-w-xl mt-2.5">
 
             {/* Badge */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-400/15 border border-amber-400/25 mb-6 w-fit">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-400/15 border border-amber-400/25 mb-3 w-fit">
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
               <span className="text-[11px] font-semibold text-amber-200 tracking-wide">AI-Powered Audit Intelligence · Pakistan's #1 Platform</span>
             </div>
 
             {/* Headline */}
-            <h2 className="text-3xl xl:text-[2.4rem] font-extrabold text-white leading-[1.15] mb-3 tracking-tight">
+            <h2 className="text-xl xl:text-[2.4rem] font-extrabold text-white leading-[1.15] mb-3 tracking-tight">
               The Complete Platform for{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-300 to-blue-200">
                 Statutory Audit
@@ -398,7 +398,7 @@ export default function Login() {
               {STATS.map((s, i) => (
                 <div
                   key={i}
-                  className={`flex-1 px-4 py-3 text-center ${i < STATS.length - 1 ? "border-r border-white/10" : ""} bg-white/[0.04]`}
+                  className={`flex-1 px-3 py-3 text-center ${i < STATS.length - 1 ? "border-r border-white/10" : ""} bg-white/[0.04]`}
                 >
                   <div className="text-sm xl:text-base font-extrabold text-white leading-tight">{s.value}</div>
                   <div className="text-[10px] text-white/40 mt-0.5 font-medium">{s.label}</div>
@@ -449,11 +449,11 @@ export default function Login() {
       </div>
 
       {/* ── Right panel (login form) ── */}
-      <div className="flex-1 flex items-center justify-center p-6">
+      <div className="flex-1 flex items-center justify-center p-3">
         <div className="w-full max-w-[400px]">
 
           {/* Mobile-only header */}
-          <div className="lg:hidden text-center mb-6">
+          <div className="lg:hidden text-center mb-3">
             <div className="flex justify-center mb-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg">
                 <Shield className="h-6 w-6" />
@@ -463,15 +463,15 @@ export default function Login() {
             <p className="text-xs text-muted-foreground mt-1">Statutory Audit Management</p>
           </div>
 
-          <div className="mb-5 hidden lg:block">
+          <div className="mb-2.5 hidden lg:block">
             <h2 className="text-xl font-bold tracking-tight">Welcome back</h2>
             <p className="text-sm text-muted-foreground mt-1">Sign in to continue to your audit workspace</p>
           </div>
 
           <Card className="border-border/60 shadow-md">
-            <CardContent className="p-5">
+            <CardContent className="p-3">
               <Tabs defaultValue="firm" onValueChange={(v) => setLoginType(v as "firm" | "portal")}>
-                <TabsList className="grid w-full grid-cols-2 mb-5 h-10">
+                <TabsList className="grid w-full grid-cols-2 mb-2.5 h-10">
                   <TabsTrigger value="firm" className="flex items-center gap-1.5 text-sm" data-testid="tab-firm-login">
                     <Building2 className="h-3.5 w-3.5" />
                     Firm Login
@@ -484,7 +484,7 @@ export default function Login() {
 
                 <TabsContent value="firm">
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2.5">
                       <FormField
                         control={form.control}
                         name="email"
@@ -544,7 +544,7 @@ export default function Login() {
                   </div>
 
                   {import.meta.env.DEV && (
-                    <div className="mt-4 p-3 rounded-lg bg-muted/50 border border-border/60" data-testid="dev-credentials">
+                    <div className="mt-2.5 p-3 rounded-lg bg-muted/50 border border-border/60" data-testid="dev-credentials">
                       <div className="flex items-center gap-2 mb-2">
                         <CheckCircle2 className="h-3 w-3 text-primary" />
                         <p className="text-[11px] font-semibold text-foreground">Demo Credentials</p>
@@ -593,7 +593,7 @@ export default function Login() {
 
                 <TabsContent value="portal">
                   <Form {...portalForm}>
-                    <form onSubmit={portalForm.handleSubmit(onPortalSubmit)} className="space-y-4">
+                    <form onSubmit={portalForm.handleSubmit(onPortalSubmit)} className="space-y-2.5">
                       <FormField
                         control={portalForm.control}
                         name="email"
@@ -638,7 +638,7 @@ export default function Login() {
                   </Form>
 
                   {import.meta.env.DEV && (
-                    <div className="mt-4 p-3 rounded-lg bg-muted/50 border border-border/60" data-testid="dev-portal-credentials">
+                    <div className="mt-2.5 p-3 rounded-lg bg-muted/50 border border-border/60" data-testid="dev-portal-credentials">
                       <div className="flex items-center gap-2 mb-2">
                         <CheckCircle2 className="h-3 w-3 text-primary" />
                         <p className="text-[11px] font-semibold text-foreground">Demo Client Login</p>
@@ -665,7 +665,7 @@ export default function Login() {
             </CardContent>
           </Card>
 
-          <p className="mt-4 text-[10px] text-muted-foreground/40 text-center">
+          <p className="mt-2.5 text-[10px] text-muted-foreground/40 text-center">
             ISA / ISQM-1 Compliant Audit Platform
           </p>
         </div>

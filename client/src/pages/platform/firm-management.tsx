@@ -235,7 +235,7 @@ export default function FirmManagement() {
             <DialogHeader>
               <DialogTitle>Create New Firm</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-2.5">
               <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1">
                 <Building2 className="h-3.5 w-3.5" />
                 Firm Information
@@ -359,7 +359,7 @@ export default function FirmManagement() {
                 </div>
               </div>
 
-              <div className="border-t pt-4 space-y-4">
+              <div className="border-t pt-4 space-y-2.5">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Country</Label>
@@ -468,7 +468,7 @@ export default function FirmManagement() {
         <div className="space-y-3">
           {firms.map((firm: any) => (
             <Card key={firm.id} data-testid={`card-firm-${firm.id}`}>
-              <CardContent className="p-4">
+              <CardContent className="p-2.5">
                 <div className="flex items-start justify-between">
                   <div className="flex gap-3 flex-1">
                     {firm.logoUrl && (
@@ -592,7 +592,7 @@ export default function FirmManagement() {
           <DialogHeader>
             <DialogTitle>Invite Firm Admin</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <div className="flex gap-2">
               <div className="flex-1">
                 <Label>Email Address</Label>

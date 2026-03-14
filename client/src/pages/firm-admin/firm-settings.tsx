@@ -124,7 +124,7 @@ function SubscriptionBillingTab({ settings, settingsLoading, subscription, subLo
   const yearlyPrice = snap?.yearlyPrice || (monthlyPrice ? monthlyPrice * 12 : null);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
@@ -135,9 +135,9 @@ function SubscriptionBillingTab({ settings, settingsLoading, subscription, subLo
           {subLoading ? (
             <div className="text-muted-foreground">Loading...</div>
           ) : (
-            <div className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="rounded-lg border p-4 space-y-2">
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                <div className="rounded-lg border p-2.5 space-y-2">
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm">Firm:</span>
@@ -157,7 +157,7 @@ function SubscriptionBillingTab({ settings, settingsLoading, subscription, subLo
                   )}
                 </div>
 
-                <div className="rounded-lg border p-4 space-y-2">
+                <div className="rounded-lg border p-2.5 space-y-2">
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Plan</div>
                   {plan ? (
                     <>
@@ -176,7 +176,7 @@ function SubscriptionBillingTab({ settings, settingsLoading, subscription, subLo
                   )}
                 </div>
 
-                <div className="rounded-lg border p-4 space-y-2">
+                <div className="rounded-lg border p-2.5 space-y-2">
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                     <CreditCard className="h-3.5 w-3.5" /> Pricing
                   </div>
@@ -198,7 +198,7 @@ function SubscriptionBillingTab({ settings, settingsLoading, subscription, subLo
               </div>
 
               {sub && (
-                <div className="rounded-lg border p-4">
+                <div className="rounded-lg border p-2.5">
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1">
                     <Calendar className="h-3.5 w-3.5" /> Billing Dates
                   </div>
@@ -238,7 +238,7 @@ function SubscriptionBillingTab({ settings, settingsLoading, subscription, subLo
               )}
 
               {sub && (
-                <div className="rounded-lg border p-4">
+                <div className="rounded-lg border p-2.5">
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1">
                     <Receipt className="h-3.5 w-3.5" /> Recent Invoices
                   </div>
@@ -294,14 +294,14 @@ function SubscriptionBillingTab({ settings, settingsLoading, subscription, subLo
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Bot className="h-4 w-4" /> AI API Override
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-2.5">
             {settings?.aiOverrideEnabled && (
               <Badge className="bg-green-100 text-green-800" data-testid="badge-ai-override-active">AI Override Active</Badge>
             )}
@@ -419,7 +419,7 @@ function FirmProfileTab() {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="py-8 flex justify-center">
+        <CardContent className="py-2 flex justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </CardContent>
       </Card>
@@ -429,7 +429,7 @@ function FirmProfileTab() {
   if (firmError || !firm) {
     return (
       <Card>
-        <CardContent className="py-8 text-center">
+        <CardContent className="py-2 text-center">
           <p className="text-red-500">Failed to load firm profile. Please try again later.</p>
         </CardContent>
       </Card>
@@ -442,8 +442,8 @@ function FirmProfileTab() {
         <CardTitle>Firm Profile</CardTitle>
         <CardDescription>Manage your firm's basic information</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <CardContent className="space-y-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
           <div className="space-y-2">
             <Label htmlFor="firmName">Firm Name *</Label>
             <Input id="firmName" value={firmData.name} onChange={(e) => setFirmData({ ...firmData, name: e.target.value })} />
@@ -518,8 +518,8 @@ function ProfileTab() {
         <CardTitle>Profile Information</CardTitle>
         <CardDescription>Update your personal information</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <CardContent className="space-y-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
           <div className="space-y-2">
             <Label htmlFor="fullName">Full Name</Label>
             <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} data-testid="input-full-name" />
@@ -565,7 +565,7 @@ function NotificationsTab() {
         <CardTitle>Notification Preferences</CardTitle>
         <CardDescription>Choose what notifications you receive</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2.5">
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
             <Label>Email Alerts</Label>
@@ -621,8 +621,8 @@ function PreferencesTab() {
         <CardTitle>Display Preferences</CardTitle>
         <CardDescription>Customize your display settings</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <CardContent className="space-y-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
           <div className="space-y-2">
             <Label>Language</Label>
             <Select value={preferences.language} onValueChange={(v) => setPreferences({ ...preferences, language: v })}>
@@ -724,7 +724,7 @@ function SecurityTab() {
         <CardTitle>Change Password</CardTitle>
         <CardDescription>Update your account password</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2.5">
         <div className="space-y-2">
           <Label htmlFor="currentPassword">Current Password</Label>
           <Input id="currentPassword" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
@@ -795,7 +795,7 @@ function LockingPhasesTab({ settings, settingsLoading }: { settings: any; settin
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
@@ -805,12 +805,12 @@ function LockingPhasesTab({ settings, settingsLoading }: { settings: any; settin
             Control whether audit phases must be completed sequentially before the next phase becomes accessible
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-3">
           {settingsLoading ? (
             <div className="text-muted-foreground">Loading...</div>
           ) : (
             <>
-              <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+              <div className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/30">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <Label className="text-base font-semibold">Enable Phase Locking</Label>
@@ -922,7 +922,7 @@ export default function FirmSettingsPage() {
         <p className="text-sm text-muted-foreground mt-0.5">Manage firm configuration and your account settings</p>
       </div>
 
-      <Tabs defaultValue="firm" className="space-y-4">
+      <Tabs defaultValue="firm" className="space-y-2.5">
         <TabsList className="bg-muted/50 flex-wrap h-auto gap-1 p-1">
           <TabsTrigger value="firm" data-testid="tab-firm">
             <Shield className="h-4 w-4 mr-1.5" />

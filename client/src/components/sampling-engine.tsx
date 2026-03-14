@@ -243,9 +243,9 @@ export function SamplingEngine({ engagementId }: SamplingEngineProps) {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="generate" className="space-y-4 mt-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-4">
+          <TabsContent value="generate" className="space-y-2.5 mt-2.5">
+            <div className="grid gap-2.5 md:grid-cols-2">
+              <div className="space-y-2.5">
                 <div className="space-y-2">
                   <Label htmlFor="method">Sampling Method</Label>
                   <Select
@@ -324,7 +324,7 @@ export function SamplingEngine({ engagementId }: SamplingEngineProps) {
               </div>
 
               {config.method === "NON_STATISTICAL_JUDGMENTAL" && (
-                <div className="space-y-4 border rounded-md p-4 bg-muted/30">
+                <div className="space-y-2.5 border rounded-md p-2.5 bg-muted/30">
                   <h4 className="font-medium flex items-center gap-2">
                     <Target className="h-4 w-4" />
                     Targeted Selection Criteria
@@ -443,14 +443,14 @@ export function SamplingEngine({ engagementId }: SamplingEngineProps) {
             </div>
           </TabsContent>
 
-          <TabsContent value="history" className="mt-4">
+          <TabsContent value="history" className="mt-2.5">
             {runsQuery.isLoading ? (
-              <div className="flex items-center justify-center py-8">
+              <div className="flex items-center justify-center py-2">
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             ) : runs.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <div className="text-center py-2 text-muted-foreground">
+                <History className="h-12 w-12 mx-auto mb-2.5 opacity-50" />
                 <p>No sampling runs yet</p>
                 <p className="text-sm">Generate your first sample to get started</p>
               </div>
@@ -523,34 +523,34 @@ export function SamplingEngine({ engagementId }: SamplingEngineProps) {
             )}
           </TabsContent>
 
-          <TabsContent value="results" className="mt-4">
+          <TabsContent value="results" className="mt-2.5">
             {samplesQuery.isLoading ? (
-              <div className="flex items-center justify-center py-8">
+              <div className="flex items-center justify-center py-2">
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             ) : !currentRun ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <div className="text-center py-2 text-muted-foreground">
+                <BarChart3 className="h-12 w-12 mx-auto mb-2.5 opacity-50" />
                 <p>Select a sampling run to view results</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-2.5">
+                <div className="grid gap-2.5 md:grid-cols-4">
                   <Card>
                     <CardContent className="pt-4">
-                      <div className="text-2xl font-bold">{currentRun.populationCount.toLocaleString()}</div>
+                      <div className="text-lg font-bold">{currentRun.populationCount.toLocaleString()}</div>
                       <p className="text-xs text-muted-foreground">Population Items</p>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardContent className="pt-4">
-                      <div className="text-2xl font-bold">{currentRun.sampleSize}</div>
+                      <div className="text-lg font-bold">{currentRun.sampleSize}</div>
                       <p className="text-xs text-muted-foreground">Selected Items</p>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardContent className="pt-4">
-                      <div className="text-2xl font-bold">
+                      <div className="text-lg font-bold">
                         {Number(currentRun.coveragePercentage).toFixed(1)}%
                       </div>
                       <p className="text-xs text-muted-foreground">Value Coverage</p>
@@ -558,7 +558,7 @@ export function SamplingEngine({ engagementId }: SamplingEngineProps) {
                   </Card>
                   <Card>
                     <CardContent className="pt-4">
-                      <div className="text-2xl font-bold">
+                      <div className="text-lg font-bold">
                         {(currentRun.populationCount - currentRun.sampleSize).toLocaleString()}
                       </div>
                       <p className="text-xs text-muted-foreground">Items Not Selected</p>

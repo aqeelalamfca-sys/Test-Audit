@@ -46,10 +46,10 @@ export function ModuleStatusHeader({
 
   return (
     <Card
-      className={cn("px-4 py-3", className)}
+      className={cn("px-3 py-3", className)}
       data-testid="module-status-header"
     >
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center justify-between gap-2.5 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -78,7 +78,7 @@ export function ModuleStatusHeader({
           )}
         </div>
 
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-2.5 flex-wrap">
           {prerequisites && prerequisites.length > 0 && (
             <div
               className="flex items-center gap-2 flex-wrap"

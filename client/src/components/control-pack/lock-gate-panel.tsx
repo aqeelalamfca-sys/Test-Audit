@@ -336,7 +336,7 @@ export function LockGatePanel({ engagementId, className }: LockGatePanelProps) {
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-4 w-64" />
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2.5">
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-40 w-full" />
         </CardContent>
@@ -387,15 +387,15 @@ export function LockGatePanel({ engagementId, className }: LockGatePanelProps) {
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2.5">
         {isLocked && lockGate?.archiveSnapshot && (
-          <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800">
+          <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800">
             <div className="flex items-center gap-2 mb-3">
               <Archive className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               <span className="font-medium text-emerald-800 dark:text-emerald-200">Engagement Locked & Archived</span>
               <Badge variant="outline" className="ml-auto">ISA 230</Badge>
             </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-2.5 text-sm">
               <div>
                 <span className="text-muted-foreground">Locked At:</span>
                 <div className="font-medium" data-testid="text-locked-at">{formatDate(lockGate.lockedAt)}</div>
@@ -570,7 +570,7 @@ export function LockGatePanel({ engagementId, className }: LockGatePanelProps) {
                     Submit a request to override failed gates. This requires partner approval.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
+                <div className="space-y-2.5 py-2">
                   <div className="space-y-2">
                     <Label>Failed Gates</Label>
                     <div className="flex flex-wrap gap-1">
@@ -628,7 +628,7 @@ export function LockGatePanel({ engagementId, className }: LockGatePanelProps) {
                     As a partner, you can approve this override request to allow engagement locking.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
+                <div className="space-y-2.5 py-2">
                   {lockGate?.overrideReason && (
                     <div className="space-y-2">
                       <Label>Original Request Reason</Label>
@@ -695,7 +695,7 @@ export function LockGatePanel({ engagementId, className }: LockGatePanelProps) {
                     </p>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <div className="py-4">
+                <div className="py-2">
                   <Label htmlFor="lock-reason">Lock Reason (Optional)</Label>
                   <Textarea
                     id="lock-reason"

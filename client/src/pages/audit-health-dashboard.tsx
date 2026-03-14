@@ -332,7 +332,7 @@ export default function AuditHealthDashboard() {
 
   if (!dashboard) {
     return (
-      <div className="px-4 py-3">
+      <div className="px-3 py-3">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
@@ -350,10 +350,10 @@ export default function AuditHealthDashboard() {
   const completedControls = qualityControls.filter(c => c.status).length;
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="space-y-4">
+    <div className="min-h-screen bg-background p-2.5">
+      <div className="space-y-2.5">
         <div className="flex items-center justify-between border-b pb-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2.5">
             <Link href="/engagements">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -385,12 +385,12 @@ export default function AuditHealthDashboard() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2.5">
           <Card className={`border-l-4 ${statusColors[healthScore.status]}`}>
             <CardContent className="pt-4">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2.5">
                 <div className={`w-20 h-20 rounded-full flex items-center justify-center ${statusBadgeColors[healthScore.status]}`}>
-                  <span className="text-2xl font-bold">{healthScore.auditHealthScore}%</span>
+                  <span className="text-lg font-bold">{healthScore.auditHealthScore}%</span>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">AUDIT SCORE</p>
@@ -571,7 +571,7 @@ function PartnerView({ dashboard, engagement, onLockFile, onOverride, lockFileMu
   const { healthScore, dataIntegrity, aiDiagnostics, misstatements, qualityControls, healthCertificate } = dashboard;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -580,10 +580,10 @@ function PartnerView({ dashboard, engagement, onLockFile, onOverride, lockFileMu
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center gap-2 py-4">
+          <div className="flex items-center justify-center gap-2 py-2">
             {dataIntegrity.map((node, idx) => (
               <div key={node.stage} className="flex items-center">
-                <div className={`px-4 py-2 rounded text-center text-sm ${
+                <div className={`px-3 py-2 rounded text-center text-sm ${
                   node.status === 'COMPLETE' ? 'bg-green-100 text-green-800' :
                   node.status === 'PARTIAL' ? 'bg-amber-100 text-amber-800' :
                   'bg-red-100 text-red-800'
@@ -633,7 +633,7 @@ function PartnerView({ dashboard, engagement, onLockFile, onOverride, lockFileMu
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2.5">
             <div>
               <p className="text-sm text-muted-foreground">Aggregate Misstatement</p>
               <p className="text-lg font-bold">Rs {formatAccounting(misstatements.summary.totalAmount)}</p>
@@ -663,7 +663,7 @@ function PartnerView({ dashboard, engagement, onLockFile, onOverride, lockFileMu
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2 mb-4">
+          <div className="space-y-2 mb-2.5">
             {qualityControls.map((control, idx) => (
               <div key={idx} className="flex items-center gap-2">
                 {control.status ? (
@@ -774,8 +774,8 @@ function ManagerView({ dashboard, selectedGap, onSelectGap, openTasks, inReviewT
   const highPriorityGaps = autoFixes.filter(f => f.severity === 'CRITICAL' || f.severity === 'HIGH');
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-4">
+    <div className="space-y-2.5">
+      <div className="grid grid-cols-3 gap-2.5">
         <Card>
           <CardContent className="pt-4">
             <p className="text-sm text-muted-foreground mb-2">TASK HEALTH</p>
@@ -859,7 +859,7 @@ function ManagerView({ dashboard, selectedGap, onSelectGap, openTasks, inReviewT
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-2 gap-2.5 mb-2.5">
               <div>
                 <p className="text-xs text-muted-foreground">Issue</p>
                 <p className="text-sm font-medium">{selectedGap.issue}</p>
@@ -879,7 +879,7 @@ function ManagerView({ dashboard, selectedGap, onSelectGap, openTasks, inReviewT
                 </Badge>
               </div>
             </div>
-            <div className="mb-4">
+            <div className="mb-2.5">
               <p className="text-xs text-muted-foreground mb-1">Required Fix:</p>
               <ul className="text-sm space-y-1">
                 {selectedGap.requiredSteps?.map((step, i) => (

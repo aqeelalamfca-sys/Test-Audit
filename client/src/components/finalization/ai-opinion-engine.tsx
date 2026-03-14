@@ -122,7 +122,7 @@ function ScoreGauge({ score, label }: { score: number | null; label: string }) {
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className={`text-2xl font-bold ${color}`}>{score !== null ? s : "—"}</div>
+      <div className={`text-lg font-bold ${color}`}>{score !== null ? s : "—"}</div>
       <div className="text-xs text-muted-foreground text-center">{label}</div>
     </div>
   );
@@ -267,7 +267,7 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
   const isFinalized = engine?.status === "FINALIZED" || isLocked;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg flex items-start gap-3 border border-amber-200 dark:border-amber-800">
         <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
         <div className="text-sm">
@@ -328,8 +328,8 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="dashboard" className="space-y-4 mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <TabsContent value="dashboard" className="space-y-2.5 mt-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
@@ -465,7 +465,7 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
           )}
         </TabsContent>
 
-        <TabsContent value="data-sources" className="space-y-4 mt-4">
+        <TabsContent value="data-sources" className="space-y-2.5 mt-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm flex items-center gap-2">
@@ -477,9 +477,9 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
             </CardHeader>
             <CardContent>
               {!dataSources ? (
-                <div className="text-sm text-muted-foreground py-4 text-center">Loading data sources...</div>
+                <div className="text-sm text-muted-foreground py-2 text-center">Loading data sources...</div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
                   <DataSourceCard
                     title="Materiality"
                     icon={<Scale className="h-4 w-4" />}
@@ -550,7 +550,7 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2.5">
                 <Badge className={
                   engine?.dataReliability === "HIGH" ? "bg-green-100 text-green-700" :
                   engine?.dataReliability === "MODERATE" ? "bg-yellow-100 text-yellow-700" :
@@ -570,7 +570,7 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="findings" className="space-y-4 mt-4">
+        <TabsContent value="findings" className="space-y-2.5 mt-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm flex items-center gap-2">
@@ -582,7 +582,7 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
             </CardHeader>
             <CardContent>
               {!engine?.findings || engine.findings.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-2 text-muted-foreground">
                   <Brain className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">No findings yet. Run the AI analysis to generate findings.</p>
                 </div>
@@ -668,7 +668,7 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="scores" className="space-y-4 mt-4">
+        <TabsContent value="scores" className="space-y-2.5 mt-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm flex items-center gap-2">
@@ -680,13 +680,13 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
             </CardHeader>
             <CardContent>
               {!scores || Object.keys(scores).length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-2 text-muted-foreground">
                   <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">Run the AI analysis to generate section scores.</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="space-y-2.5">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5">
                     <ScoreGauge score={scores.misstatementScore ?? null} label="Misstatements" />
                     <ScoreGauge score={scores.goingConcernScore ?? null} label="Going Concern" />
                     <ScoreGauge score={scores.riskCoverageScore ?? null} label="Risk Coverage" />
@@ -704,7 +704,7 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
                       { key: "controlScore", label: "Internal Controls (ISA 265)", desc: "Significant deficiencies and material weaknesses" },
                       { key: "subsequentEventsScore", label: "Subsequent Events (ISA 560)", desc: "Post-period events evaluation status" },
                     ].map((item) => (
-                      <div key={item.key} className="flex items-center gap-4">
+                      <div key={item.key} className="flex items-center gap-2.5">
                         <div className="flex-1">
                           <div className="text-sm font-medium">{item.label}</div>
                           <div className="text-xs text-muted-foreground">{item.desc}</div>
@@ -753,7 +753,7 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="partner" className="space-y-4 mt-4">
+        <TabsContent value="partner" className="space-y-2.5 mt-2.5">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm flex items-center gap-2">
@@ -763,7 +763,7 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
                 The engagement partner must exercise professional judgment to determine the final audit opinion
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2.5">
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-start gap-3">
                 <Info className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
                 <div className="text-sm text-blue-700 dark:text-blue-400">
@@ -774,7 +774,7 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
               </div>
 
               {engine?.aiCategory && engine.aiCategory !== "UNDETERMINED" && (
-                <div className="flex items-center gap-4 p-3 rounded-lg border">
+                <div className="flex items-center gap-2.5 p-3 rounded-lg border">
                   <div className="text-sm">
                     <span className="text-muted-foreground">AI Recommendation: </span>
                     <Badge className={`${CATEGORY_COLORS[engine.aiCategory]}`}>
@@ -787,12 +787,12 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
 
               {engine?.partnerCategory ? (
                 <div className="space-y-3">
-                  <div className="p-4 rounded-lg border-2 border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10">
+                  <div className="p-2.5 rounded-lg border-2 border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10">
                     <div className="flex items-center gap-2 mb-2">
                       <CheckCircle2 className="h-5 w-5 text-green-600" />
                       <span className="font-semibold text-green-800 dark:text-green-400">Partner Opinion Recorded</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm mt-3">
+                    <div className="grid grid-cols-2 gap-2.5 text-sm mt-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Opinion Type</Label>
                         <div className="mt-1">
@@ -861,7 +861,7 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
             const f = engine.findings.find((x) => x.id === reviewFindingId);
             if (!f) return null;
             return (
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 <div>
                   <Label className="text-xs text-muted-foreground">Finding</Label>
                   <p className="text-sm mt-1">{f.narrative}</p>
@@ -915,7 +915,7 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
               This action will be recorded in the audit trail.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
               <div className="text-sm text-amber-700 dark:text-amber-400 flex items-start gap-2">
                 <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />

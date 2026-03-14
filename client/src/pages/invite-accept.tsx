@@ -112,9 +112,9 @@ export default function InviteAccept() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-muted/40 p-2.5">
         <Card className="w-full max-w-md" data-testid="invite-error">
-          <CardContent className="pt-6 text-center space-y-4">
+          <CardContent className="pt-6 text-center space-y-2.5">
             <AlertTriangle className="w-12 h-12 text-destructive mx-auto" />
             <h2 className="text-xl font-semibold">Invalid Invite</h2>
             <p className="text-muted-foreground">{error}</p>
@@ -129,9 +129,9 @@ export default function InviteAccept() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-muted/40 p-2.5">
         <Card className="w-full max-w-md" data-testid="invite-success">
-          <CardContent className="pt-6 text-center space-y-4">
+          <CardContent className="pt-6 text-center space-y-2.5">
             <CheckCircle className="w-12 h-12 text-green-600 mx-auto" />
             <h2 className="text-xl font-semibold">Account Created!</h2>
             <p className="text-muted-foreground">Redirecting to your dashboard...</p>
@@ -142,10 +142,10 @@ export default function InviteAccept() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-muted/40 p-2.5">
       <Card className="w-full max-w-md" data-testid="invite-form">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-2.5">
             {inviteInfo?.firm.logoUrl ? (
               <img src={inviteInfo.firm.logoUrl} alt="" className="h-12 object-contain" />
             ) : (
@@ -159,7 +159,7 @@ export default function InviteAccept() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-2.5">
             <div className="space-y-2">
               <Label>Email</Label>
               <Input value={inviteInfo?.email || ""} disabled data-testid="input-email" />

@@ -214,7 +214,7 @@ export default function PlatformDashboard() {
     : [];
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-[1440px] mx-auto">
+    <div className="p-2.5 md:p-3 space-y-2.5 max-w-[1440px] mx-auto">
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
@@ -282,7 +282,7 @@ export default function PlatformDashboard() {
                 <RingGauge value={diskPct} label="Disk" color="#f59e0b" detail={healthData.resources.disk.used} />
               </div>
             ) : (
-              <div className="text-center py-6 text-xs text-muted-foreground">Waiting for server data...</div>
+              <div className="text-center py-3 text-xs text-muted-foreground">Waiting for server data...</div>
             )}
             {healthData?.server?.loadAverage && (
               <div className="text-center mt-1">
@@ -301,7 +301,7 @@ export default function PlatformDashboard() {
           <TabsTrigger value="activity" className="text-xs gap-1"><Activity className="h-3 w-3" /> Activity</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4 mt-3">
+        <TabsContent value="overview" className="space-y-2.5 mt-3">
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
             <Card className="cursor-pointer hover:shadow-md transition-all hover:scale-[1.02]" onClick={() => setLocation("/platform/firms")}>
               <CardContent className="p-2.5 text-center">
@@ -363,12 +363,12 @@ export default function PlatformDashboard() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
             <Card className="lg:col-span-8">
-              <CardHeader className="pb-1 pt-3 px-4">
+              <CardHeader className="pb-1 pt-3 px-3">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-blue-500" /> 7-Day Activity Trend
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pb-3 px-4">
+              <CardContent className="pb-3 px-3">
                 {metrics?.dailyStats && metrics.dailyStats.length > 0 ? (
                   <ResponsiveContainer width="100%" height={200}>
                     <AreaChart data={metrics.dailyStats}>
@@ -399,12 +399,12 @@ export default function PlatformDashboard() {
             </Card>
 
             <Card className="lg:col-span-4">
-              <CardHeader className="pb-1 pt-3 px-4">
+              <CardHeader className="pb-1 pt-3 px-3">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Briefcase className="h-4 w-4 text-indigo-500" /> Engagements by Status
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pb-3 px-4">
+              <CardContent className="pb-3 px-3">
                 {engStatusData.length > 0 ? (
                   <div>
                     <ResponsiveContainer width="100%" height={140}>
@@ -455,11 +455,11 @@ export default function PlatformDashboard() {
           </div>
         </TabsContent>
 
-        <TabsContent value="infrastructure" className="space-y-4 mt-3">
+        <TabsContent value="infrastructure" className="space-y-2.5 mt-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
             <Card>
-              <CardHeader className="pb-2 pt-3 px-4">
+              <CardHeader className="pb-2 pt-3 px-3">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Activity className="h-4 w-4 text-emerald-500" /> Health Probes
                   {healthData?.server?.ip && (
@@ -467,7 +467,7 @@ export default function PlatformDashboard() {
                   )}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pb-3 px-4">
+              <CardContent className="pb-3 px-3">
                 <div className="grid grid-cols-2 gap-2">
                   <ProbeButton label="HTTP" ok={probeResults.http?.ok ?? !!pingData?.reachable} detail={probeResults.http?.detail ?? (pingData?.reachable ? `Status ${pingData.httpStatus}` : (pingData?.error?.substring(0, 20) || "N/A"))} icon={Globe} onClick={() => handleProbeCheck("http")} isChecking={probeChecking.http} />
                   <ProbeButton label="API" ok={probeResults.api?.ok ?? !!pingData?.reachable} detail={probeResults.api?.detail ?? (pingData?.reachable ? `${pingData.responseTime}ms` : "Timeout")} icon={Activity} onClick={() => handleProbeCheck("api")} isChecking={probeChecking.api} />
@@ -479,13 +479,13 @@ export default function PlatformDashboard() {
             </Card>
 
             <Card>
-              <CardHeader className="pb-2 pt-3 px-4">
+              <CardHeader className="pb-2 pt-3 px-3">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Container className="h-4 w-4 text-teal-500" /> Docker Containers
                   <Badge variant="outline" className="text-[10px] ml-auto">{runningContainers}/{containers.length} running</Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pb-3 px-4">
+              <CardContent className="pb-3 px-3">
                 {containers.length > 0 ? (
                   <div className="space-y-1.5">
                     {containers.map((c, i) => {
@@ -505,18 +505,18 @@ export default function PlatformDashboard() {
                     })}
                   </div>
                 ) : (
-                  <div className="text-center py-6 text-xs text-muted-foreground">{isConnected ? "No containers detected" : "Connect to view containers"}</div>
+                  <div className="text-center py-3 text-xs text-muted-foreground">{isConnected ? "No containers detected" : "Connect to view containers"}</div>
                 )}
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader className="pb-2 pt-3 px-4">
+              <CardHeader className="pb-2 pt-3 px-3">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Cpu className="h-4 w-4 text-blue-500" /> Server Details
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pb-3 px-4">
+              <CardContent className="pb-3 px-3">
                 {healthData?.server ? (
                   <div className="space-y-1.5 text-xs">
                     {[
@@ -535,18 +535,18 @@ export default function PlatformDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-6 text-xs text-muted-foreground">No server data</div>
+                  <div className="text-center py-3 text-xs text-muted-foreground">No server data</div>
                 )}
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader className="pb-2 pt-3 px-4">
+              <CardHeader className="pb-2 pt-3 px-3">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <HardDrive className="h-4 w-4 text-amber-500" /> Resource Utilization
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pb-3 px-4">
+              <CardContent className="pb-3 px-3">
                 {healthData?.resources ? (
                   <div className="space-y-3">
                     {[
@@ -565,20 +565,20 @@ export default function PlatformDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-6 text-xs text-muted-foreground">No resource data</div>
+                  <div className="text-center py-3 text-xs text-muted-foreground">No resource data</div>
                 )}
               </CardContent>
             </Card>
 
             {healthData?.application?.pm2Processes && healthData.application.pm2Processes.length > 0 && (
               <Card className="md:col-span-2">
-                <CardHeader className="pb-2 pt-3 px-4">
+                <CardHeader className="pb-2 pt-3 px-3">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Zap className="h-4 w-4 text-teal-500" /> Application Processes
                     <span className="text-[10px] font-normal text-muted-foreground ml-auto">Node {healthData.application.nodeVersion}</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pb-3 px-4">
+                <CardContent className="pb-3 px-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {healthData.application.pm2Processes.map((proc, i) => (
                       <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/40 border">
@@ -601,7 +601,7 @@ export default function PlatformDashboard() {
           </div>
         </TabsContent>
 
-        <TabsContent value="security" className="space-y-4 mt-3">
+        <TabsContent value="security" className="space-y-2.5 mt-3">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <MetricCard label="SSL Certificate" value={healthData?.security?.ssl && !healthData.security.ssl.includes("No SSL") ? "Valid" : "Unknown"} icon={Lock} color={healthData?.security?.ssl && !healthData.security.ssl.includes("No SSL") ? "bg-emerald-500" : "bg-gray-400"} subtext={healthData?.security?.ssl || ""} />
             <MetricCard label="Firewall Status" value={healthData?.security?.firewall?.length ? "Active" : "Unknown"} icon={Shield} color={healthData?.security?.firewall?.length ? "bg-emerald-500" : "bg-gray-400"} />
@@ -611,12 +611,12 @@ export default function PlatformDashboard() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Card>
-              <CardHeader className="pb-2 pt-3 px-4">
+              <CardHeader className="pb-2 pt-3 px-3">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Lock className="h-4 w-4 text-emerald-500" /> SSL & Encryption
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pb-3 px-4">
+              <CardContent className="pb-3 px-3">
                 <div className="space-y-1.5 text-xs">
                   <div className="flex justify-between py-1 px-2 rounded bg-muted/30">
                     <span className="text-muted-foreground">SSL Status</span>
@@ -640,13 +640,13 @@ export default function PlatformDashboard() {
 
             {healthData?.security?.openPorts && healthData.security.openPorts.length > 0 && (
               <Card>
-                <CardHeader className="pb-2 pt-3 px-4">
+                <CardHeader className="pb-2 pt-3 px-3">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Wifi className="h-4 w-4 text-amber-500" /> Open Ports
                     <Badge variant="outline" className="text-[10px] ml-auto">{healthData.security.openPorts.length} ports</Badge>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pb-3 px-4">
+                <CardContent className="pb-3 px-3">
                   <div className="flex flex-wrap gap-1.5">
                     {healthData.security.openPorts.map((port, i) => (
                       <Badge key={i} variant="outline" className="text-[10px] font-mono">{port.address}</Badge>
@@ -668,7 +668,7 @@ export default function PlatformDashboard() {
           </div>
         </TabsContent>
 
-        <TabsContent value="activity" className="space-y-4 mt-3">
+        <TabsContent value="activity" className="space-y-2.5 mt-3">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <MetricCard label="Active Sessions" value={metrics?.activeSessions ?? "..."} icon={Eye} color="bg-blue-500" />
             <MetricCard label="Today's Logins" value={metrics?.todayLogins ?? "..."} icon={LogIn} color="bg-emerald-500" />
@@ -678,12 +678,12 @@ export default function PlatformDashboard() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
             <Card className="lg:col-span-7">
-              <CardHeader className="pb-2 pt-3 px-4">
+              <CardHeader className="pb-2 pt-3 px-3">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <BarChart3 className="h-4 w-4 text-blue-500" /> Daily Activity Breakdown
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pb-3 px-4">
+              <CardContent className="pb-3 px-3">
                 {metrics?.dailyStats && metrics.dailyStats.length > 0 ? (
                   <ResponsiveContainer width="100%" height={220}>
                     <BarChart data={metrics.dailyStats} barGap={2}>
@@ -704,12 +704,12 @@ export default function PlatformDashboard() {
             </Card>
 
             <Card className="lg:col-span-5">
-              <CardHeader className="pb-2 pt-3 px-4">
+              <CardHeader className="pb-2 pt-3 px-3">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Activity className="h-4 w-4 text-emerald-500" /> Recent Activity Feed
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pb-3 px-4">
+              <CardContent className="pb-3 px-3">
                 {metrics?.recentActivity && metrics.recentActivity.length > 0 ? (
                   <div className="space-y-1 max-h-[260px] overflow-y-auto pr-1">
                     {metrics.recentActivity.map((event) => (

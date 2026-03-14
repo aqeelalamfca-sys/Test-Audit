@@ -397,7 +397,7 @@ export default function ComplianceChecklistsPage() {
   }, [checklists]);
 
   return (
-    <div className="px-5 py-3 space-y-3 max-w-[1400px] mx-auto w-full">
+    <div className="px-3 py-3 space-y-3 max-w-[1400px] mx-auto w-full">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-lg font-semibold tracking-tight">Compliance Checklists</h1>
@@ -451,7 +451,7 @@ export default function ComplianceChecklistsPage() {
             return (
               <Card key={checklist.id} className="overflow-hidden">
                 <div
-                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                  className="flex items-center justify-between p-2.5 cursor-pointer hover:bg-muted/30 transition-colors"
                   onClick={() => toggleExpand(checklist.checklistType)}
                 >
                   <div className="flex items-center gap-3">
@@ -468,7 +468,7 @@ export default function ComplianceChecklistsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2.5">
                     <div className="flex items-center gap-2">
                       <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
                         <div
@@ -745,7 +745,7 @@ export default function ComplianceChecklistsPage() {
               Add Compliance Checklist
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="space-y-2.5 py-2">
             <div className="space-y-1.5">
               <Label>Checklist Type</Label>
               <Select value={newChecklistType} onValueChange={setNewChecklistType}>
@@ -791,7 +791,7 @@ export default function ComplianceChecklistsPage() {
               Upload Checklist from Excel
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="space-y-2.5 py-2">
             <div className="space-y-1.5">
               <Label>Checklist Type</Label>
               <Select value={uploadChecklistType} onValueChange={setUploadChecklistType}>
@@ -817,7 +817,7 @@ export default function ComplianceChecklistsPage() {
               <Label>Excel File</Label>
               <div
                 className={cn(
-                  "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+                  "border-2 border-dashed rounded-lg p-3 text-center cursor-pointer transition-colors",
                   uploadFile ? "border-primary/50 bg-primary/5" : "border-muted-foreground/25 hover:border-primary/30 hover:bg-muted/30"
                 )}
                 onClick={() => bulkFileInputRef.current?.click()}

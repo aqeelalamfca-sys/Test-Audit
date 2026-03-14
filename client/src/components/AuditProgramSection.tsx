@@ -995,7 +995,7 @@ export function AuditProgramSection({
   const progressPercent = totalProcedures > 0 ? Math.round((completedCount / totalProcedures) * 100) : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -1008,7 +1008,7 @@ export function AuditProgramSection({
                 </CardDescription>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2.5">
               <div className="flex items-center gap-2 text-sm">
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
                 <span>{completedCount}/{totalProcedures} ({progressPercent}%)</span>
@@ -1044,7 +1044,7 @@ export function AuditProgramSection({
                   <DialogHeader>
                     <DialogTitle>Add New FS Line Item</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4 py-4">
+                  <div className="space-y-2.5 py-2">
                     <div className="space-y-2">
                       <Label>Account Head / FS Line Item</Label>
                       <Input 
@@ -1054,7 +1054,7 @@ export function AuditProgramSection({
                         data-testid="input-add-account-head"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-2.5">
                       <div className="space-y-2">
                         <Label>Opening Balance</Label>
                         <Input 
@@ -1092,7 +1092,7 @@ export function AuditProgramSection({
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-2.5">
                       <div className="space-y-2">
                         <Label>Materiality</Label>
                         <Select 
@@ -1154,8 +1154,8 @@ export function AuditProgramSection({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+        <CardContent className="space-y-2.5">
+          <div className="flex items-center gap-2.5 p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <Sparkles className="h-5 w-5 text-blue-500" />
             <div className="flex-1">
               <p className="text-sm font-medium">AI-Assisted Audit Program</p>
@@ -1192,7 +1192,7 @@ export function AuditProgramSection({
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+                  <div className="space-y-2.5 p-2.5 bg-muted/30 rounded-lg">
                     {/* Balance Summary Row */}
                     {(program.openingBalance !== undefined || program.closingBalance !== undefined) && (
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-background rounded-md border">
@@ -1215,7 +1215,7 @@ export function AuditProgramSection({
                       </div>
                     )}
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-sm">
                       <div>
                         <Label className="text-xs text-muted-foreground">TB Coverage</Label>
                         <p>{program.tbCoverage.join(", ")}</p>
@@ -1257,7 +1257,7 @@ export function AuditProgramSection({
                                       <AccordionTrigger className="text-sm font-medium">{section.title}</AccordionTrigger>
                                       <AccordionContent>
                                         {section.categories.map((category, catIdx) => (
-                                          <div key={catIdx} className="mb-4">
+                                          <div key={catIdx} className="mb-2.5">
                                             <Label className="font-medium text-sm text-primary">{category.name}</Label>
                                             <div className="space-y-2 mt-2">
                                               {category.procedures.map((proc, procIdx) => (
@@ -1329,15 +1329,15 @@ export function AuditProgramSection({
                       </div>
 
                       {program.procedures.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
+                        <div className="text-center py-2 text-muted-foreground">
                           <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-50" />
                           <p>No procedures yet. Add from library or write custom procedures.</p>
                         </div>
                       ) : (
                         <div className="space-y-3">
                           {program.procedures.map((procedure, idx) => (
-                            <div key={procedure.id} className="border rounded-lg p-4 space-y-3">
-                              <div className="flex items-start justify-between gap-4">
+                            <div key={procedure.id} className="border rounded-lg p-2.5 space-y-3">
+                              <div className="flex items-start justify-between gap-2.5">
                                 <div className="flex items-start gap-3 flex-1">
                                   <span className="text-sm font-mono text-muted-foreground">{idx + 1}.</span>
                                   <div className="flex-1 space-y-2">
@@ -1489,7 +1489,7 @@ export function AuditProgramSection({
               <DialogHeader>
                 <DialogTitle>Add Account Head</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 <div className="space-y-2">
                   <Label>Account Head Name <span className="text-destructive">*</span></Label>
                   <Input 
@@ -1506,7 +1506,7 @@ export function AuditProgramSection({
                     placeholder="e.g., Sales - Local, Sales - Export, Discounts"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2.5">
                   <div className="space-y-2">
                     <Label>Materiality Status</Label>
                     <Select 

@@ -262,7 +262,7 @@ export function NotesDisclosurePanel({
 
   if (!draftFsData && coaAccounts.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
+      <div className="text-center py-2 text-muted-foreground">
         <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
         <p className="font-medium">Financial data not yet available</p>
         <p className="text-sm">Complete the Financial Statements in Planning phase and map your Chart of Accounts before generating Notes & Disclosures.</p>
@@ -273,7 +273,7 @@ export function NotesDisclosurePanel({
   if (!draftFsData) {
     return (
       <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
+        <CardContent className="flex flex-col items-center justify-center py-12 gap-2.5">
           <AlertCircle className="w-12 h-12 text-muted-foreground" />
           <p className="text-muted-foreground text-center" data-testid="text-no-fs-data">
             Financial data not yet available. Please complete the Draft Financial Statements first.
@@ -290,7 +290,7 @@ export function NotesDisclosurePanel({
     : 'destructive';
 
   return (
-    <div className="space-y-4" data-testid="notes-disclosure-panel">
+    <div className="space-y-2.5" data-testid="notes-disclosure-panel">
       <Collapsible open={configOpen} onOpenChange={setConfigOpen}>
         <Card>
           <CollapsibleTrigger asChild>
@@ -305,8 +305,8 @@ export function NotesDisclosurePanel({
             </CardHeader>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <CardContent className="space-y-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-muted-foreground">Reporting Framework</label>
                   <Select
@@ -395,7 +395,7 @@ export function NotesDisclosurePanel({
       </Collapsible>
 
       <Card>
-        <CardContent className="py-3 px-4">
+        <CardContent className="py-3 px-3">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5">
               <FileText className="w-4 h-4 text-muted-foreground" />
@@ -462,14 +462,14 @@ export function NotesDisclosurePanel({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="notes-index" className="mt-4">
+        <TabsContent value="notes-index" className="mt-2.5">
           <NotesIndexTab
             noteIndex={disclosurePackage.noteIndex}
             onScrollToNote={handleScrollToNote}
           />
         </TabsContent>
 
-        <TabsContent value="draft-notes" className="mt-4">
+        <TabsContent value="draft-notes" className="mt-2.5">
           <DraftNotesTab
             notes={filteredNotes}
             search={notesSearch}
@@ -478,11 +478,11 @@ export function NotesDisclosurePanel({
           />
         </TabsContent>
 
-        <TabsContent value="tables-schedules" className="mt-4">
+        <TabsContent value="tables-schedules" className="mt-2.5">
           <TablesSchedulesTab tables={allTables} />
         </TabsContent>
 
-        <TabsContent value="disclosure-checklist" className="mt-4">
+        <TabsContent value="disclosure-checklist" className="mt-2.5">
           <DisclosureChecklistTab
             checklist={disclosurePackage.checklist}
             missingInfo={disclosurePackage.missingInfo}
@@ -546,7 +546,7 @@ function NotesIndexTab({
             ))}
             {applicableNotes.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-2">
                   No applicable notes found for the current entity profile.
                 </TableCell>
               </TableRow>
@@ -598,7 +598,7 @@ function DraftNotesTab({
 
       {notes.length === 0 && (
         <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
+          <CardContent className="py-2 text-center text-muted-foreground">
             {search ? 'No notes match your search.' : 'No applicable notes found.'}
           </CardContent>
         </Card>
@@ -627,7 +627,7 @@ function DraftNotesTab({
                 </CardHeader>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2.5">
                   <div className="prose prose-sm dark:prose-invert max-w-none">
                     {renderNarrative(note.narrativeText)}
                   </div>
@@ -720,7 +720,7 @@ function RenderedTable({
 }) {
   if (table.isEmpty) {
     return (
-      <div className="rounded-md border border-dashed p-4 text-center text-muted-foreground text-sm" data-testid={`table-empty-${noteNumber}-${tableIndex}`}>
+      <div className="rounded-md border border-dashed p-2.5 text-center text-muted-foreground text-sm" data-testid={`table-empty-${noteNumber}-${tableIndex}`}>
         <Info className="w-4 h-4 mx-auto mb-1" />
         No data available for this table.
         {table.footnotes.length > 0 && (
@@ -783,7 +783,7 @@ function TablesSchedulesTab({
   if (tables.length === 0) {
     return (
       <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">
+        <CardContent className="py-2 text-center text-muted-foreground">
           <Table2 className="w-8 h-8 mx-auto mb-2" />
           No tables or schedules generated for the current profile.
         </CardContent>
@@ -792,7 +792,7 @@ function TablesSchedulesTab({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       {Array.from(grouped.entries()).map(([groupKey, entries]) => (
         <Card key={groupKey}>
           <CardHeader className="pb-2">
@@ -801,7 +801,7 @@ function TablesSchedulesTab({
               Note {groupKey}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-2.5">
             {entries.map((entry, idx) => (
               <div key={idx} className="space-y-2">
                 <p className="text-sm font-medium">{entry.table.title}</p>
@@ -830,7 +830,7 @@ function DisclosureChecklistTab({
   const optionalItems = missingInfo.filter(m => m.severity === 'optional');
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
@@ -881,7 +881,7 @@ function DisclosureChecklistTab({
               ))}
               {required.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-6">No required disclosures.</TableCell>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-3">No required disclosures.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -934,7 +934,7 @@ function DisclosureChecklistTab({
               {criticalItems.length} critical, {importantItems.length} important, {optionalItems.length} optional
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-2.5">
             {[
               { label: 'Critical', items: criticalItems, severity: 'critical' as const },
               { label: 'Important', items: importantItems, severity: 'important' as const },

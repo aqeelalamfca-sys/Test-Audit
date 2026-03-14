@@ -323,8 +323,8 @@ export function FSSoCE({
   );
 
   return (
-    <div className="space-y-4" data-testid="fs-soce-container">
-      <div className="print-only mb-4 text-center hidden print:block" data-testid="print-header">
+    <div className="space-y-2.5" data-testid="fs-soce-container">
+      <div className="print-only mb-2.5 text-center hidden print:block" data-testid="print-header">
         <h2 className="text-lg font-bold">{clientName}</h2>
         <h3 className="text-base font-semibold">Statement of Changes in Equity</h3>
         <p className="text-sm text-muted-foreground">

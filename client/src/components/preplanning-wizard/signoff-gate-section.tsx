@@ -237,7 +237,7 @@ export function SignOffGateSection({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {data.isLocked && (
         <Card className="border-green-200 bg-green-50 dark:bg-green-950/30">
           <CardContent className="pt-4">
@@ -273,7 +273,7 @@ export function SignOffGateSection({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-6 space-y-6">
+        <CardContent className="pt-6 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <h4 className="text-sm font-semibold text-foreground">Completion Checklist</h4>
             <AIButton field="completion_checklist" label="AI Suggest Status" />
@@ -302,8 +302,8 @@ export function SignOffGateSection({
           </div>
 
           {eqcrClearance.eqcrRequired && (
-            <div className="space-y-4 pl-4 border-l-2 border-primary/20">
-              <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-2.5 pl-4 border-l-2 border-primary/20">
+              <div className="grid gap-2.5 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">EQCR Reviewer</Label>
                   <Input
@@ -388,7 +388,7 @@ export function SignOffGateSection({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-6 space-y-6">
+        <CardContent className="pt-6 space-y-3">
           <SectionDivider title="Nature, Timing & Extent of Procedures (ISA 300.7–9)" icon={<Target className="h-4 w-4" />} />
 
           <div className="flex items-end gap-2">
@@ -445,7 +445,7 @@ export function SignOffGateSection({
 
           <SectionDivider title="Final Partner Approval (ISA 300.11)" icon={<FileSignature className="h-4 w-4" />} />
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-2.5 sm:grid-cols-2">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Approval Status</Label>
               <Select
@@ -489,8 +489,8 @@ export function SignOffGateSection({
             All mandatory items must be completed before proceeding to Planning phase (ISA 300)
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center gap-4">
+        <CardContent className="space-y-3">
+          <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className={STATUS_CONFIG.passed.badge} data-testid="badge-passed-count">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -523,7 +523,7 @@ export function SignOffGateSection({
               return (
                 <div
                   key={check.id}
-                  className={`flex items-start gap-4 p-4 rounded-lg border ${config.bg}`}
+                  className={`flex items-start gap-2.5 p-2.5 rounded-lg border ${config.bg}`}
                   data-testid={`gate-check-${check.id}`}
                 >
                   <div className={`mt-0.5 ${config.color}`}>
@@ -614,8 +614,8 @@ export function SignOffGateSection({
               </div>
             </div>
           </CardHeader>
-          <CardContent className="pt-6 space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2">
+          <CardContent className="pt-6 space-y-3">
+            <div className="grid gap-2.5 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Engagement Partner Name</Label>
                 <Input
@@ -638,7 +638,7 @@ export function SignOffGateSection({
               </div>
             </div>
 
-            <div className="flex items-start space-x-3 p-4 border rounded-lg bg-muted/30">
+            <div className="flex items-start space-x-3 p-2.5 border rounded-lg bg-muted/30">
               <Checkbox
                 id="partner-confirmation"
                 checked={partnerSignOff.confirmed}
@@ -670,7 +670,7 @@ export function SignOffGateSection({
             )}
 
             {showOverrideForm && (
-              <div className="p-4 border border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 rounded-lg space-y-3">
+              <div className="p-2.5 border border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 rounded-lg space-y-3">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
                   <span className="text-sm font-medium text-amber-700">

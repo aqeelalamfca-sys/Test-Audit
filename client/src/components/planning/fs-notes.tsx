@@ -320,7 +320,7 @@ export function FSNotes({ draftFsData, coaAccounts, engagementId, clientName, pe
   if (coaAccounts.length === 0) {
     return (
       <Card data-testid="fs-notes-empty-state">
-        <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
+        <CardContent className="flex flex-col items-center justify-center py-12 gap-2.5">
           <AlertCircle className="h-12 w-12 text-muted-foreground" />
           <div className="text-center space-y-2">
             <h3 className="text-lg font-semibold" data-testid="text-empty-title">No Chart of Accounts Data</h3>
@@ -341,8 +341,8 @@ export function FSNotes({ draftFsData, coaAccounts, engagementId, clientName, pe
   }
 
   return (
-    <div className="space-y-4" data-testid="fs-notes-container">
-      <div className="print-only mb-6 text-center border-b pb-4 hidden print:block" data-testid="print-header">
+    <div className="space-y-2.5" data-testid="fs-notes-container">
+      <div className="print-only mb-3 text-center border-b pb-4 hidden print:block" data-testid="print-header">
         <h1 className="text-xl font-bold">{clientName}</h1>
         <h2 className="text-lg font-semibold">Notes to the Financial Statements</h2>
         <p className="text-sm text-muted-foreground">
@@ -377,25 +377,25 @@ export function FSNotes({ draftFsData, coaAccounts, engagementId, clientName, pe
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
             <div className="text-center" data-testid="stat-total-notes">
-              <p className="text-2xl font-bold">{summaryStats.totalNotes}</p>
+              <p className="text-lg font-bold">{summaryStats.totalNotes}</p>
               <p className="text-xs text-muted-foreground">Total Notes</p>
             </div>
             <div className="text-center" data-testid="stat-mapped-accounts">
-              <p className="text-2xl font-bold">{summaryStats.mappedCount}</p>
+              <p className="text-lg font-bold">{summaryStats.mappedCount}</p>
               <p className="text-xs text-muted-foreground">Mapped Accounts</p>
             </div>
             <div className="text-center" data-testid="stat-unmapped-accounts">
-              <p className="text-2xl font-bold">{summaryStats.unmappedCount}</p>
+              <p className="text-lg font-bold">{summaryStats.unmappedCount}</p>
               <p className="text-xs text-muted-foreground">Unmapped Accounts</p>
             </div>
             <div className="text-center" data-testid="stat-coverage">
-              <p className="text-2xl font-bold">{summaryStats.coverage}%</p>
+              <p className="text-lg font-bold">{summaryStats.coverage}%</p>
               <p className="text-xs text-muted-foreground">Coverage</p>
             </div>
             <div className="text-center" data-testid="stat-generated-notes">
-              <p className="text-2xl font-bold">{generatedNotes.length}</p>
+              <p className="text-lg font-bold">{generatedNotes.length}</p>
               <p className="text-xs text-muted-foreground">AI Notes</p>
             </div>
           </div>
@@ -441,12 +441,12 @@ export function FSNotes({ draftFsData, coaAccounts, engagementId, clientName, pe
         </CardHeader>
         <CardContent>
           {loadingDocs ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
               <Loader2 className="h-4 w-4 animate-spin" />
               Loading documents...
             </div>
           ) : refDocs.length === 0 ? (
-            <div className={`flex flex-col items-center justify-center py-8 gap-3 border-2 border-dashed rounded-lg transition-colors ${isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25"}`} data-testid="empty-ref-docs">
+            <div className={`flex flex-col items-center justify-center py-2 gap-3 border-2 border-dashed rounded-lg transition-colors ${isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25"}`} data-testid="empty-ref-docs">
               <Upload className={`h-8 w-8 ${isDragging ? "text-primary" : "text-muted-foreground"}`} />
               <div className="text-center space-y-1">
                 <p className="text-sm font-medium">{isDragging ? "Drop files here" : "No Reference Documents"}</p>
@@ -772,14 +772,14 @@ export function FSNotes({ draftFsData, coaAccounts, engagementId, clientName, pe
         <TabsContent value="generated" className="mt-3 space-y-3">
           {loadingNotes ? (
             <Card>
-              <CardContent className="flex items-center gap-2 py-8 justify-center text-muted-foreground">
+              <CardContent className="flex items-center gap-2 py-2 justify-center text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 Loading generated notes...
               </CardContent>
             </Card>
           ) : generatedNotes.length === 0 ? (
             <Card data-testid="empty-generated-notes">
-              <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
+              <CardContent className="flex flex-col items-center justify-center py-12 gap-2.5">
                 <Sparkles className="h-12 w-12 text-muted-foreground" />
                 <div className="text-center space-y-2">
                   <h3 className="text-lg font-semibold">No Generated Notes Yet</h3>

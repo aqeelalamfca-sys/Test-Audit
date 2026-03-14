@@ -114,12 +114,12 @@ export default function WorkflowHealthPage() {
 
   if (!engagementId) {
     return (
-      <div className="p-4" data-testid="container-no-engagement">
+      <div className="p-2.5" data-testid="container-no-engagement">
         <Card>
           <CardContent className="py-10 text-center">
             <p className="text-muted-foreground" data-testid="text-no-engagement">No engagement selected</p>
             <Link href="/">
-              <Button variant="outline" className="mt-4" data-testid="button-go-dashboard">
+              <Button variant="outline" className="mt-2.5" data-testid="button-go-dashboard">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Go to Dashboard
               </Button>
@@ -161,7 +161,7 @@ export default function WorkflowHealthPage() {
           <CardHeader>
             <Skeleton className="h-6 w-48" />
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-2.5">
             {[1, 2, 3, 4, 5].map((i) => (
               <Skeleton key={i} className="h-12 w-full" />
             ))}
@@ -170,7 +170,7 @@ export default function WorkflowHealthPage() {
       ) : healthReport ? (
         <>
           <Card data-testid="card-health-summary">
-            <CardHeader className="flex flex-row items-center justify-between gap-4">
+            <CardHeader className="flex flex-row items-center justify-between gap-2.5">
               <div>
                 <CardTitle data-testid="text-health-summary-title">Health Summary</CardTitle>
                 <CardDescription data-testid="text-last-checked">
@@ -180,27 +180,27 @@ export default function WorkflowHealthPage() {
               <OverallStatusBadge status={healthReport.overallStatus} />
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-4 gap-4">
-                <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 text-center">
-                  <div className="text-2xl font-bold text-green-700 dark:text-green-400" data-testid="text-passed-count">
+              <div className="grid grid-cols-4 gap-2.5">
+                <div className="p-2.5 rounded-lg bg-green-50 dark:bg-green-900/20 text-center">
+                  <div className="text-lg font-bold text-green-700 dark:text-green-400" data-testid="text-passed-count">
                     {healthReport.summary.passed}
                   </div>
                   <div className="text-sm text-green-600 dark:text-green-500">Passed</div>
                 </div>
-                <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-center">
-                  <div className="text-2xl font-bold text-red-700 dark:text-red-400" data-testid="text-failed-count">
+                <div className="p-2.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-center">
+                  <div className="text-lg font-bold text-red-700 dark:text-red-400" data-testid="text-failed-count">
                     {healthReport.summary.failed}
                   </div>
                   <div className="text-sm text-red-600 dark:text-red-500">Failed</div>
                 </div>
-                <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-center">
-                  <div className="text-2xl font-bold text-amber-700 dark:text-amber-400" data-testid="text-warnings-count">
+                <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-center">
+                  <div className="text-lg font-bold text-amber-700 dark:text-amber-400" data-testid="text-warnings-count">
                     {healthReport.summary.warnings}
                   </div>
                   <div className="text-sm text-amber-600 dark:text-amber-500">Warnings</div>
                 </div>
-                <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-900/20 text-center">
-                  <div className="text-2xl font-bold text-slate-700 dark:text-slate-400" data-testid="text-skipped-count">
+                <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/20 text-center">
+                  <div className="text-lg font-bold text-slate-700 dark:text-slate-400" data-testid="text-skipped-count">
                     {healthReport.summary.skipped}
                   </div>
                   <div className="text-sm text-slate-600 dark:text-slate-500">Skipped</div>
@@ -224,7 +224,7 @@ export default function WorkflowHealthPage() {
                 {healthReport.checks.map((check, index) => (
                   <div 
                     key={index}
-                    className="flex items-start gap-4 p-3 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
+                    className="flex items-start gap-2.5 p-3 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
                     data-testid={`row-health-check-${index}`}
                   >
                     <StatusIcon status={check.status} />
@@ -272,7 +272,7 @@ export default function WorkflowHealthPage() {
               Issues Found ({issueReport.totalIssues})
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-2.5">
             {issueReport.missingFields.length > 0 && (
               <div>
                 <h4 className="font-medium mb-2">Missing Required Fields</h4>
@@ -320,7 +320,7 @@ export default function WorkflowHealthPage() {
         </Card>
       ) : issueReport ? (
         <Card>
-          <CardContent className="py-6 text-center text-green-600 dark:text-green-400">
+          <CardContent className="py-3 text-center text-green-600 dark:text-green-400">
             <CheckCircle2 className="h-8 w-8 mx-auto mb-2" />
             No issues detected
           </CardContent>
@@ -355,7 +355,7 @@ export default function WorkflowHealthPage() {
                   className="flex items-center gap-3 p-3 rounded-lg border bg-card"
                   data-testid={`row-data-flow-${flow.id}`}
                 >
-                  <div className="flex-1 grid grid-cols-3 gap-4 items-center">
+                  <div className="flex-1 grid grid-cols-3 gap-2.5 items-center">
                     <div className="font-medium text-sm">{flow.source}</div>
                     <div className="text-center text-muted-foreground">&rarr;</div>
                     <div className="font-medium text-sm">{flow.target}</div>

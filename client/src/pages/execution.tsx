@@ -219,11 +219,11 @@ export default function Execution() {
         saveNext: { reason: "All FS Heads must be approved before proceeding to Finalization" }
       } : undefined}
     >
-      <div className="w-full px-4 py-2 space-y-4">
+      <div className="w-full px-3 py-2 space-y-2.5">
 
         <Card data-testid="card-execution-progress-summary">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
+          <CardContent className="py-2">
+            <div className="flex items-center justify-between gap-2.5 flex-wrap mb-3">
               <div className="flex items-center gap-3">
                 <Layers className="h-5 w-5 text-primary" />
                 <div>
@@ -231,19 +231,19 @@ export default function Execution() {
                   <p className="text-xs text-muted-foreground">ISA 330, ISA 500, ISA 520 — Audit execution by FS Head</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2.5">
                 <div className="text-right">
-                  <p className="text-2xl font-bold" data-testid="text-overall-completion">{overallCompletion}%</p>
+                  <p className="text-lg font-bold" data-testid="text-overall-completion">{overallCompletion}%</p>
                   <p className="text-xs text-muted-foreground">Overall Completion</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold" data-testid="text-heads-completed">{completedHeads}/{totalHeads}</p>
+                  <p className="text-lg font-bold" data-testid="text-heads-completed">{completedHeads}/{totalHeads}</p>
                   <p className="text-xs text-muted-foreground">FS Heads Approved</p>
                 </div>
               </div>
             </div>
             <Progress value={overallCompletion} className="h-2" data-testid="progress-overall" />
-            <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground flex-wrap">
+            <div className="flex items-center gap-2.5 mt-3 text-xs text-muted-foreground flex-wrap">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500" />
                 {completedHeads} Approved
@@ -330,14 +330,14 @@ export default function Execution() {
             </div>
           ) : fsHeadsSummary.length === 0 ? (
             <Card>
-              <CardContent className="py-8">
+              <CardContent className="py-2">
                 <div className="text-center text-muted-foreground" data-testid="empty-fs-heads">
-                  <Layers className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                  <Layers className="h-12 w-12 mx-auto mb-2.5 opacity-30" />
                   <p className="font-medium">No FS Heads available yet.</p>
                   <p className="text-sm mt-1">Generate FS Heads from the FS Heads page after completing planning prerequisites.</p>
                   <Button
                     variant="outline"
-                    className="mt-4 gap-2"
+                    className="mt-2.5 gap-2"
                     onClick={() => setLocation(`/workspace/${engagementId}/fs-heads`)}
                     data-testid="btn-go-generate-fs-heads"
                   >
@@ -350,7 +350,7 @@ export default function Execution() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" data-testid="fs-heads-card-grid">
               {filteredHeads.length === 0 && (searchQuery || statusFilter !== "all" || riskFilter !== "all") ? (
-                <div className="col-span-full text-center py-8 text-muted-foreground">
+                <div className="col-span-full text-center py-2 text-muted-foreground">
                   <Search className="h-8 w-8 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">No FS heads match your filters</p>
                   <Button size="sm" variant="ghost" className="mt-2" onClick={() => { setSearchQuery(""); setStatusFilter("all"); setRiskFilter("all"); }}>Clear Filters</Button>
@@ -372,7 +372,7 @@ export default function Execution() {
                     onClick={() => setLocation(`/workspace/${engagementId}/fs-heads?head=${head.fsHeadKey}`)}
                     data-testid={`card-fs-head-${head.fsHeadKey}`}
                   >
-                    <CardContent className="p-4 space-y-3">
+                    <CardContent className="p-2.5 space-y-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           <Tooltip>
