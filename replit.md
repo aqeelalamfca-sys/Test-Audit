@@ -52,6 +52,17 @@ The workspace shell includes a page-aware AI Copilot panel that provides:
 - **Frontend**: 5-tab panel (Overview, Standards, AI Actions, Review, Next Steps) integrated into `engagement-workspace-shell.tsx` via `AICopilotEnhanced` component
 - **Hook**: `use-page-ai-context.ts` — extracts `pageId` from current route, maps slug to profile key, fetches context from backend
 
+## Sidebar Navigation (Accordion)
+
+The workspace sidebar uses collapsible accordion menus for phase groups:
+- **Component**: `WorkspaceAccordionNav` in `client/src/components/app-sidebar.tsx`
+- **Primitives**: Radix `Collapsible` from `client/src/components/ui/collapsible.tsx`
+- **Groups**: ONBOARDING, DATA IMPORT, PLANNING, FIELDWORK, COMPLETION, QUALITY & ARCHIVE — each collapses independently
+- **Per-user persistence**: Open/closed state saved to `localStorage` keyed by `auditwise_sidebar_accordion_{userId}`; rehydrates on user change
+- **Auto-expand**: Group containing the active route auto-expands on navigation
+- **Animation**: `collapsible-down/up` keyframes in `tailwind.config.ts` using `--radix-collapsible-content-height`
+- **Chevron indicator**: Rotates 90° on collapse, smooth CSS transition
+
 ## Tab UI System
 
 All tabs across audit phases use a unified design system:

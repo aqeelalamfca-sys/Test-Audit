@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
@@ -13,6 +14,11 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
 import {
   LayoutDashboard,
   Building2,
@@ -50,6 +56,7 @@ import {
   PenTool,
   Gavel,
   Archive,
+  ChevronDown,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth";
@@ -97,6 +104,148 @@ const WORKSPACE_PHASE_ICONS: Record<string, React.ElementType> = {
   "eqcr": UserCheck,
   "inspection": Archive,
 };
+
+const ACCORDION_STORAGE_KEY = "auditwise_sidebar_accordion";
+
+function getStoredAccordionState(userId: string): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(`${ACCORDION_STORAGE_KEY}_${userId}`);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveAccordionState(userId: string, state: Record<string, boolean>) {
+  try {
+    localStorage.setItem(`${ACCORDION_STORAGE_KEY}_${userId}`, JSON.stringify(state));
+  } catch {}
+}
+
+function WorkspaceAccordionNav({
+  location,
+  user,
+  currentUser,
+  getWorkspaceHref,
+}: {
+  location: string;
+  user: ReturnType<typeof useAuth>["user"];
+  currentUser?: AppSidebarProps["currentUser"];
+  getWorkspaceHref: (key: string) => string;
+}) {
+  const role = user?.role?.toUpperCase() || currentUser?.role?.toUpperCase() || "STAFF";
+  const userId = user?.id?.toString() || "default";
+  const visiblePhases = WORKSPACE_PHASES.filter(p => isPhaseVisible(p.key, role));
+
+  const groupKeys = PHASE_GROUP_ORDER.filter(g =>
+    visiblePhases.some(p => p.group === PHASE_GROUP_LABELS[g])
+  );
+
+  const activeGroupKey = groupKeys.find(g =>
+    visiblePhases
+      .filter(p => p.group === PHASE_GROUP_LABELS[g])
+      .some(p => location.includes(`/${p.key}`))
+  );
+
+  const buildState = useCallback((storedUserId: string) => {
+    const stored = getStoredAccordionState(storedUserId);
+    const initial: Record<string, boolean> = {};
+    for (const g of groupKeys) {
+      if (stored[g] !== undefined) {
+        initial[g] = stored[g];
+      } else {
+        initial[g] = g === activeGroupKey;
+      }
+    }
+    return initial;
+  }, [groupKeys, activeGroupKey]);
+
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => buildState(userId));
+
+  useEffect(() => {
+    setOpenGroups(buildState(userId));
+  }, [userId, buildState]);
+
+  useEffect(() => {
+    if (activeGroupKey && !openGroups[activeGroupKey]) {
+      setOpenGroups(prev => {
+        const next = { ...prev, [activeGroupKey]: true };
+        if (userId !== "default") saveAccordionState(userId, next);
+        return next;
+      });
+    }
+  }, [activeGroupKey, userId]);
+
+  const setGroupOpen = useCallback((groupKey: string, nextOpen: boolean) => {
+    setOpenGroups(prev => {
+      const next = { ...prev, [groupKey]: nextOpen };
+      if (userId !== "default") saveAccordionState(userId, next);
+      return next;
+    });
+  }, [userId]);
+
+  return (
+    <>
+      {groupKeys.map(groupKey => {
+        const groupLabel = PHASE_GROUP_LABELS[groupKey] || groupKey;
+        const phases = visiblePhases.filter(p => p.group === groupLabel);
+        const isOpen = !!openGroups[groupKey];
+        const hasActiveChild = phases.some(p => location.includes(`/${p.key}`));
+
+        return (
+          <Collapsible
+            key={groupKey}
+            open={isOpen}
+            onOpenChange={(nextOpen) => setGroupOpen(groupKey, nextOpen)}
+          >
+            <SidebarGroup className="pb-0">
+              <CollapsibleTrigger asChild>
+                <button
+                  className={`flex w-full items-center justify-between px-2 py-1.5 text-xs font-medium uppercase tracking-wide rounded-md transition-colors hover:bg-accent/50 ${
+                    hasActiveChild ? "text-foreground" : "text-muted-foreground"
+                  }`}
+                  data-testid={`accordion-${groupKey}`}
+                >
+                  <span>{groupLabel}</span>
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
+                      isOpen ? "rotate-0" : "-rotate-90"
+                    }`}
+                  />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {phases.map(phase => {
+                      const Icon = WORKSPACE_PHASE_ICONS[phase.key] || FileText;
+                      const href = getWorkspaceHref(phase.key);
+                      const isActive = location.includes(`/${phase.key}`);
+                      return (
+                        <SidebarMenuItem key={phase.key}>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={isActive}
+                            data-testid={`nav-${phase.key}`}
+                          >
+                            <Link href={href}>
+                              <Icon className="h-4 w-4" />
+                              <span>{phase.label}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </SidebarGroup>
+          </Collapsible>
+        );
+      })}
+    </>
+  );
+}
 
 export function AppSidebar({ currentUser }: AppSidebarProps) {
   const [location] = useLocation();
@@ -172,46 +321,12 @@ export function AppSidebar({ currentUser }: AppSidebarProps) {
               <EngagementHealthPanel slot="top" />
             </div>
 
-            {(() => {
-              const role = user?.role?.toUpperCase() || currentUser?.role?.toUpperCase() || "STAFF";
-              const visiblePhases = WORKSPACE_PHASES.filter(p => isPhaseVisible(p.key, role));
-              const groups = PHASE_GROUP_ORDER
-                .map(g => PHASE_GROUP_LABELS[g] || g)
-                .filter(g => visiblePhases.some(p => p.group === g));
-
-              return groups.map(groupLabel => (
-                <SidebarGroup key={groupLabel}>
-                  <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    {groupLabel}
-                  </SidebarGroupLabel>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      {visiblePhases
-                        .filter(phase => phase.group === groupLabel)
-                        .map(phase => {
-                          const Icon = WORKSPACE_PHASE_ICONS[phase.key] || FileText;
-                          const href = getWorkspaceHref(phase.key);
-                          const isActive = location.includes(`/${phase.key}`);
-                          return (
-                            <SidebarMenuItem key={phase.key}>
-                              <SidebarMenuButton
-                                asChild
-                                isActive={isActive}
-                                data-testid={`nav-${phase.key}`}
-                              >
-                                <Link href={href}>
-                                  <Icon className="h-4 w-4" />
-                                  <span>{phase.label}</span>
-                                </Link>
-                              </SidebarMenuButton>
-                            </SidebarMenuItem>
-                          );
-                        })}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
-              ));
-            })()}
+            <WorkspaceAccordionNav
+              location={location}
+              user={user}
+              currentUser={currentUser}
+              getWorkspaceHref={getWorkspaceHref}
+            />
 
             <div className="border-t border-sidebar-border mx-2">
               <EngagementHealthPanel slot="bottom" />
