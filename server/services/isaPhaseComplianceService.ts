@@ -635,7 +635,7 @@ class ISAPhaseComplianceService {
       case "ISA_570_FIN": {
         const docsCompleted = countTrue(
           !!ctx.gcAssessment,
-          !!ctx.gcAssessment?.overallConclusion,
+          !!(ctx.gcAssessment as any)?.auditConclusion,
           !!ctx.gcAssessment?.partnerApprovedById
         );
         const gate = applyStageGate(entry.isStageGate, docsCompleted, 3, "Going concern assessment incomplete");

@@ -251,7 +251,7 @@ router.post("/:engagementId/completion-memo", requireAuth, requirePhaseUnlocked(
     const access = await validateEngagementAccess(req.params.engagementId, req.user!.id, req.user!.firmId);
     if (!access.valid) return res.status(404).json({ error: access.error });
 
-    const memoAllowedFields = ["summary", "unresolvedMatters", "subsequentEventsConclusion", "goingConcernConclusion", "overallConclusion", "memoText"];
+    const memoAllowedFields = ["summaryOfAudit", "significantFindings", "significantJudgments", "misstatementSummary", "misstatementConclusion", "subsequentEventsConclusion", "goingConcernConclusion", "overallConclusion", "opinionRecommendation"];
     const memoData: Record<string, unknown> = {};
     for (const key of memoAllowedFields) {
       if (req.body[key] !== undefined) memoData[key] = req.body[key];
@@ -313,23 +313,23 @@ router.get("/:engagementId/finalization-stats", requireAuth, async (req: Authent
     const [events, gcAssessment, representations, memo, observations, adjustments, checklists] = await Promise.all([
       prisma.subsequentEvent.findMany({
         where: { engagementId: eid },
-        select: { id: true, eventReference: true, eventType: true, impactAssessment: true, reviewedById: true, partnerApprovedById: true },
+        select: { id: true, eventReference: true, eventType: true, evaluation: true, reviewedById: true, partnerApprovedById: true },
       }),
       prisma.goingConcernAssessment.findFirst({
         where: { engagementId: eid },
-        select: { id: true, overallConclusion: true, basisForConclusion: true, reviewedById: true, partnerApprovedById: true },
+        select: { id: true, auditConclusion: true, auditEvidence: true, reviewedById: true, partnerApprovedById: true },
       }),
       prisma.writtenRepresentation.findMany({
         where: { engagementId: eid },
-        select: { id: true, representationType: true, status: true, preparedById: true, reviewedById: true },
+        select: { id: true, representationType: true, managementAcknowledged: true, preparedById: true, reviewedById: true },
       }),
       prisma.completionMemo.findUnique({
         where: { engagementId: eid },
         select: {
-          id: true, summary: true, overallConclusion: true, unresolvedMatters: true,
+          id: true, summaryOfAudit: true, overallConclusion: true, significantFindings: true,
           subsequentEventsConclusion: true, goingConcernConclusion: true,
           preparedById: true, managerReviewedById: true, partnerApprovedById: true,
-          preparedDate: true, managerReviewedDate: true, partnerApprovedDate: true,
+          preparedDate: true, managerReviewDate: true, partnerApprovalDate: true,
         },
       }),
       prisma.observation.findMany({
@@ -342,7 +342,7 @@ router.get("/:engagementId/finalization-stats", requireAuth, async (req: Authent
       }),
       prisma.complianceChecklist.findMany({
         where: { engagementId: eid, checklistType: "COMPLETION" },
-        select: { id: true, status: true },
+        select: { id: true, isComplete: true },
       }),
     ]);
 
@@ -355,13 +355,13 @@ router.get("/:engagementId/finalization-stats", requireAuth, async (req: Authent
 
     const mgmtRepObtained = representations.some((r: any) =>
       (r.representationType === "MANAGEMENT" || r.representationType === "GENERAL") &&
-      (r.status === "OBTAINED" || r.status === "SIGNED" || r.status === "COMPLETED")
+      r.managementAcknowledged
     );
 
     const completionProgress = {
-      checklistDone: checklists.length > 0 && checklists.every((c: any) => c.status === "COMPLETED" || c.status === "REVIEWED" || c.status === "APPROVED"),
-      subsequentEventsReviewed: events.length === 0 || events.every((e: any) => e.impactAssessment && e.reviewedById),
-      goingConcernAssessed: !!(gcAssessment?.overallConclusion && gcAssessment?.basisForConclusion),
+      checklistDone: checklists.length > 0 && checklists.every((c: any) => c.isComplete),
+      subsequentEventsReviewed: events.length === 0 || events.every((e: any) => e.evaluation && e.reviewedById),
+      goingConcernAssessed: !!(gcAssessment?.auditConclusion && gcAssessment?.auditEvidence),
       representationObtained: mgmtRepObtained,
       findingsAddressed: criticalOpen.length === 0 && pendingAdj.length === 0,
       memoComplete: !!(memo?.overallConclusion),
@@ -375,8 +375,8 @@ router.get("/:engagementId/finalization-stats", requireAuth, async (req: Authent
     res.json({
       subsequentEvents: { total: events.length, reviewed: eventsReviewed.length, pending: events.length - eventsReviewed.length },
       goingConcern: gcAssessment ? {
-        concluded: !!gcAssessment.overallConclusion,
-        conclusion: gcAssessment.overallConclusion,
+        concluded: !!gcAssessment.auditConclusion,
+        conclusion: gcAssessment.auditConclusion,
         reviewed: !!gcAssessment.reviewedById,
         partnerApproved: !!gcAssessment.partnerApprovedById,
       } : null,
@@ -386,14 +386,14 @@ router.get("/:engagementId/finalization-stats", requireAuth, async (req: Authent
         items: representations,
       },
       completionMemo: memo ? {
-        hasSummary: !!memo.summary,
+        hasSummary: !!memo.summaryOfAudit,
         hasConclusion: !!memo.overallConclusion,
-        hasUnresolvedMatters: !!memo.unresolvedMatters,
+        hasFindings: !!memo.significantFindings,
         managerReviewed: !!memo.managerReviewedById,
         partnerApproved: !!memo.partnerApprovedById,
         preparedDate: memo.preparedDate,
-        managerReviewedDate: memo.managerReviewedDate,
-        partnerApprovedDate: memo.partnerApprovedDate,
+        managerReviewDate: memo.managerReviewDate,
+        partnerApprovalDate: memo.partnerApprovalDate,
       } : null,
       findings: {
         total: observations.length,

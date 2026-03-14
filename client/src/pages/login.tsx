@@ -88,7 +88,9 @@ export default function Login() {
   const [showPortalPassword, setShowPortalPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginType, setLoginType] = useState<"firm" | "portal">("firm");
-  const [showBetaNotice, setShowBetaNotice] = useState(true);
+  const [showBetaNotice, setShowBetaNotice] = useState(() => {
+    return !localStorage.getItem("betaNoticeAcknowledged");
+  });
   const isSuperAdmin = isSuperAdminAccess();
 
   const form = useForm<LoginFormData>({
@@ -214,7 +216,7 @@ export default function Login() {
           </div>
         </div>
         <DialogFooter className="pt-2">
-          <Button onClick={() => setShowBetaNotice(false)} className="w-full sm:w-auto">
+          <Button onClick={() => { localStorage.setItem("betaNoticeAcknowledged", "1"); setShowBetaNotice(false); }} className="w-full sm:w-auto">
             Acknowledge
           </Button>
         </DialogFooter>

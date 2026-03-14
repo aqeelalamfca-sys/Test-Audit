@@ -164,7 +164,7 @@ router.post("/:engagementId/run-analysis", requireAuth, async (req: Authenticate
 
     if (goingConcern) {
       const gcData = goingConcern as any;
-      if (gcData.conclusion === "MATERIAL_UNCERTAINTY" || gcData.conclusion === "material_uncertainty") {
+      if (gcData.auditConclusion === "MATERIAL_UNCERTAINTY" || gcData.auditConclusion === "material_uncertainty") {
         score -= 15;
         findings.push({
           sectionKey: "going_concern",
@@ -176,7 +176,7 @@ router.post("/:engagementId/run-analysis", requireAuth, async (req: Authenticate
           suggestedResponse: "Include Material Uncertainty Related to Going Concern paragraph per ISA 570.22.",
         });
       }
-      if (gcData.conclusion === "INAPPROPRIATE" || gcData.conclusion === "inappropriate_basis") {
+      if (gcData.auditConclusion === "INAPPROPRIATE" || gcData.auditConclusion === "inappropriate_basis") {
         score -= 30;
         findings.push({
           sectionKey: "going_concern",
@@ -247,8 +247,8 @@ router.post("/:engagementId/run-analysis", requireAuth, async (req: Authenticate
     const scoresPayload = {
       misstatementScore: totalUncorrected > materialityAmount && materialityAmount > 0 ? 0 : (totalUncorrected > materialityAmount * 0.5 && materialityAmount > 0 ? 50 : 100),
       goingConcernScore: goingConcern ? (
-        (goingConcern as any).conclusion === "INAPPROPRIATE" || (goingConcern as any).conclusion === "inappropriate_basis" ? 0 :
-        (goingConcern as any).conclusion === "MATERIAL_UNCERTAINTY" || (goingConcern as any).conclusion === "material_uncertainty" ? 40 : 100
+        (goingConcern as any).auditConclusion === "INAPPROPRIATE" || (goingConcern as any).auditConclusion === "inappropriate_basis" ? 0 :
+        (goingConcern as any).auditConclusion === "MATERIAL_UNCERTAINTY" || (goingConcern as any).auditConclusion === "material_uncertainty" ? 40 : 100
       ) : 100,
       riskCoverageScore: significantRisks.length > 0 ? Math.round(((significantRisks.length - (significantRisks.filter((r: any) => !r.responseStatus || r.responseStatus === "PENDING").length)) / significantRisks.length) * 100) : 100,
       controlScore: controlDeficiencies.length === 0 ? 100 : Math.max(0, 100 - controlDeficiencies.filter((d: any) => d.severity === "SIGNIFICANT" || d.severity === "MATERIAL_WEAKNESS").length * 20),
@@ -463,7 +463,7 @@ router.get("/:engagementId/data-sources", requireAuth, async (req: Authenticated
     res.json({
       materiality: { available: !!materiality, overallMateriality: materiality?.overallMateriality, performanceMateriality: materiality?.performanceMateriality },
       misstatements: { available: misstatements.length > 0, count: misstatements.length, uncorrectedCount: misstatements.filter((m: any) => m.status !== "CORRECTED" && m.status !== "RESOLVED").length },
-      goingConcern: { available: !!goingConcern, conclusion: (goingConcern as any)?.conclusion },
+      goingConcern: { available: !!goingConcern, conclusion: (goingConcern as any)?.auditConclusion },
       significantRisks: { available: risks.length > 0, count: risks.length },
       controlDeficiencies: { available: deficiencies.length > 0, count: deficiencies.length, significantCount: deficiencies.filter((d: any) => d.severity === "SIGNIFICANT" || d.severity === "MATERIAL_WEAKNESS").length },
       subsequentEvents: { available: events.length > 0, count: events.length, pendingCount: events.filter((e: any) => e.status === "PENDING" || e.status === "IDENTIFIED").length },
@@ -499,25 +499,25 @@ router.get("/:engagementId/opinion-reports-stats", requireAuth, async (req: Auth
       }),
     ]);
 
-    const kamFindings = engine?.findings?.filter((f: any) => f.category === "KEY_AUDIT_MATTER") || [];
+    const kamFindings = engine?.findings?.filter((f: any) => f.sectionKey === "KEY_AUDIT_MATTER") || [];
     const auditReport = deliverables.find(d => d.deliverableType === "AUDIT_REPORT");
     const managementLetter = deliverables.find(d => d.deliverableType === "MANAGEMENT_LETTER");
     const allDeliverablesFinal = deliverables.length > 0 && deliverables.every(d => d.status === "FINAL" || d.status === "ISSUED");
     const reportIssued = !!(auditReport?.status === "ISSUED" && auditReport?.issuedById);
     const finalizationApproved = !!(completionMemo?.partnerApprovedById);
-    const opinionDetermined = !!(engine?.recommendedCategory || engine?.partnerDecision === "ACCEPTED");
+    const opinionDetermined = !!(engine?.partnerCategory || (engine?.aiCategory && engine.aiCategory !== "UNDETERMINED"));
 
     res.json({
       opinion: {
         determined: opinionDetermined,
-        category: engine?.recommendedCategory || null,
-        partnerDecision: engine?.partnerDecision || null,
-        justification: engine?.justification || null,
-        evidenceReliability: engine?.evidenceReliability || null,
+        category: engine?.partnerCategory || engine?.aiCategory || null,
+        partnerCategory: engine?.partnerCategory || null,
+        partnerConclusion: engine?.partnerConclusion || null,
+        dataReliability: engine?.dataReliability || null,
       },
       keyAuditMatters: {
         count: kamFindings.length,
-        items: kamFindings.map((f: any) => ({ id: f.id, title: f.title, category: f.category })),
+        items: kamFindings.map((f: any) => ({ id: f.id, auditArea: f.auditArea, sectionKey: f.sectionKey, narrative: f.narrative })),
       },
       deliverables: {
         total: deliverables.length,

@@ -930,33 +930,33 @@ async function evaluateSingleGate(
       case "completion-checklist": {
         const checklists = await prisma.complianceChecklist.findMany({
           where: { engagementId, checklistType: "COMPLETION" },
-          select: { status: true },
+          select: { isComplete: true, totalItems: true, completedItems: true },
         });
-        const allDone = checklists.length > 0 && checklists.every((c: any) => c.status === "COMPLETED" || c.status === "REVIEWED" || c.status === "APPROVED");
+        const allDone = checklists.length > 0 && checklists.every((c: any) => c.isComplete);
         passed = allDone;
         if (passed) message = `${checklists.length} completion checklist item(s) addressed`;
-        else message = checklists.length === 0 ? "No completion checklist created" : `${checklists.filter((c: any) => c.status !== "COMPLETED" && c.status !== "REVIEWED" && c.status !== "APPROVED").length} checklist item(s) still pending`;
+        else message = checklists.length === 0 ? "No completion checklist created" : `${checklists.filter((c: any) => !c.isComplete).length} checklist item(s) still pending`;
         break;
       }
 
       case "subsequent-events": {
         const events = await prisma.subsequentEvent.findMany({
           where: { engagementId },
-          select: { id: true, impactAssessment: true, reviewedById: true },
+          select: { id: true, evaluation: true, reviewedById: true },
         });
-        passed = events.length === 0 || events.every((e: any) => e.impactAssessment && e.reviewedById);
+        passed = events.length === 0 || events.every((e: any) => e.evaluation && e.reviewedById);
         if (events.length === 0) message = "No subsequent events identified (review documented)";
         else if (passed) message = `${events.length} subsequent event(s) reviewed and assessed`;
-        else message = `${events.filter((e: any) => !e.impactAssessment || !e.reviewedById).length} event(s) pending assessment/review`;
+        else message = `${events.filter((e: any) => !e.evaluation || !e.reviewedById).length} event(s) pending assessment/review`;
         break;
       }
 
       case "going-concern": {
         const gcAssessment = await prisma.goingConcernAssessment.findFirst({
           where: { engagementId },
-          select: { overallConclusion: true, basisForConclusion: true },
+          select: { auditConclusion: true, auditEvidence: true },
         });
-        passed = !!(gcAssessment?.overallConclusion && gcAssessment?.basisForConclusion);
+        passed = !!(gcAssessment?.auditConclusion && gcAssessment?.auditEvidence);
         if (passed) message = "Going concern assessment documented with conclusion";
         else message = gcAssessment ? "Going concern assessment incomplete — conclusion or basis missing" : "No going concern assessment documented";
         break;
@@ -965,10 +965,10 @@ async function evaluateSingleGate(
       case "representation-letter": {
         const reps = await prisma.writtenRepresentation.findMany({
           where: { engagementId },
-          select: { status: true, representationType: true },
+          select: { managementAcknowledged: true, representationType: true },
         });
         const mgmtRep = reps.find((r: any) => r.representationType === "MANAGEMENT" || r.representationType === "GENERAL");
-        passed = !!(mgmtRep && (mgmtRep.status === "OBTAINED" || mgmtRep.status === "SIGNED" || mgmtRep.status === "COMPLETED"));
+        passed = !!(mgmtRep && mgmtRep.managementAcknowledged);
         if (passed) message = "Management representation letter obtained";
         else message = reps.length === 0 ? "No representation letters created" : "Management representation letter not yet obtained/signed";
         break;
@@ -1029,18 +1029,18 @@ async function evaluateSingleGate(
         });
         const gcForReview = await prisma.goingConcernAssessment.findFirst({
           where: { engagementId },
-          select: { overallConclusion: true },
+          select: { auditConclusion: true },
         });
         const openCritical = await prisma.observation.count({
           where: { engagementId, status: { in: ["OPEN", "UNDER_REVIEW"] }, severity: { in: ["HIGH", "CRITICAL"] } },
         });
-        passed = !!(memoForReview?.managerReviewedById && memoForReview?.overallConclusion && gcForReview?.overallConclusion && openCritical === 0);
+        passed = !!(memoForReview?.managerReviewedById && memoForReview?.overallConclusion && gcForReview?.auditConclusion && openCritical === 0);
         if (passed) message = "All completion procedures done — ready for partner review";
         else {
           const issues = [];
           if (!memoForReview?.overallConclusion) issues.push("completion memo incomplete");
           if (!memoForReview?.managerReviewedById) issues.push("manager review pending");
-          if (!gcForReview?.overallConclusion) issues.push("going concern not concluded");
+          if (!gcForReview?.auditConclusion) issues.push("going concern not concluded");
           if (openCritical > 0) issues.push(`${openCritical} critical findings unresolved`);
           message = `Not ready: ${issues.join(", ")}`;
         }
@@ -1062,10 +1062,10 @@ async function evaluateSingleGate(
         const engine = await prisma.opinionEngine.findFirst({
           where: { engagementId },
           orderBy: { version: "desc" },
-          select: { recommendedCategory: true, partnerDecision: true },
+          select: { aiCategory: true, partnerCategory: true, status: true },
         });
-        passed = !!(engine?.recommendedCategory || engine?.partnerDecision === "ACCEPTED");
-        if (passed) message = `Opinion type determined: ${engine?.recommendedCategory || "pending partner decision"}`;
+        passed = !!(engine?.partnerCategory || (engine?.aiCategory && engine.aiCategory !== "UNDETERMINED"));
+        if (passed) message = `Opinion type determined: ${engine?.partnerCategory || engine?.aiCategory || "pending partner decision"}`;
         else message = "Audit opinion type must be selected and documented";
         break;
       }
@@ -1074,16 +1074,16 @@ async function evaluateSingleGate(
         const engineBasis = await prisma.opinionEngine.findFirst({
           where: { engagementId },
           orderBy: { version: "desc" },
-          select: { recommendedCategory: true, justification: true },
+          select: { aiCategory: true, partnerCategory: true, partnerConclusion: true },
         });
         if (!engineBasis) {
           passed = false;
           message = "No opinion engine record — run opinion analysis first";
-        } else if (engineBasis.recommendedCategory === "UNMODIFIED") {
+        } else if ((engineBasis.partnerCategory || engineBasis.aiCategory) === "UNMODIFIED") {
           passed = true;
           message = "Unmodified opinion — standard basis paragraph applies";
         } else {
-          passed = !!(engineBasis.justification && engineBasis.justification.length > 20);
+          passed = !!(engineBasis.partnerConclusion && engineBasis.partnerConclusion.length > 20);
           if (passed) message = "Basis for modification documented";
           else message = "Modified opinion requires a documented basis for modification (ISA 705)";
         }
@@ -1096,8 +1096,8 @@ async function evaluateSingleGate(
           orderBy: { version: "desc" },
           select: { id: true },
         });
-        const kamFindings = engineKam ? await prisma.opinionEngineFinding.count({
-          where: { engineId: engineKam.id, category: "KEY_AUDIT_MATTER" },
+        const kamFindings = engineKam ? await prisma.opinionFinding.count({
+          where: { opinionEngineId: engineKam.id, sectionKey: "KEY_AUDIT_MATTER" },
         }) : 0;
         passed = kamFindings > 0;
         if (passed) message = `${kamFindings} key audit matter(s) documented`;

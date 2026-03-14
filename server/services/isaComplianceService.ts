@@ -645,7 +645,7 @@ export class ISAComplianceService {
     if (gcAssessment) {
       score += 4;
 
-      if ((gcAssessment as any).overallConclusion) score += 2;
+      if ((gcAssessment as any).auditConclusion) score += 2;
       else gaps.push({
         issue: 'Going concern conclusion not documented',
         impact: 'GC assessment incomplete',
