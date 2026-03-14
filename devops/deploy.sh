@@ -63,6 +63,23 @@ REMOTE
       APP_DIR="/opt/auditwise"
       cd "$APP_DIR"
 
+      echo "[0/6] Fixing Docker APT Signed-By conflict..."
+      rm -f /etc/apt/keyrings/docker.asc /etc/apt/keyrings/docker.gpg /usr/share/keyrings/docker-archive-keyring.gpg 2>/dev/null || true
+      rm -f /etc/apt/sources.list.d/docker.list /etc/apt/sources.list.d/docker.list.save /etc/apt/sources.list.d/download_docker_com_linux_ubuntu.list 2>/dev/null || true
+      for f in /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+        [ -f "$f" ] || continue
+        grep -qi "download.docker.com" "$f" 2>/dev/null && rm -f "$f"
+      done
+      install -m 0755 -d /etc/apt/keyrings
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
+      chmod a+r /etc/apt/keyrings/docker.gpg
+      D_ARCH=$(dpkg --print-architecture 2>/dev/null || echo "amd64")
+      D_CODE=$(. /etc/os-release && echo "${VERSION_CODENAME:-jammy}")
+      echo "deb [arch=${D_ARCH} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu ${D_CODE} stable" > /etc/apt/sources.list.d/docker.list
+      apt-get update -y -qq 2>/dev/null || true
+      apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin 2>/dev/null || true
+      echo "  Docker $(docker --version 2>/dev/null | grep -oP 'Docker version \K[0-9.]+' || echo 'OK')"
+
       echo "[1/6] Pre-deploy backup..."
       mkdir -p backups
       if docker exec auditwise-db pg_isready -U auditwise -d auditwise -h localhost &>/dev/null; then

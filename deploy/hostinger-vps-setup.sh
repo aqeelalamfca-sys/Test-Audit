@@ -75,29 +75,57 @@ install_prerequisites() {
 # 2. Docker + Compose plugin
 # ──────────────────────────────────────────────────────────────
 install_docker() {
-    info "Step 2/10 — Installing Docker…"
-    if command -v docker &>/dev/null; then
-        success "Docker already installed: $(docker --version)"
-        return
-    fi
-    curl -fsSL https://get.docker.com | sh
+    info "Step 2/10 — Installing Docker (with APT Signed-By conflict fix)…"
+
+    rm -f /etc/apt/keyrings/docker.asc \
+          /etc/apt/keyrings/docker.gpg \
+          /usr/share/keyrings/docker-archive-keyring.gpg \
+          2>/dev/null || true
+
+    rm -f /etc/apt/sources.list.d/docker.list \
+          /etc/apt/sources.list.d/docker.list.save \
+          /etc/apt/sources.list.d/download_docker_com_linux_ubuntu.list \
+          2>/dev/null || true
+
+    for f in /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+        [ -f "$f" ] || continue
+        if grep -qi "download.docker.com" "$f" 2>/dev/null; then
+            warn "Removing stale Docker source: $f"
+            rm -f "$f"
+        fi
+    done
+
+    install -m 0755 -d /etc/apt/keyrings
+
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+        | gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
+    chmod a+r /etc/apt/keyrings/docker.gpg
+
+    ARCH=$(dpkg --print-architecture 2>/dev/null || echo "amd64")
+    CODENAME=$(. /etc/os-release && echo "${VERSION_CODENAME:-jammy}")
+
+    echo "deb [arch=${ARCH} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu ${CODENAME} stable" \
+        > /etc/apt/sources.list.d/docker.list
+
+    apt-get update -y -qq
+
+    apt-get install -y -qq \
+        docker-ce \
+        docker-ce-cli \
+        containerd.io \
+        docker-buildx-plugin \
+        docker-compose-plugin \
+        2>/dev/null || {
+            warn "apt install failed, trying get.docker.com fallback..."
+            curl -fsSL https://get.docker.com | sh
+        }
+
     systemctl enable --now docker
-    # Compose plugin (bundled with Docker ≥ 23; install explicitly for older versions)
+
     if ! docker compose version &>/dev/null 2>&1; then
-        COMPOSE_PLUGIN_VERSION="v2.27.0"
-        COMPOSE_PLUGIN_DIR="/usr/local/lib/docker/cli-plugins"
-        mkdir -p "$COMPOSE_PLUGIN_DIR"
-        ARCH=$(uname -m)
-        case "$ARCH" in
-            x86_64)  ARCH_TAG="x86_64" ;;
-            aarch64) ARCH_TAG="aarch64" ;;
-            *)       ARCH_TAG="$ARCH" ;;
-        esac
-        curl -fsSL \
-          "https://github.com/docker/compose/releases/download/${COMPOSE_PLUGIN_VERSION}/docker-compose-linux-${ARCH_TAG}" \
-          -o "${COMPOSE_PLUGIN_DIR}/docker-compose"
-        chmod +x "${COMPOSE_PLUGIN_DIR}/docker-compose"
+        die "Docker Compose plugin is not available after installation"
     fi
+
     success "Docker installed: $(docker --version), Compose: $(docker compose version --short)"
 }
 

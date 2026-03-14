@@ -35,16 +35,49 @@ install_packages() {
 }
 
 install_docker() {
-  if ! command -v docker >/dev/null 2>&1; then
-    curl -fsSL https://get.docker.com | sh
-  fi
+  log "Fixing Docker APT Signed-By conflict (if any)..."
+
+  rm -f /etc/apt/keyrings/docker.asc \
+        /etc/apt/keyrings/docker.gpg \
+        /usr/share/keyrings/docker-archive-keyring.gpg \
+        2>/dev/null || true
+
+  rm -f /etc/apt/sources.list.d/docker.list \
+        /etc/apt/sources.list.d/docker.list.save \
+        /etc/apt/sources.list.d/download_docker_com_linux_ubuntu.list \
+        2>/dev/null || true
+
+  for f in /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+    [ -f "$f" ] || continue
+    grep -qi "download.docker.com" "$f" 2>/dev/null && rm -f "$f"
+  done
+
+  install -m 0755 -d /etc/apt/keyrings
+
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+    | gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
+  chmod a+r /etc/apt/keyrings/docker.gpg
+
+  ARCH=$(dpkg --print-architecture 2>/dev/null || echo "amd64")
+  CODENAME=$(. /etc/os-release && echo "${VERSION_CODENAME:-jammy}")
+
+  echo "deb [arch=${ARCH} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu ${CODENAME} stable" \
+    > /etc/apt/sources.list.d/docker.list
+
+  apt-get update -y -qq
+
+  apt-get install -y -qq \
+    docker-ce docker-ce-cli containerd.io \
+    docker-buildx-plugin docker-compose-plugin \
+    2>/dev/null || {
+      log "WARN: apt install failed, trying get.docker.com fallback..."
+      curl -fsSL https://get.docker.com | sh
+    }
+
   systemctl enable --now docker
 
-  if ! docker compose version >/dev/null 2>&1; then
-    apt-get install -y -qq docker-compose-plugin >/dev/null || true
-  fi
-
   docker compose version >/dev/null 2>&1 || fail "Docker Compose plugin is not available"
+  log "Docker ready: $(docker --version), Compose: $(docker compose version --short)"
 }
 
 sync_repo() {

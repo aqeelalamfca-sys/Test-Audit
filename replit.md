@@ -75,11 +75,71 @@ Optional:
 
 - **Start application**: `NODE_OPTIONS='--max-old-space-size=1024' NODE_ENV=development npx tsx server/index.ts` on port 5000
 
-## Deployment
+## Replit Deployment (Autoscale)
 
 - Target: autoscale
 - Build: `npm run build`
 - Run: `node dist/index.cjs`
+
+## Production Deployment (Hostinger VPS)
+
+- **Domain**: auditwise.tech
+- **VPS IP**: 187.77.130.117
+- **VPS app path**: /opt/auditwise
+- **Architecture**: Docker Compose (backend + frontend + nginx + postgres + redis)
+
+### Required Replit Secrets for VPS Deployment
+
+- `GITHUB_PERSONAL_ACCESS_TOKEN` — GitHub PAT with repo push access
+- `VPS_SSH_KEY` — Private SSH key for VPS root access
+- `VPS_HOST` — VPS IP (187.77.130.117)
+- `VPS_USER` — SSH user (root)
+
+### DevOps Commands (from Replit shell)
+
+```bash
+bash devops/init.sh                    # Initialize SSH + Git credentials
+bash devops/control.sh help            # Show all available commands
+bash devops/control.sh push [msg]      # Push code to GitHub
+bash devops/control.sh deploy          # Full deploy: push → build → restart on VPS
+bash devops/control.sh deploy-quick    # Quick deploy: pull + restart backend only
+bash devops/control.sh health          # Full system health check
+bash devops/control.sh status          # Show container status
+bash devops/control.sh logs [svc] [n]  # View container logs
+bash devops/control.sh restart [svc]   # Restart container(s)
+bash devops/control.sh rebuild [svc]   # Rebuild & restart a service
+bash devops/control.sh backup          # Create database backup
+bash devops/control.sh ssh [cmd]       # Run command on VPS
+```
+
+### Docker APT Signed-By Fix
+
+The Hostinger VPS had conflicting Docker repository signing key references (`docker.gpg` vs `docker.asc`) causing APT failures. All deploy/bootstrap scripts now include an idempotent fix that:
+1. Removes ALL old Docker keyring files and source lists
+2. Re-imports the Docker GPG key into a single `/etc/apt/keyrings/docker.gpg`
+3. Creates a clean `/etc/apt/sources.list.d/docker.list` with one `signed-by` reference
+4. Installs docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin
+
+Standalone fix: `bash deploy/fix-docker-apt.sh` (run on VPS as root)
+
+### VPS Bootstrap (first-time setup)
+
+```bash
+bash deploy/hostinger-vps-setup.sh     # Full VPS setup with SSL
+bash deploy/vps-bootstrap.sh           # Lightweight bootstrap
+bash deploy/hostinger-deploy.sh        # Deploy with secrets generation
+```
+
+### Rollback
+
+If deployment fails, the deploy scripts auto-rollback to the previous commit. Manual rollback on VPS:
+```bash
+cd /opt/auditwise
+git log --oneline -5                   # Find target commit
+git reset --hard <commit>
+docker compose build --no-cache backend frontend
+docker compose up -d --force-recreate
+```
 
 ## Phase Architecture (19-Phase System)
 
