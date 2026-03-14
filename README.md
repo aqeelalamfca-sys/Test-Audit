@@ -78,6 +78,160 @@ nano .env  # Set secure values
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
 
+### Option 3: GitHub Actions Auto-Deploy (Recommended for VPS)
+
+This repository includes a production CI/CD pipeline for Hostinger VPS:
+
+- Workflow: [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
+- VPS deploy script: [deploy/vps-github-pull-deploy.sh](deploy/vps-github-pull-deploy.sh)
+- One-time VPS bootstrap: [deploy/vps-bootstrap.sh](deploy/vps-bootstrap.sh)
+- VPS compose stack: [docker-compose.vps.yml](docker-compose.vps.yml)
+- Host Nginx configs: [deploy/nginx/host-auditwise.http.conf](deploy/nginx/host-auditwise.http.conf) and [deploy/nginx/host-auditwise.conf](deploy/nginx/host-auditwise.conf)
+
+Deployment flow on each push to main:
+
+1. GitHub Actions builds the app to validate release integrity.
+2. Workflow SSHs into VPS using GitHub Secrets.
+3. VPS script fetches latest code and hard-resets to origin/main.
+4. Existing production .env is preserved (never overwritten).
+5. Docker Compose rebuilds/restarts services.
+6. Health check runs on /api/health.
+7. On failure, script rolls back to previous commit and retries.
+
+## CI/CD Setup (One-Time)
+
+### 1. VPS Bootstrap Commands (run on VPS once)
+
+```bash
+sudo mkdir -p /opt/auditwise
+sudo chown -R $USER:$USER /opt/auditwise
+
+git clone https://github.com/aqeelalamfca-sys/Test-Audit.git /opt/auditwise
+cd /opt/auditwise
+
+chmod +x deploy/vps-bootstrap.sh deploy/vps-github-pull-deploy.sh
+
+# HTTP-first bootstrap (works before domain/SSL is ready)
+sudo APP_DIR=/opt/auditwise BRANCH=main bash deploy/vps-bootstrap.sh
+
+# Edit production secrets
+sudo nano /opt/auditwise/.env
+
+# Start stack after .env is ready
+sudo systemctl start auditwise
+sudo systemctl status auditwise --no-pager
+```
+
+If domain is already pointed to the VPS, install SSL by re-running bootstrap with DOMAIN and EMAIL:
+
+```bash
+cd /opt/auditwise
+sudo DOMAIN=yourdomain.com EMAIL=admin@yourdomain.com APP_DIR=/opt/auditwise BRANCH=main bash deploy/vps-bootstrap.sh
+```
+
+### 2. GitHub Secrets Required
+
+Set these in GitHub repository settings:
+
+- VPS_HOST: VPS public IP or DNS name.
+- VPS_USER: SSH user (for example root or deploy user).
+- VPS_SSH_KEY: Private key content used by GitHub Actions.
+
+Optional (workflow defaults are already set):
+
+- VPS_PORT: SSH port (default: 22).
+- APP_DIR: Deployment directory (default: /opt/auditwise).
+
+Notes:
+
+- Never store passwords in workflow files.
+- Keep .env only on VPS and do not commit production secrets.
+
+### 3. SSH Key Setup (Recommended)
+
+Generate key pair locally:
+
+```bash
+ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/auditwise_actions
+```
+
+Install public key on VPS:
+
+```bash
+ssh-copy-id -i ~/.ssh/auditwise_actions.pub user@your-vps-ip
+```
+
+Add private key to GitHub secret VPS_SSH_KEY:
+
+```bash
+cat ~/.ssh/auditwise_actions
+```
+
+## Local Development to Production Flow
+
+```bash
+# Local work in VS Code
+git checkout -b feature/my-change
+# edit files
+git add .
+git commit -m "feat: your change"
+git push origin feature/my-change
+
+# Create PR and merge to main
+# OR push directly to main if your process allows it
+```
+
+When main is updated, [.github/workflows/deploy.yml](.github/workflows/deploy.yml) auto-runs deployment.
+
+## Manual Deployment / Rollback
+
+Manual deploy on VPS:
+
+```bash
+cd /opt/auditwise
+APP_DIR=/opt/auditwise BRANCH=main COMPOSE_FILE=docker-compose.vps.yml bash deploy/vps-github-pull-deploy.sh
+```
+
+Manual rollback to previous commit:
+
+```bash
+cd /opt/auditwise
+PREV_COMMIT=$(git rev-parse HEAD~1)
+git reset --hard "$PREV_COMMIT"
+docker compose -f docker-compose.vps.yml up -d --build --remove-orphans
+curl -fsS http://127.0.0.1:5000/api/health
+```
+
+## Logs, Health, and Troubleshooting
+
+Health checks:
+
+```bash
+curl -fsS http://127.0.0.1:5000/api/health
+curl -I http://127.0.0.1/__healthz
+```
+
+Service and container status:
+
+```bash
+sudo systemctl status auditwise --no-pager
+docker compose -f /opt/auditwise/docker-compose.vps.yml ps
+```
+
+Live logs:
+
+```bash
+docker compose -f /opt/auditwise/docker-compose.vps.yml logs -f backend
+docker compose -f /opt/auditwise/docker-compose.vps.yml logs -f db
+sudo journalctl -u auditwise -f
+sudo tail -f /var/log/nginx/error.log
+```
+
+Re-run failed GitHub deploy:
+
+- GitHub -> Actions -> Deploy To VPS -> Re-run jobs.
+- Or trigger workflow_dispatch manually.
+
 ### Quick Deploy Commands
 
 ```bash

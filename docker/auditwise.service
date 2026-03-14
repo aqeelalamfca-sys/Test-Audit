@@ -8,9 +8,10 @@ Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/opt/auditwise
 ExecStartPre=/bin/bash -c 'which docker'
-ExecStart=/bin/bash -c 'docker compose up -d'
-ExecStop=/bin/bash -c 'docker compose stop'
-ExecReload=/bin/bash -c 'docker compose up -d --force-recreate'
+ExecStartPre=/bin/bash -c 'docker compose -f docker-compose.vps.yml config >/dev/null'
+ExecStart=/bin/bash -c 'docker compose -f docker-compose.vps.yml up -d --remove-orphans'
+ExecStop=/bin/bash -c 'docker compose -f docker-compose.vps.yml stop'
+ExecReload=/bin/bash -c 'docker compose -f docker-compose.vps.yml up -d --build --remove-orphans'
 TimeoutStartSec=300
 
 [Install]

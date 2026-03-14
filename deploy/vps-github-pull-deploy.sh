@@ -1,64 +1,134 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="${REPO_URL:-https://github.com/aqeelalamfca-sys/Test-Audit.git}"
 APP_DIR="${APP_DIR:-/opt/auditwise}"
-BRANCH="${1:-main}"
+BRANCH="${BRANCH:-${1:-main}}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.vps.yml}"
+HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:5000/api/health}"
+KEEP_BACKUPS="${KEEP_BACKUPS:-10}"
 
-echo "== AuditWise VPS Pull + Deploy =="
-echo "Repo:    ${REPO_URL}"
-echo "Branch:  ${BRANCH}"
-echo "App dir: ${APP_DIR}"
-echo "Compose: ${COMPOSE_FILE}"
-echo ""
+log() {
+  printf '[INFO] %s\n' "$*"
+}
 
-if ! command -v docker >/dev/null 2>&1; then
-  echo "FATAL: Docker is not installed."
+fail() {
+  printf '[FATAL] %s\n' "$*" >&2
   exit 1
-fi
+}
 
-if ! docker compose version >/dev/null 2>&1; then
-  echo "FATAL: Docker Compose plugin is not available."
-  exit 1
-fi
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || fail "Missing required command: $1"
+}
 
-mkdir -p "$(dirname "${APP_DIR}")"
+health_check() {
+  local max_wait="${1:-180}"
+  local i
 
-if [ ! -d "${APP_DIR}/.git" ]; then
-  echo "Cloning repository..."
-  git clone --branch "${BRANCH}" "${REPO_URL}" "${APP_DIR}"
-fi
+  for i in $(seq 1 "$max_wait"); do
+    if curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then
+      log "Health check passed: $HEALTH_URL"
+      return 0
+    fi
+    sleep 1
+  done
 
-cd "${APP_DIR}"
+  return 1
+}
 
-echo "Pulling latest code from origin/${BRANCH}..."
-git fetch origin "${BRANCH}" --prune
-git checkout "${BRANCH}"
-git pull --ff-only origin "${BRANCH}"
+ensure_repo() {
+  [ -d "$APP_DIR/.git" ] || fail "Missing git repository at $APP_DIR. Run deploy/vps-bootstrap.sh first."
+}
 
-if [ ! -f ".env" ]; then
-  echo "FATAL: .env is missing in ${APP_DIR}."
-  echo "Create it first (required: POSTGRES_PASSWORD, JWT_SECRET, ENCRYPTION_MASTER_KEY)."
-  exit 1
-fi
+ensure_env() {
+  [ -f "$APP_DIR/.env" ] || fail "Missing $APP_DIR/.env"
+  chmod 600 "$APP_DIR/.env"
 
-echo "Building backend image..."
-docker compose -f "${COMPOSE_FILE}" build backend
+  for key in POSTGRES_PASSWORD JWT_SECRET ENCRYPTION_MASTER_KEY; do
+    if ! grep -qE "^${key}=.+" "$APP_DIR/.env"; then
+      fail "Missing required variable in .env: $key"
+    fi
+  done
+}
 
-echo "Starting stack..."
-docker compose -f "${COMPOSE_FILE}" up -d --remove-orphans
+backup_database_if_running() {
+  local backup_dir="$APP_DIR/backups"
+  local stamp
+  local backup_file
 
-echo "Waiting for backend health..."
-for i in $(seq 1 90); do
-  if curl -sf http://127.0.0.1:5000/api/health >/dev/null 2>&1; then
-    echo "SUCCESS: Backend is healthy."
-    docker compose -f "${COMPOSE_FILE}" ps
-    exit 0
+  mkdir -p "$backup_dir"
+
+  if docker ps --format '{{.Names}}' | grep -q '^auditwise-db$'; then
+    stamp="$(date +%Y%m%d_%H%M%S)"
+    backup_file="$backup_dir/predeploy_${stamp}.sql.gz"
+
+    if docker exec auditwise-db pg_isready -U auditwise -d auditwise >/dev/null 2>&1; then
+      if docker exec auditwise-db pg_dump -U auditwise -d auditwise --no-owner --no-privileges 2>/dev/null | gzip >"$backup_file"; then
+        log "Database backup created: $backup_file"
+      else
+        log "Database backup failed; continuing deploy"
+        rm -f "$backup_file"
+      fi
+    else
+      log "Database container is running but not ready; skipping backup"
+    fi
+  else
+    log "Database container not running; skipping backup"
   fi
-  sleep 2
-done
 
-echo "FATAL: Backend health check failed after 180s."
-docker compose -f "${COMPOSE_FILE}" logs --tail=120 backend
-exit 1
+  ls -1t "$backup_dir"/*.sql.gz 2>/dev/null | tail -n +$((KEEP_BACKUPS + 1)) | xargs -r rm -f
+}
+
+main() {
+  require_cmd git
+  require_cmd docker
+  require_cmd curl
+  docker compose version >/dev/null 2>&1 || fail "Docker Compose plugin is required"
+
+  ensure_repo
+  cd "$APP_DIR"
+  ensure_env
+
+  local prev_commit
+  prev_commit="$(git rev-parse HEAD)"
+  log "Current commit: $prev_commit"
+
+  backup_database_if_running
+
+  git fetch origin "$BRANCH" --prune
+  git checkout "$BRANCH"
+  git reset --hard "origin/$BRANCH"
+
+  local new_commit
+  new_commit="$(git rev-parse HEAD)"
+  log "Target commit:  $new_commit"
+
+  if [ ! -f "$COMPOSE_FILE" ]; then
+    fail "Compose file not found: $COMPOSE_FILE"
+  fi
+
+  export APP_VERSION="$new_commit"
+
+  docker compose -f "$COMPOSE_FILE" config >/dev/null
+  docker compose -f "$COMPOSE_FILE" pull --ignore-pull-failures || true
+  docker compose -f "$COMPOSE_FILE" up -d --build --remove-orphans
+
+  if ! health_check 240; then
+    log "New release failed health check. Rolling back to $prev_commit"
+    git reset --hard "$prev_commit"
+    export APP_VERSION="$prev_commit"
+    docker compose -f "$COMPOSE_FILE" up -d --build --remove-orphans
+
+    if ! health_check 180; then
+      fail "Rollback failed; service is unhealthy"
+    fi
+
+    fail "Deployment rolled back due to failed health check"
+  fi
+
+  docker image prune -f >/dev/null 2>&1 || true
+
+  log "Deployment succeeded"
+  docker compose -f "$COMPOSE_FILE" ps
+}
+
+main "$@"

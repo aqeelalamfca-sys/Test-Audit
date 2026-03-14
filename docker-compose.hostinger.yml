@@ -1,0 +1,97 @@
+services:
+  db:
+    image: postgres:16
+    container_name: auditwise-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-auditwise}
+      POSTGRES_USER: ${POSTGRES_USER:-auditwise}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-please}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-auditwise} -d ${POSTGRES_DB:-auditwise} -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - auditwise
+
+  redis:
+    image: redis:7-alpine
+    container_name: auditwise-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - auditwise
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    container_name: auditwise-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: "5000"
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-auditwise}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-please}
+      POSTGRES_DB: ${POSTGRES_DB:-auditwise}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-change-me-please}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-auditwise}:${POSTGRES_PASSWORD:-change-me-please}@db:5432/${POSTGRES_DB:-auditwise}?schema=public}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      JWT_SECRET: ${JWT_SECRET:-auditwise-jwt-change-this-immediately}
+      SESSION_SECRET: ${SESSION_SECRET:-auditwise-session-change-this-immediately}
+      ENCRYPTION_MASTER_KEY: ${ENCRYPTION_MASTER_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      INITIAL_SUPER_ADMIN_EMAIL: ${INITIAL_SUPER_ADMIN_EMAIL:-admin@auditwise.tech}
+      INITIAL_SUPER_ADMIN_PASSWORD: ${INITIAL_SUPER_ADMIN_PASSWORD:-}
+      NODE_HEAP_SIZE: ${NODE_HEAP_SIZE:-1536}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@auditwise.tech}
+    volumes:
+      - uploads:/app/uploads
+      - logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 5
+    networks:
+      - auditwise
+
+networks:
+  auditwise:
+    driver: bridge
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
+  uploads:
+    driver: local
+  logs:
+    driver: local
