@@ -20,6 +20,7 @@ import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import { WorkspaceAccessGuard } from "@/components/workspace-access-guard";
 import { TrialBanner } from "@/components/trial-banner";
+import { EngagementWorkspaceShell } from "@/components/engagement-workspace-shell";
 
 import { ErrorBoundary } from "@/components/error-boundary";
 import { SystemStatusOverlay } from "@/components/system-status-overlay";
@@ -37,12 +38,17 @@ function retryImport<T>(importFn: () => Promise<T>, retries = 3): Promise<T> {
 // Lazy-loaded pages for code splitting (performance optimization)
 const Planning = lazy(() => retryImport(() => import("@/pages/planning")));
 const PrePlanning = lazy(() => retryImport(() => import("@/pages/pre-planning")));
+const AcceptanceContinuance = lazy(() => retryImport(() => import("@/pages/acceptance-continuance")));
 const FirmWideControlsLazy = lazy(() => retryImport(() => import("@/pages/firm-wide-controls")));
 const InformationRequisition = lazy(() => retryImport(() => import("@/pages/information-requisition")));
 const FSHeadsPage = lazy(() => retryImport(() => import("@/pages/fs-heads")));
 const Finalization = lazy(() => retryImport(() => import("@/pages/finalization")));
+const AdjustmentsPage = lazy(() => retryImport(() => import("@/pages/adjustments")));
 const ComplianceChecklists = lazy(() => retryImport(() => import("@/pages/compliance-checklists")));
 const Execution = lazy(() => retryImport(() => import("@/pages/execution")));
+const ProceduresSampling = lazy(() => retryImport(() => import("@/pages/procedures-sampling")));
+const ExecutionTesting = lazy(() => retryImport(() => import("@/pages/execution-testing")));
+const EvidenceLinking = lazy(() => retryImport(() => import("@/pages/evidence-linking")));
 const ImportWizard = lazy(() => retryImport(() => import("@/pages/import-wizard")));
 const NewEngagement = lazy(() => retryImport(() => import("@/pages/new-engagement")));
 const EngagementDetail = lazy(() => retryImport(() => import("@/pages/engagement-detail")));
@@ -156,21 +162,10 @@ const SECPCompliance = lazy(() => retryImport(() => import("@/pages/secp-complia
 const SECPComplianceLazy = withLazySuspense(SECPCompliance);
 const FBRDocumentation = lazy(() => retryImport(() => import("@/pages/fbr-documentation")));
 const FBRDocumentationLazy = withLazySuspense(FBRDocumentation);
-const GuardedStandardsMatrix = createGuardedComponent(StandardsMatrix, "StandardsMatrix", true);
-
 const ComplianceSimulation = lazy(() => retryImport(() => import("@/pages/compliance-simulation")));
-const GuardedComplianceSimulation = createGuardedComponent(ComplianceSimulation, "ComplianceSimulation", true);
 
 function WorkspaceRedirect() {
   return <Redirect to="/engagements" />;
-}
-
-function LegacyRouteRedirect({ params }: { params?: { id?: string }; routePath: string }) {
-  const engagementId = params?.id || "";
-  if (!engagementId) {
-    return <Redirect to="/engagements" />;
-  }
-  return null;
 }
 
 function createLegacyRedirect(legacyPath: string, workspacePath: string) {
@@ -180,6 +175,16 @@ function createLegacyRedirect(legacyPath: string, workspacePath: string) {
       return <Redirect to="/engagements" />;
     }
     return <Redirect to={`/workspace/${engagementId}/${workspacePath}`} />;
+  };
+}
+
+function createWorkspaceSlugRedirect(canonicalSlug: string) {
+  return function WorkspaceSlugRedirect({ params }: { params?: { engagementId?: string } }) {
+    const engagementId = params?.engagementId || "";
+    if (!engagementId) {
+      return <Redirect to="/engagements" />;
+    }
+    return <Redirect to={`/workspace/${engagementId}/${canonicalSlug}`} />;
   };
 }
 
@@ -265,30 +270,68 @@ function createGuardedComponent(Component: React.ComponentType<any>, displayName
   return GuardedComponent;
 }
 
-// Pre-create all guarded components at module level to avoid re-creation on every render
-// Lazy-loaded pages are marked with isLazy=true
-const GuardedInformationRequisition = createGuardedComponent(InformationRequisition, "InformationRequisition", true);
-const GuardedPrePlanning = createGuardedComponent(PrePlanning, "PrePlanning", true);
-const GuardedPlanning = createGuardedComponent(Planning, "Planning", true);
-const GuardedExecution = createGuardedComponent(Execution, "Execution", true);
-const GuardedFSHeadsPage = createGuardedComponent(FSHeadsPage, "FSHeadsPage", true);
-const GuardedFinalization = createGuardedComponent(Finalization, "Finalization", true);
-const GuardedComplianceChecklists = createGuardedComponent(ComplianceChecklists, "Checklists", true);
-const GuardedPrintView = createGuardedComponent(PrintView, "PrintView", true);
-const GuardedEQCR = createGuardedComponent(EQCR, "EQCR", true);
-const GuardedEvidenceVault = createGuardedComponent(EvidenceVault, "EvidenceVault", true);
-const GuardedInspection = createGuardedComponent(Inspection, "Inspection", true);
-const GuardedInspectionDashboard = createGuardedComponent(InspectionDashboard, "InspectionDashboard", true);
-const GuardedAuditHealthDashboard = createGuardedComponent(AuditHealthDashboard, "AuditHealthDashboard", true);
+function createShelledComponent(Component: React.ComponentType<any>, displayName: string, phaseKey: string) {
+  const ShelledComponent = (props: { params?: { engagementId?: string } }) => {
+    const engagementId = props.params?.engagementId || "";
+    return (
+      <WorkspaceAccessGuard engagementId={engagementId}>
+        <EngagementWorkspaceShell engagementId={engagementId} phaseSlug={phaseKey}>
+          <Suspense fallback={<LoadingSpinner />}>
+            <Component {...props} />
+          </Suspense>
+        </EngagementWorkspaceShell>
+      </WorkspaceAccessGuard>
+    );
+  };
+  ShelledComponent.displayName = `Shelled${displayName}`;
+  return ShelledComponent;
+}
+
+function WorkspaceResumeRedirect(props: { params?: { engagementId?: string } }) {
+  const engagementId = props.params?.engagementId || "";
+  if (!engagementId) return <Redirect to="/engagements" />;
+  return (
+    <WorkspaceAccessGuard engagementId={engagementId}>
+      <EngagementWorkspaceShell engagementId={engagementId}>
+        <div />
+      </EngagementWorkspaceShell>
+    </WorkspaceAccessGuard>
+  );
+}
+
+// Shelled workspace components — each wraps inside EngagementWorkspaceShell
+const ShelledAcceptance = createShelledComponent(AcceptanceContinuance, "Acceptance", "acceptance");
+const ShelledIndependence = createShelledComponent(EthicsIndependence, "Independence", "independence");
+const ShelledTbGlUpload = createShelledComponent(InformationRequisition, "TbGlUpload", "tb-gl-upload");
+const ShelledValidation = createShelledComponent(PostUploadWorkflow, "Validation", "validation");
+const ShelledCoaMapping = createShelledComponent(FSHeadsPage, "CoaMapping", "coa-mapping");
+const ShelledMateriality = createShelledComponent(Planning, "Materiality", "materiality");
+const ShelledRiskAssessment = createShelledComponent(Planning, "RiskAssessment", "risk-assessment");
+const ShelledPlanningStrategy = createShelledComponent(Planning, "PlanningStrategy", "planning-strategy");
+const ShelledProceduresSampling = createShelledComponent(ProceduresSampling, "ProceduresSampling", "procedures-sampling");
+const ShelledExecutionTesting = createShelledComponent(ExecutionTesting, "ExecutionTesting", "execution-testing");
+const ShelledEvidenceLinking = createShelledComponent(EvidenceLinking, "EvidenceLinking", "evidence-linking");
+const ShelledObservations = createShelledComponent(Observations, "Observations", "observations");
+const ShelledAdjustments = createShelledComponent(AdjustmentsPage, "Adjustments", "adjustments");
+const ShelledFinalization = createShelledComponent(Finalization, "Finalization", "finalization");
+const OpinionReportsPage = lazy(() => retryImport(() => import("@/pages/opinion-reports")));
+const ShelledOpinionReports = createShelledComponent(OpinionReportsPage, "OpinionReports", "opinion-reports");
+const ShelledEQCR = createShelledComponent(EQCR, "EQCR", "eqcr");
+const ShelledInspection = createShelledComponent(Inspection, "Inspection", "inspection");
+
+// Standalone tool routes — shelled but not canonical phases
+const ShelledChecklists = createShelledComponent(ComplianceChecklists, "Checklists", "execution-testing");
+const ShelledInspectionDashboard = createShelledComponent(InspectionDashboard, "InspectionDashboard", "inspection");
+const ShelledAuditHealth = createShelledComponent(AuditHealthDashboard, "AuditHealth", "execution-testing");
+const ShelledWorkflowHealth = createShelledComponent(WorkflowHealthPage, "WorkflowHealth", "execution-testing");
+const ShelledStandardsMatrix = createShelledComponent(StandardsMatrix, "StandardsMatrix", "execution-testing");
+const ShelledComplianceSimulation = createShelledComponent(ComplianceSimulation, "ComplianceSimulation", "execution-testing");
+
+// Guarded but non-shelled components (for non-workspace routes that still use old guards)
 const GuardedEngagementControl = createGuardedComponent(EngagementControl, "EngagementControl", true);
-const GuardedEthicsIndependence = createGuardedComponent(EthicsIndependence, "EthicsIndependence", true);
 const GuardedTBReview = createGuardedComponent(TBReview, "TBReview", true);
 const GuardedImportWizard = createGuardedComponent(ImportWizard, "ImportWizard", true);
 const GuardedOutputsPage = createGuardedComponent(OutputsPage, "OutputsPage", true);
-
-const GuardedObservations = createGuardedComponent(Observations, "Observations", true);
-const GuardedPostUploadWorkflow = createGuardedComponent(PostUploadWorkflow, "PostUploadWorkflow", true);
-const GuardedWorkflowHealthPage = createGuardedComponent(WorkflowHealthPage, "WorkflowHealthPage", true);
 
 function Router() {
   return (
@@ -346,62 +389,80 @@ function Router() {
       {/* Redirect bare /workspace to engagements */}
       <Route path="/workspace" component={WorkspaceRedirect} />
       
-      {/* Workspace routes (require engagementId + access check) */}
-      <Route path="/workspace/:engagementId/requisition" component={GuardedInformationRequisition} />
-      <Route path="/workspace/:engagementId/pre-planning" component={GuardedPrePlanning} />
-      <Route path="/workspace/:engagementId/planning" component={GuardedPlanning} />
-      <Route path="/workspace/:engagementId/execution" component={GuardedExecution} />
-      <Route path="/workspace/:engagementId/fs-heads" component={GuardedFSHeadsPage} />
-      <Route path="/workspace/:engagementId/checklists" component={GuardedComplianceChecklists} />
-      <Route path="/workspace/:engagementId/finalization" component={GuardedFinalization} />
-      <Route path="/workspace/:engagementId/deliverables" component={GuardedPrintView} />
-      <Route path="/workspace/:engagementId/eqcr" component={GuardedEQCR} />
-      <Route path="/workspace/:engagementId/evidence" component={GuardedEvidenceVault} />
-      <Route path="/workspace/:engagementId/inspection" component={GuardedInspection} />
-      <Route path="/workspace/:engagementId/qcr-dashboard" component={GuardedInspectionDashboard} />
-      <Route path="/workspace/:engagementId/audit-health" component={GuardedAuditHealthDashboard} />
-      <Route path="/workspace/:engagementId/workflow-health" component={GuardedWorkflowHealthPage} />
-      <Route path="/workspace/:engagementId/onboarding" component={GuardedEngagementControl} />
-      <Route path="/workspace/:engagementId/control" component={GuardedEngagementControl} />
-      <Route path="/workspace/:engagementId/ethics" component={GuardedEthicsIndependence} />
-      <Route path="/workspace/:engagementId/tb-review" component={GuardedTBReview} />
+      {/* Smart resume — bare workspace/:id redirects to active/next phase */}
+      <Route path="/workspace/:engagementId" component={WorkspaceResumeRedirect} />
 
-      <Route path="/workspace/:engagementId/import" component={GuardedImportWizard} />
-      <Route path="/workspace/:engagementId/outputs" component={GuardedOutputsPage} />
-      <Route path="/workspace/:engagementId/observations" component={GuardedObservations} />
-      <Route path="/workspace/:engagementId/post-upload-workflow" component={GuardedPostUploadWorkflow} />
-      <Route path="/workspace/:engagementId/standards-matrix" component={GuardedStandardsMatrix} />
-      <Route path="/workspace/:engagementId/compliance-simulation" component={GuardedComplianceSimulation} />
+      {/* Canonical 19-phase workspace routes — wrapped in EngagementWorkspaceShell */}
+      <Route path="/workspace/:engagementId/acceptance" component={ShelledAcceptance} />
+      <Route path="/workspace/:engagementId/independence" component={ShelledIndependence} />
+      <Route path="/workspace/:engagementId/tb-gl-upload" component={ShelledTbGlUpload} />
+      <Route path="/workspace/:engagementId/validation" component={ShelledValidation} />
+      <Route path="/workspace/:engagementId/coa-mapping" component={ShelledCoaMapping} />
+      <Route path="/workspace/:engagementId/materiality" component={ShelledMateriality} />
+      <Route path="/workspace/:engagementId/risk-assessment" component={ShelledRiskAssessment} />
+      <Route path="/workspace/:engagementId/planning-strategy" component={ShelledPlanningStrategy} />
+      <Route path="/workspace/:engagementId/procedures-sampling" component={ShelledProceduresSampling} />
+      <Route path="/workspace/:engagementId/execution-testing" component={ShelledExecutionTesting} />
+      <Route path="/workspace/:engagementId/evidence-linking" component={ShelledEvidenceLinking} />
+      <Route path="/workspace/:engagementId/observations" component={ShelledObservations} />
+      <Route path="/workspace/:engagementId/adjustments" component={ShelledAdjustments} />
+      <Route path="/workspace/:engagementId/finalization" component={ShelledFinalization} />
+      <Route path="/workspace/:engagementId/opinion-reports" component={ShelledOpinionReports} />
+      <Route path="/workspace/:engagementId/eqcr" component={ShelledEQCR} />
+      <Route path="/workspace/:engagementId/inspection" component={ShelledInspection} />
+
+      {/* Legacy workspace slug redirects to canonical slugs */}
+      <Route path="/workspace/:engagementId/requisition" component={createWorkspaceSlugRedirect("tb-gl-upload")} />
+      <Route path="/workspace/:engagementId/pre-planning" component={createWorkspaceSlugRedirect("acceptance")} />
+      <Route path="/workspace/:engagementId/planning" component={createWorkspaceSlugRedirect("materiality")} />
+      <Route path="/workspace/:engagementId/execution" component={createWorkspaceSlugRedirect("execution-testing")} />
+      <Route path="/workspace/:engagementId/fs-heads" component={createWorkspaceSlugRedirect("coa-mapping")} />
+      <Route path="/workspace/:engagementId/deliverables" component={createWorkspaceSlugRedirect("opinion-reports")} />
+      <Route path="/workspace/:engagementId/evidence" component={createWorkspaceSlugRedirect("evidence-linking")} />
+      <Route path="/workspace/:engagementId/onboarding" component={createWorkspaceSlugRedirect("acceptance")} />
+      <Route path="/workspace/:engagementId/control" component={createWorkspaceSlugRedirect("acceptance")} />
+      <Route path="/workspace/:engagementId/ethics" component={createWorkspaceSlugRedirect("independence")} />
+      <Route path="/workspace/:engagementId/post-upload-workflow" component={createWorkspaceSlugRedirect("validation")} />
+      <Route path="/workspace/:engagementId/tb-review" component={createWorkspaceSlugRedirect("validation")} />
+      <Route path="/workspace/:engagementId/import" component={createWorkspaceSlugRedirect("tb-gl-upload")} />
+      <Route path="/workspace/:engagementId/outputs" component={createWorkspaceSlugRedirect("opinion-reports")} />
+      {/* Standalone tools — wrapped in shell for consistent UX */}
+      <Route path="/workspace/:engagementId/checklists" component={ShelledChecklists} />
+      <Route path="/workspace/:engagementId/qcr-dashboard" component={ShelledInspectionDashboard} />
+      <Route path="/workspace/:engagementId/audit-health" component={ShelledAuditHealth} />
+      <Route path="/workspace/:engagementId/workflow-health" component={ShelledWorkflowHealth} />
+      <Route path="/workspace/:engagementId/standards-matrix" component={ShelledStandardsMatrix} />
+      <Route path="/workspace/:engagementId/compliance-simulation" component={ShelledComplianceSimulation} />
       
-      {/* Legacy routes - redirect to workspace with access guard */}
-      <Route path="/engagement/:id/information-requisition" component={createLegacyRedirect("information-requisition", "requisition")} />
-      <Route path="/engagement/:id/pre-planning" component={createLegacyRedirect("pre-planning", "pre-planning")} />
-      <Route path="/engagement/:id/planning" component={createLegacyRedirect("planning", "planning")} />
-      <Route path="/engagement/:id/execution" component={createLegacyRedirect("execution", "execution")} />
-      <Route path="/engagement/:id/controls" component={createLegacyRedirect("controls", "execution")} />
-      <Route path="/engagement/:id/substantive" component={createLegacyRedirect("substantive", "execution")} />
-      <Route path="/engagement/:id/analytical" component={createLegacyRedirect("analytical", "execution")} />
+      {/* Legacy routes - redirect to canonical workspace slugs */}
+      <Route path="/engagement/:id/information-requisition" component={createLegacyRedirect("information-requisition", "tb-gl-upload")} />
+      <Route path="/engagement/:id/pre-planning" component={createLegacyRedirect("pre-planning", "acceptance")} />
+      <Route path="/engagement/:id/planning" component={createLegacyRedirect("planning", "materiality")} />
+      <Route path="/engagement/:id/execution" component={createLegacyRedirect("execution", "execution-testing")} />
+      <Route path="/engagement/:id/controls" component={createLegacyRedirect("controls", "execution-testing")} />
+      <Route path="/engagement/:id/substantive" component={createLegacyRedirect("substantive", "execution-testing")} />
+      <Route path="/engagement/:id/analytical" component={createLegacyRedirect("analytical", "execution-testing")} />
       <Route path="/engagement/:id/finalization" component={createLegacyRedirect("finalization", "finalization")} />
-      <Route path="/engagement/:id/print" component={createLegacyRedirect("print", "deliverables")} />
+      <Route path="/engagement/:id/print" component={createLegacyRedirect("print", "opinion-reports")} />
       <Route path="/engagement/:id/eqcr" component={createLegacyRedirect("eqcr", "eqcr")} />
-      <Route path="/engagement/:id/evidence" component={createLegacyRedirect("evidence", "evidence")} />
+      <Route path="/engagement/:id/evidence" component={createLegacyRedirect("evidence", "evidence-linking")} />
       <Route path="/engagement/:id/inspection" component={createLegacyRedirect("inspection", "inspection")} />
-      <Route path="/engagement/:id/onboarding" component={createLegacyRedirect("onboarding", "onboarding")} />
-      <Route path="/engagement/:id/control" component={createLegacyRedirect("control", "control")} />
-      <Route path="/engagement/:id/ethics" component={createLegacyRedirect("ethics", "ethics")} />
-      <Route path="/engagement/:id/tb-review" component={createLegacyRedirect("tb-review", "tb-review")} />
-      <Route path="/engagement/:id/fs-heads" component={createLegacyRedirect("fs-heads", "fs-heads")} />
+      <Route path="/engagement/:id/onboarding" component={createLegacyRedirect("onboarding", "acceptance")} />
+      <Route path="/engagement/:id/control" component={createLegacyRedirect("control", "acceptance")} />
+      <Route path="/engagement/:id/ethics" component={createLegacyRedirect("ethics", "independence")} />
+      <Route path="/engagement/:id/tb-review" component={createLegacyRedirect("tb-review", "validation")} />
+      <Route path="/engagement/:id/fs-heads" component={createLegacyRedirect("fs-heads", "coa-mapping")} />
 
       <Route path="/engagement/:id/observations" component={createLegacyRedirect("observations", "observations")} />
-      <Route path="/engagement/:id/outputs" component={createLegacyRedirect("outputs", "outputs")} />
-      <Route path="/engagement/:id/deliverables" component={createLegacyRedirect("deliverables", "deliverables")} />
-      <Route path="/engagement/:id/evidence-vault" component={createLegacyRedirect("evidence-vault", "evidence")} />
-      <Route path="/engagement/:id/audit-health" component={createLegacyRedirect("audit-health", "audit-health")} />
-      <Route path="/engagement/:id/workflow-health" component={createLegacyRedirect("workflow-health", "workflow-health")} />
-      <Route path="/engagement/:id/post-upload-workflow" component={createLegacyRedirect("post-upload-workflow", "post-upload-workflow")} />
-      <Route path="/engagement/:id/qcr-dashboard" component={createLegacyRedirect("qcr-dashboard", "qcr-dashboard")} />
-      <Route path="/engagement/:id/import" component={createLegacyRedirect("import", "import")} />
-      <Route path="/engagement/:id/requisition" component={createLegacyRedirect("requisition", "requisition")} />
+      <Route path="/engagement/:id/outputs" component={createLegacyRedirect("outputs", "opinion-reports")} />
+      <Route path="/engagement/:id/deliverables" component={createLegacyRedirect("deliverables", "opinion-reports")} />
+      <Route path="/engagement/:id/evidence-vault" component={createLegacyRedirect("evidence-vault", "evidence-linking")} />
+      <Route path="/engagement/:id/audit-health" component={createLegacyRedirect("audit-health", "execution-testing")} />
+      <Route path="/engagement/:id/workflow-health" component={createLegacyRedirect("workflow-health", "execution-testing")} />
+      <Route path="/engagement/:id/post-upload-workflow" component={createLegacyRedirect("post-upload-workflow", "validation")} />
+      <Route path="/engagement/:id/qcr-dashboard" component={createLegacyRedirect("qcr-dashboard", "inspection")} />
+      <Route path="/engagement/:id/import" component={createLegacyRedirect("import", "tb-gl-upload")} />
+      <Route path="/engagement/:id/requisition" component={createLegacyRedirect("requisition", "tb-gl-upload")} />
       
       {/* Standalone workspace routes - redirect to engagements (require engagement context) */}
       <Route path="/pre-planning">

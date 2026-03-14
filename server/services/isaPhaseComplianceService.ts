@@ -242,22 +242,38 @@ const ISA_PHASE_MATRIX: ISAPhaseMatrixEntry[] = [
   { isaId: "IESBA", isaName: "IESBA Code", phase: "pre-planning", isStageGate: false, signoffRole: "ENGAGEMENT_PARTNER", riskLinkRequired: false, noReportBlocker: false, weight: 1.0 },
 ];
 
+/**
+ * Maps ISA compliance phases to Prisma AuditPhase enum.
+ * For canonical 19-phase workflow, see shared/phases.ts CANONICAL_PHASES.
+ */
 const PHASE_TO_PRISMA: Record<string, string> = {
   "pre-planning": "PRE_PLANNING",
+  "acceptance": "PRE_PLANNING",
+  "independence": "PRE_PLANNING",
   "planning": "PLANNING",
+  "materiality": "PLANNING",
+  "risk-assessment": "PLANNING",
+  "planning-strategy": "PLANNING",
   "execution": "EXECUTION",
+  "procedures-sampling": "EXECUTION",
+  "execution-testing": "EXECUTION",
+  "evidence-linking": "EXECUTION",
   "finalization": "FINALIZATION",
+  "adjustments": "FINALIZATION",
   "deliverables": "REPORTING",
+  "opinion-reports": "REPORTING",
   "eqcr": "EQCR",
+  "inspection": "INSPECTION",
 };
 
 const PRISMA_TO_PHASE: Record<string, string> = {
-  PRE_PLANNING: "pre-planning",
-  PLANNING: "planning",
-  EXECUTION: "execution",
+  PRE_PLANNING: "acceptance",
+  PLANNING: "materiality",
+  EXECUTION: "execution-testing",
   FINALIZATION: "finalization",
-  REPORTING: "deliverables",
+  REPORTING: "opinion-reports",
   EQCR: "eqcr",
+  INSPECTION: "inspection",
 };
 
 const NO_REPORT_BLOCKER_GATES: NoReportBlockerGate[] = [
@@ -731,6 +747,7 @@ class ISAPhaseComplianceService {
         .map((p) => PRISMA_TO_PHASE[p.phase] || p.phase.toLowerCase())
     );
 
+    /** ISA compliance phases for heatbar — see shared/phases.ts for canonical 19-phase workflow */
     const phases = ["pre-planning", "planning", "execution", "finalization", "deliverables", "eqcr"];
     return phases.map((phase) => {
       const phaseRecords = records.filter((r) => r.phase === phase);

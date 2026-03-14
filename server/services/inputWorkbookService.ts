@@ -167,6 +167,8 @@ export interface ImportResult {
   success: boolean;
   uploadVersionId: string;
   summaryRunId: string;
+  batchId?: string;
+  batchNumber?: string;
   counts: {
     tbRows: number;
     glEntries: number;
@@ -1360,6 +1362,8 @@ export async function importInputWorkbook(
     success: true,
     uploadVersionId: result.uploadVersion.id,
     summaryRunId: summaryResult.id,
+    batchId: result.batch?.id,
+    batchNumber: result.batch?.batchNumber,
     counts: result.counts,
     validations: {
       tbArithmeticStatus: summaryResult.tbArithmeticStatus as any,

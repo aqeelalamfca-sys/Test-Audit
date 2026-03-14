@@ -1,3 +1,8 @@
+/**
+ * @deprecated LEGACY — sub-tab phase engine for data intake workflow.
+ * Retained for the information-requisition page tab management.
+ * New phase logic should use shared/phases.ts + phaseGateEngine.ts.
+ */
 import { prisma } from "../db";
 
 type WorkflowTabKey = 'summary' | 'tb' | 'gl' | 'ap' | 'ar' | 'bank' | 'confirmations' | 'mapping' | 'draft-fs';

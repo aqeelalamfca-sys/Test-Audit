@@ -4,8 +4,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, CheckCircle, XCircle, AlertTriangle, CircleDashed, Upload, RefreshCw, Download, FileSpreadsheet, Database, Users, Building2, Scale, FileText, ChevronRight, X, ArrowRight, Shield, ClipboardCheck } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, AlertTriangle, CircleDashed, Upload, RefreshCw, Download, FileSpreadsheet, Database, Users, Building2, Scale, FileText, ChevronRight, X, ArrowRight, Shield, ClipboardCheck, Tag } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { getAuthToken } from "@/lib/auth";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
@@ -628,7 +631,40 @@ export function SummaryTab({ toast, onNavigate, dataSources = {}, tabGates = {} 
             onNavigateToTab={onNavigate}
           />
 
-         
+          <div className="border rounded-lg p-4 bg-muted/30 mt-4">
+            <h4 className="text-sm font-medium flex items-center gap-2 mb-3">
+              <Tag className="h-4 w-4" />
+              Upload Metadata (Source & Period Tags)
+            </h4>
+            <p className="text-xs text-muted-foreground mb-3">
+              Tags are attached to each upload batch for traceability. Set these before uploading.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="fileType" className="text-xs">File Type</Label>
+                <Select defaultValue="">
+                  <SelectTrigger id="fileType" className="h-8 text-sm">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="excel-workbook">Excel Workbook (.xlsx)</SelectItem>
+                    <SelectItem value="csv-tb">CSV — Trial Balance</SelectItem>
+                    <SelectItem value="csv-gl">CSV — General Ledger</SelectItem>
+                    <SelectItem value="erp-export">ERP Export</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="sourceTag" className="text-xs">Source Tag</Label>
+                <Input id="sourceTag" placeholder="e.g., Client ERP, Manual, Tally" className="h-8 text-sm" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="periodTag" className="text-xs">Period Tag</Label>
+                <Input id="periodTag" placeholder="e.g., FY2025, Q4-2025" className="h-8 text-sm" />
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

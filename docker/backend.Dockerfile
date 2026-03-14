@@ -5,7 +5,7 @@ WORKDIR /app
 FROM base AS deps
 COPY package.json package-lock.json* ./
 RUN if [ -f package-lock.json ]; then \
-      npm ci --maxsockets 5; \
+      npm ci --maxsockets 5 || npm install --maxsockets 5; \
     else \
       npm install --maxsockets 5; \
     fi
@@ -22,7 +22,7 @@ RUN ls -la dist/index.cjs dist/public/index.html
 FROM base AS proddeps
 COPY package.json package-lock.json* ./
 RUN if [ -f package-lock.json ]; then \
-      npm ci --omit=dev --maxsockets 5; \
+      npm ci --omit=dev --maxsockets 5 || npm install --omit=dev --maxsockets 5; \
     else \
       npm install --omit=dev --maxsockets 5; \
     fi

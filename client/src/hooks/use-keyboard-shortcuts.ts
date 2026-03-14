@@ -48,14 +48,14 @@ export const SHORTCUT_DEFINITIONS = [
 ] as const;
 
 const WORKSPACE_PHASE_KEYS: Record<string, string> = {
-  "1": "pre-planning",
-  "2": "requisition",
-  "3": "planning",
-  "4": "execution",
-  "5": "fs-heads",
-  "6": "evidence",
+  "1": "acceptance",
+  "2": "tb-gl-upload",
+  "3": "materiality",
+  "4": "execution-testing",
+  "5": "coa-mapping",
+  "6": "evidence-linking",
   "7": "finalization",
-  "8": "deliverables",
+  "8": "opinion-reports",
 };
 
 export function useKeyboardShortcuts(options: {

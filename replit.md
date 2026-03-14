@@ -1,407 +1,405 @@
-# AuditWise — Statutory Audit Management Platform
+# AuditWise
 
-## Project Overview
-
-AuditWise is a full-stack TypeScript web application built for Pakistani audit firms. It provides ISA 200-720 full coverage, ISQM-1 quality controls, and deep local regulatory integration.
-
-## UI/UX Design System
-
-The application uses a clean, modern SaaS design with consistent patterns:
-- **Page container**: `page-container` class (`px-5 py-5 space-y-6 max-w-[1400px] mx-auto w-full`), some pages use tighter `px-5 py-3 space-y-3` inline
-- **Page headers**: `<h1 className="text-xl font-semibold tracking-tight">` — no icon-in-box patterns
-- **Filter bars**: `filter-bar` class for search/filter rows
-- **Cards**: `shadow-sm` standard, using `Card`/`CardContent` from shadcn
-- **KPI grids**: `kpi-grid` class for metric card layouts
-- **Tables**: Simplified to essential columns (e.g., clients 8 cols from 18, engagements 8 from 25)
-- **Sticky header**: PageShell has `sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b`
-- **Sidebar**: Compact header/footer (h-8 avatar, text-sm)
-- **CSS file**: `client/src/index.css` contains all utility classes
+AI-enabled full-stack audit management platform for statutory audit execution.
 
 ## Architecture
 
-- **Frontend**: React 18 + Vite + Tailwind CSS + shadcn/ui components
-- **Backend**: Express.js (TypeScript) serving both the API and Vite dev middleware in development
-- **Database**: PostgreSQL via Prisma ORM
-- **Authentication**: JWT + session-based (Passport.js)
-- **Single server**: In development, Vite runs as middleware inside Express. Both frontend and backend share port 5000.
+- **Full-stack TypeScript** monorepo — single port 5000 serves both API and frontend
+- **Backend**: Express.js (`server/`) with Vite middleware in dev, static serving in production
+- **Frontend**: React 18 + Vite (`client/`) with Tailwind CSS + shadcn/ui + TanStack Query
+- **Database**: PostgreSQL via Prisma ORM (`prisma/schema.prisma`) + Drizzle ORM (`shared/schema.ts`)
+- **Auth**: JWT + session-based (Passport.js), token stored as `auditwise_token` in localStorage
+- **Production build**: `npm run build` → `dist/index.cjs` (backend+frontend) + `dist/public/` (static assets)
+- **Production run**: `node dist/index.cjs`
 
 ## Project Structure
 
 ```
-/client         - React frontend (Vite root)
-/server         - Express backend + Vite dev middleware
-/shared         - Shared TypeScript types and schema
-/prisma         - Prisma schema and seed files
-/dist           - Production build output
-/devops         - DevOps control scripts (Replit → GitHub → VPS)
-/deploy         - VPS deployment scripts (hostinger-deploy, backup, etc.)
-/docker         - Dockerfiles (backend, frontend, nginx)
-/nginx          - Nginx configuration files
-/.github        - GitHub Actions CI/CD workflows
+client/          React + Vite frontend (root at client/index.html)
+server/          Express backend — routes, services, seeds, middleware
+shared/          Shared types, Drizzle schema
+prisma/          Prisma schema and seed
+migrations/      Drizzle migrations
+deploy/          VPS deployment scripts
+docker/          Docker build files and entrypoints
 ```
 
-## Key Configuration
+## Key Dependencies
 
-- **Port**: 5000 (both frontend and backend in dev)
-- **Host**: 0.0.0.0 (required for Replit proxy)
-- **Vite**: Runs in middleware mode inside Express (`server/vite.ts`)
-- **AllowedHosts**: Set to `true` in Vite server options for Replit proxy compatibility
+- **ORM**: Prisma (primary) + Drizzle ORM (shared schema definitions)
+- **Auth**: Passport.js + JWT + express-session
+- **AI**: OpenAI integration (optional, via OPENAI_API_KEY)
+- **Storage**: Local filesystem or AWS S3 (optional)
+- **Email**: Nodemailer/SMTP (optional)
 
-## Environment Variables
+## Critical Rules
 
-- `DATABASE_URL` - PostgreSQL connection string (set by Replit)
-- `SESSION_SECRET` - Express session secret (auto-generated if not set)
-- `JWT_SECRET` - JWT signing secret (auto-generated or from `.jwt_secret` file)
-- `OPENAI_API_KEY` - For AI features (optional)
-- `GITHUB_PERSONAL_ACCESS_TOKEN` - GitHub PAT for pushing code
-- `VPS_SSH_KEY` - SSH private key for VPS deployment
-- `VPS_HOST` - VPS IP address (187.77.130.117)
-- `VPS_USER` - VPS user (root)
-- `DOMAIN_NAME` - Production domain (auditwise.tech)
+- **Prisma on Replit**: Always use `npx prisma db push --skip-generate`. Never run `npx prisma generate` standalone — it can time out.
+- **Auth token**: Stored in localStorage under key `auditwise_token`. Use `getAuthToken()` from `client/src/lib/auth.tsx` or `fetchWithAuth()` from `client/src/lib/fetchWithAuth.ts`.
+- **No `as any`**: Use `as unknown as T` instead.
+- **Client model**: Uses field `name` (NOT `companyName`).
+- **MaterialityAllocation.materialityId**: References `MaterialityCalculation`, NOT `MaterialitySet`.
+- **Audit trail**: `logAuditTrail(userId, action, entityType, entityId?, beforeValue?, afterValue?, engagementId?)` — always call with `.catch(...)`, never blocking.
+- **Production builds**: `import.meta.url` does NOT work in production CJS bundle — use `process.cwd()` for file paths instead.
+- **Template vault**: Template files live in `server/template-vault/`.
 
-## Database
+## Demo Users
 
-Uses Prisma with PostgreSQL. Schema is in `prisma/schema.prisma`.
-
-To push schema changes: `npx prisma db push`
-To generate client: `npx prisma generate`
-
-The app seeds data on startup:
-- SuperAdmin: aqeelalam2010@gmail.com
-- Demo users: partner, eqcr, manager, senior, staff (all with password `Test@123`)
+- `admin@auditwise.pk` / `Test@123`
+- `teamlead@auditwise.pk` / `Test@123`
+- `staff@auditwise.pk` / `Test@123`
+- Account lockout uses in-memory store — restart server to clear.
 
 ## Development
 
-The workflow runs: `NODE_OPTIONS='--max-old-space-size=1024' NODE_ENV=development npx tsx server/index.ts`
+```bash
+npm run dev          # Start development server (tsx server/index.ts)
+npm run build        # Build for production
+npx prisma db push --skip-generate   # Push Prisma schema changes
+npm run db:push      # Push Drizzle schema changes
+```
 
-## Deployment (Replit Autoscale)
+## Environment Variables
 
-- Target: Autoscale
+Required:
+- `DATABASE_URL` — PostgreSQL connection string (auto-provisioned by Replit)
+
+Optional:
+- `SESSION_SECRET` — Express session secret (auto-generated in dev)
+- `JWT_SECRET` — JWT signing secret (auto-generated in dev)
+- `OPENAI_API_KEY` — AI copilot features
+- `SMTP_*` — Email notifications
+- `AWS_*` / `S3_*` — S3 file storage
+
+## Workflow
+
+- **Start application**: `NODE_OPTIONS='--max-old-space-size=1024' NODE_ENV=development npx tsx server/index.ts` on port 5000
+
+## Replit Deployment (Autoscale)
+
+- Target: autoscale
 - Build: `npm run build`
 - Run: `node dist/index.cjs`
 
-## User Notification System
+## Production Deployment (Hostinger VPS)
 
-Real-time per-user notifications for review note events:
-- **Database**: `UserNotification` model (userId, type, title, message, referenceId, referenceType, isRead, createdAt)
-- **Backend**: `server/routes/userNotificationRoutes.ts` — mounted at `/api/notifications`
-  - `GET /api/notifications` — list user's notifications with unread count
-  - `PATCH /api/notifications/:id/read` — mark single notification as read
-  - `PATCH /api/notifications/mark-all-read` — mark all as read
-- **Notification triggers** (in `server/routes/reviewNoteRoutes.ts`):
-  - `REVIEW_NOTE_ASSIGNED` — when a review note is created with assignees
-  - `REVIEW_NOTE_STATUS` — when note status changes (addressed/cleared/reopened)
-  - `REVIEW_NOTE_REPLY` — when a new message is posted on a note thread
-- **Frontend**: Dynamic notification dropdown in `client/src/components/top-bar.tsx`
-  - Polls every 30s, shows unread badge count
-  - Clicking a review note notification navigates to `/review-notes`
-  - "Mark all read" button, per-notification read indicators
-- **Helper**: `createNotifications(userIds, data)` exported from userNotificationRoutes for reuse
+- **Domain**: auditwise.tech
+- **VPS IP**: 187.77.130.117
+- **VPS app path**: /opt/auditwise
+- **Architecture**: Docker Compose (backend + frontend + nginx + postgres + redis)
 
-## Engagement Allocation
+### Required Replit Secrets for VPS Deployment
 
-The Engagement Allocation page (`/engagement-allocation`) provides:
-- **Status filtering**: Tabs for All / Active / Completed engagements with status badges
-- **Inline editing**: Click Edit on any row to get per-role dropdowns (Partner, Manager, Senior, Staff, EQCR) with Save/Cancel per row
-- **Allocation history trail**: Expand any row to see who changed team allocations, when, and what changed (before→after with staff names)
-- **Backend validation**: Team update endpoint validates all userIds belong to the same firm
-- **Audit trail**: Team changes are logged with enriched snapshots (role + userId + fullName) for readable history
-- Files: `client/src/pages/engagement-allocation.tsx`, backend in `server/routes.ts`
-- API: `GET /api/engagements/:id/team-history`, `PUT /api/engagements/:id/team`
+- `GITHUB_PERSONAL_ACCESS_TOKEN` — GitHub PAT with repo push access
+- `VPS_SSH_KEY` — Private SSH key for VPS root access
+- `VPS_HOST` — VPS IP (187.77.130.117)
+- `VPS_USER` — SSH user (root)
 
-## User Management & Role Matrix
-
-The User Management page (`/firm-admin/users`) has two tabs:
-- **Users Tab**: List, search, create, edit users with role assignment. Status dropdown (Active/Suspended/Blocked) for each non-admin user — changes save immediately.
-- **Role Matrix Tab**: Editable permission grid — roles as columns (Staff, Senior, Manager, EQCR, Partner, Admin), permissions grouped by category as expandable rows. Checkboxes toggle permissions per role in real-time. FIRM_ADMIN always has all permissions (disabled checkboxes). "Save & Close" button at bottom right.
-- **User Status**: `UserStatus` enum with ACTIVE, SUSPENDED, BLOCKED, DELETED. Backend endpoint `POST /api/tenant/users/:id/set-status`. Blocked/Suspended users cannot log in.
-- APIs: `GET /api/rbac/permissions`, `GET /api/rbac/permissions/roles`, `PUT /api/admin/role-permissions`
-- Files: `client/src/pages/firm-admin/firm-users.tsx`, `server/permissionRoutes.ts`, `server/adminRoutes.ts`, `server/routes/tenantRoutes.ts`
-
-## Client Creation
-
-Shared `CreateClientDialog` component used everywhere (client list, dashboard, engagement dialog):
-- Required fields: Legal Name, NTN/CNIC, Focal Person (Name, Mobile, Email)
-- Optional: Trade Name, SECP No., Incorporation Date, City, Address, Email, Phone, Country, Entity Type, Industry
-- File: `client/src/components/create-client-dialog.tsx`
-
-## Engagement Dialog
-
-Enhanced engagement creation/edit dialog (`client/src/components/create-engagement-dialog.tsx`):
-- Tax Period dropdown (auto-sets periodStart/periodEnd)
-- Authorized Capital, Paid-up Capital (replaces single Share Capital)
-- Revenue (Last Year), Revenue (Year Before Last)
-- No. of Employees, Company Category dropdown (Pakistani categories)
-- DB columns: `authorizedCapital`, `paidUpCapital`, `companyCategory` on Engagement model
-
-## AI Opinion Engine (Finalization)
-
-The AI Opinion Engine is a sub-tab in the Finalization phase between "Going Concern" and "Reports" tabs.
-- **Database**: `OpinionEngine`, `OpinionFinding`, `OpinionAiRun` models with enums (`OpinionEngineStatus`, `OpinionCategory`, `FindingRiskLevel`, `ReviewerDecision`, `DataReliability`)
-- **Backend**: `server/opinionEngineRoutes.ts` — registered at `/api/opinion-engine`
-- **Frontend**: `client/src/components/finalization/ai-opinion-engine.tsx` — integrated via `finalization.tsx`
-- **5 Sub-tabs**: Dashboard (overall score + AI recommendation + partner decision), Data Sources (6 ISA-mapped data feeds), Findings (AI-generated with reviewer workflow), Scores (section breakdown), Partner (sign-off + lock)
-- **Analysis Engine**: Scans misstatements (ISA 450), going concern (ISA 570), significant risks (ISA 315/330), control deficiencies (ISA 265), subsequent events (ISA 560) — generates findings, scores, and opinion recommendation
-- **Security**: Lock immutability enforced, finding ownership validated via engine ID, partner-sign/lock restricted to PARTNER role via `requireMinRole`, idempotent analysis runs (deletes previous findings in transaction)
-- **Advisory Only**: Mandatory banner stating AI is advisory — final opinion requires partner professional judgment
-
-## Audit Log PDF Export
-
-The Audit Logs page (`/firm-admin/audit-logs`) has an "Export PDF" button that:
-- Fetches ALL filtered logs (up to 5000 entries) regardless of current page
-- Generates a formatted landscape A4 PDF with jspdf + jspdf-autotable
-- Includes header with firm name, generation timestamp, active filters, and entry count
-- Table columns: Timestamp, User, Role, Action, Entity, IP Address
-- Footer shows page numbers and "AuditWise - ISA Compliant Audit Platform"
-- File: `client/src/pages/firm-admin/firm-audit-logs.tsx`
-
-## AI Integration
-
-The AI Integration page (`/firm-admin/ai-usage`) provides multi-provider AI management:
-- **Providers Tab**: Configure OpenAI, Anthropic Claude, Google Gemini, DeepSeek with encrypted API keys, enable/disable toggles, and connection testing
-- **Configuration Tab**: Global AI settings (enable/disable AI, preferred provider, token limits, timeout, auto-suggestions, manual trigger mode)
-- **Usage Analytics Tab**: Token usage stats, provider breakdown, recent AI activity log
-- **AI Governance**: Audit trail logging, AI-assisted labeling, prohibited field protection, AES-256-GCM key encryption
-- Backend routes: `GET/PUT /api/tenant/ai-settings`, `POST/DELETE /api/tenant/ai-settings/provider-key`, `POST /api/tenant/ai-settings/provider-toggle`, `POST /api/tenant/ai-settings/test-provider`
-- Key decryption handled at runtime via `safeDecrypt()` in `aiService.ts` with plaintext fallback for legacy keys
-- Files: `client/src/pages/firm-admin/firm-ai-usage.tsx`, `server/routes/tenantRoutes.ts`, `server/services/aiService.ts`
-
-## Platform Admin Dashboard
-
-The Platform Dashboard (`/platform/dashboard`) shows real-time VPS metrics via SSH:
-- **Server Resources**: CPU, Memory, Disk usage from VPS (batched single SSH session)
-- **Health Probes**: HTTP/API probes hit `https://auditwise.tech`, DB/Nginx probes run Docker commands on VPS
-- **Services**: Docker container statuses normalized to active/inactive
-- **Deploy Pipeline**: Git Pull → Install → Build → Migrate → Restart (runs on VPS via SSH)
-- **Source Repository**: Git branch/commit/status from VPS `/opt/auditwise`
-- SSH key resolution: checks `VPS_SSH_PRIVATE_KEY` env → `VPS_SSH_KEY` env → `~/.ssh/vps_key` file → `/tmp/replit_deploy_key` file
-- Backend: `server/routes/systemHealthRoutes.ts`
-- Frontend: `client/src/pages/platform/platform-dashboard.tsx`
-
-## Legal Acceptance Feature
-
-Signup captures legal acceptance with Terms of Service and Privacy Policy:
-- **Signup page** (`client/src/pages/signup.tsx`): Required checkbox with clickable "Terms of Service" and "Privacy Policy" links that open PDF modals
-- **PDF files**: `client/public/legal/terms-of-service.pdf` and `client/public/legal/privacy-policy.pdf` (version 1.0)
-- **Database table**: `LegalAcceptance` stores firm_name, admin_name, email, mobile, IP address, timestamps, and document versions
-- **Backend**: Legal acceptance record created inside the signup transaction (`server/authRoutes.ts`)
-- **Super Admin dashboard**: `/platform/legal-acceptances` page with search, pagination, and detail view
-- **API**: `GET /api/platform/legal-acceptances` and `GET /api/platform/legal-acceptances/:id` (super admin only)
-
-## Data Intake Module
-
-The Data Intake module provides a centralized, linked workflow for importing, validating, reconciling, and mapping financial data:
-
-### Backend Services & Routes
-- **`server/services/dataIntakeStatusService.ts`**: Centralized status service computing live status for all sub-modules (Import, TB, GL, AR, AP, Bank, Confirmations, FS Mapping, Draft FS). Returns completion %, exception counts, reconciliation gate statuses, and completion blockers.
-- **`server/dataIntakeRoutes.ts`**: API routes for `/api/engagements/:id/data-intake/status` (GET) and `/api/engagements/:id/data-intake/reconcile` (POST)
-- **`server/services/reconIssuesEngine.ts`**: Full reconciliation scan engine (TB balance, GL balance, TB↔GL tie-out, AP/AR/Bank control account reconciliation). Persists issues to `ReconIssue` table with blocking flags.
-- **`server/coaRoutes.ts`**: Includes `POST /api/engagements/:id/coa/auto-map-prior` (maps accounts using prior engagement data for the same client, writes to both CoAAccount and MappingAllocation), `GET /api/engagements/:id/coa/mapping-stats` (mapped/unmapped counts and amounts)
-- **`server/fsDraftRoutes.ts`**: Includes `GET /api/fs-draft/:id/validate` (integrity checks: mapping coverage, TB↔GL reconciliation, BS footing, retained earnings linkage, blocking exceptions)
-
-### Frontend Components
-- **`client/src/components/data-intake-progress-ribbon.tsx`**: Top ribbon showing per-module status with record counts, quality score, exception counts, and labeled reconciliation gate icons. Added to information-requisition, import-wizard, tb-review, and review-mapping pages.
-- **`client/src/components/data-intake-checks-panel.tsx`**: Overall readiness summary card (readiness %, gates passed, open/blocking issues), plus three collapsible sections: Reconciliation Gates (9 gates with pass/fail), Draft FS Integrity Checks (6 validation checks with blocking indicators), Open Exceptions table (filterable, resolvable). Includes "Run Full Scan" button.
-- **`client/src/pages/information-requisition/DataTabSection.tsx`**: Enhanced with empty states showing contextual guidance and "Go to Upload" navigation for each data type (TB, GL, AP, AR, Bank). Summary metrics use vertical layout with uppercase labels.
-- **`client/src/pages/information-requisition/ReviewCoaSection.tsx`**: Sub-tab navigation enhanced with icons per tab (Upload, TB, GL, AP, AR, Bank, Confirmations, FS Mapping, Draft FS, Checks), horizontal scroll on narrow screens, and improved styling.
-- **FsMappingSection**: "Prior Year" button calls auto-map-prior to apply mappings from prior engagements
-
-### Validation Workbook Export
-- **`server/services/validationWorkbookService.ts`**: Generates `AuditWise_Data_Validation_Workbook.xlsx` with 5 sheets: Control_Summary, TB_Validation, GL_vs_TB_Validation, Subledger_Validation, Exceptions_Report. Queries ImportAccountBalance (OB/CB), ImportJournalLine (GL), ImportPartyBalance (AR/AP), ImportBankAccount/ImportBankBalance. Uses net movement comparison `(CB_net - OB_net) vs (GL_DR - GL_CR)` for accurate TB↔GL tie-out.
-- **API**: `GET /api/import/:engagementId/validation-workbook` in `importRoutes.ts`
-- **Frontend**: "Validation Workbook" button in SummaryTab next to "Export Output.xlsx", visible when `hasSummary` is true
-
-### Auto-Reconciliation
-- After data import, `triggerPostImportReconciliation()` in `importRoutes.ts` automatically runs the full reconciliation scan, updating gate statuses and generating exception records.
-
-## Compliance Checklists
-
-Regulatory compliance checklists per engagement (`/compliance-checklists/:engagementId`):
-
-- **Backend**: `server/routes/regulatoryComplianceRoutes.ts` mounted at `/api/compliance/checklists`
-- **Frontend**: `client/src/pages/compliance-checklists.tsx`
-- **Checklist types**: Companies Act 2017, FBR Tax, FBR WHT, FBR NTN, SECP, SECP XBRL, ISA Documentation, ISQM Quality Control, Custom
-- **Features**:
-  - **Bulk Excel/CSV upload**: Column auto-detection (law/regulation, section/rule, applicability, requirement, status, evidence, remarks). Empty rows filtered. Status auto-mapped (Compliant→COMPLETED, Non-Compliant→IN_PROGRESS, etc.)
-  - **Template download**: Per-type Excel template with styled header + instructions sheet. Uses ExcelJS
-  - **Evidence attachments**: Per-row file upload (PDF, images, Word, Excel, CSV, text — max 15MB). Files stored in `uploads/checklist-evidence/`. Inline display with download/delete. Stored as JSON array `evidenceAttachments` in each checklist item
-  - **Role guards**: All mutating endpoints require `SENIOR` role minimum
-  - **Auth**: File uploads use `fetchWithAuth` for proper auth token handling (token key: `auditwise_token`)
-- **Data model**: `ComplianceChecklist` with `items` JSON array, unique per `(engagementId, checklistType)`
-- **APIs**: GET list, POST upsert, GET template/:type, POST bulk-upload, POST evidence-upload/:type/:ref, DELETE evidence/:type/:ref/:id, GET evidence-download/:type/:ref/:id, GET export
-
-## Planning Module (ISA-Linked A-P Tabs)
-
-The Planning module (`/planning/:engagementId`) is restructured into 16 ISA-linked tabs (A-P):
-
-### Tab Structure
-- **A**: Planning Dashboard — readiness overview, intake status, risk signals, next actions
-- **B**: Financial Statements — FS review and analysis
-- **C**: Entity Controls — entity understanding sections
-- **D**: Analytical Procedures (ISA 520) — full analytics dashboard with horizontal/vertical/ratio/reasonableness analysis, fluctuation flags, risk linkage, editable narration, export. Backend: `server/planningAnalyticsRoutes.ts`, Frontend: `client/src/components/planning/analytical-procedures-panel.tsx`, Types: `shared/models/planningAnalyticsTypes.ts`. Auto-loads saved analytics on page load, shows read-only when planning locked. CR accounts sign-normalized.
-- **E**: Materiality — ISA 320 guided 10-step materiality workflow. Backend: `server/isa320MaterialityRoutes.ts` (mounted at `/api/isa320-materiality`), Frontend: `client/src/components/planning/isa320-materiality-panel.tsx`. Features: auto-pull source data from TB/GL/FS, smart benchmark recommendation engine, qualitative factor assessment, specific materiality, partner override with audit trail + revert, strict status transitions (DRAFT→PENDING_REVIEW→PENDING_APPROVAL→APPROVED→LOCKED), ISA 320 memo generation/print, push-downstream to risk/sampling, stale-status detection. Firm-ownership verified on all endpoints. `MaterialitySet` model extended with JSON fields: sourceDataSnapshot, qualitativeFactors, riskAdjustments, overrideHistory, documentationMemo, pmPercentage, trivialPercentage, benchmarkJustification, stepProgress, isStale/staleReason
-- **F**: Significant Accounts — auto-identified from TB/FS data
-- **G**: Risk Assessment — ISA 315 risk identification
-- **H**: Fraud Risk — ISA 240 fraud risk assessment with brainstorming
-- **I**: Internal Controls — process understanding and walkthroughs
-- **J**: Related Parties — ISA 550 related party identification
-- **K**: Laws & Regulations — ISA 250 compliance planning
-- **L**: Going Concern — ISA 570 assessment with auto-computed indicators
-- **M**: Team Planning — budget, timelines, team allocation
-- **N**: Strategy & Approach — ISA 300 audit strategy
-- **O**: Audit Program — program generation
-- **P**: Planning Memo — final approval and sign-off
-
-### Backend API
-- **Route prefix**: `/api/planning-dashboard`
-- **File**: `server/planningDashboardRoutes.ts`
-- **Endpoints** (all GET, all require auth + firmId verification):
-  - `/:engagementId/readiness` — intake status, risk signals, completion gates
-  - `/:engagementId/significant-accounts` — auto-identified from TB balances
-  - `/:engagementId/analytical-review` — TB trend analysis with change %
-  - `/:engagementId/fraud-indicators` — ISA 240 fraud risks
-  - `/:engagementId/control-cycles` — control cycle groupings from TB
-  - `/:engagementId/going-concern-indicators` — financial ratio indicators
-  - `/:engagementId/planning-completion` — section completion status
-
-### Frontend Components
-- `client/src/components/planning/planning-dashboard.tsx` — Tab A dashboard
-- `client/src/components/planning/planning-progress-ribbon.tsx` — top-of-page status bar
-- `client/src/components/planning/significant-accounts-panel.tsx` — Tab F
-- `client/src/components/planning/fraud-risk-panel.tsx` — Tab H
-- `client/src/components/planning/internal-controls-panel.tsx` — Tab I
-- `client/src/components/planning/laws-regulations-panel.tsx` — Tab K
-- `client/src/components/planning/going-concern-panel.tsx` — Tab L
-- `client/src/components/planning/team-planning-panel.tsx` — Tab M
-- `client/src/components/planning/planning-memo-panel.tsx` — Tab P
-
-### Data Flow
-- New tab components use `extendedPlanningData` state for persistence
-- `handleExtendedFieldChange(field, value)` writes to extended data and signals save bridge
-- On load, unknown keys from persisted data are hydrated into `extendedPlanningData`
-- Dashboard/Ribbon components fetch live data from planning-dashboard API endpoints
-
-## DevOps Control Center (devops/)
-
-Replit serves as the central DevOps controller for the entire deployment pipeline:
-
-```
-Replit → GitHub → VPS (187.77.130.117) → Docker → auditwise.tech
-```
-
-### Secrets Required
-
-| Secret | Controls |
-|--------|----------|
-| `GITHUB_PERSONAL_ACCESS_TOKEN` | GitHub pushes, code sync, CI/CD trigger |
-| `VPS_SSH_KEY` | VPS access, Docker management, deployments, backups |
-| `VPS_HOST` | VPS IP (187.77.130.117) |
-| `VPS_USER` | VPS user (root) |
-
-### Critical Project Rules
-
-- **Prisma generate** times out on Replit due to 13k+ line schema — use `npx prisma db push --skip-generate` instead
-- **Never change primary key ID column types** in the database
-- **logAuditTrail** in `server/auth.ts` uses raw Prisma — never call it inside `withTenantContext` transactions
-- Demo users all use password `Test@123`. SuperAdmin: `aqeelalam2010@gmail.com`
-- **SSH deploy key**: The key file at `/tmp/vps_deploy_key` is the correctly formatted key. Use `cp /tmp/vps_deploy_key /tmp/deploy_key && chmod 600 /tmp/deploy_key` before SSH commands
-- **GitHub push**: `git push "https://x-access-token:${GITHUB_PERSONAL_ACCESS_TOKEN}@github.com/aqeelalamfca-sys/Test-Audit.git" main`
-- **VPS deploy**: Write key to `/tmp/deploy_key`, chmod 600, then `ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no root@187.77.130.117`
-
-### Quick Commands
+### DevOps Commands (from Replit shell)
 
 ```bash
-bash devops/setup-ssh.sh             # Setup SSH key from secret (run once per session)
-bash devops/control.sh push          # Push code to GitHub
-bash devops/control.sh deploy        # Full deploy (push + build + restart)
-bash devops/control.sh deploy-quick  # Quick deploy (pull + restart backend)
-bash devops/control.sh health        # Full system health check (13 checks)
-bash devops/control.sh status        # Container status + resource usage
-bash devops/control.sh logs backend  # View backend logs
-bash devops/control.sh restart       # Restart all containers
-bash devops/control.sh backup        # Database backup
-bash devops/control.sh autopush      # Start auto-push daemon (2 min interval)
+bash devops/init.sh                    # Initialize SSH + Git credentials
+bash devops/control.sh help            # Show all available commands
+bash devops/control.sh push [msg]      # Push code to GitHub
+bash devops/control.sh deploy          # Full deploy: push → build → restart on VPS
+bash devops/control.sh deploy-quick    # Quick deploy: pull + restart backend only
+bash devops/control.sh health          # Full system health check
+bash devops/control.sh status          # Show container status
+bash devops/control.sh logs [svc] [n]  # View container logs
+bash devops/control.sh restart [svc]   # Restart container(s)
+bash devops/control.sh rebuild [svc]   # Rebuild & restart a service
+bash devops/control.sh backup          # Create database backup
+bash devops/control.sh ssh [cmd]       # Run command on VPS
 ```
 
-## Execution Module — Enhanced Working Paper Engine
+### Docker APT Signed-By Fix
 
-The Execution module's FS Heads wizard has been upgraded into a fully linked, ISA-based working paper engine:
+The Hostinger VPS had conflicting Docker repository signing key references (`docker.gpg` vs `docker.asc`) causing APT failures. All deploy/bootstrap scripts now include an idempotent fix that:
+1. Removes ALL old Docker keyring files and source lists
+2. Re-imports the Docker GPG key into a single `/etc/apt/keyrings/docker.gpg`
+3. Creates a clean `/etc/apt/sources.list.d/docker.list` with one `signed-by` reference
+4. Installs docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin
 
-### Key Services
-- **`server/services/fsHeadExecutionService.ts`** — Centralized aggregation service that pulls Data Intake (TB balances, sub-line items) + Planning (risks, assertions, audit programs, materiality) data per FS head. Returns enriched `ExecutionContext` with materiality, linked risks, assertion matrix, audit program, planning flags, team assignment, completion %, procedure/evidence/issue/review summaries.
-- **`server/services/fsHeadEnforcement.ts`** — ISA enforcement rules per FS head template
-- **`server/services/fsHeadProcedureTemplates.ts`** — Procedure templates with ISA references
+Standalone fix: `bash deploy/fix-docker-apt.sh` (run on VPS as root)
 
-### Wizard Steps (fs-heads.tsx)
-1. **Context** — Lead schedule with variance %, materiality comparison vs PM, planning flags (fraud/significant/going concern/ISA 540), weighted completion checklist (6 gates), linked risks
-2. **Assertions** — Assertion coverage matrix with visual per-assertion cards (risk count + procedure count), ROMM column, fraud/significant flags, linked audit program list
-3. **Procedures** — Planning audit program inheritance display, enhanced TOC/TOD/Analytics with linked risk info. TOC forms: control ref, type, frequency, owner, description, result dropdown. TOD forms: population count/value, sample size, exceptions found, conclusion. Analytics forms: CY/PY values, conclusion. Delete confirmations on all procedure types.
-4. **Evidence** — Drag-and-drop upload zone, colored file type badges (PDF=red, XLS=green, DOC=blue, IMG=purple), download endpoint with file streaming, delete confirmation, ISA 500 sufficiency assessment, AI evidence analysis
-5. **Conclusions** — Auto-filled work summary with procedure outcomes, completion progress bar, ISA compliance checklist, AI conclusion drafting, structured conclusion form dialog, working notes
-6. **Review** — Review point cards with resolve/respond functionality (response text + status update), return-for-rework button (PREPARED→IN_PROGRESS, REVIEWED→PREPARED), weighted completion gates (ISA references per gate), sign-off workflow (DRAFT→PREPARED→REVIEWED→APPROVED), approved state display
+### VPS Bootstrap (first-time setup)
 
-### Execution Dashboard (execution.tsx)
-- Metrics ribbon: Total Procedures, Open Procedures, Review Points, Evidence Files, High Risk Pending, ISA Compliance %
-- Search/filter bar: text search + status filter (All/Not Started/In Progress/Approved) + risk filter (All/High/Medium/Low)
-- FS Head cards: fraud/significant badges, evidence count, open review points
-- FS Heads navigator sidebar: search/filter input for quick FS head finding
-- Rule-based completion: context(10%) + assertions(15%) + procedures(30%) + evidence(20%) + conclusion(15%) + review(10%)
+```bash
+bash deploy/hostinger-vps-setup.sh     # Full VPS setup with SSL
+bash deploy/vps-bootstrap.sh           # Lightweight bootstrap
+bash deploy/hostinger-deploy.sh        # Deploy with secrets generation
+```
 
-### API Endpoints
-- `GET /api/engagements/:id/fs-heads/:key/execution-context` — Enhanced execution context with full cross-phase data
-- `GET /api/engagements/:id/execution-compliance-summary` — Aggregate metrics across all FS heads
-- `GET /api/engagements/:id/execution-summary` — High-level execution summary
-- `PATCH /api/engagements/:id/fs-heads/:key/review-points/:rpId` — Resolve/respond to review points (Zod-validated, ownership-scoped)
-- `GET /api/engagements/:id/fs-heads/:key/attachments/:attId/download` — File download with streaming
-- `POST /api/engagements/:id/fs-heads/:key/attachments` — Evidence file upload (multer)
-- `DELETE /api/engagements/:id/fs-heads/:key/attachments/:attId` — Evidence deletion
+### Rollback
 
-### Production Infrastructure
+If deployment fails, the deploy scripts auto-rollback to the previous commit. Manual rollback on VPS:
+```bash
+cd /opt/auditwise
+git log --oneline -5                   # Find target commit
+git reset --hard <commit>
+docker compose build --no-cache backend frontend
+docker compose up -d --force-recreate
+```
 
-- VPS: Hostinger (187.77.130.117), Ubuntu 24.04, 8 CPU, 32GB RAM
-- Docker: 5 containers (backend, frontend, nginx, db, redis)
-- SSL: Let's Encrypt for auditwise.tech
-- Domain: https://auditwise.tech (live and verified)
-- CI/CD: GitHub Actions (.github/workflows/deploy.yml) auto-deploys on push to main
-- GitHub repo: aqeelalamfca-sys/Test-Audit (branch: main)
+## Phase Architecture (19-Phase System)
 
-### Phase Locking
+The canonical audit workflow uses 19 phases defined in `shared/phases.ts` (single source of truth). The phases are grouped into 6 categories:
 
-- **Firm Settings → Locking Phases tab** (`/firm-admin/settings`, tab `locking-phases`): Firm Admin toggle for `phaseLockingEnabled` (default: `true`)
-- `FirmSettings.phaseLockingEnabled` (Prisma) controls whether workspace phase gating is enforced
-- **Public endpoint**: `GET /api/tenant/settings/public` — returns `{ phaseLockingEnabled }` for all authenticated users (not admin-gated)
-- **Admin endpoint**: `PATCH /api/tenant/settings` with `{ phaseLockingEnabled: boolean }` — admin-only write
-- `workspace-ribbon.tsx` reads the public endpoint; when `phaseLockingEnabled === false`, `isPhaseGated()` returns `false` for all phases
-- "Data Intake" (requisition) tab is always accessible regardless of locking status
+- **Onboarding** (0-3): client-creation, engagement-setup, acceptance, independence
+- **Data Import** (4-6): tb-gl-upload, validation, coa-mapping
+- **Planning** (7-9): materiality, risk-assessment, planning-strategy
+- **Fieldwork** (10-14): procedures-sampling, execution-testing, evidence-linking, observations, adjustments
+- **Completion** (15-16): finalization (11-section completion phase with enhanced gate enforcement), opinion-reports (9-tab reporting phase with ISA 700/701/705/706/265 coverage)
+- **Quality & Archive** (17-18): eqcr, inspection
 
-### Known Schema Mapping Notes
+Key files:
+- `shared/phases.ts` — Canonical phase registry with gates, roles, AI capabilities, ISA refs, descriptions
+- `server/services/phaseGateEngine.ts` — Backend gate evaluation engine
+- `server/services/phaseStateService.ts` — Unified phase-state service (read/update progress, status transitions, initialization)
+- `server/routes/phaseStateRoutes.ts` — Phase state API (`/api/phase-state/...`)
+- `server/routes.ts` — Phase gate API endpoints (`/api/phase-gates/:engagementId`)
+- `client/src/lib/workspace-context.tsx` — Frontend phase routing (imports from shared/phases.ts)
+- `client/src/lib/navigation.ts` — Smart routing and phase helpers
+- `client/src/lib/form-constants.ts` — Shared form dropdown options (cities, entity types, industries, frameworks, etc.)
+- `client/src/components/app-sidebar.tsx` — Sidebar with grouped 19-phase navigation
+- `client/src/components/engagement-workspace-shell.tsx` — Unified workspace shell (header, breadcrumbs, progress ribbon, prev/next, AI panel, gate alerts)
+- `client/src/hooks/use-phase-role-guard.ts` — Role-based phase guard hook (canView/canEdit/canReview/canApprove/canReopen/canArchive/isReadOnly)
+- `client/src/components/sign-off-bar.tsx` — Section sign-off bar (prepare/review/approve/return flow) with contextual action labels
+- `server/sectionSignOffRoutes.ts` — Sign-off API endpoints (prepare/review/approve/return/lock/unlock)
+- `server/services/signOffAuthority.ts` — Role authority matrix for sign-off actions
+- `client/src/App.tsx` — All workspace routes (canonical + legacy backward-compat)
 
-- **TrialBalanceLine** uses `fsArea` (enum: REVENUE, FIXED_ASSETS, RECEIVABLES, etc.) — NOT fsCategory. The `debits` and `credits` fields hold movements (NOT debitMovement/creditMovement). No `fsLineItem` field exists — use CoA mapping or accountName instead.
-- **TBReconciliation** uses `isResolved` (boolean, not `status`), `varianceAmount` (not `difference`), and `tbEntry` relation (not `tbItem`).
-- **TBValidationError** uses `isResolved` and `isBlocking` (not `resolved`/`severity`), `batch` relation (not `tbBatch`), `entry` relation (not `tbItem`).
-- **GLValidationError** uses `isResolved` (not `resolved`), `entry` relation for GLEntry.
-- **ImportBatch** uses `processedRows` and `errorCount` (not `validRows`/`errorRows`).
-- **TBEntry** has `movementDebit`, `movementCredit`, `closingDebit`, `closingCredit` — not simple `debit`/`credit`.
-- `fsAreaToCategory()` helper maps FSArea enum values to high-level categories (ASSETS, LIABILITIES, EQUITY, INCOME, EXPENSES) for planning dashboard analytics.
+**Engagement Workspace Shell**: All workspace routes render inside `EngagementWorkspaceShell`, which provides:
+- Canonical breadcrumbs: Home > Engagements > [Client] > [Phase Group] > [Phase]
+- Horizontal progress ribbon showing all 17 workspace phases with status icons and tooltips
+- Header with client name, engagement code, period, blocker count, completion stats, progress bar
+- Prev/next phase navigation in sticky bottom bar
+- AI capabilities side panel (toggle via bot icon)
+- Gate blocker/warning alerts above page content
+- Smart resume redirect: bare `/workspace/:id` redirects to first in-progress or incomplete phase
 
-## Template Vault (Task 7)
+Old route slugs (pre-planning, requisition, planning, execution, etc.) are now **redirects** to canonical slugs. Legacy workspace routes (`/workspace/:id/requisition`, `/workspace/:id/pre-planning`, etc.) redirect to their canonical equivalents. Standalone tool routes (checklists, audit-health, workflow-health, standards-matrix, compliance-simulation, qcr-dashboard) are also wrapped in the shell for consistent UX.
 
-- **Backend**: `server/templateVaultRoutes.ts` — mounted at `/api/template-vault`
-  - `GET /catalog` — returns 76 classified templates with search/filter support
-  - `GET /download/:templateId` — streams files with path traversal protection
-  - `GET /stats` — category/phase/fileType breakdown
-- **Template files**: `server/template-vault/working-papers/` (57 files) and `server/template-vault/isqm/` (19 files)
-- **Categories**: WORKING_PAPER (BS.01-BS.28, PL.01-PL.08, AE.01-AE.04), PLANNING (PR.00-PR.06), REPORTING (RP.07-RP.FS), CONFIRMATION (CF.BK-CF.AR), ISQM, ISQM_REFERENCE, OTHER
-- **Frontend**: Template Library tab in `evidence-vault.tsx` — grouped by sub-category, searchable, filterable, one-click download
+**Phase order derivation**: All frontend UI components (workspace-ribbon, global-status-bar, phase-gates-panel, global-progress-panel, standards-matrix) now reference the canonical 19-phase system. Backend PHASE_ORDER arrays remain aligned with Prisma's `AuditPhase` enum (8 high-level storage phases) with cross-reference comments to `shared/phases.ts`.
 
-## Post-Merge Setup
+### Role-Based Sign-Off System
+All 18 workspace phase pages use a standardized prepare → review → approve workflow:
+- **`usePhaseRoleGuard(phaseKey, signOffPhase)`** — Single hook returning `{ canView, canEdit, canReview, canApprove, canReopen, canArchive, isReadOnly, userRole, phaseKey }` based on `shared/phases.ts` rolePermissions + lock status
+- **`SignOffBar`** — Contextual action bar showing "Send for Review" / "Mark Reviewed" / "Approve" / "Return for Rework" per role and status
+- **PageShell pages** receive `signoffPhase`, `signoffSection`, `readOnly={roleGuard.isReadOnly}` props
+- **Non-PageShell pages** render `<SignOffBar phase="..." section="..." />` directly
+- Role hierarchy: STAFF(1) → SENIOR(2) → MANAGER(3) → EQCR(4) → PARTNER(5) → FIRM_ADMIN(6)
+- `useModuleReadOnly` (in sign-off-bar.tsx) is now only used internally by `usePhaseRoleGuard`
 
-Script: `scripts/post-merge.sh` (configured in `.replit` [postMerge] section, timeout 300s)
-Runs automatically after task agent merges: `npm install`, `prisma db push --skip-generate` (no `--accept-data-loss`), `prisma generate` (with 120s timeout, non-fatal on timeout).
+### AI Native Assistant (Unified Across All Phases)
+- **Orchestrator**: `server/services/aiPhaseOrchestrator.ts` — Registry of AI capabilities per phase (all 19 phases)
+- **Generation API**: `POST /api/ai/phase/:phaseKey/generate` — generates content AND persists to `AISuggestion` + `AIAuditLog`
+- **Suggestions API**: `GET /api/ai/phase-suggestions/:engagementId/:phaseKey` — fetch stored suggestions + audit trail per phase
+- **Accept/Reject API**: `POST /api/ai/phase-suggestions/:engagementId/:phaseKey/accept|reject` — human-in-the-loop approval
+- **Capabilities API**: `GET /api/ai/phase/:phaseKey/capabilities`, `GET /api/ai/phases/capabilities`
+- **Field-level suggestions**: `server/routes/ai-suggest.ts` — `/suggest`, `/override`, `/revert`, `/suggestions/:engagementId/:phase/:section`
+- **Frontend Hooks**: `use-phase-ai.ts` (capabilities + generation), `use-ai-suggestions.ts` (stored suggestions + accept/reject)
+- **UI Component**: `client/src/components/ai-assistant-panel.tsx` — unified panel integrated into all 16 phase pages with:
+  - Phase-specific AI capability buttons (generate drafts, analysis, summaries)
+  - Stored suggestion history with status badges (AI Draft / User Edited / Rejected)
+  - Confidence badges + low-confidence warnings (< 60%)
+  - AI-generated content clearly labeled with "AI-Generated Draft" + "Subject to Professional Judgment"
+  - Human-in-the-loop enforcement: Professional Judgment Confirmation checkbox required before accepting
+  - Edit/Accept/Reject/Regenerate workflow with audit trail
+  - AI Audit Trail section (collapsible history of all AI interactions)
+- **Storage Models**: `AISuggestion` (unique per engagementId+phase+section+fieldKey), `AIAuditLog` (immutable interaction log)
+- **Existing AI services retained**: `aiService.ts`, `aiCopilotService.ts`, `aiAuditUtilities.ts`, `ai-suggest.ts`
 
-## Data Intake Module (Task Merge Notes)
+### Legacy Engines (Deprecated, Retained)
+- `server/services/auditChainStateMachine.ts` — @deprecated, use phaseGateEngine.ts
+- `server/services/enforcementEngine.ts` — @deprecated, use phaseGateEngine.ts
+- `server/services/workflowOrchestrator.ts` — @deprecated, use phaseGateEngine.ts
+- `server/services/phaseEngine.ts` — @deprecated, use phaseGateEngine.ts
 
-- AP reconciliation sign: `drcr === 'CR' ? -balance : balance` (CR negative, DR positive)
-- Bank balance seed stores `Math.abs(bookBalance)` with separate `drcr` flag
-- `syncImportDataToCore` called after import POST `/post` to sync TB/GL data
-- ConfirmationPopulation auto-created for DEBTORS/CREDITORS/BANK during seed and import posting
+### UI Component Consolidation
+- **Canonical StatusBadge**: `client/src/components/ui/status-badge.tsx` — single source of truth for all badge types
+  - Generic: `StatusBadge` (pass/warn/fail/info/neutral/pending)
+  - Phase: `PhaseStatusBadge` (not_started/in_progress/under_review/completed/locked)
+  - Checklist: `ChecklistStatusBadge` (pending/in_progress/completed/not_applicable)
+  - Risk: `RiskBadge` (low/medium/high)
+  - ISA: `IsaReferenceBadge` (reference string)
+  - Role: `RoleBadge` (super_admin through client)
+  - Presets: `AuditStatusBadges` (Balanced, Matched, Approved, etc.)
+- **EntityStatusBadge**: `client/src/components/ui/visual-indicators.tsx` — workflow status (DRAFT/PREPARED/REVIEWED/APPROVED) with tooltip support
+- **Legacy bridge**: `client/src/components/status-badge.tsx` — re-exports from `ui/status-badge.tsx`
+- **EmptyState**: `client/src/components/empty-state.tsx` — reusable variants (NoData, NoItems, NoSearchResults, Error, TableSkeleton, CardSkeleton)
+
+### Cleanup Report
+- Full cleanup report at `docs/CLEANUP_REPORT.md`
+
+### Acceptance & Continuance (Phase 2)
+- **Page**: `client/src/pages/acceptance-continuance.tsx` — dedicated standalone page with 8 tabs
+- **Tabs**: Prospective/Recurring, Acceptance Factors, Management Integrity, Competence & Resources, Preconditions, Engagement Letter Readiness, Continuance Assessment, Acceptance Conclusion
+- **Features**: Completeness tracker, auto-save, AI assistant panel, mandatory partner approval dialog with audit trail
+- **Backend**: `server/ethicsRoutes.ts` — acceptance-data GET/PUT, acceptance-approve PATCH endpoints
+- **Model**: `AcceptanceContinuanceDecision` (Prisma)
+- **Gates**: acceptance-checklist (hard), continuance-assessed (hard), engagement-letter-issued (hard), acceptance-approved (hard)
+
+### Independence / Ethics (Phase 3)
+- **Page**: `client/src/pages/ethics-independence.tsx` — dedicated standalone page with 8 tabs
+- **Tabs**: Independence Confirmations, Conflicts of Interest, Non-Audit Services, Safeguards, Ethics Compliance, Restricted Relationships, Partner/Staff Declarations, Ethics Conclusion
+- **Features**: Real-time declaration tracking from backend, threat/safeguard display, completeness tracker, AI assistant panel, partner approval & lock dialog with audit trail
+- **Backend**: `server/ethicsRoutes.ts` — existing declaration/threat/conflict endpoints + ethics-approve PATCH
+- **Models**: `IndependenceDeclaration`, `ThreatRegister`, `Safeguard`, `EthicsConfirmation`, `ConflictOfInterest` (Prisma)
+- **Gates**: independence-confirmed (hard), conflicts-resolved (hard), ethics-declarations (hard), ethics-approved (hard)
+- **Gate enforcement**: TB/GL Upload (phase 4) requires BOTH acceptance AND independence phases to be approved
+
+### TB/GL Upload (Phase 4)
+- **Page**: `client/src/pages/information-requisition.tsx` — refactored as focused upload page
+- **Tabs**: Upload Wizard, Trial Balance, General Ledger, AP, AR, Bank, Import Logs
+- **Features**: File type selection, source/period tagging, batch tracking with batch IDs, template checks, import logs via BatchTrackingTable
+- **Backend**: `server/importRoutes.ts` — GET `/api/import/:engagementId/batches` returns batch tracking data
+- **Sub-components**: `information-requisition/SummaryTab.tsx` (upload wizard with tagging), `information-requisition/ReviewCoaSection.tsx` (tab routing + BatchTrackingTable)
+- **Gates**: tb-uploaded (hard), gl-uploaded (hard), batch-tracked (hard), template-checked (hard)
+
+### Validation & Parsing (Phase 5)
+- **Page**: `client/src/pages/post-upload-workflow.tsx` — refactored with structured validation results panel
+- **Features**: ValidationResultsPanel at top showing passed checks (green), warnings (amber), blockers (red) from backend; parser summary stats (TB rows, GL entries, pass rate); AI analysis section for corrective actions and data quality; pipeline dashboard below for workflow tracking
+- **Backend**: `server/importRoutes.ts` — GET `/api/import/:engagementId/validation-results` returns structured { passedChecks, warnings, blockers, parserSummary }
+- **Gates**: tb-validated (hard), gl-reconciled (hard), duplicates-cleared (hard), blockers-resolved (hard)
+- **Gate enforcement**: Validation blockers prevent COA Mapping and Materiality completion (recursive prerequisite checks in phaseGateEngine.ts)
+
+### CoA/FS Mapping (Phase 6)
+- **Page**: `client/src/pages/fs-heads.tsx` — MappingOverviewPanel + FSHeadsContent
+- **Features**: Mapping completeness score, 5 stat cards (total/mapped/unmapped/flagged/FS heads), 4 sub-tabs (FS Head Groups, Unmapped, Lead Schedules, Prior Year), AI analysis
+- **Backend**: `server/importRoutes.ts` — GET `/api/import/:engagementId/coa-accounts`, GET `/api/import/:engagementId/mapping-stats`
+- **Gates**: coa-mapped, fs-heads-mapped, lead-schedules-grouped (soft), unmapped-reviewed, mapping-score-met (95% threshold)
+
+### Materiality (Phase 7)
+- **Page**: `client/src/pages/planning.tsx` (materiality tab) — MaterialityPhaseOverview + ISA320MaterialityPanelNew
+- **Features**: Route-aware defaulting (/materiality → materiality tab), dynamic page title, overview card with benchmark/calculation/qualitative/approval sections, AI support badges, downstream linkage badges
+- **Gates**: benchmark-selected, materiality-calculated, qualitative-assessed (soft), materiality-approved
+
+### Risk Assessment (Phase 8)
+- **Page**: `client/src/pages/planning.tsx` (risk-assessment route) — RiskAssessmentPhaseHeader + focused tabs
+- **Tabs**: Entity & FS-Level Risks, Significant Accounts & Assertions, Fraud Risk, Related Controls Awareness, Analytical Triggers, Related Parties, Going Concern, Laws & Regulations
+- **Features**: Status overview header with risk coverage %, unmapped areas, high-risk pending counts; route-aware tab filtering; AI support for risk drafting from analytics, fraud risk prompts, missing linkage warnings
+- **Backend**: `server/planningRoutes.ts` — GET `/api/planning/:engagementId/risk-stats`
+- **Gates**: entity-risks-documented, fs-level-risks-mapped, assertion-risks-linked, significant-risks-identified, fraud-risks-assessed, risk-register-complete (soft), risk-conclusion-documented
+- **Prerequisite**: Materiality phase must be complete
+
+### Planning Strategy (Phase 9)
+- **Page**: `client/src/pages/planning.tsx` (planning-strategy route) — PlanningStrategyPhaseHeader + focused tabs
+- **Tabs**: Audit Strategy Memo, Scope & Component Coverage, Team Allocation & Timing, Internal Control Reliance, Use of Analytics, Substantive Approach & Programs, Planning Conclusion & Memo
+- **Features**: Status overview with strategy/scope/team/memo completion status; prerequisite enforcement (requires risk assessment); AI support for planning memo draft and missing linkage warnings
+- **Backend**: `server/planningRoutes.ts` — GET `/api/planning/:engagementId/strategy-stats`
+- **Gates**: strategy-documented, scope-defined, team-allocated (soft), planning-memo-complete
+- **Prerequisite**: Risk assessment phase must have documented risks
+
+### Procedures & Sampling (Phase 10)
+- **Page**: `client/src/pages/procedures-sampling.tsx` — dedicated standalone page with 4 tabs
+- **Tabs**: Risk-Procedure Matrix, Audit Program, Sampling, Assertions
+- **Features**: Phase overview header with 6 stat cards (total/linked/assertions/high-risk/sampling/reviewed), coverage % composite score, gate warnings for ISA 330/530/220/315 compliance, prerequisite enforcement, AI support badges, downstream linkage to execution/evidence/conclusions
+- **Backend**: `server/planningRoutes.ts` — GET `/api/planning/:engagementId/procedures-stats` returns comprehensive procedure/risk/sampling statistics with FS area coverage breakdown
+- **Gates**: procedures-linked (hard), high-risk-procedures-exist (hard), assertions-covered (hard), sampling-populations-defined (hard), sampling-rationale-documented (soft), reviewer-status-clear (soft)
+- **AI capabilities**: procedure-suggestions, sample-rationale-wording, missing-procedure-coverage
+- **Prerequisite**: Planning strategy phase must be complete
+
+### Execution Testing (Phase 11)
+- **Page**: `client/src/pages/execution-testing.tsx` — dedicated standalone page with 5 tabs
+- **Tabs**: Dashboard, Procedures, Testing, Workpapers, Review
+- **Features**: Phase overview header with 6 stat cards (total/completed/in-progress/not-started/workpapers/exceptions), execution % composite, gate warnings for ISA 230/330/450/500/220 compliance; FS area execution progress; per-procedure detail with risk/assertion/sample linkage; control vs substantive testing breakdown; workpaper documentation status with missing workpaper alerts; reviewer panel with awaiting-review/missing-conclusions/review-note tracking
+- **Backend**: `server/planningRoutes.ts` — GET `/api/planning/:engagementId/execution-stats` returns procedure execution progress, test counts, misstatements, review notes, evidence files, FS area execution breakdown, and full procedure details
+- **Gates**: procedures-executed (hard), workpapers-documented (hard), critical-exceptions-resolved (hard), conclusions-documented (hard), review-notes-cleared (soft), evidence-attached (soft)
+- **AI capabilities**: execution-documentation-narration, test-result-summary, exception-wording, conclusion-draft
+- **Prerequisite**: Procedures & Sampling phase must be complete
+
+### Evidence Linking (Phase 12)
+- **Page**: `client/src/pages/evidence-linking.tsx` — dedicated standalone page with 6 tabs
+- **Tabs**: Dashboard, Evidence Vault, Procedure Linkage, Categorization, Version History, Reviewer Panel
+- **Features**: Phase overview header with 6 stat cards (active files/linked procs/WP links/categorized/sufficient/linkage%), gate warnings for ISA 500/230/220 compliance; evidence-by-source-type breakdown (ISA 500 hierarchy); sufficiency assessment dashboard; missing evidence alerts for unlinked procedures; drag/drop file upload zone; filterable evidence table with source type/sufficiency/phase filters; procedure-evidence linkage matrix showing linked/unlinked status; workpaper-evidence link tracking; categorization with auto-categorize AI button; file version history with supersession tracking; traceability chips showing where each file is used (procedures/workpapers/assertions); reviewer panel with review status/sufficiency ratings/unaddressed comments
+- **Backend**: `server/planningRoutes.ts` — GET `/api/planning/:engagementId/evidence-linking-stats` returns evidence file counts, linked/unlinked procedures, workpaper evidence links, sufficiency ratings, source type breakdown, version stats, by-phase and by-sufficiency breakdowns, and full evidence list with linked procedures/workpapers
+- **Gates**: evidence-linked (hard), evidence-categorized (hard), sufficiency-confirmed (hard), version-history-maintained (soft), reviewer-comments-addressed (soft)
+- **AI capabilities**: evidence-sufficiency-prompts, missing-evidence-alerts, evidence-description-suggestions
+- **Prerequisite**: Execution Testing phase must be complete
+
+### Observations & Findings (Phase 13)
+- **Page**: `client/src/pages/observations.tsx` — dedicated standalone page
+- **Features**: Full CRUD for observations, management response/auditor conclusion workflow, severity/type/status badges, FS head linkage, effect amount tracking, filter/sort/search, waiver workflow, ISA 265/450 compliance badge
+- **Extended Types**: MISSTATEMENT, CONTROL_DEFICIENCY, MATERIAL_WEAKNESS, SIGNIFICANT_DEFICIENCY, AUDIT_FINDING, PJE_RECLASS, MANAGEMENT_POINT, COMPLIANCE_ISSUE, OTHER
+- **Extended Statuses**: OPEN, UNDER_REVIEW, MGMT_RESPONDED, PENDING_CLEARANCE, CLEARED, ADJUSTED, CARRIED_FORWARD, WAIVED, CLOSED
+- **New Fields**: title (optional descriptive heading), riskImplication, recommendation
+- **Backend**: `server/observationRoutes.ts` — CRUD, management-response, auditor-conclusion, clear, waive, review, delete endpoints
+- **Gates**: critical-findings-resolved (hard), observation-evidence-linked (hard), management-responses-obtained (hard), observations-reviewed (soft), observations-partner-approved (hard)
+- **AI capabilities**: recommendation-wording
+- **Prerequisite**: Evidence Linking phase must be complete
+
+### Adjustments & Misstatements (Phase 14)
+- **Page**: `client/src/pages/adjustments.tsx` — dedicated standalone page with 4 tabs
+- **Tabs**: Dashboard, Journal Entries, SAD Summary, Review
+- **Features**: Adjustment CRUD with journal entry format (debit/credit), misstatement classification (Factual/Judgmental/Projected per ISA 450), clearly trivial threshold assessment, materiality comparison with progress bar, management acceptance/dispute workflow, reviewer panel, phase gate compliance warnings, cumulative effect assessment, SAD (Summary of Audit Differences) split view
+- **Backend**: `server/auditAdjustmentRoutes.ts` — CRUD, management-accept, review, stats/summary endpoints
+- **API mount**: `/api/audit-adjustments`
+- **Stats endpoint**: `GET /api/audit-adjustments/:engagementId/stats/summary` (registered before `/:id` to avoid route conflict)
+- **Gates**: adjustments-summarized (hard), sad-classified (hard), sad-reviewed (hard), management-acceptance-recorded (hard), cumulative-effect-assessed (hard), adjustments-reviewed (soft), adjustments-partner-approved (hard)
+- **AI capabilities**: adjustment-narrative, sad-summary-narration
+- **Prerequisite**: Observations phase must be complete
+
+### Finalization / Completion (Phase 15)
+- **Page**: `client/src/pages/finalization.tsx` — comprehensive completion phase with 14 tabs
+- **Tabs**: Control Board (with completion dashboard), Adjusted FS, Completion Checklist, Subsequent Events, Going Concern, Legal & Claims, Related Parties, Disclosure Review, Representation Letter, Final Analytics, Final Conclusion, Completion Memo, Partner Review Readiness, Lock Gate
+- **Backend**: `server/finalizationRoutes.ts` — CRUD for subsequent events, going concern, representations, completion memo, checklists + finalization-stats endpoint
+- **Stats endpoint**: `GET /api/finalization/:engagementId/finalization-stats` (completion progress, findings/adjustments status, report readiness)
+- **Gates**: completion-checklist, subsequent-events, going-concern, representation-letter, findings-addressed, required-signoffs, disclosure-reviewed, final-analytics-done, completion-memo-done, partner-review-ready (10 gates total)
+- **AI capabilities**: completion-memo-drafting, subsequent-events-narration, going-concern-wording, unresolved-matters-summary
+- **Enhanced gate enforcement**: checks observations/adjustments status, required manager+partner sign-offs, checklist completion
+
+### Opinion / Reports (Phase 16)
+- **Page**: `client/src/pages/opinion-reports.tsx` — dedicated 9-tab reporting phase
+- **Tabs**: Dashboard, Report Type & Opinion (ISA 700/705), Emphasis/Other Matter (ISA 706/720), Key Audit Matters (ISA 701), FS Pack Readiness, Management Letter (ISA 265), Deliverables Checklist, Report Package, Release Controls
+- **Backend**: `server/opinionEngineRoutes.ts` — opinion engine, deliverables CRUD, opinion-reports-stats endpoint
+- **Stats endpoint**: `GET /api/opinion-engine/:engagementId/opinion-reports-stats` (opinion status, deliverables progress, KAMs, control deficiencies, release readiness)
+- **Gates**: finalization-approved, opinion-determined, basis-documented, kam-documented, fs-pack-ready, management-letter-done, deliverables-checklist-complete, report-package-generated, release-approved (9 gates)
+- **AI capabilities**: report-drafting-support, basis-paragraph-support, management-letter-wording, deliverable-summary
+- **Features**: AI Opinion Engine (reused from finalization), deliverables register with CRUD/upload/approval/issuance workflow, readiness checklist, release controls with partner-only issuance
+- **Routing**: `App.tsx` routes `/workspace/:engagementId/opinion-reports` to `OpinionReportsPage` (previously routed to `PrintView`/print-view.tsx)
+
+### EQCR Review (Phase 17)
+- **Page**: `client/src/pages/eqcr.tsx` — 7-tab EQCR review phase (Dashboard, Open Matters, Report Pack Review, Key Judgments, Independence Summary, EQCR Checklist, Clearance & Conclusion)
+- **Backend**: `server/eqcrRoutes.ts` — EQCR CRUD, assignment, checklist items, comments (IDOR-protected), partner comments, signed report upload, AI summary generation, unresolved issues summary, stats endpoint
+- **Stats endpoint**: `GET /api/eqcr/:engagementId/stats` (completion progress, open comments, clearance status, finalization state)
+- **Gates**: report-pack-frozen (real: checks finalized deliverables), eqcr-issues-resolved (real: checks open comments + unremarked NO items), eqcr-release (real: checks isFinalized + clearance status)
+- **AI capabilities**: eqcr-readiness-summary, eqcr-unresolved-issues-summary
+- **Security**: All mutating routes enforce finalization lock server-side; comment respond/clear routes verify comment belongs to engagement's assignment (IDOR protection)
+- **Navigation**: backHref → opinion-reports, nextHref → inspection
+
+### Inspection Archive (Phase 18)
+- **Page**: `client/src/pages/inspection.tsx` — 8-tab archive phase (Dashboard, Final Reports, Key Documents, Audit Trail, Working Papers, Review History, Archive Index, Export & Release)
+- **Backend**: `server/inspectionRoutes.ts` — stats, readiness scoring, archive lifecycle (build/seal/release), archive index generation, final reports, review history, working papers, audit trail, export logs, AI analysis endpoints
+- **Prisma models**: `ArchivePackage` (status: PENDING→BUILDING→SEALED→RELEASED, archiveIndex, packageManifest, frozenSnapshot, packageHash), reuses `InspectionReadiness`, `ExportLog`
+- **Gates**: eqcr-released (real), archive-readiness-checked (real: ≥80% readiness), archive-sealed (real: checks archive status), archive-index-generated (soft), archive-released (real: checks RELEASED status)
+- **AI capabilities**: archive-completeness-analysis, inspection-gap-summary
+- **Immutability**: After seal, all mutating routes blocked via `enforceArchiveImmutability()`; release transitions engagement status to ARCHIVED
+- **Archive Index**: Structured by sections (A-F) with ISA references for AOB/ICAP regulator retrieval
+- **Navigation**: backHref → eqcr (final phase in workflow)
+
+## Feature Status
+
+- ISA 320 Materiality: Complete
+- ISA 520 Analytical Procedures: Complete
+- Compliance Checklists: Complete (bulk Excel/CSV upload, template download, evidence attachments)
+- Data Intake: Complete (TB, GL, AR, AP, Bank import with reconciliation)
+- Risk Assessment: Complete (8-tab focused view, status overview, AI support, 7 gates)
+- Planning Strategy: Complete (7-tab focused view, status overview, prerequisite enforcement, AI support, 4 gates)
+- Procedures & Sampling: Complete (4-tab focused view, risk-procedure matrix, audit program designer, ISA 530 sampling, assertion coverage, 6 gates)
+- Execution Testing: Complete (5-tab focused view, procedure execution, control/substantive testing, workpapers, reviewer panel, 6 gates, 4 AI capabilities)
+- Evidence Linking: Complete (6-tab focused view, evidence vault, procedure linkage, categorization, version history, reviewer panel, 5 gates, 3 AI capabilities)
+- Observations & Findings: Complete (extended 9-type/9-status system, title/risk/recommendation fields, management response workflow, 5 gates, 1 AI capability)
+- Adjustments & Misstatements: Complete (4-tab view, journal entries, SAD summary, misstatement classification, trivial threshold, management acceptance, materiality comparison, 7 gates, 2 AI capabilities)
+- Execution Module: Working paper system with FS head mapping
+- Review Notes: Complete with notifications
+- Document Management: Complete with S3/local storage
+- Multi-tenant: Firm-based isolation with RLS
+- Acceptance & Continuance: Complete (8-section form, partner approval, AI, audit trail)
+- Independence / Ethics: Complete (8-section form, declaration tracking, partner approval, AI, audit trail)
+- TB/GL Upload: Complete (batch tracking, source/period tagging, import logs, template checks)
+- Validation & Parsing: Complete (structured results panel, AI analysis, blocker enforcement)
+- Finalization / Completion: Complete (11-section completion phase, 14-tab UI, completion dashboard, enhanced gate enforcement with 10 gates, 4 AI capabilities, partner review readiness tracking)
+- Opinion / Reports: Complete (9-tab reporting phase, ISA 700/701/705/706/265 coverage, AI opinion engine, deliverables register, 9 gates, 4 AI capabilities, release controls)
+- EQCR Review: Complete (7-tab focused view: Dashboard, Open Matters, Report Pack, Key Judgments, Independence, EQCR Checklist, Clearance & Conclusion; 3 real gate evaluators, 2 AI capabilities, IDOR-protected comment routes, finalization lock enforcement)
+- Inspection Archive: Complete (8-tab view: Dashboard, Final Reports, Key Documents, Audit Trail, Working Papers, Review History, Archive Index, Export & Release; 5 real gate evaluators, 2 AI capabilities, immutable archive lifecycle PENDING→BUILDING→SEALED→RELEASED, archive indexing for regulators, active/archived engagement separation)

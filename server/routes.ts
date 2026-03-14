@@ -57,6 +57,7 @@ import outputsRoutes from "./outputsRoutes";
 import fieldRegistryRoutes from "./fieldRegistryRoutes";
 import reconciliationRoutes from "./reconciliationRoutes";
 import reviewMappingRoutes from "./routes/reviewMappingRoutes";
+import phaseStateRoutes from "./routes/phaseStateRoutes";
 import dataHubRoutes from "./dataHubRoutes";
 import observationRoutes from "./observationRoutes";
 import auditAdjustmentRoutes from "./auditAdjustmentRoutes";
@@ -92,6 +93,10 @@ import { subscriptionGuard } from "./middleware/subscriptionGuard";
 import { z } from "zod";
 import type { AuditPhase } from "@prisma/client";
 
+/**
+ * Backend storage phases (Prisma AuditPhase enum values).
+ * For the canonical 19-phase workflow, see shared/phases.ts CANONICAL_PHASES.
+ */
 const PHASE_ORDER = [
   "ONBOARDING",
   "PRE_PLANNING",
@@ -207,6 +212,7 @@ export async function registerRoutes(
   app.use("/api/push", pushRoutes);
   app.use("/api/mapping", mappingRoutes);
   app.use("/api/review-mapping", reviewMappingRoutes);
+  app.use("/api/phase-state", phaseStateRoutes);
   app.use("/api/field-orchestration", fieldOrchestrationRoutes);
   app.use("/api/fetch-engine", fetchEngineRouter);
   app.use("/api/linkage-engine", linkageEngineRoutes);
@@ -239,6 +245,417 @@ export async function registerRoutes(
   app.use("/api/review-notes-v2", reviewNoteRoutes);
   app.use("/api/notifications", userNotificationRoutes);
   app.use("/api/opinion-engine", opinionEngineRoutes);
+
+  // Phase Gate Engine API
+  const { evaluatePhaseGates, evaluateAllGates, canAdvanceToPhase } = await import("./services/phaseGateEngine");
+
+  async function verifyEngagementAccess(req: AuthenticatedRequest, res: Response): Promise<boolean> {
+    const engagementId = req.params.engagementId;
+    const firmId = req.user!.firmId;
+    const userId = req.user!.id;
+    const role = req.user!.role;
+    const isPrivileged = ["PARTNER", "FIRM_ADMIN"].includes(role);
+
+    const engagement = await prisma.engagement.findFirst({
+      where: {
+        id: engagementId,
+        firmId,
+        ...(isPrivileged ? {} : { team: { some: { userId } } }),
+      },
+      select: { id: true },
+    });
+
+    if (!engagement) {
+      res.status(404).json({ error: "Engagement not found or access denied" });
+      return false;
+    }
+    return true;
+  }
+
+  app.get("/api/phase-gates/:engagementId", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      if (!(await verifyEngagementAccess(req, res))) return;
+      const snapshot = await evaluateAllGates(req.params.engagementId);
+      res.json(snapshot);
+    } catch (error) {
+      console.error("Phase gate evaluation error:", error);
+      res.status(500).json({ error: "Failed to evaluate phase gates" });
+    }
+  });
+
+  app.get("/api/phase-gates/:engagementId/:phaseKey", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      if (!(await verifyEngagementAccess(req, res))) return;
+      const evaluation = await evaluatePhaseGates(req.params.engagementId, req.params.phaseKey);
+      res.json(evaluation);
+    } catch (error) {
+      console.error("Phase gate evaluation error:", error);
+      res.status(500).json({ error: "Failed to evaluate phase gate" });
+    }
+  });
+
+  app.post("/api/phase-gates/:engagementId/:phaseKey/advance", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      if (!(await verifyEngagementAccess(req, res))) return;
+      const result = await canAdvanceToPhase(req.params.engagementId, req.params.phaseKey);
+      res.json(result);
+    } catch (error) {
+      console.error("Phase advance check error:", error);
+      res.status(500).json({ error: "Failed to check phase advancement" });
+    }
+  });
+
+  app.get("/api/ai/phase/:phaseKey/capabilities", requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { getPhaseAIConfig } = await import("./services/aiPhaseOrchestrator");
+      const config = getPhaseAIConfig(_req.params.phaseKey);
+      if (!config) {
+        return res.status(404).json({ error: "Phase not found or has no AI capabilities" });
+      }
+      res.json(config);
+    } catch (error) {
+      console.error("AI phase capabilities error:", error);
+      res.status(500).json({ error: "Failed to load AI phase capabilities" });
+    }
+  });
+
+  app.get("/api/ai/phases/capabilities", requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { getAllPhaseAIConfigs } = await import("./services/aiPhaseOrchestrator");
+      res.json(getAllPhaseAIConfigs());
+    } catch (error) {
+      console.error("AI phases capabilities error:", error);
+      res.status(500).json({ error: "Failed to load AI phase capabilities" });
+    }
+  });
+
+  app.post("/api/ai/phase/:phaseKey/generate", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { engagementId, capabilityId, additionalContext } = req.body;
+      if (!engagementId || !capabilityId) {
+        return res.status(400).json({ error: "engagementId and capabilityId are required" });
+      }
+      const firmId = req.user!.firmId;
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+      const engagement = await prisma.engagement.findFirst({
+        where: { id: engagementId, firmId },
+      });
+      if (!engagement) {
+        return res.status(404).json({ error: "Engagement not found or access denied" });
+      }
+      if (!["PARTNER", "FIRM_ADMIN"].includes(userRole)) {
+        const membership = await prisma.engagementTeam.findFirst({
+          where: { engagementId, userId },
+        });
+        if (!membership) {
+          return res.status(403).json({ error: "Not a member of this engagement team" });
+        }
+      }
+      const { generatePhaseAIContent, getPhaseAIConfig } = await import("./services/aiPhaseOrchestrator");
+      const { getPhaseByKey } = await import("../shared/phases");
+      const result = await generatePhaseAIContent({
+        engagementId,
+        phaseKey: req.params.phaseKey,
+        capabilityId,
+        additionalContext,
+        firmId,
+      });
+
+      const phase = getPhaseByKey(req.params.phaseKey);
+      if (!phase?.backendPhase) {
+        return res.status(400).json({ error: "Invalid phase key" });
+      }
+      const backendPhase = phase.backendPhase;
+      const confidence = typeof result.confidence === "number" ? result.confidence : 0.75;
+      try {
+        await prisma.aISuggestion.upsert({
+          where: {
+            engagementId_phase_section_fieldKey: {
+              engagementId,
+              phase: backendPhase as any,
+              section: req.params.phaseKey,
+              fieldKey: capabilityId,
+            },
+          },
+          create: {
+            engagementId,
+            phase: backendPhase as any,
+            section: req.params.phaseKey,
+            fieldKey: capabilityId,
+            aiValue: result.content,
+            confidence,
+            rationale: result.disclaimer,
+            citations: [],
+            status: "AI_SUGGESTED",
+            modelVersion: result.provider || "gpt-4o",
+            modelProvider: result.provider?.split("-")[0] || "openai",
+            generatedById: userId,
+          },
+          update: {
+            aiValue: result.content,
+            confidence,
+            rationale: result.disclaimer,
+            modelVersion: result.provider || "gpt-4o",
+            generatedAt: new Date(),
+          },
+        });
+        await prisma.aIAuditLog.create({
+          data: {
+            engagementId,
+            phase: backendPhase as any,
+            section: req.params.phaseKey,
+            fieldKey: capabilityId,
+            action: "AI_GENERATE",
+            newValue: result.content?.substring(0, 2000),
+            newStatus: "AI_SUGGESTED",
+            aiConfidence: confidence,
+            aiRationale: result.disclaimer,
+            userId,
+            userName: req.user?.username,
+            userRole,
+          },
+        });
+      } catch (persistErr) {
+        console.error("AI suggestion persist warning:", persistErr);
+      }
+
+      res.json(result);
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : "AI generation failed";
+      console.error("AI phase generation error:", error);
+      res.status(500).json({ error: errMsg });
+    }
+  });
+
+  app.get("/api/ai/phase-suggestions/:engagementId/:phaseKey", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { engagementId, phaseKey } = req.params;
+      const firmId = req.user!.firmId;
+      const engagement = await prisma.engagement.findFirst({
+        where: { id: engagementId, firmId },
+        select: { id: true },
+      });
+      if (!engagement) {
+        return res.status(404).json({ error: "Engagement not found" });
+      }
+      const { getPhaseByKey } = await import("../shared/phases");
+      const phase = getPhaseByKey(phaseKey);
+      const backendPhase = phase?.backendPhase;
+
+      const suggestions = await prisma.aISuggestion.findMany({
+        where: {
+          engagementId,
+          ...(backendPhase ? { phase: backendPhase as any } : {}),
+          section: phaseKey,
+        },
+        orderBy: { generatedAt: "desc" },
+        include: {
+          generatedBy: { select: { fullName: true, role: true } },
+          overriddenBy: { select: { fullName: true, role: true } },
+        },
+      });
+
+      const auditLogs = await prisma.aIAuditLog.findMany({
+        where: {
+          engagementId,
+          section: phaseKey,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        include: {
+          user: { select: { fullName: true, role: true } },
+        },
+      });
+
+      res.json({
+        success: true,
+        suggestions: suggestions.map((s: any) => ({
+          id: s.id,
+          fieldKey: s.fieldKey,
+          aiValue: s.aiValue,
+          userValue: s.userValue,
+          status: s.status,
+          confidence: s.confidence,
+          rationale: s.rationale,
+          citations: s.citations,
+          isaReference: s.isaReference,
+          modelVersion: s.modelVersion,
+          generatedAt: s.generatedAt,
+          generatedBy: s.generatedBy?.fullName,
+          overriddenAt: s.overriddenAt,
+          overriddenBy: s.overriddenBy?.fullName,
+          overrideReason: s.overrideReason,
+        })),
+        auditLog: auditLogs.map((l: any) => ({
+          id: l.id,
+          fieldKey: l.fieldKey,
+          action: l.action,
+          previousValue: l.previousValue?.substring(0, 200),
+          newValue: l.newValue?.substring(0, 200),
+          previousStatus: l.previousStatus,
+          newStatus: l.newStatus,
+          aiConfidence: l.aiConfidence,
+          userName: l.user?.fullName || l.userName,
+          userRole: l.user?.role || l.userRole,
+          createdAt: l.createdAt,
+        })),
+      });
+    } catch (error: unknown) {
+      console.error("Phase suggestions error:", error);
+      res.status(500).json({ error: "Failed to fetch phase suggestions" });
+    }
+  });
+
+  app.post("/api/ai/phase-suggestions/:engagementId/:phaseKey/accept", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { engagementId, phaseKey } = req.params;
+      const { fieldKey, userValue, overrideReason } = req.body;
+      if (!fieldKey) return res.status(400).json({ error: "fieldKey is required" });
+
+      const firmId = req.user!.firmId;
+      const engagement = await prisma.engagement.findFirst({
+        where: { id: engagementId, firmId },
+        select: { id: true },
+      });
+      if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
+      const { getPhaseByKey } = await import("../shared/phases");
+      const phase = getPhaseByKey(phaseKey);
+      if (!phase?.backendPhase) return res.status(400).json({ error: "Invalid phase key" });
+      const backendPhase = phase.backendPhase as any;
+
+      const existing = await prisma.aISuggestion.findUnique({
+        where: {
+          engagementId_phase_section_fieldKey: {
+            engagementId,
+            phase: backendPhase,
+            section: phaseKey,
+            fieldKey,
+          },
+        },
+      });
+
+      const isEdited = userValue && existing?.aiValue && userValue !== existing.aiValue;
+      const finalStatus = isEdited ? "USER_OVERRIDE" : "USER_ACCEPTED";
+
+      await prisma.aISuggestion.upsert({
+        where: {
+          engagementId_phase_section_fieldKey: {
+            engagementId,
+            phase: backendPhase,
+            section: phaseKey,
+            fieldKey,
+          },
+        },
+        create: {
+          engagementId,
+          phase: backendPhase,
+          section: phaseKey,
+          fieldKey,
+          userValue: userValue || existing?.aiValue,
+          status: finalStatus,
+          confidence: 1,
+          rationale: overrideReason || "Accepted by user",
+          overriddenAt: new Date(),
+          overriddenById: req.user!.id,
+          overrideReason,
+        },
+        update: {
+          userValue: userValue || undefined,
+          status: finalStatus,
+          overriddenAt: new Date(),
+          overriddenById: req.user!.id,
+          overrideReason,
+        },
+      });
+
+      await prisma.aIAuditLog.create({
+        data: {
+          engagementId,
+          phase: backendPhase,
+          section: phaseKey,
+          fieldKey,
+          action: isEdited ? "USER_OVERRIDE" : "USER_ACCEPT",
+          previousValue: existing?.aiValue?.substring(0, 2000),
+          newValue: (userValue || existing?.aiValue)?.substring(0, 2000),
+          previousStatus: existing?.status as any,
+          newStatus: finalStatus,
+          userId: req.user!.id,
+          userName: req.user?.username,
+          userRole: req.user?.role,
+        },
+      });
+
+      res.json({ success: true, status: finalStatus });
+    } catch (error: unknown) {
+      console.error("Accept suggestion error:", error);
+      res.status(500).json({ error: "Failed to accept suggestion" });
+    }
+  });
+
+  app.post("/api/ai/phase-suggestions/:engagementId/:phaseKey/reject", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { engagementId, phaseKey } = req.params;
+      const { fieldKey } = req.body;
+      if (!fieldKey) return res.status(400).json({ error: "fieldKey is required" });
+
+      const firmId = req.user!.firmId;
+      const engagement = await prisma.engagement.findFirst({
+        where: { id: engagementId, firmId },
+        select: { id: true },
+      });
+      if (!engagement) return res.status(404).json({ error: "Engagement not found" });
+
+      const { getPhaseByKey } = await import("../shared/phases");
+      const phase = getPhaseByKey(phaseKey);
+      if (!phase?.backendPhase) return res.status(400).json({ error: "Invalid phase key" });
+      const backendPhase = phase.backendPhase as any;
+
+      const existing = await prisma.aISuggestion.findUnique({
+        where: {
+          engagementId_phase_section_fieldKey: {
+            engagementId,
+            phase: backendPhase,
+            section: phaseKey,
+            fieldKey,
+          },
+        },
+      });
+
+      if (existing) {
+        await prisma.aISuggestion.update({
+          where: { id: existing.id },
+          data: {
+            status: "MANUAL",
+            revertedAt: new Date(),
+            revertedById: req.user!.id,
+          },
+        });
+      }
+
+      await prisma.aIAuditLog.create({
+        data: {
+          engagementId,
+          phase: backendPhase,
+          section: phaseKey,
+          fieldKey,
+          action: "USER_REJECT",
+          previousValue: existing?.aiValue?.substring(0, 2000),
+          previousStatus: existing?.status as any,
+          newStatus: "MANUAL",
+          userId: req.user!.id,
+          userName: req.user?.username,
+          userRole: req.user?.role,
+        },
+      });
+
+      res.json({ success: true, status: "MANUAL" });
+    } catch (error: unknown) {
+      console.error("Reject suggestion error:", error);
+      res.status(500).json({ error: "Failed to reject suggestion" });
+    }
+  });
 
   app.get("/api/workspace/:engagementId/planning", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -536,15 +953,20 @@ export async function registerRoutes(
     clientId: z.string().uuid(),
     engagementCode: nullableStr,
     engagementType: z.string().default("statutory_audit"),
-    reportingFramework: z.enum(["IFRS", "IFRS_SME", "LOCAL_GAAP", "OTHER"]).nullish(),
+    reportingFramework: z.enum(["IFRS", "IFRS_SME", "LOCAL_GAAP", "AFRS", "GAAP_PK", "IPSAS", "ISLAMIC", "OTHER"]).nullish(),
     sizeClassification: nullableStr,
     periodStart: z.string().min(1, "Period start is required"),
     periodEnd: z.string().min(1, "Period end is required"),
     riskRating: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
     fiscalYearEnd: nullableStr,
     fieldworkStartDate: nullableStr,
+    fieldworkEndDate: nullableStr,
     reportDeadline: nullableStr,
+    filingDeadline: nullableStr,
     budgetHours: nullableNum,
+    isGroupAudit: z.boolean().default(false),
+    isComponentAudit: z.boolean().default(false),
+    eqcrRationale: nullableStr,
     shareCapital: nullableNum,
     authorizedCapital: nullableNum,
     paidUpCapital: nullableNum,
@@ -617,8 +1039,14 @@ export async function registerRoutes(
           periodStart: new Date(data.periodStart),
           periodEnd: new Date(data.periodEnd),
           fiscalYearEnd: data.fiscalYearEnd ? new Date(data.fiscalYearEnd) : new Date(data.periodEnd),
+          reportingFramework: data.reportingFramework || undefined,
           fieldworkStartDate: data.fieldworkStartDate ? new Date(data.fieldworkStartDate) : null,
+          fieldworkEndDate: data.fieldworkEndDate ? new Date(data.fieldworkEndDate) : null,
           reportDeadline: data.reportDeadline ? new Date(data.reportDeadline) : null,
+          filingDeadline: data.filingDeadline ? new Date(data.filingDeadline) : null,
+          isGroupAudit: data.isGroupAudit || false,
+          isComponentAudit: data.isComponentAudit || false,
+          eqcrRationale: data.eqcrRationale || null,
           budgetHours: data.budgetHours,
           shareCapital: data.shareCapital,
           authorizedCapital: data.authorizedCapital,
@@ -791,7 +1219,7 @@ export async function registerRoutes(
         fieldworkEndDate: z.string().optional().nullable(),
         reportDeadline: z.string().optional().nullable(),
         filingDeadline: z.string().optional().nullable(),
-        reportingFramework: z.enum(["IFRS", "IFRS_SME", "LOCAL_GAAP", "OTHER"]).optional(),
+        reportingFramework: z.enum(["IFRS", "IFRS_SME", "LOCAL_GAAP", "AFRS", "GAAP_PK", "IPSAS", "ISLAMIC", "OTHER"]).optional(),
         applicableLaw: z.string().optional().nullable(),
         priorAuditor: z.string().optional().nullable(),
         priorAuditorReason: z.string().optional().nullable(),
@@ -946,7 +1374,7 @@ export async function registerRoutes(
         const userProgress = await prisma.engagementUserProgress.findUnique({
           where: { engagementId_userId: { engagementId: id, userId } },
         });
-        const resumeRoute = userProgress?.lastRoute || engagement.lastRoute || `/engagement/${id}/pre-planning`;
+        const resumeRoute = userProgress?.lastRoute || engagement.lastRoute || `/workspace/${id}/acceptance`;
         return res.json({
           engagementId: id,
           startedAt: engagement.startedAt,
@@ -957,7 +1385,7 @@ export async function registerRoutes(
       }
 
       // Seed workspace (idempotent - only create if not exists)
-      const defaultRoute = `/workspace/${id}/pre-planning`;
+      const defaultRoute = `/workspace/${id}/acceptance`;
       
       // Create baseline phase progress if not exists
       const existingPhases = await prisma.phaseProgress.findMany({ where: { engagementId: id } });
@@ -1054,11 +1482,11 @@ export async function registerRoutes(
         where: { engagementId_userId: { engagementId: id, userId } },
       });
 
-      const defaultRoute = `/workspace/${id}/pre-planning`;
+      const defaultRoute = `/workspace/${id}/acceptance`;
       let resumeRoute = userProgress?.lastRoute || engagement.lastRoute || defaultRoute;
 
       const validRoutePatterns = [
-        /^\/workspace\/[^\/]+\/(pre-planning|requisition|planning|execution|fs-heads|evidence|finalization|deliverables|eqcr|inspection)$/,
+        /^\/workspace\/[^\/]+\/(acceptance|independence|tb-gl-upload|validation|coa-mapping|materiality|risk-assessment|planning-strategy|procedures-sampling|execution-testing|evidence-linking|observations|adjustments|finalization|opinion-reports|eqcr|inspection|pre-planning|requisition|planning|execution|fs-heads|evidence|deliverables|outputs|onboarding|control|ethics|post-upload-workflow|tb-review|import|evidence-vault|print-view|standards-matrix)/,
         /^\/engagement\/[^\/]+\/(pre-planning|planning|execution|finalization|eqcr|inspection)$/,
         /^\/engagements$/,
       ];

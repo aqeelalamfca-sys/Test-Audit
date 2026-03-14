@@ -254,8 +254,9 @@ export function PhaseGatesSummary({ className }: PhaseGatesSummaryProps) {
   }
 
   const { status } = enforcement;
+  /** Enforcement phases for summary — see shared/phases.ts for canonical 19-phase workflow */
   const phases: EnforcementPhase[] = [
-    "ADMINISTRATION", "PRE_PLANNING", "PLANNING", "EXECUTION", 
+    "PRE_PLANNING", "REQUISITION", "PLANNING", "EXECUTION",
     "EVIDENCE", "FINALIZATION", "DELIVERABLES", "QR_EQCR", "INSPECTION"
   ];
 

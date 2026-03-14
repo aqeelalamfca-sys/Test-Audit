@@ -1,0 +1,222 @@
+# =============================================================
+# docker-compose.vps.yml — VPS Production (Host Nginx + 3 containers)
+#
+# Architecture:
+#   Host Nginx  ──TLS/SSL──►  127.0.0.1:${APP_PORT:-5000}  ──►  backend
+#   db and redis are internal-only (never published externally).
+#
+# Services: db (postgres:16), redis (redis:7-alpine), backend only.
+# Frontend is served as static files by the backend from dist/public.
+#
+# Usage:
+#   docker compose -f docker-compose.vps.yml up -d --build
+#   docker compose -f docker-compose.vps.yml pull && \
+#     docker compose -f docker-compose.vps.yml up -d   # pull pre-built image
+#
+# Required secrets in .env:
+#   POSTGRES_PASSWORD, JWT_SECRET, ENCRYPTION_MASTER_KEY
+# See .env.example for full variable reference.
+# =============================================================
+
+services:
+
+  # ── PostgreSQL 16 ────────────────────────────────────────────
+  db:
+    image: postgres:16
+    container_name: auditwise-db
+    restart: unless-stopped
+    # Intentionally no ports: section — Postgres is internal only.
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-auditwise}
+      POSTGRES_USER: ${POSTGRES_USER:-auditwise}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    shm_size: "256m"
+    # Postgres tuning — safe defaults for 2–4 GB VPS.
+    # Override via env vars in .env (e.g. PG_SHARED_BUFFERS=512MB for 4 GB RAM).
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=${PG_SHARED_BUFFERS:-256MB}"
+      - "-c"
+      - "effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-768MB}"
+      - "-c"
+      - "work_mem=${PG_WORK_MEM:-8MB}"
+      - "-c"
+      - "maintenance_work_mem=${PG_MAINTENANCE_WORK_MEM:-64MB}"
+      - "-c"
+      - "max_connections=${PG_MAX_CONNECTIONS:-100}"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "wal_buffers=16MB"
+      - "-c"
+      - "log_min_duration_statement=1000"
+      - "-c"
+      - "idle_in_transaction_session_timeout=60000"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-auditwise} -d ${POSTGRES_DB:-auditwise} -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - auditwise
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ── Redis 7 ──────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: auditwise-redis
+    restart: unless-stopped
+    # Intentionally no ports: section — Redis is internal only.
+    expose:
+      - "6379"
+    # Redis tuning:
+    #   maxmemory  — size to ~10% of VPS RAM (256 MB for 2–4 GB VPS).
+    #                Override via REDIS_MAXMEMORY=512mb for 8 GB VPS.
+    #   allkeys-lru — evict least-recently-used keys when full (good for cache).
+    #   appendonly  — persist writes to disk for crash safety.
+    command: >
+      redis-server
+      --maxmemory ${REDIS_MAXMEMORY:-256mb}
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+      --save 900 1
+      --save 300 10
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - auditwise
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Backend (Express API + pre-built React SPA) ───────────────
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    image: ghcr.io/aqeelalamfca-sys/auditwise-backend:${APP_VERSION:-latest}
+    container_name: auditwise-backend
+    restart: unless-stopped
+    # Bind ONLY to loopback — host Nginx is the only intended ingress.
+    # Use APP_PORT to override if running multiple instances.
+    ports:
+      - "127.0.0.1:${APP_PORT:-5000}:5000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: "5000"
+      # ── Database ─────────────────────────────────────────────
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-auditwise}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-auditwise}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-auditwise}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-auditwise}?schema=public}
+      # ── Cache ─────────────────────────────────────────────────
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      # ── Secrets ───────────────────────────────────────────────
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      ENCRYPTION_MASTER_KEY: ${ENCRYPTION_MASTER_KEY:?ENCRYPTION_MASTER_KEY is required}
+      # ── Admin ─────────────────────────────────────────────────
+      INITIAL_SUPER_ADMIN_EMAIL: ${INITIAL_SUPER_ADMIN_EMAIL:-admin@auditwise.tech}
+      INITIAL_SUPER_ADMIN_PASSWORD: ${INITIAL_SUPER_ADMIN_PASSWORD:-}
+      SUPER_ADMIN_ALLOWED_IPS: ${SUPER_ADMIN_ALLOWED_IPS:-}
+      ADMIN_RESET: ${ADMIN_RESET:-false}
+      # ── Node.js runtime performance ───────────────────────────
+      # NODE_HEAP_SIZE — max-old-space-size used by the entrypoint.
+      #   1536 MB is safe for 4 GB VPS; lower to 1024 for 2 GB.
+      NODE_HEAP_SIZE: ${NODE_HEAP_SIZE:-1536}
+      # NODE_OPTIONS — picked up by Prisma CLI sub-processes and any
+      #   node invocations that do not set --max-old-space-size explicitly.
+      NODE_OPTIONS: "--max-old-space-size=${NODE_HEAP_SIZE:-1536} --max-semi-space-size=64"
+      # ── Optional integrations ─────────────────────────────────
+      APP_VERSION: ${APP_VERSION:-latest}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@auditwise.tech}
+      VPS_SSH_HOST: ${VPS_SSH_HOST:-}
+      VPS_SSH_PORT: ${VPS_SSH_PORT:-22}
+      VPS_SSH_USER: ${VPS_SSH_USER:-}
+      VPS_SSH_PASSWORD: ${VPS_SSH_PASSWORD:-}
+      VPS_SSH_PRIVATE_KEY: ${VPS_SSH_PRIVATE_KEY:-}
+      VPS_APP_URL: ${VPS_APP_URL:-}
+    volumes:
+      - uploads:/app/uploads
+      - logs:/app/logs
+    # init: true — run a tiny init process as PID 1 so signals are forwarded
+    #   correctly and zombie processes are reaped automatically.
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    # tmpfs for Node.js / Prisma scratch space (/tmp).
+    # NOTE: read_only is intentionally omitted because Prisma writes to
+    #   node_modules/.prisma at container startup (prisma generate).
+    #   Once you pre-bake the Prisma client into the image and disable
+    #   runtime generation, you can safely add "read_only: true" here.
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 5
+    networks:
+      - auditwise
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+networks:
+  auditwise:
+    driver: bridge
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
+  uploads:
+    driver: local
+  logs:
+    driver: local

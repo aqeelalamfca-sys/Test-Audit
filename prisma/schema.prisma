@@ -605,6 +605,8 @@ model User {
 
   inspectionChecks InspectionReadiness[] @relation("InspectionCheckedBy")
   exports          ExportLog[]           @relation("ExportedBy")
+  archivesSealed   ArchivePackage[]      @relation("ArchiveSealedBy")
+  archivesReleased ArchivePackage[]      @relation("ArchiveReleasedBy")
   reviewThreads    ReviewThread[]        @relation("ReviewThreadAuthor")
 
   sectionsPrepared        SectionSignOff[] @relation("SectionPreparedBy")
@@ -1001,6 +1003,10 @@ enum ReportingFramework {
   IFRS
   IFRS_SME
   LOCAL_GAAP
+  AFRS
+  GAAP_PK
+  IPSAS
+  ISLAMIC
   OTHER
 }
 
@@ -1233,6 +1239,8 @@ model Client {
   ultimateBeneficialOwners Json?
   parentCompany            String?
   subsidiaries             String[]
+  reportingFramework       String?
+  contactPersons           Json?
 
   focalPersonName   String?
   focalPersonMobile String?
@@ -1469,6 +1477,7 @@ model Engagement {
   eqcrAssignment      EQCRAssignment?
   inspectionReadiness InspectionReadiness?
   exportLogs          ExportLog[]
+  archivePackage      ArchivePackage?
   sectionSignOffs     SectionSignOff[]
 
   engagementLetters    EngagementLetter[]
@@ -4124,6 +4133,31 @@ model ExportLog {
   @@index([engagementId])
 }
 
+model ArchivePackage {
+  id           String @id @default(uuid())
+  engagementId String @unique
+
+  status       String @default("PENDING")
+
+  archiveIndex   Json?
+  packageManifest Json?
+  packageHash    String?
+  frozenSnapshot Json?
+  notes          String?
+
+  sealedAt     DateTime?
+  sealedById   String?
+  releasedAt   DateTime?
+  releasedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  engagement Engagement @relation(fields: [engagementId], references: [id])
+  sealedBy   User?      @relation("ArchiveSealedBy", fields: [sealedById], references: [id])
+  releasedBy User?      @relation("ArchiveReleasedBy", fields: [releasedById], references: [id])
+}
+
 // ============================================
 // ENHANCED REVIEW NOTES (ISA 220)
 // ============================================
@@ -6024,9 +6058,10 @@ model AuditAdjustment {
   adjustmentType AdjustmentType
   status         AdjustmentStatus @default(IDENTIFIED)
 
-  fsArea      String?
-  accountCode String?
-  accountName String?
+  misstatementClassification String?
+  fsArea                     String?
+  accountCode                String?
+  accountName                String?
 
   description String
   auditImpact String?
@@ -6037,6 +6072,13 @@ model AuditAdjustment {
 
   isMaterial        Boolean @default(false)
   materialityImpact String?
+
+  isClearlyTrivial       Boolean  @default(false)
+  trivialThresholdAmount Decimal? @db.Decimal(18, 2)
+
+  managementAccepted Boolean?
+  sadNarrative       String?
+  cumulativeEffect   Decimal? @db.Decimal(18, 2)
 
   identifiedById         String?
   identifiedAt           DateTime?
@@ -6053,6 +6095,8 @@ model AuditAdjustment {
 
   linkedProcedureId String?
   linkedWorkpaperId String?
+  observationId     String?
+  linkedEvidenceIds String[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -6063,6 +6107,7 @@ model AuditAdjustment {
   @@index([engagementId])
   @@index([adjustmentType])
   @@index([status])
+  @@index([observationId])
 }
 
 // ============================================
@@ -10659,6 +10704,9 @@ model ImportBatch {
   batchNumber String
   fileName    String?
   fileSize    Int?
+  fileType    String?
+  sourceTag   String?
+  periodTag   String?
 
   status ImportBatchStatus @default(UPLOADED)
 
@@ -11760,14 +11808,21 @@ enum ObservationType {
   CONTROL_DEFICIENCY
   MATERIAL_WEAKNESS
   SIGNIFICANT_DEFICIENCY
+  AUDIT_FINDING
+  PJE_RECLASS
+  MANAGEMENT_POINT
+  COMPLIANCE_ISSUE
   OTHER
 }
 
 enum ObservationStatus {
   OPEN
   UNDER_REVIEW
+  MGMT_RESPONDED
   PENDING_CLEARANCE
   CLEARED
+  ADJUSTED
+  CARRIED_FORWARD
   WAIVED
   CLOSED
 }
@@ -11784,6 +11839,7 @@ model Observation {
   engagementId String
 
   observationRef String?
+  title          String?
   type           ObservationType     @default(MISSTATEMENT)
   status         ObservationStatus   @default(OPEN)
   severity       ObservationSeverity @default(MEDIUM)
@@ -11801,6 +11857,9 @@ model Observation {
   effect            String?
   effectAmount      Decimal? @db.Decimal(18, 2)
   effectQualitative String?
+
+  riskImplication String?
+  recommendation  String?
 
   proposedAction         String?
   proposedAdjustmentType String?

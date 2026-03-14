@@ -2,23 +2,31 @@ import { useEnforcementOptional, type EnforcementPhase } from "@/lib/enforcement
 import { cn } from "@/lib/utils";
 import { CheckCircle2, Lock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { getWorkspacePhases } from "../../../shared/phases";
+
+const CANONICAL_WORKSPACE = getWorkspacePhases();
 
 const PHASE_LABELS: Record<EnforcementPhase, string> = {
   ADMINISTRATION: "Admin",
-  PRE_PLANNING: "Pre-Planning",
-  REQUISITION: "Data Intake",
+  PRE_PLANNING: "Acceptance",
+  REQUISITION: "TB / GL Upload",
   PLANNING: "Planning",
   EXECUTION: "Execution",
   EVIDENCE: "Evidence",
   FINALIZATION: "Finalization",
-  DELIVERABLES: "Deliverables",
-  QR_EQCR: "QR",
+  DELIVERABLES: "Reports",
+  QR_EQCR: "EQCR",
   INSPECTION: "Inspection"
 };
 
+/**
+ * Enforcement phases for status bar display.
+ * Derived order mirrors canonical 19-phase groups.
+ * See shared/phases.ts for full canonical workflow.
+ */
 const PHASE_ORDER: EnforcementPhase[] = [
-  "REQUISITION",
   "PRE_PLANNING",
+  "REQUISITION",
   "PLANNING",
   "EXECUTION",
   "EVIDENCE",

@@ -1024,7 +1024,265 @@ router.patch("/non-audit-services/:serviceId/approve", requireAuth, requireRoles
 });
 
 // ============================================
-// ETHICS CONFIRMATION
+// ACCEPTANCE PHASE DATA (Save/Load form data as JSON blob)
+// ============================================
+
+router.get("/engagements/:engagementId/acceptance-data", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+
+    const decision = await prisma.acceptanceContinuanceDecision.findUnique({
+      where: { engagementId },
+    });
+
+    if (!decision) {
+      return res.json({ exists: false, data: null });
+    }
+
+    res.json({ exists: true, data: decision });
+  } catch (error) {
+    console.error("Get acceptance data error:", error);
+    res.status(500).json({ error: "Failed to fetch acceptance data" });
+  }
+});
+
+router.put("/engagements/:engagementId/acceptance-data", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const { formData } = req.body;
+
+    const engagement = await prisma.engagement.findFirst({
+      where: { id: engagementId },
+    });
+
+    if (!engagement) {
+      return res.status(404).json({ error: "Engagement not found" });
+    }
+
+    const existing = await prisma.acceptanceContinuanceDecision.findUnique({
+      where: { engagementId },
+    });
+
+    let result;
+    if (existing) {
+      result = await prisma.acceptanceContinuanceDecision.update({
+        where: { engagementId },
+        data: {
+          isNewClient: formData.isNewClient ?? existing.isNewClient,
+          isReengagement: formData.isReengagement ?? existing.isReengagement,
+          clientIntegrityRating: formData.clientIntegrityRating,
+          clientIntegrityNotes: formData.clientIntegrityNotes,
+          managementIntegrityRating: formData.managementIntegrityRating,
+          managementIntegrityNotes: formData.managementIntegrityNotes,
+          engagementRiskLevel: formData.engagementRiskLevel,
+          engagementRiskFactors: formData.engagementRiskFactors,
+          priorAuditorContacted: formData.priorAuditorContacted ?? false,
+          priorAuditorContactDate: formData.priorAuditorContactDate ? new Date(formData.priorAuditorContactDate) : null,
+          priorAuditorResponse: formData.priorAuditorResponse,
+          priorAuditorConcerns: formData.priorAuditorConcerns,
+          competenceConfirmed: formData.competenceConfirmed ?? false,
+          competenceNotes: formData.competenceNotes,
+          resourcesAvailable: formData.resourcesAvailable ?? false,
+          resourcesNotes: formData.resourcesNotes,
+          independenceCleared: formData.independenceCleared ?? false,
+          independenceClearanceDate: formData.independenceClearanceDate ? new Date(formData.independenceClearanceDate) : null,
+          independenceIssues: formData.independenceIssues,
+          ethicalRequirementsMet: formData.ethicalRequirementsMet ?? false,
+          ethicalIssues: formData.ethicalIssues,
+          decision: formData.decision,
+          decisionRationale: formData.decisionRationale,
+        },
+      });
+    } else {
+      result = await prisma.acceptanceContinuanceDecision.create({
+        data: {
+          engagementId,
+          firmId: engagement.firmId,
+          isNewClient: formData.isNewClient ?? true,
+          isReengagement: formData.isReengagement ?? false,
+          clientIntegrityRating: formData.clientIntegrityRating,
+          clientIntegrityNotes: formData.clientIntegrityNotes,
+          managementIntegrityRating: formData.managementIntegrityRating,
+          managementIntegrityNotes: formData.managementIntegrityNotes,
+          engagementRiskLevel: formData.engagementRiskLevel,
+          engagementRiskFactors: formData.engagementRiskFactors,
+          competenceConfirmed: formData.competenceConfirmed ?? false,
+          competenceNotes: formData.competenceNotes,
+          resourcesAvailable: formData.resourcesAvailable ?? false,
+          resourcesNotes: formData.resourcesNotes,
+          decision: formData.decision,
+          decisionRationale: formData.decisionRationale,
+        },
+      });
+    }
+
+    await logAuditTrail(
+      req.user!.id,
+      "ACCEPTANCE_DATA_SAVED",
+      "acceptance_continuance_decision",
+      result.id,
+      existing,
+      result,
+      engagementId,
+      "Acceptance & continuance form data saved",
+      req.ip,
+      req.get("user-agent")
+    );
+
+    res.json(result);
+  } catch (error) {
+    console.error("Save acceptance data error:", error);
+    res.status(500).json({ error: "Failed to save acceptance data" });
+  }
+});
+
+router.patch("/engagements/:engagementId/acceptance-approve", requireAuth, requireRoles("PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const { decision, rationale, comments } = req.body;
+
+    if (!decision || !["APPROVED", "REJECTED"].includes(decision)) {
+      return res.status(400).json({ error: "Decision must be APPROVED or REJECTED" });
+    }
+    if (!rationale || rationale.length < 10) {
+      return res.status(400).json({ error: "Rationale must be at least 10 characters" });
+    }
+
+    const existing = await prisma.acceptanceContinuanceDecision.findUnique({
+      where: { engagementId },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: "No acceptance data found. Complete the acceptance form first." });
+    }
+
+    const result = await prisma.acceptanceContinuanceDecision.update({
+      where: { engagementId },
+      data: {
+        decision: decision,
+        decisionRationale: rationale,
+        decisionDate: new Date(),
+        decisionById: req.user!.id,
+        partnerApprovedAt: decision === "APPROVED" ? new Date() : null,
+        partnerApprovedById: decision === "APPROVED" ? req.user!.id : null,
+        partnerComments: comments,
+      },
+    });
+
+    await logAuditTrail(
+      req.user!.id,
+      decision === "APPROVED" ? "ACCEPTANCE_APPROVED" : "ACCEPTANCE_REJECTED",
+      "acceptance_continuance_decision",
+      result.id,
+      existing,
+      result,
+      engagementId,
+      `Acceptance ${decision.toLowerCase()} by partner: ${rationale}`,
+      req.ip,
+      req.get("user-agent")
+    );
+
+    res.json(result);
+  } catch (error) {
+    console.error("Acceptance approval error:", error);
+    res.status(500).json({ error: "Failed to process acceptance approval" });
+  }
+});
+
+// ============================================
+// INDEPENDENCE PHASE APPROVAL
+// ============================================
+
+router.patch("/engagements/:engagementId/ethics-approve", requireAuth, requireRoles("PARTNER"), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const { notes } = req.body;
+
+    const [declarations, threats, team] = await Promise.all([
+      prisma.independenceDeclaration.findMany({ where: { engagementId } }),
+      prisma.threatRegister.findMany({ where: { engagementId } }),
+      prisma.engagementTeam.findMany({ where: { engagementId } }),
+    ]);
+
+    const teamMemberIds = team.map((t: { userId: string }) => t.userId);
+    const declarationUserIds = declarations.map((d: { userId: string }) => d.userId);
+    const pendingCount = teamMemberIds.filter((id: string) => !declarationUserIds.includes(id)).length;
+
+    const unresolvedThreats = threats.filter((t: { status: string }) =>
+      t.status === "IDENTIFIED" || t.status === "UNRESOLVED"
+    );
+
+    if (pendingCount > 0) {
+      return res.status(400).json({
+        error: `Cannot approve: ${pendingCount} team member(s) have not submitted independence declarations`,
+      });
+    }
+
+    if (unresolvedThreats.length > 0) {
+      return res.status(400).json({
+        error: `Cannot approve: ${unresolvedThreats.length} unresolved threat(s) remain`,
+      });
+    }
+
+    const existing = await prisma.ethicsConfirmation.findUnique({
+      where: { engagementId },
+    });
+
+    let result;
+    if (existing) {
+      result = await prisma.ethicsConfirmation.update({
+        where: { engagementId },
+        data: {
+          allDeclarationsComplete: true,
+          allThreatsResolved: true,
+          isLocked: true,
+          lockedById: req.user!.id,
+          lockedDate: new Date(),
+          completionConfirmedById: req.user!.id,
+          completionConfirmedDate: new Date(),
+          completionConfirmationNotes: notes,
+        },
+      });
+    } else {
+      result = await prisma.ethicsConfirmation.create({
+        data: {
+          engagementId,
+          allDeclarationsComplete: true,
+          allThreatsResolved: true,
+          isLocked: true,
+          lockedById: req.user!.id,
+          lockedDate: new Date(),
+          startConfirmedById: req.user!.id,
+          startConfirmedDate: new Date(),
+          completionConfirmedById: req.user!.id,
+          completionConfirmedDate: new Date(),
+          completionConfirmationNotes: notes,
+        },
+      });
+    }
+
+    await logAuditTrail(
+      req.user!.id,
+      "ETHICS_INDEPENDENCE_APPROVED",
+      "ethics_confirmation",
+      result.id,
+      existing,
+      result,
+      engagementId,
+      "Independence & Ethics phase approved by partner",
+      req.ip,
+      req.get("user-agent")
+    );
+
+    res.json(result);
+  } catch (error) {
+    console.error("Ethics approval error:", error);
+    res.status(500).json({ error: "Failed to approve ethics" });
+  }
+});
+
+// ============================================
+// ETHICS CONFIRMATION / STATUS
 // ============================================
 
 router.get("/engagements/:engagementId/ethics-status", requireAuth, async (req: AuthenticatedRequest, res: Response) => {

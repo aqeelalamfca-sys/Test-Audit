@@ -33,6 +33,8 @@ import {
   Eye,
   Shield,
   Loader2,
+  RotateCcw,
+  Send,
 } from "lucide-react";
 
 export type SignOffStatus = "DRAFT" | "PREPARED" | "REVIEWED" | "APPROVED" | "LOCKED";
@@ -139,6 +141,8 @@ export function SignOffBar({
   const { toast } = useToast();
   const [unlockDialogOpen, setUnlockDialogOpen] = useState(false);
   const [unlockReason, setUnlockReason] = useState("");
+  const [returnDialogOpen, setReturnDialogOpen] = useState(false);
+  const [returnReason, setReturnReason] = useState("");
 
   const userRole = (user?.role || "STAFF").toUpperCase();
 
@@ -190,6 +194,39 @@ export function SignOffBar({
     },
   });
 
+  const returnMutation = useMutation({
+    mutationFn: async (reason: string) => {
+      const res = await fetchWithAuth(
+        `/api/section-signoffs/${engagementId}/${phase}/${encodeURIComponent(section)}/return`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reason }),
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Action failed" }));
+        throw new Error(err.error || "Action failed");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/section-signoffs", engagementId, phase, section],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/section-signoffs", engagementId, phase],
+      });
+      toast({ title: "Returned for Rework", description: "Section returned to preparer for corrections" });
+      setReturnDialogOpen(false);
+      setReturnReason("");
+      if (onStatusChange) onStatusChange("PREPARED", false);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Return Failed", description: error.message, variant: "destructive" });
+    },
+  });
+
   const unlockMutation = useMutation({
     mutationFn: async (reason: string) => {
       const res = await fetchWithAuth(
@@ -237,10 +274,21 @@ export function SignOffBar({
     (status === "PREPARED" && ROLE_CAN_REVIEW.includes(userRole) && signoff?.preparedById !== user?.id) ||
     (status === "REVIEWED" && ROLE_CAN_APPROVE.includes(userRole) && signoff?.preparedById !== user?.id);
 
+  const canReturn =
+    (status === "PREPARED" && (ROLE_CAN_REVIEW.includes(userRole) || ROLE_CAN_APPROVE.includes(userRole))) ||
+    (status === "REVIEWED" && ROLE_CAN_APPROVE.includes(userRole));
+
   const canUnlock = isLocked && ROLE_CAN_UNLOCK.includes(userRole);
 
+  const getCompleteLabel = (): { label: string; icon: typeof Send } => {
+    if (status === "DRAFT") return { label: "Send for Review", icon: Send };
+    if (status === "PREPARED") return { label: "Mark Reviewed", icon: Eye };
+    if (status === "REVIEWED") return { label: "Approve", icon: Shield };
+    return { label: "Complete", icon: CheckCircle2 };
+  };
+
   const getCompleteTooltip = (): string => {
-    if (status === "DRAFT" && ROLE_CAN_PREPARE.includes(userRole)) return "Mark as Prepared (sets your name and timestamp)";
+    if (status === "DRAFT" && ROLE_CAN_PREPARE.includes(userRole)) return "Mark as Prepared and send for Manager review";
     if (status === "PREPARED" && ROLE_CAN_REVIEW.includes(userRole)) return "Mark as Reviewed (Manager sign-off)";
     if (status === "REVIEWED" && ROLE_CAN_APPROVE.includes(userRole)) return "Approve & Lock (Partner final sign-off)";
     if (isLocked) return "This section is approved and read-only";
@@ -249,6 +297,9 @@ export function SignOffBar({
     if (signoff?.preparedById === user?.id) return "Cannot review/approve your own work (Segregation of Duties)";
     return "Not available at your current role";
   };
+
+  const completeAction = getCompleteLabel();
+  const CompleteIcon = completeAction.icon;
 
   if (isLoading) {
     return (
@@ -334,12 +385,35 @@ export function SignOffBar({
             </Tooltip>
           )}
 
+          {canReturn && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-[11px] text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-950/40"
+                  onClick={() => setReturnDialogOpen(true)}
+                  data-testid={`signoff-return-${section}`}
+                >
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  Return for Rework
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Return to preparer for corrections (requires reason)</TooltipContent>
+            </Tooltip>
+          )}
+
           {canComplete && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   size="sm"
-                  className="h-6 px-2.5 text-[11px] bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                  className={cn(
+                    "h-6 px-2.5 text-[11px] font-semibold",
+                    status === "REVIEWED"
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                  )}
                   onClick={() => completeMutation.mutate()}
                   disabled={completeMutation.isPending}
                   data-testid={`signoff-complete-${section}`}
@@ -347,16 +421,16 @@ export function SignOffBar({
                   {completeMutation.isPending ? (
                     <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                   ) : (
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    <CompleteIcon className="h-3 w-3 mr-1" />
                   )}
-                  Complete
+                  {completeAction.label}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{getCompleteTooltip()}</TooltipContent>
             </Tooltip>
           )}
 
-          {!canComplete && !isLocked && (
+          {!canComplete && !canReturn && !isLocked && status !== "DRAFT" && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <span className="inline-flex">
@@ -368,7 +442,7 @@ export function SignOffBar({
                     data-testid={`signoff-complete-disabled-${section}`}
                   >
                     <CheckCircle2 className="h-3 w-3 mr-1" />
-                    Complete
+                    {getCompleteTooltip().startsWith("Waiting") ? getCompleteTooltip().split("(")[0].trim() : "Pending"}
                   </Button>
                 </span>
               </TooltipTrigger>
@@ -384,6 +458,41 @@ export function SignOffBar({
           )}
         </div>
       </div>
+
+      <Dialog open={returnDialogOpen} onOpenChange={setReturnDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-600">
+              <RotateCcw className="h-5 w-5" />
+              Return for Rework
+            </DialogTitle>
+            <DialogDescription>
+              This will return the section to the preparer for corrections. A mandatory reason is required and will be recorded in the audit trail.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={returnReason}
+            onChange={(e) => setReturnReason(e.target.value)}
+            placeholder="Describe what needs to be corrected (required)..."
+            className="min-h-[80px]"
+            data-testid="signoff-return-reason"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReturnDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+              onClick={() => returnMutation.mutate(returnReason)}
+              disabled={!returnReason.trim() || returnMutation.isPending}
+              data-testid="signoff-return-confirm"
+            >
+              {returnMutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
+              Confirm Return
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={unlockDialogOpen} onOpenChange={setUnlockDialogOpen}>
         <DialogContent className="sm:max-w-md">

@@ -25,49 +25,54 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import { CANONICAL_PHASES, getWorkspacePhases, SLUG_TO_BACKEND_PHASE } from "../../../shared/phases";
+
 const PHASE_ICONS: Record<string, React.ElementType> = {
-  "requisition": FileText,
-  "pre-planning": ClipboardList,
-  "planning": Target,
-  "execution": Play,
-  "fs-heads": Layers,
-  "evidence": FolderOpen,
+  "acceptance": ClipboardList,
+  "independence": Shield,
+  "tb-gl-upload": FileText,
+  "validation": Search,
+  "coa-mapping": Layers,
+  "materiality": Target,
+  "risk-assessment": Target,
+  "planning-strategy": Target,
+  "procedures-sampling": Play,
+  "execution-testing": Play,
+  "evidence-linking": FolderOpen,
+  "observations": FileOutput,
+  "adjustments": FileOutput,
   "finalization": CheckCircle2,
-  "deliverables": FileOutput,
+  "opinion-reports": FileOutput,
   "eqcr": CheckCircle2,
   "inspection": Search,
 };
 
-const PHASE_ROUTE_TO_AUDIT: Record<string, string> = {
-  "pre-planning": "PRE_PLANNING",
-  "requisition": "REQUISITION",
-  "planning": "PLANNING",
-  "execution": "EXECUTION",
-  "fs-heads": "EXECUTION",
-  "evidence": "EXECUTION",
-  "finalization": "FINALIZATION",
-  "deliverables": "REPORTING",
-  "eqcr": "EQCR",
-  "inspection": "INSPECTION",
-};
+const PHASE_ROUTE_TO_AUDIT: Record<string, string> = {};
+for (const phase of CANONICAL_PHASES) {
+  PHASE_ROUTE_TO_AUDIT[phase.routeSlug] = phase.backendPhase;
+}
 
 const PHASE_ISA_REF: Record<string, string> = {
-  "pre-planning": "ISA 220, 210",
-  "requisition": "ISA 230",
-  "planning": "ISA 300, 315, 320",
-  "execution": "ISA 330, 500, 530",
-  "fs-heads": "ISA 500, 501",
-  "evidence": "ISA 500, 501",
+  "acceptance": "ISA 220, 210",
+  "independence": "IESBA, ISA 200",
+  "tb-gl-upload": "ISA 230",
+  "validation": "ISA 230",
+  "coa-mapping": "ISA 500",
+  "materiality": "ISA 320",
+  "risk-assessment": "ISA 315, 240",
+  "planning-strategy": "ISA 300",
+  "procedures-sampling": "ISA 330, 530",
+  "execution-testing": "ISA 330, 500",
+  "evidence-linking": "ISA 500, 501",
+  "observations": "ISA 265",
+  "adjustments": "ISA 450",
   "finalization": "ISA 560, 570, 700",
-  "deliverables": "ISA 700, 705, 706",
+  "opinion-reports": "ISA 700, 705, 706",
   "eqcr": "ISQM-1",
   "inspection": "ISQM-1",
 };
 
-const PHASE_ORDER = [
-  "pre-planning", "requisition", "planning", "execution",
-  "fs-heads", "evidence", "finalization", "deliverables", "eqcr", "inspection"
-];
+const PHASE_ORDER = getWorkspacePhases().map(p => p.routeSlug);
 
 type TrafficColor = "red" | "amber" | "green" | "gray";
 
@@ -151,7 +156,6 @@ export function WorkspaceRibbon() {
 
   const isTabActive = (tabKey: string) => {
     if (activePhase === tabKey) return true;
-    if (tabKey === "requisition" && activePhase === "information-requisition") return true;
     return false;
   };
 
@@ -173,7 +177,7 @@ export function WorkspaceRibbon() {
     if (firmSettings?.phaseLockingEnabled === false) return false;
     const idx = PHASE_ORDER.indexOf(phaseKey);
     if (idx <= 0) return false;
-    if (phaseKey === "requisition") return false;
+    if (phaseKey === "acceptance") return false;
     const prev = PHASE_ORDER[idx - 1];
     const prevTraffic = getPhaseTraffic(prev);
     return prevTraffic === "red" || prevTraffic === "gray";

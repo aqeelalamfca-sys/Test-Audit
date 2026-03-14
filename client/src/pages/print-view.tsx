@@ -437,7 +437,7 @@ export default function PrintView() {
       subtitle={`Audit deliverables register & print view${client?.name ? ` | ${client.name}` : ""}${engagement?.engagementCode ? ` (${engagement.engagementCode})` : ""}`}
       icon={<Printer className="h-6 w-6 text-primary" />}
       backHref={`/workspace/${engagementId}/finalization`}
-      nextHref={`/workspace/${engagementId}/qcr`}
+      nextHref={`/workspace/${engagementId}/eqcr`}
       dashboardHref="/engagements"
       saveFn={async () => {
         try {

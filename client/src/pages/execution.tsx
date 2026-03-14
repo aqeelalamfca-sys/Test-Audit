@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { PageShell } from "@/components/page-shell";
-import { useModuleReadOnly } from "@/components/sign-off-bar";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { useExecutionSaveBridge } from "@/hooks/use-execution-save-bridge";
 import { useToast } from "@/hooks/use-toast";
 import { AICopilotToggle } from "@/components/ai-copilot-panel";
@@ -58,7 +58,7 @@ export default function Execution() {
     client,
   } = useEngagement();
   const engagementId = params.engagementId || contextEngagementId || undefined;
-  const { isReadOnly: executionReadOnly } = useModuleReadOnly("EXECUTION", "EXECUTION");
+  const { isReadOnly: executionReadOnly } = usePhaseRoleGuard("fieldwork", "EXECUTION");
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -194,7 +194,7 @@ export default function Execution() {
       title="Execution Phase"
       subtitle={`${client?.name || ""} ${engagement?.engagementCode ? `(${engagement.engagementCode})` : ""}`}
       icon={<ClipboardList className="h-5 w-5 text-primary" />}
-      backHref={`/workspace/${engagementId}/planning`}
+      backHref={`/workspace/${engagementId}/planning-strategy`}
       nextHref={`/workspace/${engagementId}/finalization`}
       dashboardHref="/engagements"
       canNavigateNext={canProceedToFinalization}

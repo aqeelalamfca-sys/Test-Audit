@@ -554,7 +554,7 @@ router.get("/template/:datasetType", async (req: Request, res: Response) => {
   return res.status(400).json({ error: 'Unknown dataset type' });
 });
 
-router.get("/:engagementId/batches", async (req: Request, res: Response) => {
+router.get("/:engagementId/batches", requireAuth, async (req: Request, res: Response) => {
   try {
     const { engagementId } = req.params;
     
@@ -3354,6 +3354,9 @@ router.post("/:engagementId/input-workbook", requireAuth, upload.single("file"),
     }
 
     const skipValidation = req.query.skipValidation === 'true';
+    const sourceTag = (req.body?.sourceTag as string) || null;
+    const periodTag = (req.body?.periodTag as string) || null;
+    const fileType = (req.body?.fileType as string) || req.file.mimetype || null;
 
     if (!skipValidation) {
       const validationResult = await validateWorkbookStructure(req.file.buffer);
@@ -3384,6 +3387,17 @@ router.post("/:engagementId/input-workbook", requireAuth, upload.single("file"),
       req.file.originalname,
       req.file.buffer
     );
+
+    if (result.success && result.batchId) {
+      await prisma.importBatch.update({
+        where: { id: result.batchId },
+        data: {
+          fileType: fileType,
+          sourceTag: sourceTag,
+          periodTag: periodTag,
+        },
+      }).catch(err => console.error("Failed to update batch tags:", err));
+    }
 
     if (!result.success) {
       return res.status(400).json({
@@ -3649,6 +3663,154 @@ router.post("/:engagementId/error-report", requireAuth, upload.single("file"), a
   } catch (error) {
     console.error("Error generating error report:", error);
     res.status(500).json({ error: "Failed to generate error report" });
+  }
+});
+
+router.get("/:engagementId/validation-results", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+
+    const allIssues = await prisma.reconIssue.findMany({
+      where: { engagementId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const blockers = allIssues.filter(i => i.blocking && !i.resolvedAt);
+    const warnings = allIssues.filter(i => !i.blocking && !i.resolvedAt);
+    const resolved = allIssues.filter(i => !!i.resolvedAt);
+
+    const tbCount = await prisma.trialBalanceLine.count({ where: { trialBalance: { engagementId } } });
+    const glCount = await prisma.gLEntry.count({ where: { engagementId } });
+
+    const summaryRun = await prisma.summaryRun.findFirst({
+      where: { engagementId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const passedChecks: Array<{ label: string; detail: string }> = [];
+    const warningChecks: Array<{ label: string; detail: string; ruleCode: string; id: string }> = [];
+    const blockerChecks: Array<{ label: string; detail: string; ruleCode: string; id: string }> = [];
+
+    if (tbCount > 0) passedChecks.push({ label: "TB Data Present", detail: `${tbCount} rows imported` });
+    if (glCount > 0) passedChecks.push({ label: "GL Data Present", detail: `${glCount} entries imported` });
+
+    const tbBlockers = allIssues.filter(i => i.tab === "TB" && i.blocking && !i.resolvedAt);
+    if (tbBlockers.length === 0 && tbCount > 0) {
+      passedChecks.push({ label: "TB Structural Validation", detail: "No blocking TB issues" });
+    }
+
+    const glBlockers = allIssues.filter(i => i.tab === "GL" && i.blocking && !i.resolvedAt);
+    if (glBlockers.length === 0 && glCount > 0) {
+      passedChecks.push({ label: "GL Reconciliation", detail: "No blocking GL issues" });
+    }
+
+    const dupIssues = allIssues.filter(i => i.ruleCode?.includes("DUPLICATE") && !i.resolvedAt);
+    if (dupIssues.length === 0) {
+      passedChecks.push({ label: "Duplicate Check", detail: "No duplicates detected" });
+    }
+
+    if (resolved.length > 0) {
+      passedChecks.push({ label: "Resolved Issues", detail: `${resolved.length} issue(s) resolved` });
+    }
+
+    for (const issue of blockers) {
+      blockerChecks.push({
+        label: issue.message,
+        detail: `${issue.tab} — ${issue.ruleCode}${issue.accountCode ? ` (${issue.accountCode})` : ""}`,
+        ruleCode: issue.ruleCode,
+        id: issue.id,
+      });
+    }
+
+    for (const issue of warnings) {
+      warningChecks.push({
+        label: issue.message,
+        detail: `${issue.tab} — ${issue.ruleCode}${issue.accountCode ? ` (${issue.accountCode})` : ""}`,
+        ruleCode: issue.ruleCode,
+        id: issue.id,
+      });
+    }
+
+    res.json({
+      passedChecks,
+      warnings: warningChecks,
+      blockers: blockerChecks,
+      parserSummary: {
+        tbRowCount: tbCount,
+        glEntryCount: glCount,
+        totalIssues: allIssues.length,
+        blockerCount: blockers.length,
+        warningCount: warnings.length,
+        resolvedCount: resolved.length,
+        summaryRun: summaryRun ? {
+          runNumber: summaryRun.runNumber,
+          tbRowCount: summaryRun.tbRowCount,
+          glEntryCount: summaryRun.glEntryCount,
+          createdAt: summaryRun.createdAt,
+        } : null,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching validation results:", error);
+    res.status(500).json({ error: "Failed to fetch validation results" });
+  }
+});
+
+router.get("/:engagementId/coa-accounts", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const accounts = await prisma.coAAccount.findMany({
+      where: { engagementId },
+      orderBy: { accountCode: "asc" },
+      select: {
+        id: true,
+        accountCode: true,
+        accountName: true,
+        accountClass: true,
+        accountSubclass: true,
+        nature: true,
+        tbGroup: true,
+        fsLineItem: true,
+        notesDisclosureRef: true,
+        openingBalance: true,
+        periodDr: true,
+        periodCr: true,
+        closingBalance: true,
+        aiSuggestedTBGroup: true,
+        aiSuggestedFSLine: true,
+        aiConfidence: true,
+        aiRationale: true,
+        isOverridden: true,
+      },
+    });
+    res.json(accounts);
+  } catch (error) {
+    console.error("Error fetching CoA accounts:", error);
+    res.status(500).json({ error: "Failed to fetch CoA accounts" });
+  }
+});
+
+router.get("/:engagementId/mapping-stats", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { engagementId } = req.params;
+    const totalAccounts = await prisma.coAAccount.count({ where: { engagementId } });
+    const mappedCount = await prisma.coAAccount.count({ where: { engagementId, fsLineItem: { not: null } } });
+    const flaggedCount = await prisma.coAAccount.count({ where: { engagementId, fsLineItem: null, notesDisclosureRef: { not: null } } });
+    const fsHeadCount = await prisma.fSHead.count({ where: { engagementId } });
+    const score = totalAccounts > 0 ? Math.round((mappedCount / totalAccounts) * 100) : 0;
+
+    res.json({
+      totalAccounts,
+      mappedCount,
+      unmappedCount: totalAccounts - mappedCount - flaggedCount,
+      flaggedCount,
+      fsHeadCount,
+      mappingScore: score,
+      thresholdMet: score >= 95,
+    });
+  } catch (error) {
+    console.error("Error fetching mapping stats:", error);
+    res.status(500).json({ error: "Failed to fetch mapping stats" });
   }
 });
 

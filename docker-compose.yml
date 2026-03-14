@@ -201,7 +201,6 @@ volumes:
   logs:
     driver: local
   certbot-etc:
-    external: true
-    name: auditwise_certbot-etc
+    driver: local
   certbot-www:
     driver: local

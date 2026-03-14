@@ -1,5 +1,8 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams } from "wouter";
+import { AIAssistantPanel } from "@/components/ai-assistant-panel";
+import { SignOffBar } from "@/components/sign-off-bar";
+import { usePhaseRoleGuard } from "@/hooks/use-phase-role-guard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -417,7 +420,7 @@ function OverallProgressHeader({ dashboard }: { dashboard: WorkflowDashboard }) 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" data-testid="section-progress-header">
       <div>
-        <h1 className="text-xl font-semibold" data-testid="text-page-title">Post-Upload Audit Workflow</h1>
+        <h1 className="text-xl font-semibold" data-testid="text-page-title">Validation & Parsing</h1>
         <p className="text-sm text-muted-foreground mt-0.5" data-testid="text-engagement-code">
           {dashboard.engagementCode} &middot; {dashboard.phasesCompleted}/{dashboard.totalPhases} phases complete
         </p>
@@ -547,11 +550,225 @@ function SummaryCards({ dashboard }: { dashboard: WorkflowDashboard }) {
   );
 }
 
+interface ValidationResults {
+  passedChecks: Array<{ label: string; detail: string }>;
+  warnings: Array<{ label: string; detail: string; ruleCode: string; id: string }>;
+  blockers: Array<{ label: string; detail: string; ruleCode: string; id: string }>;
+  parserSummary: {
+    tbRowCount: number;
+    glEntryCount: number;
+    totalIssues: number;
+    blockerCount: number;
+    warningCount: number;
+    resolvedCount: number;
+    summaryRun: { runNumber: number; tbRowCount: number; glEntryCount: number; createdAt: string } | null;
+  };
+}
+
+function ValidationResultsPanel({ engagementId }: { engagementId: string }) {
+  const [activeSection, setActiveSection] = useState<'all' | 'passed' | 'warnings' | 'blockers'>('all');
+
+  const { data: results, isLoading, refetch, isFetching } = useQuery<ValidationResults>({
+    queryKey: ["/api/import", engagementId, "validation-results"],
+    queryFn: async () => {
+      const res = await fetchWithAuth(`/api/import/${engagementId}/validation-results`);
+      if (!res.ok) throw new Error("Failed to fetch validation results");
+      return res.json();
+    },
+    enabled: !!engagementId,
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <Skeleton className="h-6 w-48 mb-2" />
+          <Skeleton className="h-20 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!results) {
+    return (
+      <Card>
+        <CardContent className="p-4 text-center">
+          <AlertTriangle className="h-6 w-6 mx-auto mb-2 text-amber-500" />
+          <p className="text-sm text-muted-foreground mb-2">Could not load validation results.</p>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <RefreshCw className="h-3.5 w-3.5 mr-1" /> Retry
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const { passedChecks, warnings, blockers, parserSummary } = results;
+  const totalChecks = passedChecks.length + warnings.length + blockers.length;
+  const passPercent = totalChecks > 0 ? Math.round((passedChecks.length / totalChecks) * 100) : 0;
+  const hasBlockers = blockers.length > 0;
+
+  return (
+    <div className="space-y-4">
+      <Card className={hasBlockers ? "border-red-300 dark:border-red-800" : "border-green-300 dark:border-green-800"}>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Validation & Parsing Results
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Badge className={hasBlockers ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"} variant="secondary">
+                {hasBlockers ? `${blockers.length} Blocker(s)` : "All Clear"}
+              </Badge>
+              <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+                <RefreshCw className={`h-3.5 w-3.5 mr-1 ${isFetching ? "animate-spin" : ""}`} />
+                Re-scan
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="text-center p-2 bg-muted/30 rounded-md">
+              <p className="text-2xl font-bold">{parserSummary.tbRowCount.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">TB Rows</p>
+            </div>
+            <div className="text-center p-2 bg-muted/30 rounded-md">
+              <p className="text-2xl font-bold">{parserSummary.glEntryCount.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">GL Entries</p>
+            </div>
+            <div className="text-center p-2 bg-muted/30 rounded-md">
+              <p className="text-2xl font-bold text-green-600">{passedChecks.length}</p>
+              <p className="text-xs text-muted-foreground">Checks Passed</p>
+            </div>
+            <div className="text-center p-2 bg-muted/30 rounded-md">
+              <p className="text-2xl font-bold">{passPercent}%</p>
+              <p className="text-xs text-muted-foreground">Pass Rate</p>
+            </div>
+          </div>
+
+          <div className="flex gap-1 border-b pb-1">
+            {[
+              { key: 'all' as const, label: `All (${totalChecks})` },
+              { key: 'passed' as const, label: `Passed (${passedChecks.length})`, color: 'text-green-600' },
+              { key: 'warnings' as const, label: `Warnings (${warnings.length})`, color: 'text-amber-600' },
+              { key: 'blockers' as const, label: `Blockers (${blockers.length})`, color: 'text-red-600' },
+            ].map(tab => (
+              <Button
+                key={tab.key}
+                variant={activeSection === tab.key ? "secondary" : "ghost"}
+                size="sm"
+                className={`text-xs ${tab.color || ''}`}
+                onClick={() => setActiveSection(tab.key)}
+              >
+                {tab.label}
+              </Button>
+            ))}
+          </div>
+
+          <div className="space-y-1 max-h-[400px] overflow-y-auto">
+            {(activeSection === 'all' || activeSection === 'blockers') && blockers.map((item) => (
+              <div key={item.id} className="flex items-start gap-2 p-2 rounded-md bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
+                <AlertOctagon className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-red-800 dark:text-red-300">{item.label}</p>
+                  <p className="text-xs text-red-600/70 dark:text-red-400/70">{item.detail}</p>
+                </div>
+              </div>
+            ))}
+
+            {(activeSection === 'all' || activeSection === 'warnings') && warnings.map((item) => (
+              <div key={item.id} className="flex items-start gap-2 p-2 rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+                <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-300">{item.label}</p>
+                  <p className="text-xs text-amber-600/70 dark:text-amber-400/70">{item.detail}</p>
+                </div>
+              </div>
+            ))}
+
+            {(activeSection === 'all' || activeSection === 'passed') && passedChecks.map((item, idx) => (
+              <div key={idx} className="flex items-start gap-2 p-2 rounded-md bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+                <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-green-800 dark:text-green-300">{item.label}</p>
+                  <p className="text-xs text-green-600/70 dark:text-green-400/70">{item.detail}</p>
+                </div>
+              </div>
+            ))}
+
+            {totalChecks === 0 && (
+              <div className="text-center py-6 text-muted-foreground">
+                <Info className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                <p className="text-sm">No validation data yet</p>
+                <p className="text-xs mt-1">Upload data in the TB/GL Upload phase first</p>
+              </div>
+            )}
+          </div>
+
+          {totalChecks > 0 && (
+            <div className="border-t pt-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-4 w-4 text-purple-500" />
+                <h3 className="text-sm font-semibold">AI Analysis</h3>
+              </div>
+              <div className="space-y-2">
+                {blockers.length > 0 && (
+                  <div className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800">
+                    <p className="text-xs font-medium text-purple-800 dark:text-purple-300 mb-1">Corrective Actions Needed</p>
+                    <ul className="text-xs text-purple-700/80 dark:text-purple-400/80 space-y-1 list-disc pl-4">
+                      {blockers.map((b) => (
+                        <li key={b.id}>
+                          <span className="font-medium">{b.ruleCode}</span>: {b.detail}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-xs text-purple-600/60 dark:text-purple-400/60 mt-2 italic">
+                      Resolve all blockers before proceeding to COA Mapping. Re-upload corrected files or mark issues as resolved.
+                    </p>
+                  </div>
+                )}
+                {warnings.length > 0 && blockers.length === 0 && (
+                  <div className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800">
+                    <p className="text-xs font-medium text-purple-800 dark:text-purple-300 mb-1">Data Quality Summary</p>
+                    <p className="text-xs text-purple-700/80 dark:text-purple-400/80">
+                      {warnings.length} warning(s) found but no blockers — you may proceed to COA Mapping.
+                      Review warnings to improve data quality.
+                    </p>
+                  </div>
+                )}
+                {blockers.length === 0 && warnings.length === 0 && passedChecks.length > 0 && (
+                  <div className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800">
+                    <p className="text-xs font-medium text-purple-800 dark:text-purple-300 mb-1">All Clear</p>
+                    <p className="text-xs text-purple-700/80 dark:text-purple-400/80">
+                      All validation checks passed. Data is ready for COA Mapping and Materiality phases.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {parserSummary.summaryRun && (
+            <div className="text-xs text-muted-foreground border-t pt-2 flex items-center gap-2">
+              <Info className="h-3 w-3" />
+              Last validation run #{parserSummary.summaryRun.runNumber} &mdash; {new Date(parserSummary.summaryRun.createdAt).toLocaleString()}
+              &mdash; {parserSummary.resolvedCount} issue(s) resolved
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function PostUploadWorkflow() {
   const params = useParams<{ engagementId: string }>();
   const { activeEngagement } = useWorkspace();
   const engagementId = params.engagementId || activeEngagement?.id || "";
   const { toast } = useToast();
+  const roleGuard = usePhaseRoleGuard("validation", "REQUISITION");
   const [expandedExceptions, setExpandedExceptions] = useState(false);
 
   const { data: dashboard, isLoading, isError, refetch, isFetching } = useQuery<WorkflowDashboard>({
@@ -604,6 +821,10 @@ export default function PostUploadWorkflow() {
 
   return (
     <div className="page-container">
+      <SignOffBar phase="REQUISITION" section="validation" className="mb-1" />
+      <AIAssistantPanel engagementId={engagementId} phaseKey="validation" className="mb-3" />
+      <ValidationResultsPanel engagementId={engagementId} />
+
       <div className="flex items-center justify-between gap-2">
         <OverallProgressHeader dashboard={dashboard} />
         <Button

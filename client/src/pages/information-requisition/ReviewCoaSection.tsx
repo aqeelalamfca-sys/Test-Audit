@@ -246,13 +246,13 @@ export function ReviewCoaSection({
   const getInitialSubTab = () => {
     const params = new URLSearchParams(search);
     const subtab = params.get('subtab');
-    if (subtab && ['upload', 'tb', 'gl', 'ap', 'ar', 'bank', 'confirmations', 'draft-fs', 'mapping', 'checks'].includes(subtab)) {
-      return subtab as 'upload' | 'tb' | 'gl' | 'ap' | 'ar' | 'bank' | 'confirmations' | 'draft-fs' | 'mapping' | 'checks';
+    if (subtab && ['upload', 'tb', 'gl', 'ap', 'ar', 'bank', 'batches', 'confirmations', 'draft-fs', 'mapping', 'checks'].includes(subtab)) {
+      return subtab as 'upload' | 'tb' | 'gl' | 'ap' | 'ar' | 'bank' | 'batches' | 'confirmations' | 'draft-fs' | 'mapping' | 'checks';
     }
     return 'upload';
   };
 
-  const [reviewCoaSubTab, setReviewCoaSubTab] = useState<'upload' | 'tb' | 'gl' | 'ap' | 'ar' | 'bank' | 'confirmations' | 'draft-fs' | 'mapping' | 'checks'>(getInitialSubTab);
+  const [reviewCoaSubTab, setReviewCoaSubTab] = useState<'upload' | 'tb' | 'gl' | 'ap' | 'ar' | 'bank' | 'batches' | 'confirmations' | 'draft-fs' | 'mapping' | 'checks'>(getInitialSubTab);
 
   useEffect(() => {
     if (activeSubTab !== undefined && activeSubTab !== reviewCoaSubTab) {
@@ -2429,6 +2429,128 @@ export function ReviewCoaSection({
           </SubTabShell>
         );
       })()}
+
+      {reviewCoaSubTab === 'batches' && (
+        <SubTabShell tabKey="batches">
+          <div className="space-y-4 p-2">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Import Logs & Batch Tracking
+                </CardTitle>
+                <CardDescription>
+                  All upload batches with traceable batch IDs, source tags, and processing status
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <BatchTrackingTable engagementId={effectiveEngagementId} />
+              </CardContent>
+            </Card>
+          </div>
+        </SubTabShell>
+      )}
+    </div>
+  );
+}
+
+function BatchTrackingTable({ engagementId }: { engagementId: string }) {
+  const [batches, setBatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!engagementId) return;
+    setLoading(true);
+    fetchWithAuth(`/api/import/${engagementId}/batches`)
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          setBatches(data);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [engagementId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-sm text-muted-foreground">Loading import logs...</span>
+      </div>
+    );
+  }
+
+  if (batches.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <FileSpreadsheet className="h-10 w-10 mx-auto mb-2 opacity-40" />
+        <p className="text-sm">No upload batches found</p>
+        <p className="text-xs mt-1">Upload a workbook to create the first batch</p>
+      </div>
+    );
+  }
+
+  const getStatusBadge = (status: string) => {
+    const colors: Record<string, string> = {
+      UPLOADED: "bg-blue-100 text-blue-800",
+      VALIDATING: "bg-yellow-100 text-yellow-800",
+      READY: "bg-green-100 text-green-800",
+      SUBMITTED: "bg-purple-100 text-purple-800",
+      APPROVED: "bg-emerald-100 text-emerald-800",
+      POSTED: "bg-green-200 text-green-900",
+      LOCKED: "bg-gray-200 text-gray-800",
+      REJECTED: "bg-red-100 text-red-800",
+    };
+    return <Badge className={colors[status] || "bg-gray-100 text-gray-700"} variant="secondary">{status}</Badge>;
+  };
+
+  return (
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[140px]">Batch ID</TableHead>
+            <TableHead>File</TableHead>
+            <TableHead>Source</TableHead>
+            <TableHead>Period</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Rows</TableHead>
+            <TableHead className="text-right">Errors</TableHead>
+            <TableHead className="text-right">Warnings</TableHead>
+            <TableHead>Uploaded By</TableHead>
+            <TableHead>Date</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {batches.map((batch) => (
+            <TableRow key={batch.id}>
+              <TableCell className="font-mono text-xs">{batch.batchNumber}</TableCell>
+              <TableCell className="max-w-[200px] truncate text-sm">{batch.fileName || '—'}</TableCell>
+              <TableCell className="text-sm">{batch.sourceTag || '—'}</TableCell>
+              <TableCell className="text-sm">{batch.periodTag || '—'}</TableCell>
+              <TableCell>{getStatusBadge(batch.status)}</TableCell>
+              <TableCell className="text-right font-mono text-sm">{batch.totalRows.toLocaleString()}</TableCell>
+              <TableCell className="text-right">
+                {batch.errorCount > 0 ? (
+                  <Badge variant="destructive" className="font-mono">{batch.errorCount}</Badge>
+                ) : (
+                  <span className="text-green-600 text-sm">0</span>
+                )}
+              </TableCell>
+              <TableCell className="text-right">
+                {batch.warningCount > 0 ? (
+                  <Badge variant="secondary" className="bg-amber-100 text-amber-800 font-mono">{batch.warningCount}</Badge>
+                ) : (
+                  <span className="text-green-600 text-sm">0</span>
+                )}
+              </TableCell>
+              <TableCell className="text-sm">{batch.uploadedBy?.fullName || '—'}</TableCell>
+              <TableCell className="text-xs text-muted-foreground">{new Date(batch.uploadedAt).toLocaleString()}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

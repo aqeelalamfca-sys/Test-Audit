@@ -8,6 +8,7 @@ const db = prisma as any;
 
 const router = Router();
 
+/** Backend storage phases — see shared/phases.ts for canonical 19-phase workflow */
 const PHASE_ORDER: AuditPhase[] = [
   "ONBOARDING",
   "PRE_PLANNING", 
