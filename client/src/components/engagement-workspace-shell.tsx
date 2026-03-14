@@ -4,8 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useWorkspace } from "@/lib/workspace-context";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Loader2, Bot, X } from "lucide-react";
+import { AlertTriangle, Loader2, Sparkles, X } from "lucide-react";
 import { getPhaseByKey } from "../../../shared/phases";
+import { AICopilotEnhanced } from "@/components/ai-copilot-enhanced";
 
 interface EngagementWorkspaceShellProps {
   children: ReactNode;
@@ -66,7 +67,7 @@ export function EngagementWorkspaceShell({ children, phaseSlug, engagementId }: 
     return <Redirect to={`/workspace/${engagementId}/${resumePhaseSlug}`} />;
   }
 
-  const clientName = activeEngagement?.clientName || "Client";
+  const clientName = activeEngagement?.client?.name || "Client";
   const engagementCode = activeEngagement?.engagementCode || "";
   const periodStart = activeEngagement?.periodStart;
   const periodEnd = activeEngagement?.periodEnd;
@@ -91,11 +92,12 @@ export function EngagementWorkspaceShell({ children, phaseSlug, engagementId }: 
             <Button
               variant={aiPanelOpen ? "default" : "ghost"}
               size="sm"
-              className="h-7 w-7 p-0 shrink-0"
+              className={`h-7 px-2.5 shrink-0 gap-1.5 text-xs ${aiPanelOpen ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700" : ""}`}
               onClick={() => setAiPanelOpen(!aiPanelOpen)}
-              title="Toggle AI panel"
+              title="Toggle Audit Copilot"
             >
-              <Bot className="h-3.5 w-3.5" />
+              <Sparkles className="h-3.5 w-3.5" />
+              {!aiPanelOpen && "Copilot"}
             </Button>
           )}
         </div>
@@ -136,34 +138,11 @@ export function EngagementWorkspaceShell({ children, phaseSlug, engagementId }: 
         </div>
 
         {aiPanelOpen && currentCanonical && (
-          <div className="w-72 border-l bg-muted/30 flex flex-col shrink-0">
-            <div className="flex items-center justify-between px-3 py-2 border-b">
-              <div className="flex items-center gap-1.5 text-sm font-medium">
-                <Bot className="h-4 w-4 text-primary" />
-                AI Assistant
-              </div>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setAiPanelOpen(false)}>
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-            <div className="flex-1 p-3 overflow-auto">
-              <p className="text-xs text-muted-foreground mb-3">
-                AI capabilities for <span className="font-medium">{currentCanonical.label}</span>:
-              </p>
-              {currentCanonical.aiCapabilities.length > 0 ? (
-                <div className="space-y-2">
-                  {currentCanonical.aiCapabilities.map((cap) => (
-                    <Button key={cap} variant="outline" size="sm" className="w-full justify-start text-xs h-8">
-                      <Bot className="h-3 w-3 mr-1.5 text-primary" />
-                      {cap.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                    </Button>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground/70 italic">No AI capabilities for this phase.</p>
-              )}
-            </div>
-          </div>
+          <AICopilotEnhanced
+            engagementId={engagementId}
+            collapsed={false}
+            onToggleCollapse={() => setAiPanelOpen(false)}
+          />
         )}
       </div>
     </div>

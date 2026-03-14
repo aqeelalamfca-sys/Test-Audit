@@ -43,6 +43,15 @@ docker/          Docker build files and entrypoints
 - **Production builds**: `import.meta.url` does NOT work in production CJS bundle — use `process.cwd()` for file paths instead.
 - **Template vault**: Template files live in `server/template-vault/`.
 
+## AI Audit Copilot (Enhanced)
+
+The workspace shell includes a page-aware AI Copilot panel that provides:
+- **Page Profiles**: 15+ route-aware profiles with objectives, expected outputs, review rules, field hints, and suggestion templates (`server/services/pageProfiles.ts`)
+- **Standards Library**: 30+ ISA/ISQM/Ethics standards with key paragraphs, audit implications, and page-to-standards mapping (`server/services/standardsLibrary.ts`)
+- **Backend Endpoints**: `/api/ai/copilot-enhanced/` — page-context, field-suggestions, section-draft, page-review, standards lookup, next-steps (`server/routes/aiCopilotEnhancedRoutes.ts`)
+- **Frontend**: 5-tab panel (Overview, Standards, AI Actions, Review, Next Steps) integrated into `engagement-workspace-shell.tsx` via `AICopilotEnhanced` component
+- **Hook**: `use-page-ai-context.ts` — extracts `pageId` from current route, maps slug to profile key, fetches context from backend
+
 ## Demo Users
 
 - `admin@auditwise.pk` / `Test@123`

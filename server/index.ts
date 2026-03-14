@@ -70,6 +70,7 @@ import progressRoutes from "./progressRoutes";
 import isaComplianceRoutes from "./routes/isaComplianceRoutes";
 import auditHealthRoutes from "./routes/auditHealthRoutes";
 import aiCopilotRoutes from "./routes/aiCopilotRoutes";
+import aiCopilotEnhancedRoutes from "./routes/aiCopilotEnhancedRoutes";
 import templateRoutes from "./templateRoutes";
 import templateVaultRoutes from "./templateVaultRoutes";
 import importRoutes from "./importRoutes";
@@ -421,6 +422,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   app.use("/api/isa-compliance", isaComplianceRoutes);
   app.use("/api/audit-health", auditHealthRoutes);
   app.use("/api/ai/copilot", aiCopilotRoutes);
+  app.use("/api/ai/copilot-enhanced", aiCopilotEnhancedRoutes);
   app.use("/api/ai", aiRoutes);
   app.use("/api/ai/suggest", aiSuggestRoutes);
   app.use("/api/ai/preplanning", preplanningAiRoutes);
