@@ -1,6 +1,6 @@
 # AuditWise Deployment Guide
 
-## Architecture
+## Recommended Architecture (Hostinger VPS)
 
 ```
 Replit (development)
@@ -10,19 +10,108 @@ GitHub (source control)
 Hostinger VPS (production)
   ├── Host Nginx (SSL termination + reverse proxy, ports 80/443)
   │     ↓ proxy_pass to 127.0.0.1:5000
-  └── Docker Containers
-        ├── auditwise-db (PostgreSQL 16, port 5432 internal)
-        ├── auditwise-redis (Redis 7, port 6379 internal)
-        └── auditwise-backend (Express API, port 5000 exposed to host)
-              ↓ serves both API + static frontend
+  └── Docker Containers  [docker-compose.vps.yml — 3 services]
+        ├── auditwise-db (PostgreSQL 16, port 5432 internal only)
+        ├── auditwise-redis (Redis 7, port 6379 internal only)
+        └── auditwise-backend (Express API, port 5000 → host loopback)
+              ↓ serves both REST API + pre-built React SPA
 https://auditwise.tech
 ```
 
-**Note:** Host-level Nginx handles SSL certificates (via Certbot/Let's Encrypt) and
-proxies all traffic to the backend container on port 5000. The backend serves both the
-API endpoints and the pre-built React frontend as static files. The Docker Compose file
-also includes `frontend` and `nginx` containers for fully containerized local testing,
-but they are NOT used in production deployment.
+**Why this shape?**
+- Host Nginx handles TLS (Let's Encrypt) and acts as the only public-facing process.
+- Only 3 Docker containers run in production — less RAM, faster restarts, simpler logs.
+- The backend (`dist/index.cjs`) serves the Vite-built React SPA from `dist/public` — no
+  separate frontend container required.
+- PostgreSQL and Redis are never exposed outside the Docker network.
+
+> **Local / full-containerized mode** (all 5 containers including Nginx and frontend)
+> is supported via `docker-compose.prod.yml` and is documented at the end of this
+> guide. Use it for local testing or when you want a fully self-contained Docker stack.
+
+---
+
+## Quick Start — Fresh VPS (Recommended)
+
+For a brand-new Ubuntu 22.04/24.04 VPS, one script installs everything end-to-end:
+
+```bash
+# 1. SSH into your VPS
+ssh root@YOUR_VPS_IP
+
+# 2. Set your domain and email, then run the installer
+DOMAIN=auditwise.tech EMAIL=admin@auditwise.tech \
+  bash <(curl -fsSL https://raw.githubusercontent.com/aqeelalamfca-sys/Test-Audit/main/deploy/hostinger-vps-setup.sh)
+```
+
+Or, if you already have the repo cloned:
+
+```bash
+git clone https://github.com/aqeelalamfca-sys/Test-Audit.git /opt/auditwise
+DOMAIN=auditwise.tech EMAIL=admin@auditwise.tech \
+  bash /opt/auditwise/deploy/hostinger-vps-setup.sh
+```
+
+The installer (`deploy/hostinger-vps-setup.sh`) performs these steps automatically:
+
+| Step | What it does |
+|------|-------------|
+| 1 | Installs `git`, `curl`, `ufw`, `nginx`, `certbot`, `python3-certbot-nginx` |
+| 2 | Installs Docker Engine + Compose plugin |
+| 3 | Creates 2 GB swap, tunes `vm.swappiness` |
+| 4 | Clones / updates repo to `/opt/auditwise` |
+| 5 | Creates `.env` from `.env.example`, auto-generates secrets, prompts for review |
+| 6 | Pre-deploy database backup (if a previous deployment exists) |
+| 7 | Builds and starts 3 containers via `docker-compose.vps.yml` |
+| 8 | Installs `deploy/nginx/host-auditwise.conf` and reloads Nginx |
+| 9 | Obtains Let's Encrypt certificate via Certbot |
+| 10 | Configures UFW (allow SSH + 80 + 443, deny all else) |
+| + | Installs daily DB backup cron and twice-daily Certbot renewal cron |
+| + | Runs a post-install health check on all endpoints |
+
+---
+
+## Key Files for VPS Deployment
+
+| File | Purpose |
+|------|---------|
+| `docker-compose.vps.yml` | **3-service** production stack (db, redis, backend) |
+| `deploy/nginx/host-auditwise.conf` | Host Nginx config (HTTP→HTTPS, WebSocket, SSE, asset caching) |
+| `deploy/hostinger-vps-setup.sh` | End-to-end VPS installer / updater |
+| `.env.example` | Canonical environment variable template |
+| `deploy/backup.sh` | Standalone PostgreSQL backup utility |
+
+---
+
+## Environment Variables
+
+Copy and edit `.env` before first start:
+
+```bash
+cp .env.example .env
+nano .env   # or vim, vi …
+```
+
+Required fields:
+
+| Variable | Description |
+|----------|-------------|
+| `POSTGRES_PASSWORD` | Strong random password (`openssl rand -hex 24`) |
+| `JWT_SECRET` | 32-byte hex secret (`openssl rand -hex 32`) |
+| `ENCRYPTION_MASTER_KEY` | 32-byte hex secret (`openssl rand -hex 32`) |
+| `INITIAL_SUPER_ADMIN_EMAIL` | First admin account email |
+| `INITIAL_SUPER_ADMIN_PASSWORD` | First admin password (change after login) |
+
+Optional performance tuning (safe defaults already set):
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `NODE_HEAP_SIZE` | `1536` | MB; lower to `1024` for 2 GB VPS |
+| `REDIS_MAXMEMORY` | `256mb` | ~10% of RAM; raise for larger VPS |
+| `PG_SHARED_BUFFERS` | `256MB` | ~25% of RAM available to Postgres |
+| `PG_EFFECTIVE_CACHE_SIZE` | `768MB` | ~75% of RAM for Postgres planner |
+
+---
 
 ---
 
@@ -117,21 +206,23 @@ SSH into your VPS and run the one-command deploy:
 ssh root@YOUR_VPS_IP
 ```
 
-### Option A: Docker Deployment (Recommended)
+### Option A: Recommended — Host Nginx + 3 Containers (`docker-compose.vps.yml`)
+
+Use the new end-to-end installer (see **Quick Start** section above for the one-liner):
 
 ```bash
 apt-get update && apt-get install -y git
 git clone -b main https://github.com/aqeelalamfca-sys/Test-Audit.git /opt/auditwise
 cd /opt/auditwise
-sudo bash deploy/hostinger-deploy.sh
+DOMAIN=auditwise.tech EMAIL=admin@auditwise.tech bash deploy/hostinger-vps-setup.sh
 ```
 
 This script automatically:
 1. Installs Docker, Nginx, Certbot, UFW
 2. Configures firewall (SSH + HTTP + HTTPS only)
 3. Generates all production secrets (`.env`)
-4. Builds and starts all 5 Docker containers
-5. Configures Nginx reverse proxy
+4. Builds and starts **3 Docker containers** (`docker-compose.vps.yml`)
+5. Installs host Nginx config (`deploy/nginx/host-auditwise.conf`)
 6. Obtains SSL certificate from Let's Encrypt
 7. Sets up daily database backups (02:00 UTC)
 8. Verifies everything is running
@@ -241,26 +332,25 @@ testing only and are not started in production.
 
 ## Management Commands
 
-### Docker Mode
+### Docker VPS Mode (`docker-compose.vps.yml`)
 
 ```bash
 cd /opt/auditwise
 
 # View logs
-docker compose logs -f backend        # backend logs
-docker compose logs -f db             # database logs
-docker compose logs -f redis          # redis logs
-sudo tail -f /var/log/nginx/error.log # host nginx logs
+docker compose -f docker-compose.vps.yml logs -f backend   # backend logs
+docker compose -f docker-compose.vps.yml logs -f db        # database logs
+docker compose -f docker-compose.vps.yml logs -f redis     # redis logs
+sudo tail -f /var/log/nginx/error.log                      # host nginx logs
 
 # Container status
-docker compose ps
+docker compose -f docker-compose.vps.yml ps
 
 # Restart backend
-docker compose restart backend
+docker compose -f docker-compose.vps.yml restart backend
 
-# Rebuild and restart (production services only)
-docker compose build backend
-docker compose up -d db redis backend
+# Rebuild and restart (all 3 services)
+docker compose -f docker-compose.vps.yml up -d --build
 
 # Host Nginx status
 sudo systemctl status nginx
@@ -269,8 +359,9 @@ sudo nginx -t
 # Database backup
 bash deploy/backup.sh
 
-# Update from GitHub
-bash deploy/vps-update.sh
+# Update from GitHub (re-runs the installer — idempotent)
+DOMAIN=auditwise.tech EMAIL=admin@auditwise.tech \
+  bash /opt/auditwise/deploy/hostinger-vps-setup.sh
 
 # Database shell
 docker exec -it auditwise-db psql -U auditwise -d auditwise
@@ -381,7 +472,23 @@ gunzip -c backups/LATEST_BACKUP.sql.gz \
 
 ---
 
-## Quick Deploy (deployment/ folder)
+## Legacy / Local Testing: Full Containerized Stack
+
+> **Note:** The following modes run all 5 containers (db, redis, backend, frontend, nginx)
+> inside Docker, including a containerized Nginx. This is useful for **local development**
+> and **testing the full stack** without a host Nginx. It is **not recommended for
+> production VPS** because it uses more RAM, adds complexity, and the containerized
+> Nginx cannot easily integrate with Let's Encrypt on a host that already runs Nginx.
+
+### `docker-compose.prod.yml` (5-service legacy mode)
+
+```bash
+cd /opt/auditwise
+cp .env.example .env && nano .env
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+### `deployment/` folder (self-contained deployment)
 
 For a clean containerized deployment using only the `deployment/` folder:
 
