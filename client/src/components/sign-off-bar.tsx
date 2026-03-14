@@ -313,7 +313,7 @@ export function SignOffBar({
     <>
       <div
         className={cn(
-          "flex items-center gap-3 rounded-md border px-3 py-1.5 text-xs transition-colors",
+          "flex items-center gap-3 rounded-md border px-3 py-1.5 text-xs transition-colors w-fit",
           config.barColor,
           className,
         )}
@@ -328,7 +328,7 @@ export function SignOffBar({
 
         <div className="h-4 w-px bg-border shrink-0" />
 
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
           <SignOffStep
             label="Prepared"
             roleName="Associate"
