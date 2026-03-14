@@ -255,17 +255,34 @@ NODE_OPTIONS="--max-old-space-size=$HEAP_SIZE" npx prisma generate 2>&1 || {
 echo "  Prisma client ready."
 
 echo "[4/5] Running database migrations..."
-if [ -d "prisma/migrations" ] && [ "$(ls -A prisma/migrations 2>/dev/null)" ]; then
+HAS_MIGRATIONS="false"
+if [ -d "prisma/migrations" ]; then
+  if find prisma/migrations -maxdepth 2 -type f -name "migration.sql" | grep -q .; then
+    HAS_MIGRATIONS="true"
+  fi
+fi
+
+if [ "$HAS_MIGRATIONS" = "true" ]; then
   echo "  Found prisma/migrations — running prisma migrate deploy..."
-  NODE_OPTIONS="--max-old-space-size=$HEAP_SIZE" npx prisma migrate deploy 2>&1 || {
-    echo "  WARN: prisma migrate deploy failed. Falling back to prisma db push..."
+  set +e
+  MIGRATE_OUTPUT=$(NODE_OPTIONS="--max-old-space-size=$HEAP_SIZE" npx prisma migrate deploy 2>&1)
+  MIGRATE_STATUS=$?
+  set -e
+
+  if [ "$MIGRATE_STATUS" -ne 0 ]; then
+    echo "$MIGRATE_OUTPUT"
+    if echo "$MIGRATE_OUTPUT" | grep -q "P3005"; then
+      echo "  WARN: P3005 detected (non-empty DB with no migration history). Falling back to prisma db push..."
+    else
+      echo "  WARN: prisma migrate deploy failed. Falling back to prisma db push..."
+    fi
     NODE_OPTIONS="--max-old-space-size=$HEAP_SIZE" npx prisma db push --skip-generate 2>&1 || {
       echo "FATAL: Database schema sync failed."
       exit 1
     }
-  }
+  fi
 else
-  echo "  No migrations directory — running prisma db push..."
+  echo "  No migrations found — running prisma db push..."
   NODE_OPTIONS="--max-old-space-size=$HEAP_SIZE" npx prisma db push --skip-generate 2>&1 || {
     echo ""
     echo "FATAL: Database schema sync failed."
