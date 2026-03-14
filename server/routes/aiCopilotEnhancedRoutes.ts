@@ -388,6 +388,256 @@ router.get("/standards/search/:query", requireAuth, async (req: AuthenticatedReq
   }
 });
 
+router.post("/page-assistant", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const input = z.object({
+      pageId: z.string(),
+      engagementId: z.string().uuid(),
+      formData: z.object({
+        totalFields: z.number().optional(),
+        filledFields: z.number().optional(),
+        emptyFields: z.number().optional(),
+        completionPercent: z.number().optional(),
+        fields: z.array(z.object({
+          name: z.string().max(200),
+          label: z.string().max(200),
+          type: z.string().max(50),
+          value: z.string().max(500),
+          isEmpty: z.boolean(),
+          isNarrative: z.boolean(),
+        })).max(50).optional(),
+        narrativeFields: z.array(z.object({
+          name: z.string().max(200),
+          label: z.string().max(200),
+          value: z.string().max(500),
+          isEmpty: z.boolean(),
+        })).max(15).optional(),
+        selectedOptions: z.array(z.string().max(200)).max(20).optional(),
+        visibleTabs: z.array(z.string().max(100)).max(20).optional(),
+        activeTab: z.string().max(100).optional(),
+        hasConclusion: z.boolean().optional(),
+      }).optional(),
+      userRole: z.string().optional(),
+    }).parse(req.body);
+
+    const { pageId, engagementId, formData, userRole } = input;
+    const profile = getPageProfile(pageId);
+    const standards = getStandardsByPage(pageId);
+
+    let engagementContext: Record<string, unknown> = {};
+    let engagementContextStr = "";
+    try {
+      const engagement = await prisma.engagement.findFirst({
+        where: { id: engagementId, firmId: req.user!.firmId ?? undefined },
+        select: {
+          id: true,
+          engagementCode: true,
+          currentPhase: true,
+          fiscalYearEnd: true,
+          status: true,
+          clientId: true,
+        },
+      });
+
+      if (engagement) {
+        const client = await prisma.client.findUnique({
+          where: { id: engagement.clientId },
+          select: { name: true, industry: true, entityType: true },
+        });
+        const [materiality, riskCount, observationCount, adjustmentCount] = await Promise.all([
+          prisma.materialityAssessment.findFirst({
+            where: { engagementId },
+            select: { overallMateriality: true, performanceMateriality: true, benchmark: true, method: true },
+            orderBy: { createdAt: "desc" },
+          }),
+          prisma.riskAssessment.count({ where: { engagementId } }),
+          prisma.observation.count({ where: { engagementId } }),
+          prisma.auditAdjustment.count({ where: { engagementId } }),
+        ]);
+
+        engagementContext = {
+          clientName: client?.name || "Unknown",
+          industry: client?.industry || "Not specified",
+          entityType: client?.entityType || "Not specified",
+          engagementCode: engagement.engagementCode,
+          phase: engagement.currentPhase,
+          status: engagement.status,
+          fyEnd: engagement.fiscalYearEnd,
+          materiality: materiality ? {
+            overall: materiality.overallMateriality,
+            performance: materiality.performanceMateriality,
+            benchmark: materiality.benchmark,
+            method: materiality.method,
+          } : null,
+          risksIdentified: riskCount,
+          observations: observationCount,
+          adjustments: adjustmentCount,
+        };
+
+        engagementContextStr = Object.entries(engagementContext)
+          .filter(([, v]) => v !== null && v !== undefined)
+          .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`)
+          .join("\n");
+      }
+    } catch (engErr) {
+      console.warn("Page assistant: engagement context error:", engErr instanceof Error ? engErr.message : engErr);
+    }
+
+    const standardsSummary = standards.slice(0, 8).map(s => ({
+      code: s.code,
+      title: s.title,
+      summary: s.summary,
+      auditImplication: s.auditImplication,
+    }));
+
+    const fieldSummary = formData?.fields
+      ?.filter(f => !f.isEmpty && f.value.length > 0)
+      .slice(0, 30)
+      .map(f => `${f.label || f.name}: ${f.value.substring(0, 200)}`)
+      .join("\n") || "No form data captured";
+
+    const emptyFieldsList = formData?.fields
+      ?.filter(f => f.isEmpty && f.label)
+      .map(f => f.label)
+      .slice(0, 20) || [];
+
+    const selectedOpts = formData?.selectedOptions?.join(", ") || "";
+
+    const prompt = `You are analyzing the "${profile?.module || pageId}" page of an audit engagement.
+
+PAGE INFORMATION:
+- Page: ${profile?.module || pageId}
+- Objective: ${profile?.objective || "Complete this section of the audit"}
+- Expected Outputs: ${profile?.expectedOutputs?.join(", ") || "Working paper documentation"}
+- Phase Group: ${profile?.group || "unknown"}
+${formData?.activeTab ? `- Active Tab: ${formData.activeTab}` : ""}
+${formData?.visibleTabs?.length ? `- Available Tabs: ${formData.visibleTabs.join(", ")}` : ""}
+
+ENGAGEMENT CONTEXT:
+${engagementContextStr || "No engagement data available"}
+
+CURRENT PAGE STATE:
+- Fields detected: ${formData?.totalFields || 0}
+- Fields filled: ${formData?.filledFields || 0} (${formData?.completionPercent || 0}% complete)
+- Empty fields: ${formData?.emptyFields || 0}
+${selectedOpts ? `- Selected options: ${selectedOpts}` : ""}
+${formData?.hasConclusion ? "- Conclusion section is present on this page" : ""}
+
+FIELD VALUES (current data on page):
+${fieldSummary}
+
+${emptyFieldsList.length > 0 ? `EMPTY/MISSING FIELDS:\n${emptyFieldsList.map((f, i) => `${i + 1}. ${f}`).join("\n")}` : "All visible fields appear filled."}
+
+APPLICABLE STANDARDS:
+${standardsSummary.map(s => `${s.code}: ${s.title} - ${s.summary}`).join("\n") || "No specific standards mapped"}
+
+${profile?.commonMistakes?.length ? `COMMON MISTAKES ON THIS PAGE:\n${profile.commonMistakes.map(m => `- ${m}`).join("\n")}` : ""}
+
+${profile?.requiredEvidence?.length ? `REQUIRED EVIDENCE:\n${profile.requiredEvidence.map(e => `- ${e}`).join("\n")}` : ""}
+
+Provide your analysis in the following JSON structure (respond ONLY with valid JSON, no markdown):
+{
+  "pageSummary": "2-3 sentence summary of what this page is for and what stage of audit it relates to",
+  "guidance": ["list of 3-5 practical guidance items for completing this page properly"],
+  "inputSuggestions": ["list of 2-4 specific suggestions for field values or wording based on the current page data"],
+  "missingFields": ["list of missing or incomplete items that need attention, with significance noted"],
+  "standardsReferences": [{"code": "ISA XXX", "relevance": "why this standard matters for this specific page and current data"}],
+  "procedures": ["list of 3-5 practical audit procedures to perform for this page"],
+  "reviewNotes": ["list of 2-3 reviewer-level observations or challenges based on current inputs"],
+  "nextActions": ["list of 2-3 next steps after completing this page"]
+}`;
+
+    let aiOutput: Record<string, unknown> | null = null;
+    let generated = true;
+
+    try {
+      const aiSettings = await fetchAISettings(req.user!.firmId!);
+      const result = await generateAIContent(aiSettings, {
+        prompt,
+        context: engagementContextStr,
+        systemPrompt: "You are a senior statutory auditor analyzing an audit working paper page. Respond ONLY with valid JSON matching the requested structure. Be specific to the current page data, not generic. Reference specific ISA/ISQM paragraphs. Use professional audit language. Base your analysis on the actual field values provided.",
+        maxTokens: 4000,
+        temperature: 0.4,
+      });
+
+      if (result.content && result.content.trim().length > 10) {
+        try {
+          const cleaned = result.content.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+          aiOutput = JSON.parse(cleaned);
+        } catch (_parseErr) {
+          aiOutput = { rawContent: result.content };
+          generated = true;
+        }
+      } else {
+        throw new Error("Empty AI response");
+      }
+    } catch (_aiErr) {
+      generated = false;
+      const moduleName = profile?.module || pageId;
+      const objective = profile?.objective || "Complete this section";
+
+      aiOutput = {
+        pageSummary: `This is the ${moduleName} page. Objective: ${objective}. ${formData?.completionPercent || 0}% of visible fields are completed.`,
+        guidance: [
+          ...(profile?.expectedOutputs?.map(o => `Ensure you produce: ${o}`) || []),
+          ...(profile?.commonMistakes?.slice(0, 2).map(m => `Avoid: ${m}`) || []),
+          "Review all fields for completeness before proceeding",
+          "Ensure adequate documentation supports professional judgment",
+        ].slice(0, 5),
+        inputSuggestions: formData?.narrativeFields?.filter(f => f.isEmpty).slice(0, 3).map(f =>
+          `${f.label || f.name}: Draft professional narrative addressing the requirements of this field`
+        ) || ["Complete all narrative fields with specific, engagement-relevant content"],
+        missingFields: emptyFieldsList.length > 0
+          ? emptyFieldsList.slice(0, 8).map(f => `${f} — requires completion`)
+          : ["No missing fields detected in visible form"],
+        standardsReferences: standardsSummary.slice(0, 4).map(s => ({
+          code: s.code,
+          relevance: `${s.title}: ${s.auditImplication || s.summary}`,
+        })),
+        procedures: profile?.requiredEvidence?.slice(0, 4).map(e => `Obtain and document: ${e}`) || [
+          "Review documentation for completeness",
+          "Verify consistency with engagement strategy",
+          "Cross-reference with related working papers",
+        ],
+        reviewNotes: [
+          ...(profile?.reviewRules?.slice(0, 2).map(r => r.message) || []),
+          formData?.completionPercent && formData.completionPercent < 80
+            ? `Page is ${formData.completionPercent}% complete — several fields require attention before review`
+            : "Page completion appears adequate for initial review",
+        ].slice(0, 3),
+        nextActions: profile?.nextStepGuidance?.slice(0, 3) || [
+          "Save current progress",
+          "Request manager review when complete",
+          "Proceed to the next related working paper",
+        ],
+      };
+    }
+
+    res.json({
+      pageId,
+      module: profile?.module || pageId,
+      objective: profile?.objective || "",
+      generated,
+      analysis: aiOutput,
+      context: {
+        totalFields: formData?.totalFields || 0,
+        filledFields: formData?.filledFields || 0,
+        completionPercent: formData?.completionPercent || 0,
+        activeTab: formData?.activeTab || "",
+        hasConclusion: formData?.hasConclusion || false,
+      },
+      standards: standardsSummary,
+      disclaimer: "AI-assisted analysis — subject to professional judgment",
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid request", details: error.errors });
+    }
+    console.error("Page assistant error:", error);
+    res.status(500).json({ error: "Failed to analyze page" });
+  }
+});
+
 router.post("/seed-conclusion", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { pageId, engagementId, existingText, mode } = z.object({

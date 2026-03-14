@@ -64,7 +64,14 @@ export function usePageFormData() {
     const fields: FormFieldData[] = [];
     const narrativeFields: FormFieldData[] = [];
     const selectedOptions: string[] = [];
-    const container = document.querySelector(".page-container, [data-testid='page-content'], main, .flex-1.overflow-auto") || document.body;
+    const container = document.querySelector(".page-container, [data-testid='page-content'], main, [role='main'], .flex-1.overflow-auto");
+    if (!container) {
+      return {
+        totalFields: 0, filledFields: 0, emptyFields: 0, completionPercent: 0,
+        fields: [], narrativeFields: [], hasConclusion: false,
+        selectedOptions: [], visibleTabs: [], activeTab: "",
+      };
+    }
 
     const inputs = container.querySelectorAll<HTMLInputElement>(
       'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([aria-hidden="true"])'
@@ -117,7 +124,7 @@ export function usePageFormData() {
       if (value && label) selectedOptions.push(`${label}: ${value}`);
     });
 
-    const radixSelects = container.querySelectorAll<HTMLElement>("[data-testid*='select'], [role='combobox'], button[data-state]");
+    const radixSelects = container.querySelectorAll<HTMLElement>("[role='combobox']");
     radixSelects.forEach(btn => {
       if (btn.closest("[data-radix-popper-content-wrapper]")) return;
       if (btn.tagName === "SELECT" || btn.tagName === "INPUT") return;
@@ -132,7 +139,7 @@ export function usePageFormData() {
 
     const visibleTabs: string[] = [];
     let activeTab = "";
-    const tabButtons = container.querySelectorAll<HTMLElement>('[role="tab"], [data-state="active"], [data-state="inactive"]');
+    const tabButtons = container.querySelectorAll<HTMLElement>('[role="tab"]');
     tabButtons.forEach(tab => {
       const text = tab.textContent?.trim();
       if (text) {

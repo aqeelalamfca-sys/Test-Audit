@@ -48,9 +48,18 @@ docker/          Docker build files and entrypoints
 The workspace shell includes a page-aware AI Copilot panel that provides:
 - **Page Profiles**: 15+ route-aware profiles with objectives, expected outputs, review rules, field hints, and suggestion templates (`server/services/pageProfiles.ts`)
 - **Standards Library**: 30+ ISA/ISQM/Ethics standards with key paragraphs, audit implications, and page-to-standards mapping (`server/services/standardsLibrary.ts`)
-- **Backend Endpoints**: `/api/ai/copilot-enhanced/` — page-context, field-suggestions, section-draft, page-review, standards lookup, next-steps (`server/routes/aiCopilotEnhancedRoutes.ts`)
+- **Backend Endpoints**: `/api/ai/copilot-enhanced/` — page-context, field-suggestions, section-draft, page-review, page-assistant, standards lookup, next-steps, seed-conclusion (`server/routes/aiCopilotEnhancedRoutes.ts`)
 - **Frontend**: 5-tab panel (Overview, Standards, AI Actions, Review, Next Steps) integrated into `engagement-workspace-shell.tsx` via `AICopilotEnhanced` component
 - **Hook**: `use-page-ai-context.ts` — extracts `pageId` from current route, maps slug to profile key, fetches context from backend
+
+## Page-Aware AI Assistant Drawer
+
+A universal slide-in drawer (`client/src/components/ai-assistant-drawer.tsx`) that auto-analyzes the current page:
+- **Page Context Engine**: `client/src/hooks/use-page-form-data.ts` — extracts live form data from DOM (inputs, textareas, selects, checkboxes, radios), captures labels/values/completion status, identifies narrative fields, scoped to page container (never falls back to document.body)
+- **Backend**: `POST /api/ai/copilot-enhanced/page-assistant` — accepts structured page context (pageId, engagementId, formData with field values), enriches with backend engagement data (client, materiality, risks, observations), calls AI with structured prompt, returns categorized JSON (pageSummary, guidance, inputSuggestions, missingFields, standardsReferences, procedures, reviewNotes, nextActions), falls back to template-based output when AI unavailable. Server-side Zod validation with max field/string limits.
+- **Two tabs**: "Analysis" (auto-runs on open, shows collapsible categorized sections) and "Smart Actions" (Seed Conclusion, Draft Summary, Missing Fields, Review Section, Fill Narratives)
+- **Context badges**: Shows fields detected, completion %, active tab, AI/template indicator
+- **Text injection**: Insert/Replace/Append generated text into Page Conclusion panel via CustomEvent
 
 ## Universal Page Conclusion System
 
