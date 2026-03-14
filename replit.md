@@ -52,6 +52,14 @@ The workspace shell includes a page-aware AI Copilot panel that provides:
 - **Frontend**: 5-tab panel (Overview, Standards, AI Actions, Review, Next Steps) integrated into `engagement-workspace-shell.tsx` via `AICopilotEnhanced` component
 - **Hook**: `use-page-ai-context.ts` — extracts `pageId` from current route, maps slug to profile key, fetches context from backend
 
+## Tab UI System
+
+All tabs across audit phases use a unified design system:
+- **Base primitives** (`client/src/components/ui/tabs.tsx`): Flex-based horizontal scroll, `shrink-0` triggers, subtle border/shadow active state, hidden scrollbar via `scrollbar-none` utility
+- **SimpleTabNavigation / NumberedTabNavigation** (`client/src/components/numbered-tab-navigation.tsx`): Custom tab navs with matching style, status dots, numbered steps
+- **Phase pages** use `<TabsList className="w-full">` with `<TabsTrigger>` containing icon + label. For 8+ tab pages (acceptance, ethics), triggers use `flex-col` layout (icon above text)
+- **AI Copilot sidebar**: Layout uses `flex gap-2.5` with `flex-1 min-w-0` on content area — tabs scroll horizontally when sidebar opens instead of compressing
+
 ## Demo Users
 
 - `admin@auditwise.pk` / `Test@123`

@@ -752,20 +752,20 @@ export default function TBReview() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="space-y-2.5">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
-          <TabsTrigger value="tb-grid" className="gap-2" data-testid="tab-tb-grid">
+        <TabsList className="w-full">
+          <TabsTrigger value="tb-grid" data-testid="tab-tb-grid">
             <FileSpreadsheet className="h-4 w-4" />
             <span className="hidden sm:inline">TB Details</span>
           </TabsTrigger>
-          <TabsTrigger value="gl-grid" className="gap-2" data-testid="tab-gl-grid">
+          <TabsTrigger value="gl-grid" data-testid="tab-gl-grid">
             <Database className="h-4 w-4" />
             <span className="hidden sm:inline">GL Details</span>
           </TabsTrigger>
-          <TabsTrigger value="mapping" className="gap-2" data-testid="tab-mapping">
+          <TabsTrigger value="mapping" data-testid="tab-mapping">
             <GitCompare className="h-4 w-4" />
             <span className="hidden sm:inline">Mapping</span>
           </TabsTrigger>
-          <TabsTrigger value="reconciliation" className="gap-2" data-testid="tab-reconciliation">
+          <TabsTrigger value="reconciliation" data-testid="tab-reconciliation">
             <Calculator className="h-4 w-4" />
             <span className="hidden sm:inline">Reconciliation</span>
           </TabsTrigger>

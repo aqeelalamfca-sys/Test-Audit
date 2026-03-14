@@ -390,15 +390,15 @@ export default function Inspection() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="flex flex-wrap h-auto gap-1">
-          <TabsTrigger value="dashboard" className="text-xs"><BarChart3 className="h-3 w-3 mr-1" />Dashboard</TabsTrigger>
-          <TabsTrigger value="reports" className="text-xs"><FileText className="h-3 w-3 mr-1" />Final Reports</TabsTrigger>
-          <TabsTrigger value="documents" className="text-xs"><FileCheck className="h-3 w-3 mr-1" />Key Documents</TabsTrigger>
-          <TabsTrigger value="trail" className="text-xs"><History className="h-3 w-3 mr-1" />Audit Trail</TabsTrigger>
-          <TabsTrigger value="papers" className="text-xs"><ClipboardList className="h-3 w-3 mr-1" />Working Papers</TabsTrigger>
-          <TabsTrigger value="review" className="text-xs"><Eye className="h-3 w-3 mr-1" />Review History</TabsTrigger>
-          <TabsTrigger value="index" className="text-xs"><Search className="h-3 w-3 mr-1" />Archive Index</TabsTrigger>
-          <TabsTrigger value="exports" className="text-xs"><FolderArchive className="h-3 w-3 mr-1" />Export & Release</TabsTrigger>
+        <TabsList className="w-full">
+          <TabsTrigger value="dashboard"><BarChart3 className="h-3.5 w-3.5" />Dashboard</TabsTrigger>
+          <TabsTrigger value="reports"><FileText className="h-3.5 w-3.5" />Final Reports</TabsTrigger>
+          <TabsTrigger value="documents"><FileCheck className="h-3.5 w-3.5" />Key Documents</TabsTrigger>
+          <TabsTrigger value="trail"><History className="h-3.5 w-3.5" />Audit Trail</TabsTrigger>
+          <TabsTrigger value="papers"><ClipboardList className="h-3.5 w-3.5" />Working Papers</TabsTrigger>
+          <TabsTrigger value="review"><Eye className="h-3.5 w-3.5" />Review History</TabsTrigger>
+          <TabsTrigger value="index"><Search className="h-3.5 w-3.5" />Archive Index</TabsTrigger>
+          <TabsTrigger value="exports"><FolderArchive className="h-3.5 w-3.5" />Export & Release</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-2.5 mt-2.5">

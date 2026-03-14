@@ -923,33 +923,33 @@ export default function FirmSettingsPage() {
       </div>
 
       <Tabs defaultValue="firm" className="space-y-2.5">
-        <TabsList className="bg-muted/50 flex-wrap h-auto gap-1 p-1">
+        <TabsList className="w-full">
           <TabsTrigger value="firm" data-testid="tab-firm">
-            <Shield className="h-4 w-4 mr-1.5" />
+            <Shield className="h-4 w-4" />
             Subscription
           </TabsTrigger>
           <TabsTrigger value="firm-profile" data-testid="tab-firm-profile">
-            <Building2 className="h-4 w-4 mr-1.5" />
+            <Building2 className="h-4 w-4" />
             Firm Profile
           </TabsTrigger>
           <TabsTrigger value="profile" data-testid="tab-profile">
-            <User className="h-4 w-4 mr-1.5" />
+            <User className="h-4 w-4" />
             My Profile
           </TabsTrigger>
           <TabsTrigger value="notifications" data-testid="tab-notifications">
-            <Bell className="h-4 w-4 mr-1.5" />
+            <Bell className="h-4 w-4" />
             Notifications
           </TabsTrigger>
           <TabsTrigger value="preferences" data-testid="tab-preferences">
-            <Palette className="h-4 w-4 mr-1.5" />
+            <Palette className="h-4 w-4" />
             Preferences
           </TabsTrigger>
           <TabsTrigger value="security" data-testid="tab-security">
-            <Shield className="h-4 w-4 mr-1.5" />
+            <Shield className="h-4 w-4" />
             Security
           </TabsTrigger>
           <TabsTrigger value="locking-phases" data-testid="tab-locking-phases">
-            <Lock className="h-4 w-4 mr-1.5" />
+            <Lock className="h-4 w-4" />
             Locking Phases
           </TabsTrigger>
         </TabsList>

@@ -808,7 +808,7 @@ export function FSDraftGenerator({ engagementId }: FSDraftGeneratorProps) {
 
           <div className="flex-1 overflow-hidden mt-2.5">
             <Tabs value={drilldownTab} onValueChange={(v) => setDrilldownTab(v as any)} className="h-full flex flex-col">
-              <TabsList className="grid grid-cols-3 flex-shrink-0" data-testid="drilldown-tabs">
+              <TabsList className="w-auto flex-shrink-0" data-testid="drilldown-tabs">
                 <TabsTrigger value="accounts" data-testid="tab-accounts">Accounts & Balances</TabsTrigger>
                 <TabsTrigger value="population" data-testid="tab-population">Population</TabsTrigger>
                 <TabsTrigger value="mapping" data-testid="tab-mapping">Mapping</TabsTrigger>

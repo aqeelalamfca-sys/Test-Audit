@@ -138,7 +138,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
 
     return (
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="w-full">
           <TabsTrigger value="summary">Executive Summary</TabsTrigger>
           <TabsTrigger value="engagements">Engagements</TabsTrigger>
           <TabsTrigger value="analysis">Analysis</TabsTrigger>
@@ -366,7 +366,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
 
     return (
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="w-full">
           <TabsTrigger value="summary">Overview</TabsTrigger>
           <TabsTrigger value="at-risk">At-Risk ({atRiskEngagements?.length || 0})</TabsTrigger>
           <TabsTrigger value="overdue">Overdue ({overdueEngagements?.length || 0})</TabsTrigger>
@@ -501,7 +501,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
 
     return (
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="w-full">
           <TabsTrigger value="summary">Overview</TabsTrigger>
           <TabsTrigger value="team">Team ({teamMembers?.length || 0})</TabsTrigger>
           <TabsTrigger value="profitability">Profitability</TabsTrigger>
@@ -662,7 +662,7 @@ export function ReportViewer({ isOpen, onClose, reportType, data, title }: Repor
 
     return (
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="w-full">
           <TabsTrigger value="summary">Overview</TabsTrigger>
           <TabsTrigger value="industry">Industry</TabsTrigger>
           <TabsTrigger value="services">Services</TabsTrigger>

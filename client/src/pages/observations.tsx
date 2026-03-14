@@ -947,7 +947,7 @@ export default function Observations() {
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden flex flex-col">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="w-full">
               <TabsTrigger value="basic" data-testid="tab-basic">Basic Info</TabsTrigger>
               <TabsTrigger value="linkage" data-testid="tab-linkage">FS Linkage</TabsTrigger>
               <TabsTrigger value="action" data-testid="tab-action">Proposed Action</TabsTrigger>

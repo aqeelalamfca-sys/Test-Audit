@@ -310,18 +310,18 @@ export default function ProceduresSampling() {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview" className="text-xs sm:text-sm">
-              <Layers className="h-3.5 w-3.5 mr-1" /> Risk-Procedure Matrix
+          <TabsList className="w-full">
+            <TabsTrigger value="overview">
+              <Layers className="h-3.5 w-3.5" /> Risk-Procedure Matrix
             </TabsTrigger>
-            <TabsTrigger value="audit-program" className="text-xs sm:text-sm">
-              <ClipboardList className="h-3.5 w-3.5 mr-1" /> Audit Program
+            <TabsTrigger value="audit-program">
+              <ClipboardList className="h-3.5 w-3.5" /> Audit Program
             </TabsTrigger>
-            <TabsTrigger value="sampling" className="text-xs sm:text-sm">
-              <Database className="h-3.5 w-3.5 mr-1" /> Sampling
+            <TabsTrigger value="sampling">
+              <Database className="h-3.5 w-3.5" /> Sampling
             </TabsTrigger>
-            <TabsTrigger value="assertions" className="text-xs sm:text-sm">
-              <ListChecks className="h-3.5 w-3.5 mr-1" /> Assertions
+            <TabsTrigger value="assertions">
+              <ListChecks className="h-3.5 w-3.5" /> Assertions
             </TabsTrigger>
           </TabsList>
 

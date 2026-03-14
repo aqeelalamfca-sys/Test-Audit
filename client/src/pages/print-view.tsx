@@ -1010,7 +1010,7 @@ export default function PrintView() {
 
           {selectedDeliverable && (
             <Tabs defaultValue="details" className="mt-2.5">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="w-full">
                 <TabsTrigger value="details">Details</TabsTrigger>
                 <TabsTrigger value="audit-trail">Audit Trail</TabsTrigger>
                 <TabsTrigger value="files">Files ({selectedDeliverable.files.length})</TabsTrigger>

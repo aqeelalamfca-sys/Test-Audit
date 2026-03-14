@@ -1757,7 +1757,7 @@ export default function DeploymentGuide() {
         <Separator />
 
         <Tabs defaultValue="hostinger" className="w-full">
-          <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-muted/50 p-1" data-testid="platform-tabs">
+          <TabsList className="w-full" data-testid="platform-tabs">
             {platforms.map(p => (
               <TabsTrigger
                 key={p.id}

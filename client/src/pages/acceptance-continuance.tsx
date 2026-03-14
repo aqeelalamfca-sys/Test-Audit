@@ -386,11 +386,11 @@ export default function AcceptanceContinuance() {
       <div className="flex gap-2.5">
         <div className="flex-1 min-w-0">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-4 lg:grid-cols-8 w-full h-auto">
+            <TabsList className="w-full">
               {TABS.map(tab => (
-                <TabsTrigger key={tab.id} value={tab.id} className="text-xs flex flex-col gap-1 py-2">
-                  <tab.icon className="h-4 w-4" />
-                  <span className="hidden lg:inline">{tab.label}</span>
+                <TabsTrigger key={tab.id} value={tab.id} className="flex-col gap-0.5 py-1.5 px-2 min-w-[4.5rem]">
+                  <tab.icon className="h-4 w-4 shrink-0" />
+                  <span className="text-[10px] leading-tight text-center">{tab.label}</span>
                 </TabsTrigger>
               ))}
             </TabsList>

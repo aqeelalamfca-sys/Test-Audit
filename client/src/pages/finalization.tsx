@@ -792,7 +792,7 @@ export default function Finalization() {
               </Card>
 
               <Tabs value={fsSubTab} onValueChange={setFsSubTab} className="w-full">
-                <TabsList className="w-full justify-start flex-wrap gap-1 h-auto p-1">
+                <TabsList className="w-full">
                   <TabsTrigger value="adjusted-bs" className="gap-1.5 text-xs" data-testid="tab-adjusted-bs">
                     <Scale className="h-3.5 w-3.5" />
                     Adjusted Balance Sheet

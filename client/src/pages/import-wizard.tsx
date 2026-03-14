@@ -717,7 +717,7 @@ export default function ImportWizard() {
                       <Eye className="w-4 h-4" /> Preview Data ({batchDetail.stagingRows.length} rows)
                     </h4>
                     <Tabs defaultValue={batchDetail.stagingRows[0]?.recordType || "GL_LINE"}>
-                      <TabsList className="flex-wrap h-auto">
+                      <TabsList className="w-full">
                         {Array.from(new Set(batchDetail.stagingRows.map((r) => r.recordType))).map((rt) => (
                           <TabsTrigger key={rt} value={rt}>{rt}</TabsTrigger>
                         ))}

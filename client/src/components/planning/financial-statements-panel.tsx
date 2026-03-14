@@ -258,7 +258,7 @@ export function FinancialStatementsPanel({
         </Card>
 
         <Tabs value={fsSubTab} onValueChange={setFsSubTab} className="w-full">
-          <TabsList className="w-full justify-start flex-wrap gap-1 h-auto p-1">
+          <TabsList className="w-full">
             <TabsTrigger value="balance-sheet" className="gap-1.5 text-xs"><Scale className="h-3.5 w-3.5" />Balance Sheet</TabsTrigger>
             <TabsTrigger value="profit-loss" className="gap-1.5 text-xs"><TrendingUp className="h-3.5 w-3.5" />Profit & Loss</TabsTrigger>
             <TabsTrigger value="socf" className="gap-1.5 text-xs"><ArrowUpDown className="h-3.5 w-3.5" />SoCF</TabsTrigger>

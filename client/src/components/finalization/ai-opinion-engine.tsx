@@ -307,7 +307,7 @@ export function AIOpinionEngine({ engagementId }: OpinionEngineProps) {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-5 w-full">
+        <TabsList className="w-full">
           <TabsTrigger value="dashboard" className="gap-1 text-xs">
             <BarChart3 className="h-3.5 w-3.5" /> Dashboard
           </TabsTrigger>

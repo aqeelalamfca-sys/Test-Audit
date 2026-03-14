@@ -399,11 +399,11 @@ export default function Adjustments() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="dashboard"><BarChart3 className="h-3.5 w-3.5 mr-1" />Dashboard</TabsTrigger>
-            <TabsTrigger value="journal"><FileText className="h-3.5 w-3.5 mr-1" />Journal Entries</TabsTrigger>
-            <TabsTrigger value="sad"><Scale className="h-3.5 w-3.5 mr-1" />SAD Summary</TabsTrigger>
-            <TabsTrigger value="review"><Users className="h-3.5 w-3.5 mr-1" />Review</TabsTrigger>
+          <TabsList className="w-full">
+            <TabsTrigger value="dashboard"><BarChart3 className="h-3.5 w-3.5" />Dashboard</TabsTrigger>
+            <TabsTrigger value="journal"><FileText className="h-3.5 w-3.5" />Journal Entries</TabsTrigger>
+            <TabsTrigger value="sad"><Scale className="h-3.5 w-3.5" />SAD Summary</TabsTrigger>
+            <TabsTrigger value="review"><Users className="h-3.5 w-3.5" />Review</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-2.5">

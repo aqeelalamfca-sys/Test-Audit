@@ -228,7 +228,7 @@ export function SamplingEngine({ engagementId }: SamplingEngineProps) {
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="w-full">
             <TabsTrigger value="generate" data-testid="tab-generate">
               <Play className="h-4 w-4 mr-1" />
               Generate Sample

@@ -423,7 +423,7 @@ export function AnalyticalProceduresPanel({ engagementId, readOnly }: Analytical
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto p-1">
+            <TabsList className="w-full">
               <TabsTrigger value="horizontal" className="text-xs gap-1">
                 <ArrowUpDown className="h-3 w-3" />Horizontal
               </TabsTrigger>

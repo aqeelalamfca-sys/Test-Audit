@@ -241,7 +241,7 @@ export function LinkageMonitorPanel({ engagementId, onDataChange }: LinkageMonit
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-5" data-testid="tabs-monitor">
+            <TabsList className="w-full" data-testid="tabs-monitor">
               <TabsTrigger value="health" data-testid="tab-health">Health Summary</TabsTrigger>
               <TabsTrigger value="breaks" data-testid="tab-breaks">
                 Break Register

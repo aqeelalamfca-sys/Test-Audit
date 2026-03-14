@@ -30,7 +30,7 @@ export function NumberedTabNavigation({
       <div 
         role="tablist" 
         aria-label={ariaLabel}
-        className="flex items-center gap-1 p-1 bg-muted/40 rounded-xl border border-border/30 overflow-x-auto"
+        className="flex items-center gap-0.5 p-1 bg-muted/50 rounded-lg border border-border/40 overflow-x-auto scrollbar-none"
       >
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab;
@@ -54,22 +54,20 @@ export function NumberedTabNavigation({
                 }
               }}
               data-testid={`tab-${tab.id}`}
-              className={`
-                group relative flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-medium whitespace-nowrap
-                transition-all duration-150 ease-out min-w-fit focus:outline-none focus:ring-2 focus:ring-primary/50
-                ${isActive 
-                  ? 'bg-primary/10 text-primary shadow-sm' 
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                }
-              `}
+              className={cn(
+                "group relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap shrink-0",
+                "transition-all duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+                isActive 
+                  ? "bg-background text-foreground shadow-sm border border-border/50" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+              )}
             >
-              <span className={`
-                flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-semibold
-                ${isActive 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'bg-muted text-muted-foreground group-hover:text-foreground'
-                }
-              `}>
+              <span className={cn(
+                "flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-semibold shrink-0",
+                isActive 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted text-muted-foreground group-hover:text-foreground"
+              )}>
                 {tab.step}
               </span>
               <span>{tab.label}</span>
@@ -121,7 +119,7 @@ export function SimpleTabNavigation({
       <div 
         role="tablist" 
         aria-label={ariaLabel}
-        className="flex items-center gap-1 p-1 bg-muted/40 rounded-xl border border-border/30 overflow-x-auto"
+        className="flex items-center gap-0.5 p-1 bg-muted/50 rounded-lg border border-border/40 overflow-x-auto scrollbar-none"
       >
         {tabs.map((tab, index) => {
           const isActive = tab.id === activeTab;
@@ -146,28 +144,31 @@ export function SimpleTabNavigation({
                 }
               }}
               data-testid={`tab-${tab.id}`}
-              className={`
-                group relative flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-medium whitespace-nowrap
-                transition-all duration-150 ease-out min-w-fit focus:outline-none focus:ring-2 focus:ring-primary/50
-                ${isActive 
-                  ? 'bg-primary/10 text-primary shadow-sm' 
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                }
-              `}
+              className={cn(
+                "group relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap shrink-0",
+                "transition-all duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+                isActive 
+                  ? "bg-background text-foreground shadow-sm border border-border/50" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+              )}
             >
-              <span className={`
-                flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-semibold
-                ${isActive 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'bg-muted text-muted-foreground group-hover:text-foreground'
-                }
-              `}>
-                {index + 1}
-              </span>
+              {tab.icon && (
+                <span className="shrink-0 [&>svg]:h-3.5 [&>svg]:w-3.5">{tab.icon}</span>
+              )}
+              {!tab.icon && (
+                <span className={cn(
+                  "flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-semibold shrink-0",
+                  isActive 
+                    ? "bg-primary text-primary-foreground" 
+                    : "bg-muted text-muted-foreground group-hover:text-foreground"
+                )}>
+                  {index + 1}
+                </span>
+              )}
               <span>{tab.label}</span>
               {dotColor && (
                 <span
-                  className={`w-1.5 h-1.5 rounded-full ${dotColor}`}
+                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`}
                   title={tabStatus?.label}
                 />
               )}

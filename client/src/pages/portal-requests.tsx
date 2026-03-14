@@ -314,7 +314,7 @@ export default function PortalRequests() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div >
             <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isRefreshing}>
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
             </Button>
@@ -328,28 +328,28 @@ export default function PortalRequests() {
       <main className="container mx-auto px-3 py-3">
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 mb-3">
           <Card className="p-2.5">
-            <div className="flex items-center gap-2">
+            <div >
               <Clock className="h-4 w-4 text-yellow-600" />
               <span className="text-sm text-muted-foreground">Pending</span>
             </div>
             <p className="text-lg font-bold mt-1">{stats?.pendingRequests || 0}</p>
           </Card>
           <Card className="p-2.5">
-            <div className="flex items-center gap-2">
+            <div >
               <AlertCircle className="h-4 w-4 text-blue-600" />
               <span className="text-sm text-muted-foreground">In Progress</span>
             </div>
             <p className="text-lg font-bold mt-1">{stats?.inProgressRequests || 0}</p>
           </Card>
           <Card className="p-2.5">
-            <div className="flex items-center gap-2">
+            <div >
               <CheckCircle className="h-4 w-4 text-green-600" />
               <span className="text-sm text-muted-foreground">Completed</span>
             </div>
             <p className="text-lg font-bold mt-1">{stats?.completedRequests || 0}</p>
           </Card>
           <Card className="p-2.5">
-            <div className="flex items-center gap-2">
+            <div >
               <Paperclip className="h-4 w-4 text-purple-600" />
               <span className="text-sm text-muted-foreground">Attachments</span>
             </div>
@@ -358,12 +358,12 @@ export default function PortalRequests() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-2.5">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="company" className="flex items-center gap-2">
+          <TabsList className="w-full">
+            <TabsTrigger value="company">
               <Building2 className="h-4 w-4" />
               <span className="hidden sm:inline">Company</span>
             </TabsTrigger>
-            <TabsTrigger value="requests" className="flex items-center gap-2">
+            <TabsTrigger value="requests">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Requests</span>
               {(stats?.pendingRequests || 0) > 0 && (
@@ -372,7 +372,7 @@ export default function PortalRequests() {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="deliverables" className="flex items-center gap-2">
+            <TabsTrigger value="deliverables" >
               <FileCheck className="h-4 w-4" />
               <span className="hidden sm:inline">Deliverables</span>
               {deliverables.length > 0 && (
@@ -381,7 +381,7 @@ export default function PortalRequests() {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="attachments" className="flex items-center gap-2">
+            <TabsTrigger value="attachments" >
               <Paperclip className="h-4 w-4" />
               <span className="hidden sm:inline">Files</span>
             </TabsTrigger>
@@ -390,7 +390,7 @@ export default function PortalRequests() {
           <TabsContent value="company" className="space-y-2.5">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle >
                   <Building2 className="h-5 w-5" />
                   Company Information
                 </CardTitle>
@@ -424,11 +424,11 @@ export default function PortalRequests() {
                     Contact Information
                   </h4>
                   <div className="grid gap-2.5 sm:grid-cols-2">
-                    <div className="flex items-center gap-2">
+                    <div >
                       <Mail className="h-4 w-4 text-muted-foreground" />
                       <span>{engagement?.client.email || "-"}</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div >
                       <Phone className="h-4 w-4 text-muted-foreground" />
                       <span>{engagement?.client.phone || "-"}</span>
                     </div>
@@ -612,7 +612,7 @@ export default function PortalRequests() {
           <TabsContent value="deliverables" className="space-y-2.5">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle >
                   <FileCheck className="h-5 w-5" />
                   Audit Deliverables
                 </CardTitle>
@@ -693,7 +693,7 @@ export default function PortalRequests() {
           <TabsContent value="attachments" className="space-y-2.5">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle >
                   <Paperclip className="h-5 w-5" />
                   All Attachments
                 </CardTitle>

@@ -471,12 +471,12 @@ export default function Login() {
           <Card className="border-border/60 shadow-md">
             <CardContent className="p-3">
               <Tabs defaultValue="firm" onValueChange={(v) => setLoginType(v as "firm" | "portal")}>
-                <TabsList className="grid w-full grid-cols-2 mb-2.5 h-10">
-                  <TabsTrigger value="firm" className="flex items-center gap-1.5 text-sm" data-testid="tab-firm-login">
+                <TabsList className="w-full mb-2.5">
+                  <TabsTrigger value="firm" className="flex-1 text-sm py-2" data-testid="tab-firm-login">
                     <Building2 className="h-3.5 w-3.5" />
                     Firm Login
                   </TabsTrigger>
-                  <TabsTrigger value="portal" className="flex items-center gap-1.5 text-sm" data-testid="tab-client-portal">
+                  <TabsTrigger value="portal" className="flex-1 text-sm py-2" data-testid="tab-client-portal">
                     <Users className="h-3.5 w-3.5" />
                     Client Portal
                   </TabsTrigger>

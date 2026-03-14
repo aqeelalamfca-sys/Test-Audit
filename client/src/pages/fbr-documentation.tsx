@@ -1060,7 +1060,7 @@ export default function FBRDocumentation() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="flex flex-wrap gap-1">
+        <TabsList className="w-full">
           <TabsTrigger value="computation" data-testid="tab-computation">
             <Calculator className="h-4 w-4 mr-1.5" />
             Tax Computation

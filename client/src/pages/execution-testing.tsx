@@ -291,21 +291,21 @@ export default function ExecutionTesting() {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="dashboard" className="text-xs sm:text-sm">
-              <Layers className="h-3.5 w-3.5 mr-1" /> Dashboard
+          <TabsList className="w-full">
+            <TabsTrigger value="dashboard">
+              <Layers className="h-3.5 w-3.5" /> Dashboard
             </TabsTrigger>
-            <TabsTrigger value="procedures" className="text-xs sm:text-sm">
-              <ClipboardList className="h-3.5 w-3.5 mr-1" /> Procedures
+            <TabsTrigger value="procedures">
+              <ClipboardList className="h-3.5 w-3.5" /> Procedures
             </TabsTrigger>
-            <TabsTrigger value="testing" className="text-xs sm:text-sm">
-              <Shield className="h-3.5 w-3.5 mr-1" /> Testing
+            <TabsTrigger value="testing">
+              <Shield className="h-3.5 w-3.5" /> Testing
             </TabsTrigger>
-            <TabsTrigger value="workpapers" className="text-xs sm:text-sm">
-              <FileText className="h-3.5 w-3.5 mr-1" /> Workpapers
+            <TabsTrigger value="workpapers">
+              <FileText className="h-3.5 w-3.5" /> Workpapers
             </TabsTrigger>
-            <TabsTrigger value="review" className="text-xs sm:text-sm">
-              <MessageSquare className="h-3.5 w-3.5 mr-1" /> Review
+            <TabsTrigger value="review">
+              <MessageSquare className="h-3.5 w-3.5" /> Review
             </TabsTrigger>
           </TabsList>
 

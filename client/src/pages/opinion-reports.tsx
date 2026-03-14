@@ -401,9 +401,9 @@ export default function OpinionReportsPage() {
         />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full justify-start flex-wrap gap-1 h-auto p-1">
+          <TabsList className="w-full">
             {opinionReportsTabs.map((tab) => (
-              <TabsTrigger key={tab.id} value={tab.id} className="gap-1.5 text-xs">
+              <TabsTrigger key={tab.id} value={tab.id}>
                 {tab.icon}
                 {tab.label}
               </TabsTrigger>

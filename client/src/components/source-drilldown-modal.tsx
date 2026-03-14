@@ -103,7 +103,7 @@ export function SourceDrilldownModal({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="w-full">
             <TabsTrigger value="entries">
               {sourceType === "gl-to-tb" ? "GL Entries" : "TB Line Items"}
               <Badge variant="outline" className="ml-2">

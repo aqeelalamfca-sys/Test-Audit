@@ -437,29 +437,29 @@ export default function EvidenceLinking() {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full justify-start">
+        <TabsList className="w-full">
           <TabsTrigger value="dashboard">
-            <BarChart3 className="h-3.5 w-3.5 mr-1" />
+            <BarChart3 className="h-3.5 w-3.5" />
             Dashboard
           </TabsTrigger>
           <TabsTrigger value="vault">
-            <FolderOpen className="h-3.5 w-3.5 mr-1" />
+            <FolderOpen className="h-3.5 w-3.5" />
             Evidence Vault
           </TabsTrigger>
           <TabsTrigger value="linkage">
-            <Link2 className="h-3.5 w-3.5 mr-1" />
+            <Link2 className="h-3.5 w-3.5" />
             Procedure Linkage
           </TabsTrigger>
           <TabsTrigger value="categorization">
-            <Tags className="h-3.5 w-3.5 mr-1" />
+            <Tags className="h-3.5 w-3.5" />
             Categorization
           </TabsTrigger>
           <TabsTrigger value="versions">
-            <History className="h-3.5 w-3.5 mr-1" />
+            <History className="h-3.5 w-3.5" />
             Version History
           </TabsTrigger>
           <TabsTrigger value="review">
-            <User className="h-3.5 w-3.5 mr-1" />
+            <User className="h-3.5 w-3.5" />
             Reviewer Panel
           </TabsTrigger>
         </TabsList>

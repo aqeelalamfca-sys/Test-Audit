@@ -712,35 +712,35 @@ export default function EQCR() {
         </Card>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto py-1 bg-muted/50">
-            <TabsTrigger value="dashboard" className="gap-1.5 text-xs">
+          <TabsList className="w-full">
+            <TabsTrigger value="dashboard">
               <BarChart3 className="h-3.5 w-3.5" />
               Dashboard
             </TabsTrigger>
-            <TabsTrigger value="open-matters" className="gap-1.5 text-xs">
+            <TabsTrigger value="open-matters">
               <AlertTriangle className="h-3.5 w-3.5" />
               Open Matters
               {(openComments.length + openChecklistIssues.length) > 0 && (
                 <Badge variant="destructive" className="ml-1 text-[10px] px-1 py-0 h-4">{openComments.length + openChecklistIssues.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="report-pack" className="gap-1.5 text-xs">
+            <TabsTrigger value="report-pack">
               <Package className="h-3.5 w-3.5" />
               Report Pack
             </TabsTrigger>
-            <TabsTrigger value="key-judgments" className="gap-1.5 text-xs">
+            <TabsTrigger value="key-judgments">
               <Scale className="h-3.5 w-3.5" />
               Key Judgments
             </TabsTrigger>
-            <TabsTrigger value="independence" className="gap-1.5 text-xs">
+            <TabsTrigger value="independence">
               <Shield className="h-3.5 w-3.5" />
               Independence
             </TabsTrigger>
-            <TabsTrigger value="checklist" className="gap-1.5 text-xs">
+            <TabsTrigger value="checklist">
               <ClipboardCheck className="h-3.5 w-3.5" />
               EQCR Checklist
             </TabsTrigger>
-            <TabsTrigger value="clearance" className="gap-1.5 text-xs">
+            <TabsTrigger value="clearance">
               <Lock className="h-3.5 w-3.5" />
               Clearance
             </TabsTrigger>

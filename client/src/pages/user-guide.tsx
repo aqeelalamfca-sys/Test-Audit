@@ -602,7 +602,7 @@ export default function UserGuide() {
       </div>
       
       <Tabs value={activeGuideTab} onValueChange={setActiveGuideTab} className="w-full">
-        <TabsList className="w-full justify-start flex-wrap gap-1 h-auto p-1">
+        <TabsList className="w-full">
           <TabsTrigger value="guide" className="gap-1.5" data-testid="tab-guide-content">
             <BookOpen className="h-3.5 w-3.5" />
             Guide Content

@@ -546,7 +546,7 @@ export function FSNotes({ draftFsData, coaAccounts, engagementId, clientName, pe
       </Card>
 
       <Tabs value={notesViewTab} onValueChange={setNotesViewTab} className="w-full">
-        <TabsList className="w-full justify-start h-auto p-1 gap-1 flex-wrap">
+        <TabsList className="w-full">
           <TabsTrigger value="data" className="gap-1.5 text-xs" data-testid="tab-notes-data-view">
             <FileText className="h-3.5 w-3.5" />
             Account Data ({noteGroups.length})

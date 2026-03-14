@@ -447,7 +447,7 @@ export function NotesDisclosurePanel({
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full justify-start flex-wrap gap-1">
+        <TabsList className="w-full">
           <TabsTrigger value="notes-index" data-testid="tab-notes-index" className="gap-1">
             <List className="w-4 h-4" />Notes Index
           </TabsTrigger>

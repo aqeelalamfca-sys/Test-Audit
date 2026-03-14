@@ -1066,32 +1066,32 @@ export default function Administration() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-7 bg-muted/50">
-          <TabsTrigger value="firm" className="flex items-center gap-2" data-testid="tab-firm">
+        <TabsList className="w-full">
+          <TabsTrigger value="firm" data-testid="tab-firm">
             <Landmark className="h-4 w-4" />
             Firm Setting
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
+          <TabsTrigger value="settings">
             <Settings className="h-4 w-4" />
             Settings
           </TabsTrigger>
-          <TabsTrigger value="rbac" className="flex items-center gap-2">
+          <TabsTrigger value="rbac">
             <Shield className="h-4 w-4" />
             RBAC
           </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-2">
+          <TabsTrigger value="users">
             <Users className="h-4 w-4" />
             Users
           </TabsTrigger>
-          <TabsTrigger value="flags" className="flex items-center gap-2">
+          <TabsTrigger value="flags">
             <Flag className="h-4 w-4" />
             Flags
           </TabsTrigger>
-          <TabsTrigger value="templates" className="flex items-center gap-2">
+          <TabsTrigger value="templates">
             <FileText className="h-4 w-4" />
             Templates
           </TabsTrigger>
-          <TabsTrigger value="audit" className="flex items-center gap-2">
+          <TabsTrigger value="audit">
             <History className="h-4 w-4" />
             Audit Log
           </TabsTrigger>

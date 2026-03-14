@@ -294,11 +294,11 @@ export default function PlatformDashboard() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="overview" className="text-xs gap-1"><BarChart3 className="h-3 w-3" /> Overview</TabsTrigger>
-          <TabsTrigger value="infrastructure" className="text-xs gap-1"><Server className="h-3 w-3" /> Infrastructure</TabsTrigger>
-          <TabsTrigger value="security" className="text-xs gap-1"><ShieldAlert className="h-3 w-3" /> Security</TabsTrigger>
-          <TabsTrigger value="activity" className="text-xs gap-1"><Activity className="h-3 w-3" /> Activity</TabsTrigger>
+        <TabsList className="w-full">
+          <TabsTrigger value="overview"><BarChart3 className="h-3.5 w-3.5" /> Overview</TabsTrigger>
+          <TabsTrigger value="infrastructure"><Server className="h-3.5 w-3.5" /> Infrastructure</TabsTrigger>
+          <TabsTrigger value="security"><ShieldAlert className="h-3.5 w-3.5" /> Security</TabsTrigger>
+          <TabsTrigger value="activity"><Activity className="h-3.5 w-3.5" /> Activity</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-2.5 mt-3">

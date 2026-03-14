@@ -1647,7 +1647,7 @@ export function FsMappingSection({ engagementId, token, toast, onNavigate, canAp
               <div className="flex-1 flex flex-col overflow-hidden">
                 <div className="p-2 border-b flex items-center gap-2 flex-wrap">
                   <Tabs value={filterStatus} onValueChange={(v) => setFilterStatus(v as FilterStatus)} className="flex-shrink-0">
-                    <TabsList className="h-8">
+                    <TabsList className="w-auto">
                       <TabsTrigger value="all" className="text-xs px-3" data-testid="tab-filter-all">
                         All
                         <Badge variant="outline" className="ml-1 text-[10px] no-default-hover-elevate no-default-active-elevate">{tbEntries.length}</Badge>
