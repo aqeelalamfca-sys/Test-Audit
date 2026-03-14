@@ -184,17 +184,16 @@ services:
         max-file: "3"
 
   nginx:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: docker/nginx.Dockerfile
+    image: ghcr.io/aqeelalamfca-sys/auditwise-nginx:${APP_VERSION:-latest}
     container_name: auditwise-nginx
     restart: always
-    entrypoint: ["/docker-entrypoint-custom.sh"]
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/default.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/nginx-ssl.conf:/etc/nginx/nginx-ssl.conf:ro
-      - ./docker/nginx-entrypoint.sh:/docker-entrypoint-custom.sh:ro
       - certbot-webroot:/var/www/certbot:ro
       - nginx-ssl:/etc/nginx/ssl:ro
     depends_on:
@@ -203,7 +202,7 @@ services:
       backend:
         condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost/api/health 2>/dev/null || wget -q --spider https://localhost/api/health 2>/dev/null || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10

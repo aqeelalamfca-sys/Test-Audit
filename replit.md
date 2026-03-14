@@ -112,6 +112,12 @@ bash devops/control.sh backup          # Create database backup
 bash devops/control.sh ssh [cmd]       # Run command on VPS
 ```
 
+### Docker Nginx Entrypoint
+- The nginx container uses a custom entrypoint script (`docker/nginx-entrypoint.sh`) baked into the image via `docker/nginx.Dockerfile`
+- The Dockerfile runs `dos2unix` + `chmod +x` + `chown root:root` on the entrypoint to prevent permission-denied errors regardless of host OS line endings
+- `.gitattributes` enforces LF line endings for all `.sh` files
+- All compose files (`docker-compose.yml`, `docker-compose.prod.yml`, `deployment/docker-compose.yml`) build from the Dockerfile rather than bind-mounting the script
+
 ### Docker APT Signed-By Fix
 
 The Hostinger VPS had conflicting Docker repository signing key references (`docker.gpg` vs `docker.asc`) causing APT failures. All deploy/bootstrap scripts now include an idempotent fix that:

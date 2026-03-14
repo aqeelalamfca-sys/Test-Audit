@@ -1,6 +1,6 @@
 FROM nginx:alpine
 
-RUN apk add --no-cache curl bash openssl
+RUN apk add --no-cache curl bash openssl dos2unix
 
 RUN rm -rf /etc/nginx/conf.d/*
 
@@ -8,7 +8,9 @@ COPY deploy/nginx/proxy.conf /etc/nginx/conf.d/default.conf
 COPY deploy/nginx/proxy-ssl.conf /etc/nginx/nginx-ssl.conf
 COPY docker/nginx-entrypoint.sh /docker-entrypoint-custom.sh
 
-RUN chmod +x /docker-entrypoint-custom.sh && \
+RUN dos2unix /docker-entrypoint-custom.sh && \
+    chmod +x /docker-entrypoint-custom.sh && \
+    chown root:root /docker-entrypoint-custom.sh && \
     mkdir -p /etc/nginx/ssl /var/www/certbot
 
 EXPOSE 80 443
